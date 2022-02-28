@@ -31,7 +31,7 @@ import (
 	grpcgzip "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/bufbuild/connect"
-	crossrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go-connect/cross/v1test"
+	crossrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/cross/v1test"
 	crosspb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/cross/v1test"
 	connectgzip "github.com/bufbuild/connect/compress/gzip"
 	"github.com/stretchr/testify/assert"
