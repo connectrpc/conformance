@@ -10,7 +10,7 @@ SKIP_GOLANGCI_LINT := 1
 LICENSE_HEADER_LICENSE_TYPE := apache
 LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
 LICENSE_HEADER_YEAR_RANGE := 2020-2022
-LICENSE_HEADER_IGNORES := \/testdata
+LICENSE_HEADER_IGNORES := \/testdata proto\/grpc
 
 include make/go/bootstrap.mk
 include make/go/go.mk
