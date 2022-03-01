@@ -34,6 +34,7 @@ import (
 	"github.com/fullstorydev/grpcurl"
 	jsonpbv1 "github.com/golang/protobuf/jsonpb"
 	protov1 "github.com/golang/protobuf/proto"
+	"github.com/google/go-cmp/cmp"
 	"github.com/jhump/protoreflect/grpcreflect"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/http2"
@@ -44,6 +45,7 @@ import (
 	grpcgzip "google.golang.org/grpc/encoding/gzip"
 	grpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/bufbuild/connect"
@@ -243,7 +245,7 @@ func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 		expect := &crosspb.PingResponse{Number: num}
 		res, err := client.Ping(context.Background(), connect.NewEnvelope(req))
 		assert.Nil(t, err, "ping error")
-		assert.Equal(t, res.Msg, expect, "ping response")
+		assert.Empty(t, cmp.Diff(res.Msg, expect, protocmp.Transform()), "ping response")
 	})
 	t.Run("errors", func(t *testing.T) {
 		req := &crosspb.FailRequest{Code: int32(connect.CodeResourceExhausted)}
@@ -281,7 +283,7 @@ func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 		}
 		res, err := stream.CloseAndReceive()
 		assert.Nil(t, err, "CloseAndReceive error")
-		assert.Equal(t, res.Msg, &crosspb.SumResponse{Sum: expect}, "response")
+		assert.Empty(t, cmp.Diff(res.Msg, &crosspb.SumResponse{Sum: expect}, protocmp.Transform()), "response")
 	})
 	t.Run("count_up", func(t *testing.T) {
 		const n = 5
@@ -346,7 +348,7 @@ func testWithGRPCClient(t *testing.T, client crosspb.CrossServiceClient, opts ..
 		expect := &crosspb.PingResponse{Number: num}
 		res, err := client.Ping(context.Background(), req, opts...)
 		assert.Nil(t, err, "ping error")
-		assert.Equal(t, res, expect, "ping response")
+		assert.Empty(t, cmp.Diff(res, expect, protocmp.Transform()), "ping response")
 	})
 	t.Run("errors", func(t *testing.T) {
 		req := &crosspb.FailRequest{Code: int32(connect.CodeResourceExhausted)}
@@ -389,7 +391,7 @@ func testWithGRPCClient(t *testing.T, client crosspb.CrossServiceClient, opts ..
 		}
 		res, err := stream.CloseAndRecv()
 		assert.Nil(t, err, "CloseAndRecv error")
-		assert.Equal(t, res, &crosspb.SumResponse{Sum: expect}, "response")
+		assert.Empty(t, cmp.Diff(res, &crosspb.SumResponse{Sum: expect}, protocmp.Transform()), "response")
 	})
 	t.Run("count_up", func(t *testing.T) {
 		const n = 5
