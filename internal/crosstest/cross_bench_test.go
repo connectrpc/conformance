@@ -1,17 +1,3 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package crosstest
 
 import (
@@ -31,17 +17,14 @@ import (
 	grpcgzip "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/bufbuild/connect"
-	crossrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/cross/v1test"
-	crosspb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/cross/v1test"
-	connectgzip "github.com/bufbuild/connect/compress/gzip"
-	"github.com/stretchr/testify/assert"
+	"github.com/bufbuild/connect/internal/assert"
+	crossrpc "github.com/bufbuild/connect/internal/crosstest/gen/proto/connect/cross/v1test"
+	crosspb "github.com/bufbuild/connect/internal/crosstest/gen/proto/go/cross/v1test"
 )
 
 func BenchmarkConnect(b *testing.B) {
-	mux, err := connect.NewServeMux(
-		crossrpc.WithCrossServiceHandler(crossServerConnect{}),
-	)
-	assert.Nil(b, err, "mux construction error")
+	mux := http.NewServeMux()
+	mux.Handle(crossrpc.NewCrossServiceHandler(crossServerConnect{}))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -55,7 +38,7 @@ func BenchmarkConnect(b *testing.B) {
 	client, err := crossrpc.NewCrossServiceClient(
 		server.URL,
 		server.Client(),
-		connect.WithRequestCompressor(connectgzip.Name),
+		connect.WithGzipRequests(),
 	)
 	assert.Nil(b, err, "client construction error")
 	b.ResetTimer()
@@ -65,7 +48,7 @@ func BenchmarkConnect(b *testing.B) {
 			for pb.Next() {
 				_, _ = client.Ping(
 					context.Background(),
-					connect.NewRequest(&crosspb.PingRequest{Number: 42}),
+					connect.NewEnvelope(&crosspb.PingRequest{Number: 42}),
 				)
 			}
 		})
