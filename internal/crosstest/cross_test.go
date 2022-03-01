@@ -35,6 +35,7 @@ import (
 	jsonpbv1 "github.com/golang/protobuf/jsonpb"
 	protov1 "github.com/golang/protobuf/proto"
 	"github.com/jhump/protoreflect/grpcreflect"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
@@ -46,9 +47,8 @@ import (
 	"google.golang.org/protobuf/types/known/durationpb"
 
 	"github.com/bufbuild/connect"
-	"github.com/bufbuild/connect/internal/assert"
-	crossrpc "github.com/bufbuild/connect/internal/crosstest/gen/proto/connect/cross/v1test"
-	crosspb "github.com/bufbuild/connect/internal/crosstest/gen/proto/go/cross/v1test"
+	crossrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/cross/v1test"
+	crosspb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/cross/v1test"
 	"github.com/bufbuild/connect/reflection"
 )
 
@@ -277,7 +277,7 @@ func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 		stream := client.Sum(context.Background())
 		for i := int64(1); i <= upTo; i++ {
 			err := stream.Send(&crosspb.SumRequest{Number: i})
-			assert.Nil(t, err, "Send %v", assert.Fmt(i))
+			assert.Nil(t, err, "Send %v", i)
 		}
 		res, err := stream.CloseAndReceive()
 		assert.Nil(t, err, "CloseAndReceive error")
@@ -318,7 +318,7 @@ func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 			defer wg.Done()
 			for i, n := range send {
 				err := stream.Send(&crosspb.CumSumRequest{Number: n})
-				assert.Nil(t, err, "send error #%v", assert.Fmt(i))
+				assert.Nil(t, err, "send error #%v", i)
 			}
 			assert.Nil(t, stream.CloseSend(), "close send error")
 		}()
@@ -385,7 +385,7 @@ func testWithGRPCClient(t *testing.T, client crosspb.CrossServiceClient, opts ..
 		assert.Nil(t, err, "call error")
 		for i := int64(1); i <= upTo; i++ {
 			err := stream.Send(&crosspb.SumRequest{Number: i})
-			assert.Nil(t, err, "Send %v", assert.Fmt(i))
+			assert.Nil(t, err, "Send %v", i)
 		}
 		res, err := stream.CloseAndRecv()
 		assert.Nil(t, err, "CloseAndRecv error")
@@ -425,7 +425,7 @@ func testWithGRPCClient(t *testing.T, client crosspb.CrossServiceClient, opts ..
 			defer wg.Done()
 			for i, n := range send {
 				err := stream.Send(&crosspb.CumSumRequest{Number: n})
-				assert.Nil(t, err, "send error #%v", assert.Fmt(i))
+				assert.Nil(t, err, "send error #%v", i)
 			}
 			assert.Nil(t, stream.CloseSend(), "close send error")
 		}()
