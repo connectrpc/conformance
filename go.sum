@@ -26,6 +26,8 @@ github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/bufbuild/connect v0.0.0-20220224172658-5281d7322b54 h1:rWbi5ABc6YZ6Dwb5ycFo8+prBW+I7P0yCMJumpFRy6A=
 github.com/bufbuild/connect v0.0.0-20220224172658-5281d7322b54/go.mod h1:6VGKI5/kwOaq1+ae8U8FmPqwR1Kuo5imEIVe3nOonuE=
+github.com/bufbuild/connect v0.0.0-20220228224225-8263ad888e55 h1:fXyQYIwO6/bO8MUqk8FUE/nwTTrZBGFA6T3uHu2MvYE=
+github.com/bufbuild/connect v0.0.0-20220228224225-8263ad888e55/go.mod h1:6VGKI5/kwOaq1+ae8U8FmPqwR1Kuo5imEIVe3nOonuE=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=

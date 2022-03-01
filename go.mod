@@ -3,7 +3,7 @@ module github.com/bufbuild/connect-crosstest
 go 1.18
 
 require (
-	github.com/bufbuild/connect v0.0.0-20220224172658-5281d7322b54
+	github.com/bufbuild/connect v0.0.0-20220228224225-8263ad888e55
 	github.com/fullstorydev/grpcurl v1.8.6
 	github.com/golang/protobuf v1.5.2
 	github.com/jhump/protoreflect v1.12.0
