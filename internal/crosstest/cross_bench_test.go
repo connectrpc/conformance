@@ -52,7 +52,7 @@ func BenchmarkConnect(b *testing.B) {
 	client, err := crossrpc.NewCrossServiceClient(
 		server.URL,
 		server.Client(),
-		connect.WithRequestCompressor("gzip"),
+		connect.WithGzipRequests(),
 	)
 	assert.Nil(b, err, "client construction error")
 	b.ResetTimer()

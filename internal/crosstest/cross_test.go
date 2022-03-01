@@ -45,6 +45,7 @@ import (
 	grpcgzip "google.golang.org/grpc/encoding/gzip"
 	grpb "google.golang.org/grpc/reflection/grpc_reflection_v1alpha"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/durationpb"
 
@@ -238,6 +239,11 @@ func assertErrorConnect(t testing.TB, err error, msg string) *connect.Error {
 	return connectErr
 }
 
+func assertProtobufEqual[Msg proto.Message](t testing.TB, got, want Msg, message string) {
+	t.Helper()
+	assert.Empty(t, cmp.Diff(got, want, protocmp.Transform()), message)
+}
+
 func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 	t.Run("ping", func(t *testing.T) {
 		num := rand.Int63()
@@ -245,7 +251,7 @@ func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 		expect := &crosspb.PingResponse{Number: num}
 		res, err := client.Ping(context.Background(), connect.NewEnvelope(req))
 		assert.Nil(t, err, "ping error")
-		assert.Empty(t, cmp.Diff(res.Msg, expect, protocmp.Transform()), "ping response")
+		assertProtobufEqual(t, res.Msg, expect, "ping response")
 	})
 	t.Run("errors", func(t *testing.T) {
 		req := &crosspb.FailRequest{Code: int32(connect.CodeResourceExhausted)}
@@ -283,7 +289,7 @@ func testWithConnectClient(t *testing.T, client crossrpc.CrossServiceClient) {
 		}
 		res, err := stream.CloseAndReceive()
 		assert.Nil(t, err, "CloseAndReceive error")
-		assert.Empty(t, cmp.Diff(res.Msg, &crosspb.SumResponse{Sum: expect}, protocmp.Transform()), "response")
+		assertProtobufEqual(t, res.Msg, &crosspb.SumResponse{Sum: expect}, "response")
 	})
 	t.Run("count_up", func(t *testing.T) {
 		const n = 5
@@ -348,7 +354,7 @@ func testWithGRPCClient(t *testing.T, client crosspb.CrossServiceClient, opts ..
 		expect := &crosspb.PingResponse{Number: num}
 		res, err := client.Ping(context.Background(), req, opts...)
 		assert.Nil(t, err, "ping error")
-		assert.Empty(t, cmp.Diff(res, expect, protocmp.Transform()), "ping response")
+		assertProtobufEqual(t, res, expect, "ping response")
 	})
 	t.Run("errors", func(t *testing.T) {
 		req := &crosspb.FailRequest{Code: int32(connect.CodeResourceExhausted)}
@@ -391,7 +397,7 @@ func testWithGRPCClient(t *testing.T, client crosspb.CrossServiceClient, opts ..
 		}
 		res, err := stream.CloseAndRecv()
 		assert.Nil(t, err, "CloseAndRecv error")
-		assert.Empty(t, cmp.Diff(res, &crosspb.SumResponse{Sum: expect}, protocmp.Transform()), "response")
+		assertProtobufEqual(t, res, &crosspb.SumResponse{Sum: expect}, "response")
 	})
 	t.Run("count_up", func(t *testing.T) {
 		const n = 5
