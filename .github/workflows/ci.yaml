@@ -14,6 +14,19 @@ jobs:
         with:
           stable: false
           go-version: 1.18.0-rc1
+      # TODO: remove when `connect` goes public.
+      - name: setup-pat
+        run: |
+          echo "machine github.com login bufbuildrobot password ${{ secrets.PAT }}" > ${HOME}/.netrc
+      - name: install-connect-go
+        run: go install github.com/bufbuild/connect/cmd/protoc-gen-connect-go@latest
+        env:
+          GIT_TERMINAL_PROMPT: 1
+          # TODO: remove when `connect` goes public.
+          GOPRIVATE: github.com/bufbuild/*
       - name: ci
         if: success()
         run: make ci
+        env:
+          # TODO: remove when `connect` goes public.
+          GOPRIVATE: github.com/bufbuild/*

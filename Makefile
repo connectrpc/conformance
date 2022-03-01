@@ -21,7 +21,7 @@ include make/go/dep_protoc_gen_go_grpc.mk
 
 .PHONY: installprotoc-gen-go-connect
 installprotoc-gen-go-connect:
-	go install github.com/bufbuild/connect/cmd/protoc-gen-go-connect
+	go install github.com/bufbuild/connect/cmd/protoc-gen-connect-go
 
 bufgeneratedeps:: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) installprotoc-gen-go-connect
 

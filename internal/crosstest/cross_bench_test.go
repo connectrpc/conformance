@@ -33,15 +33,12 @@ import (
 	"github.com/bufbuild/connect"
 	crossrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/cross/v1test"
 	crosspb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/cross/v1test"
-	connectgzip "github.com/bufbuild/connect/compress/gzip"
 	"github.com/stretchr/testify/assert"
 )
 
 func BenchmarkConnect(b *testing.B) {
-	mux, err := connect.NewServeMux(
-		crossrpc.WithCrossServiceHandler(crossServerConnect{}),
-	)
-	assert.Nil(b, err, "mux construction error")
+	mux := http.NewServeMux()
+	mux.Handle(crossrpc.NewCrossServiceHandler(crossServerConnect{}))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
 	server.StartTLS()
@@ -55,7 +52,7 @@ func BenchmarkConnect(b *testing.B) {
 	client, err := crossrpc.NewCrossServiceClient(
 		server.URL,
 		server.Client(),
-		connect.WithRequestCompressor(connectgzip.Name),
+		connect.WithGzipRequests(),
 	)
 	assert.Nil(b, err, "client construction error")
 	b.ResetTimer()
@@ -65,7 +62,7 @@ func BenchmarkConnect(b *testing.B) {
 			for pb.Next() {
 				_, _ = client.Ping(
 					context.Background(),
-					connect.NewRequest(&crosspb.PingRequest{Number: 42}),
+					connect.NewEnvelope(&crosspb.PingRequest{Number: 42}),
 				)
 			}
 		})
