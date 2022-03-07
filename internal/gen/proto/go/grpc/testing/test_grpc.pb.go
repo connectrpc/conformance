@@ -40,6 +40,8 @@ type TestServiceClient interface {
 	EmptyCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// One request followed by one response.
 	UnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
+	// One request followed by one response. This RPC always failes.
+	FailUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
 	// satisfy subsequent requests.
@@ -84,6 +86,15 @@ func (c *testServiceClient) EmptyCall(ctx context.Context, in *Empty, opts ...gr
 func (c *testServiceClient) UnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error) {
 	out := new(SimpleResponse)
 	err := c.cc.Invoke(ctx, "/grpc.testing.TestService/UnaryCall", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *testServiceClient) FailUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error) {
+	out := new(SimpleResponse)
+	err := c.cc.Invoke(ctx, "/grpc.testing.TestService/FailUnaryCall", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -244,6 +255,8 @@ type TestServiceServer interface {
 	EmptyCall(context.Context, *Empty) (*Empty, error)
 	// One request followed by one response.
 	UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
+	// One request followed by one response. This RPC always failes.
+	FailUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
 	// satisfy subsequent requests.
@@ -278,6 +291,9 @@ func (UnimplementedTestServiceServer) EmptyCall(context.Context, *Empty) (*Empty
 }
 func (UnimplementedTestServiceServer) UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnaryCall not implemented")
+}
+func (UnimplementedTestServiceServer) FailUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FailUnaryCall not implemented")
 }
 func (UnimplementedTestServiceServer) CacheableUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CacheableUnaryCall not implemented")
@@ -342,6 +358,24 @@ func _TestService_UnaryCall_Handler(srv interface{}, ctx context.Context, dec fu
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(TestServiceServer).UnaryCall(ctx, req.(*SimpleRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _TestService_FailUnaryCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SimpleRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(TestServiceServer).FailUnaryCall(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/grpc.testing.TestService/FailUnaryCall",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(TestServiceServer).FailUnaryCall(ctx, req.(*SimpleRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -495,6 +529,10 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UnaryCall",
 			Handler:    _TestService_UnaryCall_Handler,
+		},
+		{
+			MethodName: "FailUnaryCall",
+			Handler:    _TestService_FailUnaryCall_Handler,
 		},
 		{
 			MethodName: "CacheableUnaryCall",
