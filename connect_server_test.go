@@ -60,8 +60,7 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopgrpc.DoTimeoutOnSleepingServer(client) })
 		assert.NotPanics(t, func() { interopgrpc.DoCancelAfterBegin(client) })
 		assert.NotPanics(t, func() { interopgrpc.DoCancelAfterFirstResponse(client) })
-		// TODO(doria): fix test case
-		// assert.NotPanics(t, func() { interopgrpc.DoCustomMetadata(client) })
+		assert.NotPanics(t, func() { interopgrpc.DoCustomMetadata(client) })
 		assert.NotPanics(t, func() { interopgrpc.DoStatusCodeAndMessage(client) })
 		assert.NotPanics(t, func() { interopgrpc.DoSpecialStatusMessage(client) })
 		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedMethod(gconn) })

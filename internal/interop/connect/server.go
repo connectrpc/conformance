@@ -116,13 +116,11 @@ func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.Cli
 }
 
 func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
-	if initialMetadataRaw := ctx.Value(initialMetadataKey); initialMetadataRaw != nil {
-		initialMetadata := initialMetadataRaw.([]string)
-		stream.ResponseHeader().Add(initialMetadataKey, initialMetadata[0])
+	if initialMetadata := stream.RequestHeader().Values(initialMetadataKey); len(initialMetadata) > 0 {
+		stream.ResponseHeader().Set(initialMetadataKey, initialMetadata[0])
 	}
-	if trailingMetadataRaw := ctx.Value(trailingMetadataKey); trailingMetadataRaw != nil {
-		trailingMetadata := trailingMetadataRaw.([]string)
-		stream.ResponseTrailer().Add(trailingMetadataKey, trailingMetadata[0])
+	if trailingMetadata := stream.RequestHeader().Values(trailingMetadataKey); len(trailingMetadata) > 0 {
+		stream.ResponseTrailer().Set(trailingMetadataKey, trailingMetadata[0])
 	}
 	for {
 		if err := ctx.Err(); err != nil {
