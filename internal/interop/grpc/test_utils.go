@@ -505,7 +505,7 @@ var (
 
 func validateMetadata(header, trailer metadata.MD) {
 	if len(header.Get(initialMetadataKey)) != 1 {
-		log.Fatalf("Expected exactly one header from server. Received %d, %v", len(header[initialMetadataKey]))
+		log.Fatalf("Expected exactly one header from server. Received %d", len(header[initialMetadataKey]))
 	}
 	if header[initialMetadataKey][0] != initialMetadataValue {
 		log.Fatalf("Got header %s; want %s", header[initialMetadataKey][0], initialMetadataValue)
