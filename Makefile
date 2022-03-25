@@ -1,38 +1,114 @@
-MAKEGO := make/go
-MAKEGO_REMOTE := https://github.com/bufbuild/makego.git
-PROJECT := connect-crosstest
-GO_MODULE := github.com/bufbuild/connect-crosstest
-GO_MOD_VERSION := 1.18
-GO_GET_PKGS := $(GO_GET_PKGS) github.com/bufbuild/connect@main
-GO_ALL_REPO_PKGS := ./internal/...
-# Remove when https://github.com/golangci/golangci-lint/pull/2438 is fixed (Golang 1.18 support)
-SKIP_GOLANGCI_LINT := 1
-LICENSE_HEADER_LICENSE_TYPE := apache
-LICENSE_HEADER_COPYRIGHT_HOLDER := Buf Technologies, Inc.
-LICENSE_HEADER_YEAR_RANGE := 2020-2022
-LICENSE_HEADER_IGNORES := \/testdata proto\/grpc internal\/interop\/grpc
+# See https://tech.davis-hansson.com/p/make/
+SHELL := bash
+.DELETE_ON_ERROR:
+.SHELLFLAGS := -eu -o pipefail -c
+.DEFAULT_GOAL := all
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
+MAKEFLAGS += --no-print-directory
+BIN=.tmp/bin
+# Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
+GO ?= go
+COPYRIGHT_YEARS := 2022
+# Which commit of bufbuild/makego should we source checknodiffgenerated.bash
+# from?
+MAKEGO_COMMIT := 383cdab9b837b1fba0883948ff54ed20eedbd611
+LICENSE_IGNORE := -e proto/grpc -e internal/interop/grpc
+BUF_EXCLUDE := --exclude-path proto/grpc
 
-include make/go/bootstrap.mk
-include make/go/go.mk
-include make/go/buf.mk
-include make/go/license_header.mk
-include make/go/dep_protoc_gen_go.mk
-include make/go/dep_protoc_gen_go_grpc.mk
+.PHONY: help
+help: ## Describe useful make targets
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "%-30s %s\n", $$1, $$2}'
 
-.PHONY: installprotoc-gen-go-connect
-installprotoc-gen-go-connect:
-	go install github.com/bufbuild/connect/cmd/protoc-gen-connect-go
+.PHONY: all
+all: ## Build, test, and lint (default)
+	$(MAKE) test
+	$(MAKE) lint
+	$(MAKE) checkgenerate
 
-bufgeneratedeps:: $(BUF) $(PROTOC_GEN_GO) $(PROTOC_GEN_GO_GRPC) installprotoc-gen-go-connect
+.PHONY: clean
+clean: ## Delete intermediate build artifacts
+	@# -X only removes untracked files, -d recurses into directories, -f actually removes files/dirs
+	git clean -Xdf
 
-.PHONY: bufgeneratecleango
-bufgeneratecleango:
-	rm -rf internal/gen/proto
+.PHONY: test
+test: build ## Run unit tests
+	$(GO) test -vet=off -race -cover ./...
 
-bufgenerateclean:: bufgeneratecleango
+.PHONY: build
+build: generate ## Build all packages
+	$(GO) build ./...
 
-.PHONY: bufgeneratego
-bufgeneratego:
-	buf generate
+.PHONY: lint
+lint: $(BIN)/gofmt $(BIN)/buf ## Lint Go and protobuf
+	test -z "$$($(BIN)/gofmt -s -l . | tee /dev/stderr)"
+	test -z "$$($(BIN)/buf format -d $(BUF_EXCLUDE) . | tee /dev/stderr)"
+	@# TODO: replace vet with golangci-lint when it supports 1.18
+	@# Configure staticcheck to target the correct Go version and enable
+	@# ST1020, ST1021, and ST1022.
+	$(GO) vet ./...
+	@# We only have vendored protobuf for now.
+	@# $(BIN)/buf lint $(BUF_EXCLUDE)
 
-bufgeneratesteps:: bufgeneratego
+.PHONY: lintfix
+lintfix: $(BIN)/gofmt $(BIN)/buf ## Automatically fix some lint errors
+	$(BIN)/gofmt -s -w .
+	$(BIN)/buf format -w $(BUF_EXCLUDE) .
+
+.PHONY: generate
+generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/license-header ## Regenerate code and licenses
+	@# We want to operate on a list of modified and new files, excluding
+	@# deleted and ignored files. git-ls-files can't do this alone. comm -23 takes
+	@# two files and prints the union, dropping lines common to both (-3) and
+	@# those only in the second file (-2). We make one git-ls-files call for
+	@# the modified, cached, and new (--others) files, and a second for the
+	@# deleted files.
+	rm -rf internal/gen
+	PATH=$(BIN) $(BIN)/buf generate
+	@$(BIN)/license-header \
+		--license-type apache \
+		--copyright-holder "Buf Technologies, Inc." \
+		--year-range "$(COPYRIGHT_YEARS)" \
+		$(shell comm -23 \
+			<(git ls-files --cached --modified --others --no-empty-directory --exclude-standard | sort -u | grep -v $(LICENSE_IGNORE)) \
+			<(git ls-files --deleted | sort -u))
+
+.PHONY: upgrade
+upgrade: ## Upgrade dependencies
+	go get -u -t ./... && go mod tidy -v
+
+.PHONY: checkgenerate
+checkgenerate: $(BIN)/checknodiffgenerated.bash
+	$(BIN)/checknodiffgenerated.bash $(MAKE) generate
+
+$(BIN)/gofmt:
+	@mkdir -p $(@D)
+	$(GO) build -o $(@) cmd/gofmt
+
+$(BIN)/buf: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.2.1
+
+$(BIN)/license-header: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install \
+		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.2.1
+
+$(BIN)/protoc-gen-connect-go: Makefile
+	@mkdir -p $(@D)
+	@# Pinned by go.mod.
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect/cmd/protoc-gen-connect-go
+
+$(BIN)/protoc-gen-go-grpc: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+
+$(BIN)/protoc-gen-go: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
+
+$(BIN)/checknodiffgenerated.bash:
+	@mkdir -p $(@D)
+	curl -SsLo $(@) https://raw.githubusercontent.com/bufbuild/makego/$(MAKEGO_COMMIT)/make/go/scripts/checknodiffgenerated.bash
+	chmod u+x $(@)
+
