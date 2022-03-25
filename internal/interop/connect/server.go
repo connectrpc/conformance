@@ -67,11 +67,11 @@ func (s *testServer) UnaryCall(ctx context.Context, in *connect.Request[testpb.S
 	res := connect.NewResponse(&testpb.SimpleResponse{
 		Payload: pl,
 	})
-	if initialMetadata := in.Header().Values(initialMetadataKey); len(initialMetadata) > 0 {
-		res.Header().Set(initialMetadataKey, initialMetadata[0])
+	if initialMetadata := in.Header().Get(initialMetadataKey); initialMetadata != "" {
+		res.Header().Set(initialMetadataKey, initialMetadata)
 	}
-	if trailingMetadata := in.Header().Values(trailingMetadataKey); len(trailingMetadata) > 0 {
-		res.Trailer().Set(trailingMetadataKey, trailingMetadata[0])
+	if trailingMetadata := in.Header().Get(trailingMetadataKey); trailingMetadata != "" {
+		res.Trailer().Set(trailingMetadataKey, trailingMetadata)
 	}
 	return res, nil
 }
@@ -116,13 +116,11 @@ func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.Cli
 }
 
 func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
-	if initialMetadataRaw := ctx.Value(initialMetadataKey); initialMetadataRaw != nil {
-		initialMetadata := initialMetadataRaw.([]string)
-		stream.ResponseHeader().Add(initialMetadataKey, initialMetadata[0])
+	if initialMetadata := stream.RequestHeader().Get(initialMetadataKey); initialMetadata != "" {
+		stream.ResponseHeader().Set(initialMetadataKey, initialMetadata)
 	}
-	if trailingMetadataRaw := ctx.Value(trailingMetadataKey); trailingMetadataRaw != nil {
-		trailingMetadata := trailingMetadataRaw.([]string)
-		stream.ResponseTrailer().Add(trailingMetadataKey, trailingMetadata[0])
+	if trailingMetadata := stream.RequestHeader().Get(trailingMetadataKey); trailingMetadata != "" {
+		stream.ResponseTrailer().Set(trailingMetadataKey, trailingMetadata)
 	}
 	for {
 		if err := ctx.Err(); err != nil {
