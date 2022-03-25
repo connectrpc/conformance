@@ -1,32 +1,48 @@
 name: ci
-on: push
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '15 22 * * *'
+  workflow_dispatch: {} # support manual runs
+# Prevent writing to the repository using the CI token.
+# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
+permissions: read-all
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.18.x]
+        include:
+          - go: 1.18.x
+            latest: true
     steps:
-      - name: checkout
-        uses: actions/checkout@v2
+      - name: Checkout Code
+        uses: actions/checkout@v3
         with:
-          fetch-depth: 0
-      - name: setup-go
-        if: success()
-        uses: actions/setup-go@v2
+          fetch-depth: 1
+      - name: Install Go
+        uses: actions/setup-go@v3
         with:
-          stable: false
-          go-version: 1.18.0-rc1
-      # TODO: remove when `connect` goes public.
-      - name: setup-pat
-        run: |
-          echo "machine github.com login bufbuildrobot password ${{ secrets.PAT }}" > ${HOME}/.netrc
-      - name: install-connect-go
-        run: go install github.com/bufbuild/connect/cmd/protoc-gen-connect-go@latest
-        env:
-          GIT_TERMINAL_PROMPT: 1
-          # TODO: remove when `connect` goes public.
-          GOPRIVATE: github.com/bufbuild/*
-      - name: ci
-        if: success()
-        run: make ci
-        env:
-          # TODO: remove when `connect` goes public.
-          GOPRIVATE: github.com/bufbuild/*
+          go-version: ${{ matrix.go-version }}
+      # TODO: Remove when connect is public.
+      - name: Configure Private Repo Access
+        uses: webfactory/ssh-agent@v0.5.4
+        with:
+          ssh-private-key: ${{ secrets.CONNECT_DEPLOY_KEY }}
+      - name: Cache
+        uses: actions/cache@v2
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-connect-crosstest-ci-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-connect-crosstest-ci-
+      - name: Test
+        run: make test
+      - name: Lint
+        # Often, lint & gofmt guidelines depend on the Go version. To prevent
+        # conflicting guidance, run only on the most recent supported version.
+        if: matrix.latest
+        run: make lint && make checkgenerate
