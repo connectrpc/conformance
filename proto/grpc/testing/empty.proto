@@ -27,4 +27,3 @@ package grpc.testing;
 //   };
 //
 message Empty {}
-

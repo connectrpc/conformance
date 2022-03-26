@@ -14,7 +14,6 @@ COPYRIGHT_YEARS := 2022
 # from?
 MAKEGO_COMMIT := 383cdab9b837b1fba0883948ff54ed20eedbd611
 LICENSE_IGNORE := -e proto/grpc -e internal/interop/grpc
-BUF_EXCLUDE := --exclude-path proto/grpc
 
 .PHONY: help
 help: ## Describe useful make targets
@@ -42,29 +41,29 @@ build: generate ## Build all packages
 .PHONY: lint
 lint: $(BIN)/gofmt $(BIN)/buf ## Lint Go and protobuf
 	test -z "$$($(BIN)/gofmt -s -l . | tee /dev/stderr)"
-	test -z "$$($(BIN)/buf format -d $(BUF_EXCLUDE) . | tee /dev/stderr)"
+	test -z "$$($(BIN)/buf format -d . | tee /dev/stderr)"
 	@# TODO: replace vet with golangci-lint when it supports 1.18
 	@# Configure staticcheck to target the correct Go version and enable
 	@# ST1020, ST1021, and ST1022.
 	$(GO) vet ./...
-	@# We only have vendored protobuf for now.
-	@# $(BIN)/buf lint $(BUF_EXCLUDE)
+	@# We only have vendored protobuf for now, and it fails all lint checks.
+	@# $(BIN)/buf lint --exclude-path proto/grpc
 
 .PHONY: lintfix
 lintfix: $(BIN)/gofmt $(BIN)/buf ## Automatically fix some lint errors
 	$(BIN)/gofmt -s -w .
-	$(BIN)/buf format -w $(BUF_EXCLUDE) .
+	$(BIN)/buf format -w .
 
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/license-header ## Regenerate code and licenses
+	rm -rf internal/gen
+	PATH=$(BIN) $(BIN)/buf generate
 	@# We want to operate on a list of modified and new files, excluding
 	@# deleted and ignored files. git-ls-files can't do this alone. comm -23 takes
 	@# two files and prints the union, dropping lines common to both (-3) and
 	@# those only in the second file (-2). We make one git-ls-files call for
 	@# the modified, cached, and new (--others) files, and a second for the
 	@# deleted files.
-	rm -rf internal/gen
-	PATH=$(BIN) $(BIN)/buf generate
 	@$(BIN)/license-header \
 		--license-type apache \
 		--copyright-holder "Buf Technologies, Inc." \
