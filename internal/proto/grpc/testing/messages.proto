@@ -132,7 +132,7 @@ message StreamingInputCallRequest {
   // the request's compression status.
   BoolValue expect_compressed = 2;
 
-  // Not expecting any payload from the response.
+// Not expecting any payload from the response.
 }
 
 // Client-streaming response.
