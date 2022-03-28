@@ -22,10 +22,10 @@ import (
 
 	"google.golang.org/grpc"
 
-	"github.com/bufbuild/connect"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/bufbuild/connect-go"
 )
 
 func DoFailWithNonASCIIError(tc connectpb.TestServiceClient, args ...grpc.CallOption) {

@@ -55,6 +55,8 @@ github.com/OneOfOne/xxhash v1.2.2/go.mod h1:HSdplMjZKSmBqAxg5vPj2TmRDmfkzw+cTzAE
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/bufbuild/connect v0.0.0-20220323181351-14c252d096e4 h1:+nnJC+11J4wvTs3gRHhl0h3V5ZjrnqwHBY1ESdiTZhw=
 github.com/bufbuild/connect v0.0.0-20220323181351-14c252d096e4/go.mod h1:m+Mrt/xmlDYZvfOA1G4SgXr6p1l1lQ8FUx5n7wsNpnM=
+github.com/bufbuild/connect-go v0.0.0-20220328202428-89094519aa70 h1:aWVq3BEwjGmArR1qtPm3Zj9LgLx1JQfczy5SbaFDzxI=
+github.com/bufbuild/connect-go v0.0.0-20220328202428-89094519aa70/go.mod h1:0idvEElPFoI1JGDO9Wd1epYjRhK/sDX89657QnZPt0A=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash v1.1.0/go.mod h1:XrSqR1VqqWfGrhpAt58auRo0WTKS1nRRg3ghfAqPWnc=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=

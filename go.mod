@@ -14,6 +14,7 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.5.0 // indirect
+	github.com/bufbuild/connect-go v0.0.0-20220328202428-89094519aa70 // indirect
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect
