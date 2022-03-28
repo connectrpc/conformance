@@ -21,9 +21,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/bufbuild/connect"
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-go"
 )
 
 const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
