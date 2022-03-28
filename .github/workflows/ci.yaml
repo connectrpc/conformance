@@ -34,7 +34,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.CONNECT_DEPLOY_KEY }}
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-connect-crosstest-ci-${{ hashFiles('**/go.sum') }}
