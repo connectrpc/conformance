@@ -28,7 +28,7 @@ in mind.
 Offered under the [Apache 2 license][license].
 
 [APIv2]: https://blog.golang.org/protobuf-apiv2
-[Connect]: https://github.com/bufbuild/connect
+[Connect]: https://github.com/bufbuild/connect-go
 [interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE.txt
