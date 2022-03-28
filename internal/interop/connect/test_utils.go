@@ -297,11 +297,7 @@ func DoCancelAfterFirstResponse(tc connectpb.TestServiceClient) {
 
 var (
 	initialMetadataValue  = "test_initial_metadata_value"
-	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
-	customMetadata        = metadata.Pairs(
-		initialMetadataKey, initialMetadataValue,
-		trailingMetadataKey, trailingMetadataValue,
-	)
+	trailingMetadataValue = []byte("\x0a\x0b\x0a\x0b\x0a\x0b")
 )
 
 func validateMetadata(header, trailer http.Header) {
@@ -314,8 +310,12 @@ func validateMetadata(header, trailer http.Header) {
 	if len(trailer.Values(trailingMetadataKey)) != 1 {
 		log.Fatalf("Expected exactly one trailer from server. Received %d", len(trailer.Values(trailingMetadataKey)))
 	}
-	if trailer.Get(trailingMetadataKey) != trailingMetadataValue {
-		log.Fatalf("Got trailer %s; want %s", trailer.Get(trailingMetadataKey), trailingMetadataValue)
+	decodedTrailer, err := connect.DecodeBinaryHeader(trailer.Get(trailingMetadataKey))
+	if err != nil {
+		log.Fatalf("Failed to decode response trailer: %v", trailer.Get(trailingMetadataKey))
+	}
+	if string(decodedTrailer) != string(trailingMetadataValue) {
+		log.Fatalf("Got trailer %s; want %s", string(trailer.Get(trailingMetadataKey)), string(trailingMetadataValue))
 	}
 }
 
@@ -328,11 +328,13 @@ func DoCustomMetadata(tc connectpb.TestServiceClient) {
 		ResponseSize: int32(1),
 		Payload:      pl,
 	}
-	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
-	var header, trailer http.Header
+	ctx := context.Background()
+	connectReq := connect.NewRequest(req)
+	connectReq.Header().Set(initialMetadataKey, initialMetadataValue)
+	connectReq.Header().Set(trailingMetadataKey, connect.EncodeBinaryHeader(trailingMetadataValue))
 	reply, err := tc.UnaryCall(
 		ctx,
-		connect.NewRequest(req),
+		connectReq,
 	)
 	if err != nil {
 		log.Fatal("/TestService/UnaryCall RPC failed: ", err)
@@ -342,7 +344,7 @@ func DoCustomMetadata(tc connectpb.TestServiceClient) {
 	if t != testpb.PayloadType_COMPRESSABLE || s != 1 {
 		log.Fatalf("Got the reply with type %d len %d; want %d, %d", t, s, testpb.PayloadType_COMPRESSABLE, 1)
 	}
-	validateMetadata(header, trailer)
+	validateMetadata(reply.Header(), reply.Trailer())
 
 	// Testing with FullDuplex.
 	stream := tc.FullDuplexCall(ctx)
@@ -359,6 +361,8 @@ func DoCustomMetadata(tc connectpb.TestServiceClient) {
 		ResponseParameters: respParam,
 		Payload:            pl,
 	}
+	stream.RequestHeader().Set(initialMetadataKey, initialMetadataValue)
+	stream.RequestHeader().Set(trailingMetadataKey, connect.EncodeBinaryHeader(trailingMetadataValue))
 	if err := stream.Send(streamReq); err != nil {
 		log.Fatalf("%v has error %v while sending %v", stream, err, streamReq)
 	}
