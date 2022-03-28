@@ -34,9 +34,18 @@ func main() {
 	))
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
-			Address: "localhost:8081",
-			Port:    ":8081",
+			Host: "localhost",
 			Protocols: []*serverpb.ProtocolSupport{
+				{
+					Protocol: serverpb.Protocol_PROTOCOL_GRPC_WEB,
+					HttpVersions: []*serverpb.HTTPVersion{
+						{
+							Major: int32(1),
+							Minor: int32(1),
+						},
+					},
+					Port: "8080",
+				},
 				{
 					Protocol: serverpb.Protocol_PROTOCOL_GRPC,
 					HttpVersions: []*serverpb.HTTPVersion{
@@ -44,6 +53,7 @@ func main() {
 							Major: int32(2),
 						},
 					},
+					Port: "8081",
 				},
 			},
 		},
@@ -53,6 +63,10 @@ func main() {
 	}
 	// TODO(doria): find a better way to represent this on stdout.
 	fmt.Println(string(bytes))
+	go http.ListenAndServe(
+		":8080",
+		nil,
+	)
 	http.ListenAndServe(
 		":8081",
 		h2c.NewHandler(mux, &http2.Server{}),

@@ -18,9 +18,8 @@ package server.v1;
 
 // ServerMetadata is the metadata returned from the server started by the server binary.
 message ServerMetadata {
-  string address = 1;
-  string port = 3;
-  repeated ProtocolSupport protocols = 4;
+  string host = 1;
+  repeated ProtocolSupport protocols = 2;
 }
 
 enum Protocol {
@@ -32,6 +31,7 @@ enum Protocol {
 message ProtocolSupport {
   Protocol protocol = 1;
   repeated HTTPVersion http_versions = 2;
+  string port = 3;
 }
 
 message HTTPVersion {

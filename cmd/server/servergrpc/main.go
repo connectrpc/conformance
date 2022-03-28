@@ -32,14 +32,13 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	server := grpc.NewServer()
-	_, port, err := net.SplitHostPort(lis.Addr().String())
+	host, port, err := net.SplitHostPort(lis.Addr().String())
 	if err != nil {
 		log.Fatalf("failed to split host port from listener addr: %s", lis.Addr().String())
 	}
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
-			Address: lis.Addr().String(),
-			Port:    port,
+			Host: host,
 			Protocols: []*serverpb.ProtocolSupport{
 				{
 					Protocol: serverpb.Protocol_PROTOCOL_GRPC,
@@ -48,6 +47,7 @@ func main() {
 							Major: int32(2),
 						},
 					},
+					Port: port,
 				},
 			},
 		},
