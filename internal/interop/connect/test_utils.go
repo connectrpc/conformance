@@ -29,9 +29,9 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/bufbuild/connect"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-go"
 )
 
 var (

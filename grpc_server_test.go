@@ -20,12 +20,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/bufbuild/connect"
 	crossgrpc "github.com/bufbuild/connect-crosstest/internal/cross/grpc"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
