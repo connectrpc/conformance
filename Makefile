@@ -111,3 +111,17 @@ $(BIN)/checknodiffgenerated.bash:
 	curl -SsLo $(@) https://raw.githubusercontent.com/bufbuild/makego/$(MAKEGO_COMMIT)/make/go/scripts/checknodiffgenerated.bash
 	chmod u+x $(@)
 
+docker-compose-clean:
+	docker-compose down
+	-docker container rm connect-crosstest-server-connect-1 connect-crosstest-server-grpc-1 connect-crosstest-client-connect-1 connect-crosstest-client-grpc-1
+	-docker image rm connect-crosstest_server-connect connect-crosstest_server-grpc connect-crosstest_client-connect connect-crosstest_client-grpc
+
+test-docker-compose: docker-compose-clean
+	# docker build is a work around for the --ssh as it is not yet supported by docker-compose (github.com/docker/compose/issues/7025), can be removed when either it is supported or connect-go become public
+	docker build --ssh default -f Dockerfile.serverconnect .
+	docker build --ssh default -f Dockerfile.servergrpc .
+	docker build --ssh default -f Dockerfile.clientconnect .
+	docker build --ssh default -f Dockerfile.clientgrpc .
+	docker-compose run client-connect
+	docker-compose run client-grpc
+	docker-compose down

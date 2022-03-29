@@ -1,0 +1,38 @@
+version: "3.9"
+services:
+  server-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.serverconnect
+      args:
+        HTTP1_PORT: "8080"
+        HTTP2_PORT: "8081"
+    expose:
+      - "8080"
+      - "8081"
+  server-grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.servergrpc
+      args:
+        PORT: "8082"
+    expose:
+      - "8082"
+  client-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.clientconnect
+      args:
+        HOST: "server-connect"
+        PORT: "8081"
+    depends_on:
+      - server-connect
+  client-grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.clientgrpc
+      args:
+        HOST: "server-grpc"
+        PORT: "8082"
+    depends_on:
+      - server-grpc
