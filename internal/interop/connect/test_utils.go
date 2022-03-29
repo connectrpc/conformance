@@ -381,10 +381,10 @@ func DoCustomMetadata(tc connectpb.TestServiceClient) {
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.
 func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
-	code := int32(2)
+	code := int32(2) // status unknown
 	msg := "test status message"
 	expectedErr := connect.NewError(
-		connect.CodeUnknown, // grpc error code 2
+		connect.CodeUnknown,
 		errors.New(msg),
 	)
 	respStatus := &testpb.EchoStatus{
@@ -395,7 +395,7 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 	req := &testpb.SimpleRequest{
 		ResponseStatus: respStatus,
 	}
-	if _, err := tc.UnaryCall(context.Background(), connect.NewRequest(req)); err == nil || !errors.Is(err, expectedErr) {
+	if _, err := tc.UnaryCall(context.Background(), connect.NewRequest(req)); err == nil || connect.CodeOf(err) != connect.CodeUnknown || err.Error() != expectedErr.Error() {
 		log.Fatalf("%v.UnaryCall(_, %v) = _, %v, want _, %v", tc, req, err, expectedErr)
 	}
 	// Test FullDuplexCall.
@@ -412,7 +412,7 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 	if err := stream.CloseSend(); err != nil {
 		log.Fatalf("%v.CloseSend() = %v, want <nil>", stream, err)
 	}
-	if _, err := stream.Receive(); !errors.Is(err, expectedErr) {
+	if _, err := stream.Receive(); connect.CodeOf(err) != connect.CodeUnknown || err.Error() != expectedErr.Error() {
 		log.Fatalf("%v.Recv() returned error %v, want %v", stream, err, expectedErr)
 	}
 	fmt.Println("successful code and message")

@@ -81,7 +81,7 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopconnect.DoCancelAfterFirstResponse(client) })
 		assert.NotPanics(t, func() { interopconnect.DoCustomMetadata(client) })
 		// TODO(doria): fix connect client test cases
-		// assert.NotPanics(t, func() { interopconnect.DoStatusCodeAndMessage(client) })
+		assert.NotPanics(t, func() { interopconnect.DoStatusCodeAndMessage(client) })
 		// assert.NotPanics(t, func() { interopconnect.DoSpecialStatusMessage(client) })
 		// assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
 		// assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
