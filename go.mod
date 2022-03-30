@@ -3,7 +3,7 @@ module github.com/bufbuild/connect-crosstest
 go 1.18
 
 require (
-	github.com/bufbuild/connect v0.0.0-20220323181351-14c252d096e4
+	github.com/bufbuild/connect-go v0.0.0-20220330174750-a5497c2bfff7
 	github.com/golang/protobuf v1.5.2
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20220225172249-27dd8689420f
@@ -14,7 +14,6 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.5.0 // indirect
-	github.com/bufbuild/connect-go v0.0.0-20220328202428-89094519aa70 // indirect
 	github.com/davecgh/go-spew v1.1.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/sys v0.0.0-20220310020820-b874c991c1a5 // indirect

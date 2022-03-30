@@ -583,7 +583,7 @@ func DoCustomMetadata(tc testpb.TestServiceClient, args ...grpc.CallOption) {
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.
 func DoStatusCodeAndMessage(tc testpb.TestServiceClient, args ...grpc.CallOption) {
-	var code int32 = 2
+	code := int32(codes.Unknown)
 	msg := "test status message"
 	expectedErr := status.Error(codes.Code(code), msg)
 	respStatus := &testpb.EchoStatus{
@@ -620,10 +620,8 @@ func DoStatusCodeAndMessage(tc testpb.TestServiceClient, args ...grpc.CallOption
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
 // in status message.
 func DoSpecialStatusMessage(tc testpb.TestServiceClient, args ...grpc.CallOption) {
-	const (
-		code int32  = 2
-		msg  string = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
-	)
+	code := int32(codes.Unknown)
+	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
 	expectedErr := status.Error(codes.Code(code), msg)
 	req := &testpb.SimpleRequest{
 		ResponseStatus: &testpb.EchoStatus{

@@ -381,10 +381,10 @@ func DoCustomMetadata(tc connectpb.TestServiceClient) {
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.
 func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
-	code := int32(2)
+	code := int32(connect.CodeUnknown)
 	msg := "test status message"
 	expectedErr := connect.NewError(
-		connect.CodeUnknown, // grpc error code 2
+		connect.CodeUnknown,
 		errors.New(msg),
 	)
 	respStatus := &testpb.EchoStatus{
@@ -395,7 +395,7 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 	req := &testpb.SimpleRequest{
 		ResponseStatus: respStatus,
 	}
-	if _, err := tc.UnaryCall(context.Background(), connect.NewRequest(req)); err == nil || !errors.Is(err, expectedErr) {
+	if _, err := tc.UnaryCall(context.Background(), connect.NewRequest(req)); err == nil || connect.CodeOf(err) != connect.CodeUnknown || err.Error() != expectedErr.Error() {
 		log.Fatalf("%v.UnaryCall(_, %v) = _, %v, want _, %v", tc, req, err, expectedErr)
 	}
 	// Test FullDuplexCall.
@@ -412,7 +412,7 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 	if err := stream.CloseSend(); err != nil {
 		log.Fatalf("%v.CloseSend() = %v, want <nil>", stream, err)
 	}
-	if _, err := stream.Receive(); !errors.Is(err, expectedErr) {
+	if _, err := stream.Receive(); connect.CodeOf(err) != connect.CodeUnknown || err.Error() != expectedErr.Error() {
 		log.Fatalf("%v.Recv() returned error %v, want %v", stream, err, expectedErr)
 	}
 	fmt.Println("successful code and message")
@@ -421,10 +421,8 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
 // in status message.
 func DoSpecialStatusMessage(tc connectpb.TestServiceClient) {
-	const (
-		code int32  = 2
-		msg  string = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
-	)
+	code := int32(connect.CodeUnknown)
+	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
 	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg))
 	req := &testpb.SimpleRequest{
 		ResponseStatus: &testpb.EchoStatus{
@@ -434,7 +432,7 @@ func DoSpecialStatusMessage(tc connectpb.TestServiceClient) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if _, err := tc.UnaryCall(ctx, connect.NewRequest(req)); err == nil || !errors.Is(err, expectedErr) {
+	if _, err := tc.UnaryCall(ctx, connect.NewRequest(req)); err == nil || connect.CodeOf(err) != connect.CodeUnknown || err.Error() != expectedErr.Error() {
 		log.Fatalf("%v.UnaryCall(_, %v) = _, %v, want _, %v", tc, req, err, expectedErr)
 	}
 	fmt.Println("successful code and message")
