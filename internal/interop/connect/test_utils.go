@@ -381,7 +381,7 @@ func DoCustomMetadata(tc connectpb.TestServiceClient) {
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.
 func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
-	code := int32(2) // status unknown
+	code := int32(connect.CodeUnknown)
 	msg := "test status message"
 	expectedErr := connect.NewError(
 		connect.CodeUnknown,
@@ -421,10 +421,8 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
 // in status message.
 func DoSpecialStatusMessage(tc connectpb.TestServiceClient) {
-	const (
-		code int32  = 2 // code unknown
-		msg  string = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
-	)
+	code := int32(connect.CodeUnknown)
+	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
 	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg))
 	req := &testpb.SimpleRequest{
 		ResponseStatus: &testpb.EchoStatus{
