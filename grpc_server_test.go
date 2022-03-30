@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"testing"
 
+	crossconnect "github.com/bufbuild/connect-crosstest/internal/cross/connect"
 	crossgrpc "github.com/bufbuild/connect-crosstest/internal/cross/grpc"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
@@ -77,11 +78,10 @@ func TestGRPCServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopconnect.DoCancelAfterBegin(client) })
 		assert.NotPanics(t, func() { interopconnect.DoCancelAfterFirstResponse(client) })
 		assert.NotPanics(t, func() { interopconnect.DoCustomMetadata(client) })
-		// TODO(doria): fix connect client test cases
-		// assert.NotPanics(t, func() { interopconnect.DoStatusCodeAndMessage(client) })
-		// assert.NotPanics(t, func() { interopconnect.DoSpecialStatusMessage(client) })
-		// assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
-		// assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
+		assert.NotPanics(t, func() { interopconnect.DoStatusCodeAndMessage(client) })
+		assert.NotPanics(t, func() { interopconnect.DoSpecialStatusMessage(client) })
+		assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
+		assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
 	})
 }
 

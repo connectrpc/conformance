@@ -422,7 +422,7 @@ func DoStatusCodeAndMessage(tc connectpb.TestServiceClient) {
 // in status message.
 func DoSpecialStatusMessage(tc connectpb.TestServiceClient) {
 	const (
-		code int32  = 2
+		code int32  = 2 // code unknown
 		msg  string = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
 	)
 	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg))
@@ -434,7 +434,7 @@ func DoSpecialStatusMessage(tc connectpb.TestServiceClient) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if _, err := tc.UnaryCall(ctx, connect.NewRequest(req)); err == nil || !errors.Is(err, expectedErr) {
+	if _, err := tc.UnaryCall(ctx, connect.NewRequest(req)); err == nil || connect.CodeOf(err) != connect.CodeUnknown || err.Error() != expectedErr.Error() {
 		log.Fatalf("%v.UnaryCall(_, %v) = _, %v, want _, %v", tc, req, err, expectedErr)
 	}
 	fmt.Println("successful code and message")
