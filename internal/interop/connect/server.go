@@ -71,7 +71,11 @@ func (s *testServer) UnaryCall(ctx context.Context, in *connect.Request[testpb.S
 		res.Header().Set(initialMetadataKey, initialMetadata)
 	}
 	if trailingMetadata := in.Header().Get(trailingMetadataKey); trailingMetadata != "" {
-		res.Trailer().Set(trailingMetadataKey, trailingMetadata)
+		decodedTrailingMetadata, err := connect.DecodeBinaryHeader(trailingMetadata)
+		if err != nil {
+			return nil, err
+		}
+		res.Trailer().Set(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
 	}
 	return res, nil
 }
@@ -120,7 +124,11 @@ func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStr
 		stream.ResponseHeader().Set(initialMetadataKey, initialMetadata)
 	}
 	if trailingMetadata := stream.RequestHeader().Get(trailingMetadataKey); trailingMetadata != "" {
-		stream.ResponseTrailer().Set(trailingMetadataKey, trailingMetadata)
+		decodedTrailingMetadata, err := connect.DecodeBinaryHeader(trailingMetadata)
+		if err != nil {
+			return err
+		}
+		stream.ResponseTrailer().Set(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
 	}
 	for {
 		if err := ctx.Err(); err != nil {
