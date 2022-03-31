@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2022 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,11 +25,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/bufbuild/connect"
 	crossconnect "github.com/bufbuild/connect-crosstest/internal/cross/connect"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/bufbuild/connect-go"
 	"golang.org/x/net/http2"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -57,7 +57,23 @@ func main() {
 		log.Fatalf("failed to unmarshal server metadata: %v", err)
 	}
 	fmt.Println("received server metadata", serverMetadata.String())
-	client, err := connectpb.NewTestServiceClient(newClientH2C(), "http://"+serverMetadata.Address, connect.WithGRPC())
+	if serverMetadata.GetProtocols() == nil {
+		log.Fatalf("failed to get protocols supported from server metadata")
+	}
+	var port string
+	for _, protocolSupport := range serverMetadata.GetProtocols() {
+		if protocolSupport.GetProtocol() == serverpb.Protocol_PROTOCOL_GRPC {
+			port = protocolSupport.GetPort()
+		}
+	}
+	if port == "" {
+		log.Fatalf("failed to get compatible port")
+	}
+	client, err := connectpb.NewTestServiceClient(
+		newClientH2C(),
+		"http://"+net.JoinHostPort(serverMetadata.GetHost(), port),
+		connect.WithGRPC(),
+	)
 	if err != nil {
 		log.Fatalf("failed to create connect client: %v", err)
 	}
@@ -70,10 +86,9 @@ func main() {
 	interopconnect.DoTimeoutOnSleepingServer(client)
 	interopconnect.DoCancelAfterBegin(client)
 	interopconnect.DoCancelAfterFirstResponse(client)
-	// interopconnect.DoCustomMetadata(client)
+	interopconnect.DoCustomMetadata(client)
 	interopconnect.DoStatusCodeAndMessage(client)
 	interopconnect.DoSpecialStatusMessage(client)
 	interopconnect.DoUnimplementedService(client)
-	// TODO(doria): add cross tests
 	crossconnect.DoFailWithNonASCIIError(client)
 }

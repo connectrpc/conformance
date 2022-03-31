@@ -1,4 +1,4 @@
-// Copyright 2020-2022 Buf Technologies, Inc.
+// Copyright 2022 Buf Technologies, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"os"
 
 	crossgrpc "github.com/bufbuild/connect-crosstest/internal/cross/grpc"
@@ -42,8 +43,20 @@ func main() {
 		log.Fatalf("failed to unmarshal server metadata: %v", err)
 	}
 	fmt.Println("received server metadata", serverMetadata.String())
+	if serverMetadata.GetProtocols() == nil {
+		log.Fatalf("failed to get protocols supported from server metadata")
+	}
+	var port string
+	for _, protocolSupport := range serverMetadata.GetProtocols() {
+		if protocolSupport.GetProtocol() == serverpb.Protocol_PROTOCOL_GRPC {
+			port = protocolSupport.GetPort()
+		}
+	}
+	if port == "" {
+		log.Fatalf("failed to get compatible port")
+	}
 	gconn, err := grpc.Dial(
-		serverMetadata.Address,
+		net.JoinHostPort(serverMetadata.GetHost(), port),
 		grpc.WithInsecure(),
 	)
 	if err != nil {
@@ -65,6 +78,5 @@ func main() {
 	interopgrpc.DoSpecialStatusMessage(client)
 	interopgrpc.DoUnimplementedMethod(gconn)
 	interopgrpc.DoUnimplementedService(client)
-	// TODO(doria): add cross tests
 	crossgrpc.DoFailWithNonASCIIError(client)
 }
