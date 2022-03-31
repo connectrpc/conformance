@@ -69,6 +69,7 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossgrpc.DoFailWithNonASCIIError(client) })
 		assert.NotPanics(t, func() {
+			// gRPC interop test defaults, per https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#rpc_soak
 			soakIterations := 10
 			perIterationMaxAcceptableLatency := 1000 * time.Millisecond
 			interopgrpc.DoSoakTest(
@@ -101,6 +102,7 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
 		assert.NotPanics(t, func() {
+			// gRPC interop test defaults, per https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#rpc_soak
 			soakIterations := 10
 			perIterationMaxAcceptableLatency := 1000 * time.Millisecond
 			interopconnect.DoSoakTest(
