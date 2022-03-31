@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	crossconnect "github.com/bufbuild/connect-crosstest/internal/cross/connect"
 	crossgrpc "github.com/bufbuild/connect-crosstest/internal/cross/grpc"
@@ -67,6 +68,18 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedMethod(gconn) })
 		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossgrpc.DoFailWithNonASCIIError(client) })
+		assert.NotPanics(t, func() {
+			interopgrpc.DoSoakTest(
+				client,
+				server.Listener.Addr().String(),
+				nil,
+				false, /* resetChannel */
+				1000,
+				0,
+				1*time.Second,
+				time.Now().Add(1*time.Minute),
+			)
+		})
 	})
 	t.Run("connect_client", func(t *testing.T) {
 		client, err := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
@@ -85,5 +98,16 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopconnect.DoSpecialStatusMessage(client) })
 		assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
+		assert.NotPanics(t, func() {
+			interopconnect.DoSoakTest(
+				client,
+				server.Listener.Addr().String(),
+				false, /* resetChannel */
+				1000,
+				0,
+				1*time.Second,
+				time.Now().Add(1*time.Minute),
+			)
+		})
 	})
 }

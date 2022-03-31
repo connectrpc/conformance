@@ -485,7 +485,7 @@ func doOneSoakIteration(ctx context.Context, tc connectpb.TestServiceClient, res
 	start := time.Now()
 	client := tc
 	if resetChannel {
-		newClient, err := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
+		newClient, err := connectpb.NewTestServiceClient(&http.Client{}, serverAddr, connect.WithGRPC())
 		if err != nil {
 			return time.Nanosecond, err
 		}
