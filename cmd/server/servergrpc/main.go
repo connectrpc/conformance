@@ -15,6 +15,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -27,7 +28,12 @@ import (
 )
 
 func main() {
-	lis, err := net.Listen("tcp", "localhost:0")
+	port := flag.String("port", "", "the port the server will listen on")
+	flag.Parse()
+	if port == nil {
+		log.Fatal("--port must be set")
+	}
+	lis, err := net.Listen("tcp", net.JoinHostPort("localhost", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

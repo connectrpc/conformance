@@ -15,6 +15,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -28,6 +29,12 @@ import (
 )
 
 func main() {
+	h1Port := flag.String("http1_port", "", "the http1 port that the connect server will listen on")
+	h2Port := flag.String("http2_port", "", "the http2 port that the connect server will listen on")
+	flag.Parse()
+	if *h1Port == "" || *h2Port == "" {
+		log.Fatal("--http1_port and --http2_port must both be set")
+	}
 	mux := http.NewServeMux()
 	mux.Handle(testrpc.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),
@@ -44,7 +51,7 @@ func main() {
 							Minor: int32(1),
 						},
 					},
-					Port: "8080",
+					Port: *h1Port,
 				},
 				{
 					Protocol: serverpb.Protocol_PROTOCOL_GRPC,
@@ -53,7 +60,7 @@ func main() {
 							Major: int32(2),
 						},
 					},
-					Port: "8081",
+					Port: *h2Port,
 				},
 			},
 		},
@@ -64,11 +71,11 @@ func main() {
 	// TODO(doria): find a better way to represent this on stdout.
 	fmt.Println(string(bytes))
 	go http.ListenAndServe(
-		":8080",
+		":"+*h1Port,
 		mux,
 	)
 	http.ListenAndServe(
-		":8081",
+		":"+*h2Port,
 		h2c.NewHandler(mux, &http2.Server{}),
 	)
 }
