@@ -38,7 +38,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	server := grpc.NewServer()
-	host, port, err := net.SplitHostPort(lis.Addr().String())
+	host, _, err := net.SplitHostPort(lis.Addr().String())
 	if err != nil {
 		log.Fatalf("failed to split host port from listener addr: %s", lis.Addr().String())
 	}
@@ -53,7 +53,7 @@ func main() {
 							Major: int32(2),
 						},
 					},
-					Port: port,
+					Port: *port,
 				},
 			},
 		},
