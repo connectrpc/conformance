@@ -69,15 +69,17 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossgrpc.DoFailWithNonASCIIError(client) })
 		assert.NotPanics(t, func() {
+			soakIterations := 10
+			perIterationMaxAcceptableLatency := 1000 * time.Millisecond
 			interopgrpc.DoSoakTest(
 				client,
 				server.Listener.Addr().String(),
 				nil,
 				false, /* resetChannel */
-				1000,
+				soakIterations,
 				0,
-				1*time.Second,
-				time.Now().Add(1*time.Minute),
+				perIterationMaxAcceptableLatency,
+				time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
 			)
 		})
 	})
@@ -99,14 +101,16 @@ func TestConnecServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
 		assert.NotPanics(t, func() {
+			soakIterations := 10
+			perIterationMaxAcceptableLatency := 1000 * time.Millisecond
 			interopconnect.DoSoakTest(
 				client,
 				server.Listener.Addr().String(),
 				false, /* resetChannel */
-				1000,
+				soakIterations,
 				0,
-				1*time.Second,
-				time.Now().Add(1*time.Minute),
+				perIterationMaxAcceptableLatency,
+				time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
 			)
 		})
 	})

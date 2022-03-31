@@ -66,15 +66,18 @@ func TestGRPCServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossgrpc.DoFailWithNonASCIIError(client) })
 		assert.NotPanics(t, func() {
+			// gRPC interop test defaults, per https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#rpc_soak
+			soakIterations := 10
+			perIterationMaxAcceptableLatency := 1000 * time.Millisecond
 			interopgrpc.DoSoakTest(
 				client,
 				lis.Addr().String(),
 				nil,
 				false, /* resetChannel */
-				1000,
+				soakIterations,
 				0,
-				1*time.Second,
-				time.Now().Add(1*time.Minute),
+				perIterationMaxAcceptableLatency,
+				time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
 			)
 		})
 	})
@@ -96,14 +99,17 @@ func TestGRPCServer(t *testing.T) {
 		assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
 		assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
 		assert.NotPanics(t, func() {
+			// gRPC interop test defaults, per https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#rpc_soak
+			soakIterations := 10
+			perIterationMaxAcceptableLatency := 1000 * time.Millisecond
 			interopconnect.DoSoakTest(
 				client,
 				"http://"+lis.Addr().String(),
 				false, /* resetChannel */
-				1000,
+				soakIterations,
 				0,
-				1*time.Second,
-				time.Now().Add(1*time.Minute),
+				perIterationMaxAcceptableLatency,
+				time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
 			)
 		})
 	})
