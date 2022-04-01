@@ -1,0 +1,11 @@
+FROM node:16-alpine
+
+WORKDIR /workspace
+
+COPY package.json package-lock.json /workspace/
+
+COPY internal/gen /workspace/internal/gen
+
+COPY grpcweb_client_test.js /workspace/grpcweb_client_test.js
+
+RUN npm install
