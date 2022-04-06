@@ -26,7 +26,6 @@ package interopgrpc
 import (
 	"context"
 	"io"
-	"log"
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/testing"
@@ -163,8 +162,8 @@ func DoPingPong(t testing.TB, client testpb.TestServiceClient, args ...grpc.Call
 		index++
 	}
 	assert.NoError(t, stream.CloseSend())
-	_, receiveErr := stream.Recv()
-	assert.Equal(t, receiveErr, io.EOF)
+	_, err = stream.Recv()
+	assert.Equal(t, err, io.EOF)
 	t.Logf("successful ping pong")
 }
 
@@ -173,9 +172,9 @@ func DoEmptyStream(t testing.TB, client testpb.TestServiceClient, args ...grpc.C
 	stream, err := client.FullDuplexCall(context.Background(), args...)
 	assert.NoError(t, err)
 	assert.NoError(t, stream.CloseSend())
-	if _, err := stream.Recv(); err != io.EOF {
-		log.Fatalf("%v failed to complete the empty stream test: %v", stream, err)
-	}
+	_, err = stream.Recv()
+	assert.Error(t, err)
+	assert.Equal(t, err, io.EOF)
 	t.Logf("successful empty stream")
 }
 
@@ -184,23 +183,16 @@ func DoTimeoutOnSleepingServer(t testing.TB, client testpb.TestServiceClient, ar
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 	stream, err := client.FullDuplexCall(ctx, args...)
-	if err != nil {
-		if status.Code(err) == codes.DeadlineExceeded {
-			return
-		}
-		t.Fatalf("invalid error found: %v", err)
-	}
+	assert.NoError(t, err)
 	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		Payload:      pl,
 	}
-	if err := stream.Send(req); err != nil && err != io.EOF {
-		t.Fatalf("%v.Send(_) = %v", stream, err)
-	}
-	if _, err := stream.Recv(); status.Code(err) != codes.DeadlineExceeded {
-		t.Fatalf("%v.Recv() = _, %v, want error code %d", stream, err, codes.DeadlineExceeded)
-	}
+	err = stream.Send(req)
+	assert.NoError(t, err)
+	_, err = stream.Recv()
+	assert.Equal(t, status.Code(err), codes.DeadlineExceeded)
 	t.Logf("successful timeout on sleep")
 }
 
