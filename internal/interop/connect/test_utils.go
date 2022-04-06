@@ -25,6 +25,7 @@ import (
 	"os"
 	"time"
 
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/benchmark/stats"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
@@ -560,5 +561,33 @@ func DoSoakTest(tc connectpb.TestServiceClient, serverAddr string, resetChannel 
 	}
 	if totalFailures > maxFailures {
 		log.Fatalf("soak test total failures: %d exceeds max failures threshold: %d.", totalFailures, maxFailures)
+	}
+}
+
+func DoFailWithNonASCIIError(tc connectpb.TestServiceClient, args ...grpc.CallOption) {
+	reply, err := tc.FailUnaryCall(
+		context.Background(),
+		connect.NewRequest(
+			&testpb.SimpleRequest{
+				ResponseType: testpb.PayloadType_COMPRESSABLE,
+			},
+		),
+	)
+	if err != nil {
+		if reply != nil {
+			log.Fatalf("reply should be empty: %v", reply)
+		}
+		var connectErr *connect.Error
+		ok := errors.As(err, &connectErr)
+		if !ok {
+			log.Fatalf("failed to convert error to connect error: %v", err)
+		}
+		if connectErr.Code() != connect.CodeResourceExhausted {
+			log.Fatalf("incorrect status code received: %v", connectErr.Code())
+		}
+		if connectErr.Error() != connect.CodeResourceExhausted.String()+": "+NonASCIIErrMsg {
+			log.Fatalf("incorrect error message received: %s", connectErr.Error())
+		}
+		fmt.Println("successful fail call with non-ASCII error")
 	}
 }
