@@ -112,9 +112,7 @@ $(BIN)/checknodiffgenerated.bash:
 	chmod u+x $(@)
 
 docker-compose-clean:
-	docker-compose down
-	-docker container rm connect-crosstest-server-connect-1 connect-crosstest-server-grpc-1 connect-crosstest-client-connect-1 connect-crosstest-client-grpc-1
-	-docker image rm connect-crosstest_server-connect connect-crosstest_server-grpc connect-crosstest_client-connect connect-crosstest_client-grpc
+	docker-compose down --rmi local --remove-orphans
 
 test-docker-compose: docker-compose-clean
 	# docker build is a work around for the --ssh as it is not yet supported by docker-compose (github.com/docker/compose/issues/7025), can be removed when either it is supported or connect-go become public
@@ -124,4 +122,4 @@ test-docker-compose: docker-compose-clean
 	docker build --ssh default -f Dockerfile.clientgrpc .
 	docker-compose run client-connect
 	docker-compose run client-grpc
-	docker-compose down
+	docker-compose down --rmi local --remove-orphans
