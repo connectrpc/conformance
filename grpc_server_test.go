@@ -24,11 +24,14 @@ import (
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	crosstesting "github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
+
+type T testing.T
 
 func TestGRPCServer(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
@@ -39,7 +42,8 @@ func TestGRPCServer(t *testing.T) {
 		server.Serve(lis)
 	}()
 	defer server.GracefulStop()
-	t.Run("grpc_client", func(t *testing.T) {
+	t.Run("grpc_client", func(testingT *testing.T) {
+		t := crosstesting.NewCrossTestT(testingT)
 		gconn, err := grpc.Dial(
 			lis.Addr().String(),
 			grpc.WithInsecure(),
@@ -63,7 +67,8 @@ func TestGRPCServer(t *testing.T) {
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
 	})
-	t.Run("connect_client", func(t *testing.T) {
+	t.Run("connect_client", func(testingT *testing.T) {
+		t := crosstesting.NewCrossTestT(testingT)
 		client, err := connectpb.NewTestServiceClient(newClientH2C(), "http://"+lis.Addr().String(), connect.WithGRPC())
 		assert.NoError(t, err)
 		interopconnect.DoEmptyUnaryCall(t, client)

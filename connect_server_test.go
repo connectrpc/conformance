@@ -24,6 +24,7 @@ import (
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	crosstesting "github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -40,7 +41,8 @@ func TestConnectServer(t *testing.T) {
 	// TODO(doria): Can I do this without using TLS?
 	server.StartTLS()
 	defer server.Close()
-	t.Run("grpc_client", func(t *testing.T) {
+	t.Run("grpc_client", func(testingT *testing.T) {
+		t := crosstesting.NewCrossTestT(testingT)
 		pool := x509.NewCertPool()
 		pool.AddCert(server.Certificate())
 		gconn, err := grpc.Dial(
@@ -66,7 +68,8 @@ func TestConnectServer(t *testing.T) {
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
 	})
-	t.Run("connect_client", func(t *testing.T) {
+	t.Run("connect_client", func(testingT *testing.T) {
+		t := crosstesting.NewCrossTestT(testingT)
 		client, err := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
 		assert.NoError(t, err)
 		interopconnect.DoEmptyUnaryCall(t, client)

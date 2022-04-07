@@ -32,13 +32,16 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	reqSizes            = []int{27182, 8, 1828, 45904}
-	respSizes           = []int{31415, 9, 2653, 58979}
+const (
 	largeReqSize        = 271828
 	largeRespSize       = 314159
 	initialMetadataKey  = "x-grpc-test-echo-initial"
 	trailingMetadataKey = "x-grpc-test-echo-trailing-bin"
+)
+
+var (
+	reqSizes  = []int{27182, 8, 1828, 45904}
+	respSizes = []int{31415, 9, 2653, 58979}
 )
 
 // ClientNewPayload returns a payload of the given type and size.
@@ -62,7 +65,7 @@ func DoEmptyUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, proto.Equal(&testpb.Empty{}, reply.Msg))
-	t.Logf("succcessful unary call")
+	t.Successf("succcessful unary call")
 }
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
@@ -77,7 +80,7 @@ func DoLargeUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 	assert.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), largeRespSize)
-	t.Logf("successful large unary call")
+	t.Successf("successful large unary call")
 }
 
 // DoClientStreaming performs a client streaming RPC.
@@ -95,7 +98,7 @@ func DoClientStreaming(t testing.TB, client connectpb.TestServiceClient) {
 	reply, err := stream.CloseAndReceive()
 	assert.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetAggregatedPayloadSize(), int32(sum))
-	t.Logf("successful client streaming test")
+	t.Successf("successful client streaming test")
 }
 
 // DoServerStreaming performs a server streaming RPC.
@@ -122,7 +125,7 @@ func DoServerStreaming(t testing.TB, client connectpb.TestServiceClient) {
 	}
 	assert.NoError(t, stream.Err())
 	assert.Equal(t, respCnt, len(respSizes))
-	t.Logf("successful server streaming test")
+	t.Successf("successful server streaming test")
 }
 
 // DoPingPong performs ping-pong style bi-directional streaming RPC.
@@ -152,7 +155,7 @@ func DoPingPong(t testing.TB, client connectpb.TestServiceClient) {
 	assert.NoError(t, stream.CloseSend())
 	_, err := stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
-	t.Logf("successful ping pong")
+	t.Successf("successful ping pong")
 }
 
 // DoEmptyStream sets up a bi-directional streaming with zero message.
@@ -163,7 +166,7 @@ func DoEmptyStream(t testing.TB, client connectpb.TestServiceClient) {
 	_, err := stream.Receive()
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, io.EOF))
-	t.Logf("successful empty stream")
+	t.Successf("successful empty stream")
 }
 
 // DoTimeoutOnSleepingServer performs an RPC on a sleep server which causes RPC timeout.
@@ -182,7 +185,7 @@ func DoTimeoutOnSleepingServer(t testing.TB, client connectpb.TestServiceClient)
 	_, err = stream.Receive()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeDeadlineExceeded)
-	t.Logf("successful timeout on sleep")
+	t.Successf("successful timeout on sleep")
 }
 
 var testMetadata = metadata.MD{
@@ -199,7 +202,7 @@ func DoCancelAfterBegin(t testing.TB, client connectpb.TestServiceClient) {
 	cancel()
 	_, err := stream.CloseAndReceive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeCanceled)
-	t.Logf("successful cancel after begin")
+	t.Successf("successful cancel after begin")
 }
 
 // DoCancelAfterFirstResponse cancels the RPC after receiving the first message from the server.
@@ -224,7 +227,7 @@ func DoCancelAfterFirstResponse(t testing.TB, client connectpb.TestServiceClient
 	cancel()
 	_, err = stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeCanceled)
-	t.Logf("successful cancel after first response")
+	t.Successf("successful cancel after first response")
 }
 
 var (
@@ -285,7 +288,7 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	_, err = stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
 	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer())
-	t.Logf("successful custom metadata")
+	t.Successf("successful custom metadata")
 }
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.
@@ -319,7 +322,7 @@ func DoStatusCodeAndMessage(t testing.TB, client connectpb.TestServiceClient) {
 	_, err = stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
 	assert.Equal(t, err.Error(), expectedErr.Error())
-	t.Logf("successful code and message")
+	t.Successf("successful code and message")
 }
 
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
@@ -340,14 +343,14 @@ func DoSpecialStatusMessage(t testing.TB, client connectpb.TestServiceClient) {
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
 	assert.Equal(t, err.Error(), expectedErr.Error())
-	t.Logf("successful code and message")
+	t.Successf("successful code and message")
 }
 
 // DoUnimplementedService attempts to call a method from an unimplemented service.
 func DoUnimplementedService(t testing.TB, client connectpb.UnimplementedServiceClient) {
 	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
-	t.Logf("successful unimplemented service")
+	t.Successf("successful unimplemented service")
 }
 
 func DoFailWithNonASCIIError(t testing.TB, client connectpb.TestServiceClient, args ...grpc.CallOption) {
@@ -363,5 +366,5 @@ func DoFailWithNonASCIIError(t testing.TB, client connectpb.TestServiceClient, a
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
 	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+NonASCIIErrMsg)
-	t.Logf("successful fail call with non-ASCII error")
+	t.Successf("successful fail call with non-ASCII error")
 }
