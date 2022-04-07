@@ -20,17 +20,18 @@ import (
 	"net/http"
 	"testing"
 
-	crossconnect "github.com/bufbuild/connect-crosstest/internal/cross/connect"
-	crossgrpc "github.com/bufbuild/connect-crosstest/internal/cross/grpc"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	crosstesting "github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
+
+type T testing.T
 
 func TestGRPCServer(t *testing.T) {
 	lis, err := net.Listen("tcp", "localhost:0")
@@ -41,7 +42,8 @@ func TestGRPCServer(t *testing.T) {
 		server.Serve(lis)
 	}()
 	defer server.GracefulStop()
-	t.Run("grpc_client", func(t *testing.T) {
+	t.Run("grpc_client", func(testingT *testing.T) {
+		t := crosstesting.NewCrossTestT(testingT)
 		gconn, err := grpc.Dial(
 			lis.Addr().String(),
 			grpc.WithInsecure(),
@@ -49,39 +51,40 @@ func TestGRPCServer(t *testing.T) {
 		assert.NoError(t, err)
 		defer gconn.Close()
 		client := testgrpc.NewTestServiceClient(gconn)
-		assert.NotPanics(t, func() { interopgrpc.DoEmptyUnaryCall(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoLargeUnaryCall(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoClientStreaming(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoServerStreaming(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoPingPong(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoEmptyStream(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoTimeoutOnSleepingServer(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoCancelAfterBegin(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoCancelAfterFirstResponse(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoCustomMetadata(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoStatusCodeAndMessage(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoSpecialStatusMessage(client) })
-		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedMethod(gconn) })
-		assert.NotPanics(t, func() { interopgrpc.DoUnimplementedService(client) })
-		assert.NotPanics(t, func() { crossgrpc.DoFailWithNonASCIIError(client) })
+		interopgrpc.DoEmptyUnaryCall(t, client)
+		interopgrpc.DoLargeUnaryCall(t, client)
+		interopgrpc.DoClientStreaming(t, client)
+		interopgrpc.DoServerStreaming(t, client)
+		interopgrpc.DoPingPong(t, client)
+		interopgrpc.DoEmptyStream(t, client)
+		interopgrpc.DoTimeoutOnSleepingServer(t, client)
+		interopgrpc.DoCancelAfterBegin(t, client)
+		interopgrpc.DoCancelAfterFirstResponse(t, client)
+		interopgrpc.DoCustomMetadata(t, client)
+		interopgrpc.DoStatusCodeAndMessage(t, client)
+		interopgrpc.DoSpecialStatusMessage(t, client)
+		interopgrpc.DoUnimplementedMethod(t, gconn)
+		interopgrpc.DoUnimplementedService(t, client)
+		interopgrpc.DoFailWithNonASCIIError(t, client)
 	})
-	t.Run("connect_client", func(t *testing.T) {
+	t.Run("connect_client", func(testingT *testing.T) {
+		t := crosstesting.NewCrossTestT(testingT)
 		client, err := connectpb.NewTestServiceClient(newClientH2C(), "http://"+lis.Addr().String(), connect.WithGRPC())
 		assert.NoError(t, err)
-		assert.NotPanics(t, func() { interopconnect.DoEmptyUnaryCall(client) })
-		assert.NotPanics(t, func() { interopconnect.DoLargeUnaryCall(client) })
-		assert.NotPanics(t, func() { interopconnect.DoClientStreaming(client) })
-		assert.NotPanics(t, func() { interopconnect.DoServerStreaming(client) })
-		assert.NotPanics(t, func() { interopconnect.DoPingPong(client) })
-		assert.NotPanics(t, func() { interopconnect.DoEmptyStream(client) })
-		assert.NotPanics(t, func() { interopconnect.DoTimeoutOnSleepingServer(client) })
-		assert.NotPanics(t, func() { interopconnect.DoCancelAfterBegin(client) })
-		assert.NotPanics(t, func() { interopconnect.DoCancelAfterFirstResponse(client) })
-		assert.NotPanics(t, func() { interopconnect.DoCustomMetadata(client) })
-		assert.NotPanics(t, func() { interopconnect.DoStatusCodeAndMessage(client) })
-		assert.NotPanics(t, func() { interopconnect.DoSpecialStatusMessage(client) })
-		assert.NotPanics(t, func() { interopconnect.DoUnimplementedService(client) })
-		assert.NotPanics(t, func() { crossconnect.DoFailWithNonASCIIError(client) })
+		interopconnect.DoEmptyUnaryCall(t, client)
+		interopconnect.DoLargeUnaryCall(t, client)
+		interopconnect.DoClientStreaming(t, client)
+		interopconnect.DoServerStreaming(t, client)
+		interopconnect.DoPingPong(t, client)
+		interopconnect.DoEmptyStream(t, client)
+		interopconnect.DoTimeoutOnSleepingServer(t, client)
+		interopconnect.DoCancelAfterBegin(t, client)
+		interopconnect.DoCancelAfterFirstResponse(t, client)
+		interopconnect.DoCustomMetadata(t, client)
+		interopconnect.DoStatusCodeAndMessage(t, client)
+		interopconnect.DoSpecialStatusMessage(t, client)
+		interopconnect.DoUnimplementedService(t, client)
+		interopconnect.DoFailWithNonASCIIError(t, client)
 	})
 }
 
