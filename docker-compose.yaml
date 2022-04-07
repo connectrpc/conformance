@@ -18,7 +18,7 @@ services:
         PORT: "8082"
     expose:
       - "8082"
-  client-connect:
+  client-connect-to-connect:
     build:
       context: .
       dockerfile: Dockerfile.clientconnect
@@ -27,7 +27,25 @@ services:
         PORT: "8081"
     depends_on:
       - server-connect
-  client-grpc:
+  client-connect-to-grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.clientconnect
+      args:
+        HOST: "server-grpc"
+        PORT: "8082"
+    depends_on:
+      - server-grpc
+  client-grpc-to-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.clientgrpc
+      args:
+        HOST: "server-connect"
+        PORT: "8081"
+    depends_on:
+      - server-connect
+  client-grpc-to-grpc:
     build:
       context: .
       dockerfile: Dockerfile.clientgrpc

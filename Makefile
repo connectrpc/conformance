@@ -120,6 +120,8 @@ test-docker-compose: docker-compose-clean
 	docker build --ssh default -f Dockerfile.servergrpc .
 	docker build --ssh default -f Dockerfile.clientconnect .
 	docker build --ssh default -f Dockerfile.clientgrpc .
-	docker-compose run client-connect
-	docker-compose run client-grpc
+	docker-compose run client-connect-to-connect
+	docker-compose run client-connect-to-grpc
+	docker-compose run client-grpc-to-connect
+	docker-compose run client-grpc-to-grpc
 	docker-compose down --rmi local --remove-orphans
