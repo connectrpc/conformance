@@ -39,4 +39,4 @@ ENV PORT=$PORT
 
 COPY --from=builder /go/bin/clientgrpc /usr/local/bin/clientgrpc
 
-ENTRYPOINT echo "{\"host\":\"$HOST\",\"protocols\":[{\"protocol\":\"PROTOCOL_GRPC\",\"httpVersions\":[{\"major\":2}],\"port\":\"$PORT\"}]}" | /usr/local/bin/clientgrpc run
+ENTRYPOINT /usr/local/bin/clientgrpc --host="$HOST" --port="$PORT"

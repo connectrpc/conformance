@@ -5,8 +5,8 @@ services:
       context: .
       dockerfile: Dockerfile.serverconnect
       args:
-        HTTP1_PORT: "8080"
-        HTTP2_PORT: "8081"
+        H1_PORT: "8080"
+        H2_PORT: "8081"
     expose:
       - "8080"
       - "8081"

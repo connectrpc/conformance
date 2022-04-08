@@ -32,11 +32,11 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 
 FROM alpine:3.15.3
 
-ARG HTTP1_PORT
-ARG HTTP2_PORT
-ENV HTTP1_PORT=$HTTP1_PORT
-ENV HTTP2_PORT=$HTTP2_PORT
+ARG H1_PORT
+ARG H2_PORT
+ENV H1_PORT=$H1_PORT
+ENV H2_PORT=$H2_PORT
 
 COPY --from=builder /go/bin/serverconnect /usr/local/bin/serverconnect
 
-ENTRYPOINT /usr/local/bin/serverconnect --http1_port $HTTP1_PORT --http2_port $HTTP2_PORT
+ENTRYPOINT /usr/local/bin/serverconnect --h1port $H1_PORT --h2port $H2_PORT
