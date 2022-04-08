@@ -15,13 +15,17 @@
 package interopconnect
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/benchmark/stats"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 
@@ -367,4 +371,74 @@ func DoFailWithNonASCIIError(t testing.TB, client connectpb.TestServiceClient, a
 	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
 	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+NonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
+}
+
+func doOneSoakIteration(t testing.TB, ctx context.Context, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
+	start := time.Now()
+	client := tc
+	if resetChannel {
+		newClient, err := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
+		if err != nil {
+			return time.Nanosecond, err
+		}
+		client = newClient
+	}
+	// per test spec, don't include channel shutdown in latency measurement
+	defer func() { latency = time.Since(start) }()
+	// do a large-unary RPC
+	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	req := &testpb.SimpleRequest{
+		ResponseType: testpb.PayloadType_COMPRESSABLE,
+		ResponseSize: int32(largeRespSize),
+		Payload:      pl,
+	}
+	reply, err := client.UnaryCall(ctx, connect.NewRequest(req))
+	assert.NoError(t, err)
+	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
+	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), largeRespSize)
+	return
+}
+
+// DoSoakTest runs large unary RPCs in a loop for a configurable number of times, with configurable failure thresholds.
+// If resetChannel is false, then each RPC will be performed on client. Otherwise, each RPC will be performed on a new
+// stub that is created with the provided server address and dial options.
+func DoSoakTest(t testing.TB, client connectpb.TestServiceClient, serverAddr string, resetChannel bool, soakIterations int, maxFailures int, perIterationMaxAcceptableLatency time.Duration, overallDeadline time.Time) {
+	ctx, cancel := context.WithDeadline(context.Background(), overallDeadline)
+	defer cancel()
+	iterationsDone := 0
+	totalFailures := 0
+	hopts := stats.HistogramOptions{
+		NumBuckets:     20,
+		GrowthFactor:   1,
+		BaseBucketSize: 1,
+		MinValue:       0,
+	}
+	h := stats.NewHistogram(hopts)
+	for i := 0; i < soakIterations; i++ {
+		if time.Now().After(overallDeadline) {
+			break
+		}
+		iterationsDone++
+		latency, err := doOneSoakIteration(t, ctx, client, resetChannel, serverAddr)
+		latencyMs := int64(latency / time.Millisecond)
+		h.Add(latencyMs)
+		if err != nil {
+			totalFailures++
+			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
+			continue
+		}
+		if latency > perIterationMaxAcceptableLatency {
+			totalFailures++
+			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
+			continue
+		}
+		fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
+	}
+	var b bytes.Buffer
+	h.Print(&b)
+	fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
+	fmt.Fprintln(os.Stderr, b.String())
+	fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
+	assert.True(t, iterationsDone >= soakIterations)
+	assert.True(t, totalFailures <= maxFailures)
 }

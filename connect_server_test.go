@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
@@ -31,6 +32,12 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+const (
+	// gRPC interop test defaults, per https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md#rpc_soak
+	soakIterations                   = 10
+	perIterationMaxAcceptableLatency = 1000 * time.Millisecond
+)
+
 func TestConnectServer(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.Handle(connectpb.NewTestServiceHandler(
@@ -38,7 +45,6 @@ func TestConnectServer(t *testing.T) {
 	))
 	server := httptest.NewUnstartedServer(mux)
 	server.EnableHTTP2 = true
-	// TODO(doria): Can I do this without using TLS?
 	server.StartTLS()
 	defer server.Close()
 	t.Run("grpc_client", func(testingT *testing.T) {
@@ -67,6 +73,17 @@ func TestConnectServer(t *testing.T) {
 		interopgrpc.DoUnimplementedMethod(t, gconn)
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
+		interopgrpc.DoSoakTest(
+			t,
+			client,
+			server.Listener.Addr().String(),
+			nil,
+			false, /* resetChannel */
+			soakIterations,
+			0,
+			perIterationMaxAcceptableLatency,
+			time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
+		)
 	})
 	t.Run("connect_client", func(testingT *testing.T) {
 		t := crosstesting.NewCrossTestT(testingT)
@@ -86,5 +103,15 @@ func TestConnectServer(t *testing.T) {
 		interopconnect.DoSpecialStatusMessage(t, client)
 		interopconnect.DoUnimplementedService(t, client)
 		interopconnect.DoFailWithNonASCIIError(t, client)
+		interopconnect.DoSoakTest(
+			t,
+			client,
+			server.Listener.Addr().String(),
+			false, /* resetChannel */
+			soakIterations,
+			0,
+			perIterationMaxAcceptableLatency,
+			time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
+		)
 	})
 }

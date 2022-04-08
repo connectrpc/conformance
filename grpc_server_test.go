@@ -19,6 +19,7 @@ import (
 	"net"
 	"net/http"
 	"testing"
+	"time"
 
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
@@ -66,6 +67,17 @@ func TestGRPCServer(t *testing.T) {
 		interopgrpc.DoUnimplementedMethod(t, gconn)
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
+		interopgrpc.DoSoakTest(
+			t,
+			client,
+			lis.Addr().String(),
+			nil,
+			false, /* resetChannel */
+			soakIterations,
+			0,
+			perIterationMaxAcceptableLatency,
+			time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
+		)
 	})
 	t.Run("connect_client", func(testingT *testing.T) {
 		t := crosstesting.NewCrossTestT(testingT)
@@ -85,6 +97,16 @@ func TestGRPCServer(t *testing.T) {
 		interopconnect.DoSpecialStatusMessage(t, client)
 		interopconnect.DoUnimplementedService(t, client)
 		interopconnect.DoFailWithNonASCIIError(t, client)
+		interopconnect.DoSoakTest(
+			t,
+			client,
+			"http://"+lis.Addr().String(),
+			false, /* resetChannel */
+			soakIterations,
+			0,
+			perIterationMaxAcceptableLatency,
+			time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
+		)
 	})
 }
 
