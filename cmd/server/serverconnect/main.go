@@ -29,11 +29,11 @@ import (
 )
 
 func main() {
-	h1Port := flag.String("http1_port", "", "the http1 port that the connect server will listen on")
-	h2Port := flag.String("http2_port", "", "the http2 port that the connect server will listen on")
+	h1Port := flag.String("h1port", "", "the http1 port that the connect server will listen on")
+	h2Port := flag.String("h2port", "", "the http2 port that the connect server will listen on")
 	flag.Parse()
 	if *h1Port == "" || *h2Port == "" {
-		log.Fatal("--http1_port and --http2_port must both be set")
+		log.Fatal("--h1port and --h2port must both be set")
 	}
 	mux := http.NewServeMux()
 	mux.Handle(testrpc.NewTestServiceHandler(
@@ -68,7 +68,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	// TODO(doria): find a better way to represent this on stdout.
 	fmt.Println(string(bytes))
 	go http.ListenAndServe(
 		":"+*h1Port,

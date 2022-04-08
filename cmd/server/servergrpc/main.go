@@ -30,7 +30,7 @@ import (
 func main() {
 	port := flag.String("port", "", "the port the server will listen on")
 	flag.Parse()
-	if port == nil {
+	if *port == "" {
 		log.Fatal("--port must be set")
 	}
 	lis, err := net.Listen("tcp", net.JoinHostPort("localhost", *port))
@@ -61,7 +61,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	// TODO(doria): find a better way to represent this on stdout.
 	fmt.Println(string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
 

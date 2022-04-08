@@ -15,68 +15,46 @@
 package main
 
 import (
-	"bufio"
-	"errors"
-	"fmt"
-	"io"
+	"flag"
 	"log"
 	"net"
-	"os"
 
-	crossgrpc "github.com/bufbuild/connect-crosstest/internal/cross/grpc"
+	"github.com/bufbuild/connect-crosstest/cmd/client/clienttesting"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
-// TODO(doria): takes in which http versions; picks the tests that are of interest based on version but also relevance to client itself
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-	serverMetadataRaw, err := reader.ReadBytes('\n')
-	if err != nil && !errors.Is(err, io.EOF) {
-		log.Fatalf("failed to read server metadata: %v", err)
-	}
-	var serverMetadata serverpb.ServerMetadata
-	if err := protojson.Unmarshal(serverMetadataRaw, &serverMetadata); err != nil {
-		log.Fatalf("failed to unmarshal server metadata: %v", err)
-	}
-	fmt.Println("received server metadata", serverMetadata.String())
-	if serverMetadata.GetProtocols() == nil {
-		log.Fatalf("failed to get protocols supported from server metadata")
-	}
-	var port string
-	for _, protocolSupport := range serverMetadata.GetProtocols() {
-		if protocolSupport.GetProtocol() == serverpb.Protocol_PROTOCOL_GRPC {
-			port = protocolSupport.GetPort()
-		}
-	}
-	if port == "" {
-		log.Fatalf("failed to get compatible port")
+	host := flag.String("host", "", "the host name of the test server")
+	port := flag.String("port", "", "the port of the test server")
+	flag.Parse()
+	if *host == "" || *port == "" {
+		log.Fatalf("--host and --port must both be set")
 	}
 	gconn, err := grpc.Dial(
-		net.JoinHostPort(serverMetadata.GetHost(), port),
+		net.JoinHostPort(*host, *port),
 		grpc.WithInsecure(),
 	)
 	if err != nil {
 		log.Fatalf("failed grpc dial: %v", err)
 	}
 	defer gconn.Close()
+	t := clienttesting.NewClientTestingT()
 	client := testgrpc.NewTestServiceClient(gconn)
-	interopgrpc.DoEmptyUnaryCall(client)
-	interopgrpc.DoLargeUnaryCall(client)
-	interopgrpc.DoClientStreaming(client)
-	interopgrpc.DoServerStreaming(client)
-	interopgrpc.DoPingPong(client)
-	interopgrpc.DoEmptyStream(client)
-	interopgrpc.DoTimeoutOnSleepingServer(client)
-	interopgrpc.DoCancelAfterBegin(client)
-	interopgrpc.DoCancelAfterFirstResponse(client)
-	interopgrpc.DoCustomMetadata(client)
-	interopgrpc.DoStatusCodeAndMessage(client)
-	interopgrpc.DoSpecialStatusMessage(client)
-	interopgrpc.DoUnimplementedMethod(gconn)
-	interopgrpc.DoUnimplementedService(client)
-	crossgrpc.DoFailWithNonASCIIError(client)
+	interopgrpc.DoEmptyUnaryCall(t, client)
+	interopgrpc.DoLargeUnaryCall(t, client)
+	interopgrpc.DoClientStreaming(t, client)
+	interopgrpc.DoServerStreaming(t, client)
+	interopgrpc.DoPingPong(t, client)
+	interopgrpc.DoEmptyStream(t, client)
+	interopgrpc.DoTimeoutOnSleepingServer(t, client)
+	interopgrpc.DoCancelAfterBegin(t, client)
+	interopgrpc.DoCancelAfterFirstResponse(t, client)
+	interopgrpc.DoCustomMetadata(t, client)
+	interopgrpc.DoStatusCodeAndMessage(t, client)
+	interopgrpc.DoSpecialStatusMessage(t, client)
+	interopgrpc.DoUnimplementedMethod(t, gconn)
+	interopgrpc.DoUnimplementedService(t, client)
+	interopgrpc.DoFailWithNonASCIIError(t, client)
 }

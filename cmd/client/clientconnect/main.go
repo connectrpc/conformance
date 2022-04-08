@@ -15,23 +15,17 @@
 package main
 
 import (
-	"bufio"
 	"crypto/tls"
-	"errors"
-	"fmt"
-	"io"
+	"flag"
 	"log"
 	"net"
 	"net/http"
-	"os"
 
-	crossconnect "github.com/bufbuild/connect-crosstest/internal/cross/connect"
+	"github.com/bufbuild/connect-crosstest/cmd/client/clienttesting"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
-	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	"github.com/bufbuild/connect-go"
 	"golang.org/x/net/http2"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func newClientH2C() *http.Client {
@@ -47,48 +41,33 @@ func newClientH2C() *http.Client {
 }
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-	serverMetadataRaw, err := reader.ReadBytes('\n')
-	if err != nil && !errors.Is(err, io.EOF) {
-		log.Fatalf("failed to read server metadata: %v", err)
-	}
-	var serverMetadata serverpb.ServerMetadata
-	if err := protojson.Unmarshal(serverMetadataRaw, &serverMetadata); err != nil {
-		log.Fatalf("failed to unmarshal server metadata: %v", err)
-	}
-	fmt.Println("received server metadata", serverMetadata.String())
-	if serverMetadata.GetProtocols() == nil {
-		log.Fatalf("failed to get protocols supported from server metadata")
-	}
-	var port string
-	for _, protocolSupport := range serverMetadata.GetProtocols() {
-		if protocolSupport.GetProtocol() == serverpb.Protocol_PROTOCOL_GRPC {
-			port = protocolSupport.GetPort()
-		}
-	}
-	if port == "" {
-		log.Fatalf("failed to get compatible port")
+	host := flag.String("host", "", "the host name of the test server")
+	port := flag.String("port", "", "the port of the test server")
+	flag.Parse()
+	if *host == "" || *port == "" {
+		log.Fatalf("--host and --port must both be set")
 	}
 	client, err := connectpb.NewTestServiceClient(
 		newClientH2C(),
-		"http://"+net.JoinHostPort(serverMetadata.GetHost(), port),
+		"http://"+net.JoinHostPort(*host, *port),
 		connect.WithGRPC(),
 	)
 	if err != nil {
 		log.Fatalf("failed to create connect client: %v", err)
 	}
-	interopconnect.DoEmptyUnaryCall(client)
-	interopconnect.DoLargeUnaryCall(client)
-	interopconnect.DoClientStreaming(client)
-	interopconnect.DoServerStreaming(client)
-	interopconnect.DoPingPong(client)
-	interopconnect.DoEmptyStream(client)
-	interopconnect.DoTimeoutOnSleepingServer(client)
-	interopconnect.DoCancelAfterBegin(client)
-	interopconnect.DoCancelAfterFirstResponse(client)
-	interopconnect.DoCustomMetadata(client)
-	interopconnect.DoStatusCodeAndMessage(client)
-	interopconnect.DoSpecialStatusMessage(client)
-	interopconnect.DoUnimplementedService(client)
-	crossconnect.DoFailWithNonASCIIError(client)
+	t := clienttesting.NewClientTestingT()
+	interopconnect.DoEmptyUnaryCall(t, client)
+	interopconnect.DoLargeUnaryCall(t, client)
+	interopconnect.DoClientStreaming(t, client)
+	interopconnect.DoServerStreaming(t, client)
+	interopconnect.DoPingPong(t, client)
+	interopconnect.DoEmptyStream(t, client)
+	interopconnect.DoTimeoutOnSleepingServer(t, client)
+	interopconnect.DoCancelAfterBegin(t, client)
+	interopconnect.DoCancelAfterFirstResponse(t, client)
+	interopconnect.DoCustomMetadata(t, client)
+	interopconnect.DoStatusCodeAndMessage(t, client)
+	interopconnect.DoSpecialStatusMessage(t, client)
+	interopconnect.DoUnimplementedService(t, client)
+	interopconnect.DoFailWithNonASCIIError(t, client)
 }
