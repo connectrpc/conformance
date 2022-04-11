@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("--port must both be set")
 	}
 	if *implementation != "connect" && *implementation != "grpc-go" {
-		log.Fatalf(`--implementation must be set to "connect" or "grpc-go": %v`)
+		log.Fatalf(`--implementation must be set to "connect" or "grpc-go": %q`, *implementation)
 	}
 	switch *implementation {
 	case "connect":
