@@ -116,9 +116,7 @@ docker-compose-clean:
 
 test-docker-compose: docker-compose-clean
 	# docker build is a work around for the --ssh as it is not yet supported by docker-compose (github.com/docker/compose/issues/7025), can be removed when either it is supported or connect-go become public
-	docker build --ssh default -f Dockerfile.serverconnect .
-	docker build --ssh default -f Dockerfile.servergrpc .
-	docker build --ssh default -f Dockerfile.client .
+	docker build --ssh default -f Dockerfile.base -t connect_crosstest_base .
 	docker-compose run client-connect-to-connect
 	docker-compose run client-connect-to-grpc
 	docker-compose run client-grpc-to-connect

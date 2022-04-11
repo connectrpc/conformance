@@ -1,30 +1,7 @@
 ARG HTTP1_PORT
 ARG HTTP2_PORT
 
-FROM golang:1.18.0-alpine3.15 as builder
-
-WORKDIR /workspace
-
-COPY go.mod go.sum /workspace/
-
-# These can be removed after the connect-go become public
-RUN apk add --update --no-cache \
-    ca-certificates \
-    git \
-    openssh-client && \
-  rm -rf /var/cache/apk/*
-
-ENV GOPRIVATE=github.com/bufbuild
-
-RUN --mount=type=secret,id=GITHUB_PAT --mount=type=ssh \
-    # Download public key for github.com and use ssh key for auth for local development.
-    mkdir -p -m 0700 ~/.ssh && \
-    ssh-keyscan github.com >> ~/.ssh/known_hosts && \
-    git config --global --add url."git@github.com:".insteadOf "https://github.com/" && \
-    go mod download github.com/bufbuild/connect-go
-
-COPY cmd /workspace/cmd
-COPY internal /workspace/internal
+FROM connect_crosstest_base as builder
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 \
