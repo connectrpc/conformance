@@ -13,3 +13,11 @@ plugins:
   - name: connect-go
     out: internal/gen/proto/connect
     opt: paths=source_relative
+  - remote: buf.build/protocolbuffers/plugins/js:v3.20.0-1
+    out: internal/gen/proto/grpc-web
+    opt: import_style=commonjs
+  - remote: buf.build/grpc/plugins/web:v1.3.1-2
+    out: internal/gen/proto/grpc-web
+    opt:
+      - import_style=commonjs
+      - mode=grpcweb
