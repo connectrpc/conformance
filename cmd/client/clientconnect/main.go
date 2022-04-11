@@ -20,8 +20,9 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 
-	"github.com/bufbuild/connect-crosstest/cmd/client/clienttesting"
+	"github.com/bufbuild/connect-crosstest/internal/console"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	"github.com/bufbuild/connect-go"
@@ -41,21 +42,25 @@ func newClientH2C() *http.Client {
 }
 
 func main() {
-	host := flag.String("host", "", "the host name of the test server")
+	host := flag.String("host", "127.0.0.1", "the host name of the test server, defaults to 127.0.0.1")
 	port := flag.String("port", "", "the port of the test server")
 	flag.Parse()
-	if *host == "" || *port == "" {
-		log.Fatalf("--host and --port must both be set")
+	if *port == "" {
+		log.Fatalf("--port must both be set")
+	}
+	serverURL, err := url.ParseRequestURI("http://" + net.JoinHostPort(*host, *port))
+	if err != nil {
+		log.Fatalf("invalid url: %s", "http://"+net.JoinHostPort(*host, *port))
 	}
 	client, err := connectpb.NewTestServiceClient(
 		newClientH2C(),
-		"http://"+net.JoinHostPort(*host, *port),
+		serverURL.String(),
 		connect.WithGRPC(),
 	)
 	if err != nil {
 		log.Fatalf("failed to create connect client: %v", err)
 	}
-	t := clienttesting.NewClientTestingT()
+	t := console.NewTB()
 	interopconnect.DoEmptyUnaryCall(t, client)
 	interopconnect.DoLargeUnaryCall(t, client)
 	interopconnect.DoClientStreaming(t, client)

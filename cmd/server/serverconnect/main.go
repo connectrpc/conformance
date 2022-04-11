@@ -15,10 +15,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
@@ -29,16 +34,24 @@ import (
 )
 
 func main() {
-	h1Port := flag.String("h1port", "", "the http1 port that the connect server will listen on")
-	h2Port := flag.String("h2port", "", "the http2 port that the connect server will listen on")
+	h1Port := flag.String("h1port", "", "port for HTTP/1.1 traffic")
+	h2Port := flag.String("h2port", "", "port for HTTP/2 traffic")
 	flag.Parse()
 	if *h1Port == "" || *h2Port == "" {
-		log.Fatal("--h1port and --h2port must both be set")
+		log.Fatal("--h1port and --h2port must be set")
 	}
 	mux := http.NewServeMux()
 	mux.Handle(testrpc.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),
 	))
+	h1Server := http.Server{
+		Addr:    ":" + *h1Port,
+		Handler: mux,
+	}
+	h2Server := http.Server{
+		Addr:    ":" + *h2Port,
+		Handler: h2c.NewHandler(mux, &http2.Server{}),
+	}
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
 			Host: "localhost",
@@ -52,6 +65,15 @@ func main() {
 						},
 					},
 					Port: *h1Port,
+				},
+				{
+					Protocol: serverpb.Protocol_PROTOCOL_GRPC_WEB,
+					HttpVersions: []*serverpb.HTTPVersion{
+						{
+							Major: int32(2),
+						},
+					},
+					Port: *h2Port,
 				},
 				{
 					Protocol: serverpb.Protocol_PROTOCOL_GRPC,
@@ -69,12 +91,25 @@ func main() {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
 	fmt.Println(string(bytes))
-	go http.ListenAndServe(
-		":"+*h1Port,
-		mux,
-	)
-	http.ListenAndServe(
-		":"+*h2Port,
-		h2c.NewHandler(mux, &http2.Server{}),
-	)
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		if err := h1Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalln(err)
+		}
+	}()
+	go func() {
+		if err := h2Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalln(err)
+		}
+	}()
+	<-done
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := h1Server.Shutdown(ctx); err != nil {
+		log.Fatalln(err)
+	}
+	if err := h2Server.Shutdown(ctx); err != nil {
+		log.Fatalln(err)
+	}
 }

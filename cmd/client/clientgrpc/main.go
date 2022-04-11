@@ -19,18 +19,18 @@ import (
 	"log"
 	"net"
 
-	"github.com/bufbuild/connect-crosstest/cmd/client/clienttesting"
+	"github.com/bufbuild/connect-crosstest/internal/console"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
 	"google.golang.org/grpc"
 )
 
 func main() {
-	host := flag.String("host", "", "the host name of the test server")
+	host := flag.String("host", "127.0.0.1", "the host name of the test server, defaults to 127.0.0.1")
 	port := flag.String("port", "", "the port of the test server")
 	flag.Parse()
-	if *host == "" || *port == "" {
-		log.Fatalf("--host and --port must both be set")
+	if *port == "" {
+		log.Fatalf("--port must both be set")
 	}
 	gconn, err := grpc.Dial(
 		net.JoinHostPort(*host, *port),
@@ -40,7 +40,7 @@ func main() {
 		log.Fatalf("failed grpc dial: %v", err)
 	}
 	defer gconn.Close()
-	t := clienttesting.NewClientTestingT()
+	t := console.NewTB()
 	client := testgrpc.NewTestServiceClient(gconn)
 	interopgrpc.DoEmptyUnaryCall(t, client)
 	interopgrpc.DoLargeUnaryCall(t, client)
