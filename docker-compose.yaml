@@ -21,36 +21,40 @@ services:
   client-connect-to-connect:
     build:
       context: .
-      dockerfile: Dockerfile.clientconnect
+      dockerfile: Dockerfile.client
       args:
         HOST: "server-connect"
         PORT: "8081"
+        IMPLEMENTATION: "connect"
     depends_on:
       - server-connect
   client-connect-to-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.clientconnect
+      dockerfile: Dockerfile.client
       args:
         HOST: "server-grpc"
         PORT: "8082"
+        IMPLEMENTATION: "connect"
     depends_on:
       - server-grpc
   client-grpc-to-connect:
     build:
       context: .
-      dockerfile: Dockerfile.clientgrpc
+      dockerfile: Dockerfile.client
       args:
         HOST: "server-connect"
         PORT: "8081"
+        IMPLEMENTATION: "grpc-go"
     depends_on:
       - server-connect
   client-grpc-to-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.clientgrpc
+      dockerfile: Dockerfile.client
       args:
         HOST: "server-grpc"
         PORT: "8082"
+        IMPLEMENTATION: "grpc-go"
     depends_on:
       - server-grpc
