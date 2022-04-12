@@ -41,3 +41,7 @@ func (t *t) Fatalf(format string, args ...any) {
 func (t *t) Successf(format string, args ...any) {
 	t.internal.Logf(format, args...)
 }
+
+func (t *t) FailNow() {
+	t.internal.FailNow()
+}
