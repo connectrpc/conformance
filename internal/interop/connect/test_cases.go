@@ -34,6 +34,7 @@ import (
 	"github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 const (
@@ -68,7 +69,7 @@ func DoEmptyUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 		context.Background(),
 		connect.NewRequest(&testpb.Empty{}),
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, proto.Equal(&testpb.Empty{}, reply.Msg))
 	t.Successf("succcessful unary call")
 }
@@ -76,14 +77,14 @@ func DoEmptyUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
 func DoLargeUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(largeRespSize),
 		Payload:      pl,
 	}
 	reply, err := client.UnaryCall(context.Background(), connect.NewRequest(req))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), largeRespSize)
 	t.Successf("successful large unary call")
@@ -95,15 +96,15 @@ func DoClientStreaming(t testing.TB, client connectpb.TestServiceClient) {
 	var sum int
 	for _, s := range reqSizes {
 		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, s)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
 		}
-		assert.NoError(t, stream.Send(req))
+		require.NoError(t, stream.Send(req))
 		sum += s
 	}
 	reply, err := stream.CloseAndReceive()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetAggregatedPayloadSize(), int32(sum))
 	t.Successf("successful client streaming test")
 }
@@ -121,7 +122,7 @@ func DoServerStreaming(t testing.TB, client connectpb.TestServiceClient) {
 		ResponseParameters: respParam,
 	}
 	stream, err := client.StreamingOutputCall(context.Background(), connect.NewRequest(req))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	var respCnt int
 	var index int
 	for stream.Receive() {
@@ -130,7 +131,7 @@ func DoServerStreaming(t testing.TB, client connectpb.TestServiceClient) {
 		index++
 		respCnt++
 	}
-	assert.NoError(t, stream.Err())
+	require.NoError(t, stream.Err())
 	assert.Equal(t, respCnt, len(respSizes))
 	t.Successf("successful server streaming test")
 }
@@ -147,20 +148,20 @@ func DoPingPong(t testing.TB, client connectpb.TestServiceClient) {
 			},
 		}
 		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		req := &testpb.StreamingOutputCallRequest{
 			ResponseType:       testpb.PayloadType_COMPRESSABLE,
 			ResponseParameters: respParam,
 			Payload:            pl,
 		}
-		assert.NoError(t, stream.Send(req))
+		require.NoError(t, stream.Send(req))
 		reply, err := stream.Receive()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 		assert.Equal(t, len(reply.GetPayload().GetBody()), respSizes[index])
 		index++
 	}
-	assert.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.CloseSend())
 	_, err := stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
 	t.Successf("successful ping pong")
@@ -170,7 +171,7 @@ func DoPingPong(t testing.TB, client connectpb.TestServiceClient) {
 func DoEmptyStream(t testing.TB, client connectpb.TestServiceClient) {
 	stream := client.FullDuplexCall(context.Background())
 	assert.NotNil(t, stream)
-	assert.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.CloseSend())
 	_, err := stream.Receive()
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, io.EOF))
@@ -184,13 +185,13 @@ func DoTimeoutOnSleepingServer(t testing.TB, client connectpb.TestServiceClient)
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
 	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		Payload:      pl,
 	}
 	err = stream.Send(req)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	_, err = stream.Receive()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeDeadlineExceeded)
@@ -225,15 +226,15 @@ func DoCancelAfterFirstResponse(t testing.TB, client connectpb.TestServiceClient
 		},
 	}
 	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 		Payload:            pl,
 	}
-	assert.NoError(t, stream.Send(req))
+	require.NoError(t, stream.Send(req))
 	_, err = stream.Receive()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	cancel()
 	_, err = stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeCanceled)
@@ -250,7 +251,7 @@ func validateMetadata(t testing.TB, header, trailer http.Header) {
 	assert.Equal(t, header.Get(initialMetadataKey), initialMetadataValue)
 	assert.Equal(t, len(trailer.Values(trailingMetadataKey)), 1)
 	decodedTrailer, err := connect.DecodeBinaryHeader(trailer.Get(trailingMetadataKey))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, string(decodedTrailer), string(trailingMetadataValue))
 }
 
@@ -258,7 +259,7 @@ func validateMetadata(t testing.TB, header, trailer http.Header) {
 func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	// Testing with UnaryCall.
 	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(1),
@@ -272,7 +273,7 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 		ctx,
 		connectReq,
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), 1)
 	validateMetadata(t, reply.Header(), reply.Trailer())
@@ -292,10 +293,10 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	}
 	stream.RequestHeader().Set(initialMetadataKey, initialMetadataValue)
 	stream.RequestHeader().Set(trailingMetadataKey, connect.EncodeBinaryHeader(trailingMetadataValue))
-	assert.NoError(t, stream.Send(streamReq))
+	require.NoError(t, stream.Send(streamReq))
 	_, err = stream.Receive()
-	assert.NoError(t, err)
-	assert.NoError(t, stream.CloseSend())
+	require.NoError(t, err)
+	require.NoError(t, stream.CloseSend())
 	_, err = stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
 	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer())
@@ -328,8 +329,8 @@ func DoStatusCodeAndMessage(t testing.TB, client connectpb.TestServiceClient) {
 	streamReq := &testpb.StreamingOutputCallRequest{
 		ResponseStatus: respStatus,
 	}
-	assert.NoError(t, stream.Send(streamReq))
-	assert.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.Send(streamReq))
+	require.NoError(t, stream.CloseSend())
 	_, err = stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
 	assert.Equal(t, err.Error(), expectedErr.Error())
@@ -394,14 +395,14 @@ func doOneSoakIteration(t testing.TB, ctx context.Context, tc connectpb.TestServ
 	defer func() { latency = time.Since(start) }()
 	// do a large-unary RPC
 	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(largeRespSize),
 		Payload:      pl,
 	}
 	reply, err := client.UnaryCall(ctx, connect.NewRequest(req))
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), largeRespSize)
 	return

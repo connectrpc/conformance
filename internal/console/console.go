@@ -17,6 +17,7 @@ package console
 
 import (
 	"log"
+	"os"
 )
 
 type TB struct{}
@@ -37,4 +38,8 @@ func (t *TB) Fatalf(format string, args ...any) {
 
 func (t *TB) Successf(format string, args ...any) {
 	log.Printf("SUCCESS: "+format, args...)
+}
+
+func (t *TB) FailNow() {
+	os.Exit(1)
 }
