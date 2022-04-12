@@ -190,6 +190,12 @@ func DoTimeoutOnSleepingServer(t testing.TB, client testpb.TestServiceClient, ar
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
 	defer cancel()
 	stream, err := client.FullDuplexCall(ctx, args...)
+	if err != nil {
+		if status.Code(err) == codes.DeadlineExceeded {
+			// This emulates the original test case.
+			return
+		}
+	}
 	assert.NoError(t, err)
 	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
 	req := &testpb.StreamingOutputCallRequest{
