@@ -115,10 +115,10 @@ docker-compose-clean:
 	docker-compose down --rmi local --remove-orphans
 
 test-docker-compose: docker-compose-clean
-	# docker build is a work around for the --ssh as it is not yet supported by docker-compose (github.com/docker/compose/issues/7025), can be removed when either it is supported or connect-go become public
-	docker build --ssh default -f Dockerfile.base -t connect_crosstest_base .
+	@# docker build is a work around for the --ssh as it is not yet supported by docker-compose (github.com/docker/compose/issues/7025), can be removed when either it is supported or connect-go become public
+	docker build --ssh default -f Dockerfile.crosstest -t crosstest_image .
 	docker-compose run client-connect-to-connect
 	docker-compose run client-connect-to-grpc
 	docker-compose run client-grpc-to-connect
 	docker-compose run client-grpc-to-grpc
-	docker-compose down --rmi local --remove-orphans
+	$(MAKE) docker-compose-clean

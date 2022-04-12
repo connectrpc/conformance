@@ -3,58 +3,43 @@ services:
   server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.serverconnect
-      args:
-        H1_PORT: "8080"
-        H2_PORT: "8081"
+      dockerfile: Dockerfile.crosstest
+    entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081"
     expose:
       - "8080"
       - "8081"
   server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.servergrpc
-      args:
-        PORT: "8082"
+      dockerfile: Dockerfile.crosstest
+    entrypoint: /usr/local/bin/servergrpc --port "8082"
     expose:
       - "8082"
   client-connect-to-connect:
     build:
       context: .
-      dockerfile: Dockerfile.client
-      args:
-        HOST: "server-connect"
-        PORT: "8081"
-        IMPLEMENTATION: "connect"
+      dockerfile: Dockerfile.crosstest
+    entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect"
     depends_on:
       - server-connect
   client-connect-to-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.client
-      args:
-        HOST: "server-grpc"
-        PORT: "8082"
-        IMPLEMENTATION: "connect"
+      dockerfile: Dockerfile.crosstest
+    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="connect"
     depends_on:
       - server-grpc
   client-grpc-to-connect:
     build:
       context: .
-      dockerfile: Dockerfile.client
-      args:
-        HOST: "server-connect"
-        PORT: "8081"
-        IMPLEMENTATION: "grpc-go"
+      dockerfile: Dockerfile.crosstest
+    entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go"
     depends_on:
       - server-connect
   client-grpc-to-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.client
-      args:
-        HOST: "server-grpc"
-        PORT: "8082"
-        IMPLEMENTATION: "grpc-go"
+      dockerfile: Dockerfile.crosstest
+    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="grpc-go"
     depends_on:
       - server-grpc
