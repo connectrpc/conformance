@@ -15,7 +15,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -23,28 +22,38 @@ import (
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
+type flags struct {
+	port string
+}
+
 func main() {
-	port := flag.String("port", "", "the port the server will listen on")
-	flag.Parse()
-	if *port == "" {
-		log.Fatal("--port must be set")
+	flagset := flags{}
+	rootCmd := &cobra.Command{
+		Use:   "servergrpc",
+		Short: "Starts a grpc test server",
+		Run: func(cmd *cobra.Command, args []string) {
+			run(flagset)
+		},
 	}
-	lis, err := net.Listen("tcp", net.JoinHostPort("localhost", *port))
+	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port the server will listen on")
+	rootCmd.MarkFlagRequired("port")
+	rootCmd.Execute()
+}
+
+func run(flagset flags) {
+	lis, err := net.Listen("tcp", ":"+flagset.port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	server := grpc.NewServer()
-	host, _, err := net.SplitHostPort(lis.Addr().String())
-	if err != nil {
-		log.Fatalf("failed to split host port from listener addr: %s", lis.Addr().String())
-	}
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
-			Host: host,
+			Host: "localhost",
 			Protocols: []*serverpb.ProtocolSupport{
 				{
 					Protocol: serverpb.Protocol_PROTOCOL_GRPC,
@@ -53,7 +62,7 @@ func main() {
 							Major: int32(2),
 						},
 					},
-					Port: *port,
+					Port: flagset.port,
 				},
 			},
 		},
@@ -63,7 +72,6 @@ func main() {
 	}
 	fmt.Println(string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
-
 	server.Serve(lis)
 	defer server.GracefulStop()
 }
