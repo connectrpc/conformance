@@ -32,7 +32,7 @@ func (t *TB) Errorf(format string, args ...any) {
 }
 
 func (t *TB) Fatalf(format string, args ...any) {
-	log.Fatalf("FAIL: "+format, args...)
+	log.Printf("FAIL: "+format, args...)
 }
 
 func (t *TB) Successf(format string, args ...any) {
