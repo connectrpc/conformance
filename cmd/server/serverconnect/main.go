@@ -33,20 +33,19 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-var (
-	flagset = flags{}
-)
-
 type flags struct {
 	h1Port string
 	h2Port string
 }
 
 func main() {
+	flagset := flags{}
 	rootCmd := &cobra.Command{
 		Use:   "serverconnect",
 		Short: "Starts a connect test server",
-		Run:   run,
+		Run: func(cmd *cobra.Command, args []string) {
+			run(flagset)
+		},
 	}
 	rootCmd.Flags().StringVar(&flagset.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
 	rootCmd.Flags().StringVar(&flagset.h2Port, "h2port", "", "port for HTTP/2 traffic")
@@ -55,7 +54,7 @@ func main() {
 	rootCmd.Execute()
 }
 
-func run(cmd *cobra.Command, args []string) {
+func run(flagset flags) {
 	mux := http.NewServeMux()
 	mux.Handle(testrpc.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),

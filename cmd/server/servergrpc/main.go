@@ -27,26 +27,25 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
-var (
-	flagset = flags{}
-)
-
 type flags struct {
 	port string
 }
 
 func main() {
+	flagset := flags{}
 	rootCmd := &cobra.Command{
 		Use:   "servergrpc",
 		Short: "Starts a grpc test server",
-		Run:   run,
+		Run: func(cmd *cobra.Command, args []string) {
+			run(flagset)
+		},
 	}
 	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port the server will listen on")
 	rootCmd.MarkFlagRequired("port")
 	rootCmd.Execute()
 }
 
-func run(cmd *cobra.Command, args []string) {
+func run(flagset flags) {
 	lis, err := net.Listen("tcp", ":"+flagset.port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

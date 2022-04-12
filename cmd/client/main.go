@@ -32,10 +32,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-var (
-	flagset = flags{}
-)
-
 type flags struct {
 	host           string
 	port           string
@@ -43,10 +39,13 @@ type flags struct {
 }
 
 func main() {
+	flagset := flags{}
 	rootCmd := &cobra.Command{
 		Use:   "client",
 		Short: "Starts a grpc or connect client, based on implementation",
-		Run:   run,
+		Run: func(cmd *cobra.Command, args []string) {
+			run(flagset)
+		},
 	}
 	rootCmd.Flags().StringVar(&flagset.host, "host", "127.0.0.1", "the host name of the test server")
 	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port of the test server")
@@ -61,7 +60,7 @@ func main() {
 	rootCmd.Execute()
 }
 
-func run(cmd *cobra.Command, args []string) {
+func run(flagset flags) {
 	switch flagset.implementation {
 	case "connect":
 		serverURL, err := url.ParseRequestURI("http://" + net.JoinHostPort(flagset.host, flagset.port))
