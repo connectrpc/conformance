@@ -10,6 +10,6 @@
     "xhr2": "0.2.1"
   },
   "scripts": {
-    "test": "mocha grpc_client_test.js"
+    "test": "mocha grpcweb_client_test.js"
   }
 }

@@ -13,7 +13,7 @@ COPYRIGHT_YEARS := 2022
 # Which commit of bufbuild/makego should we source checknodiffgenerated.bash
 # from?
 MAKEGO_COMMIT := 383cdab9b837b1fba0883948ff54ed20eedbd611
-LICENSE_IGNORE := -e internal/proto/grpc -e internal/interop/grpc -e cmd/client/clientgrpcweb/interop_client.js
+LICENSE_IGNORE := -e internal/proto/grpc -e internal/interop/grpc -e grpcweb_client_test.js
 
 .PHONY: help
 help: ## Describe useful make targets
