@@ -49,16 +49,17 @@ var (
 )
 
 // ClientNewPayload returns a payload of the given type and size.
-func ClientNewPayload(t testing.TB, payloadType testpb.PayloadType, size int) *testpb.Payload {
+func ClientNewPayload(t testing.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
+	t.Helper()
 	if size < 0 {
-		t.Fatalf("Requested a response with invalid length %d", size)
+		return nil, fmt.Errorf("Requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
 	assert.Equal(t, payloadType, testpb.PayloadType_COMPRESSABLE)
 	return &testpb.Payload{
 		Type: payloadType,
 		Body: body,
-	}
+	}, nil
 }
 
 // DoEmptyUnaryCall performs a unary RPC with empty request and response messages.
@@ -74,7 +75,8 @@ func DoEmptyUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
 func DoLargeUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
-	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	assert.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(largeRespSize),
@@ -92,7 +94,8 @@ func DoClientStreaming(t testing.TB, client connectpb.TestServiceClient) {
 	stream := client.StreamingInputCall(context.Background())
 	var sum int
 	for _, s := range reqSizes {
-		pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, s)
+		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, s)
+		assert.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
 		}
@@ -143,7 +146,8 @@ func DoPingPong(t testing.TB, client connectpb.TestServiceClient) {
 				Size: int32(respSizes[index]),
 			},
 		}
-		pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
+		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
+		assert.NoError(t, err)
 		req := &testpb.StreamingOutputCallRequest{
 			ResponseType:       testpb.PayloadType_COMPRESSABLE,
 			ResponseParameters: respParam,
@@ -179,12 +183,13 @@ func DoTimeoutOnSleepingServer(t testing.TB, client connectpb.TestServiceClient)
 	defer cancel()
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
-	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	assert.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		Payload:      pl,
 	}
-	err := stream.Send(req)
+	err = stream.Send(req)
 	assert.NoError(t, err)
 	_, err = stream.Receive()
 	assert.Error(t, err)
@@ -219,14 +224,15 @@ func DoCancelAfterFirstResponse(t testing.TB, client connectpb.TestServiceClient
 			Size: 31415,
 		},
 	}
-	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	assert.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 		Payload:            pl,
 	}
 	assert.NoError(t, stream.Send(req))
-	_, err := stream.Receive()
+	_, err = stream.Receive()
 	assert.NoError(t, err)
 	cancel()
 	_, err = stream.Receive()
@@ -251,7 +257,8 @@ func validateMetadata(t testing.TB, header, trailer http.Header) {
 // DoCustomMetadata checks that metadata is echoed back to the client.
 func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	// Testing with UnaryCall.
-	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	assert.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(1),
@@ -386,7 +393,8 @@ func doOneSoakIteration(t testing.TB, ctx context.Context, tc connectpb.TestServ
 	// per test spec, don't include channel shutdown in latency measurement
 	defer func() { latency = time.Since(start) }()
 	// do a large-unary RPC
-	pl := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	assert.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(largeRespSize),
