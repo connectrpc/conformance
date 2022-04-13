@@ -33,14 +33,18 @@ func main() {
 	if *port == "" {
 		log.Fatal("--port must be set")
 	}
-	lis, err := net.Listen("tcp", ":"+*port)
+	lis, err := net.Listen("tcp", net.JoinHostPort("localhost", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	server := grpc.NewServer()
+	host, _, err := net.SplitHostPort(lis.Addr().String())
+	if err != nil {
+		log.Fatalf("failed to split host port from listener addr: %s", lis.Addr().String())
+	}
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
-			Host: "localhost",
+			Host: host,
 			Protocols: []*serverpb.ProtocolSupport{
 				{
 					Protocol: serverpb.Protocol_PROTOCOL_GRPC,
