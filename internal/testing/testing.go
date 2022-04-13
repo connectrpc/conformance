@@ -22,4 +22,5 @@ type TB interface {
 	Errorf(string, ...any)
 	Fatalf(string, ...any)
 	Successf(string, ...any)
+	FailNow()
 }

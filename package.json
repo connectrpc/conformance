@@ -10,6 +10,6 @@
     "xhr2": "0.2.1"
   },
   "scripts": {
-    "test": "mocha cmd/client/clientgrpcweb/interop_client.js"
+    "test": "mocha grpcweb_client_test.js"
   }
 }

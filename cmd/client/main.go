@@ -16,7 +16,6 @@ package main
 
 import (
 	"crypto/tls"
-	"flag"
 	"log"
 	"net"
 	"net/http"
@@ -28,30 +27,45 @@ import (
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
 	"github.com/bufbuild/connect-go"
+	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
 
+type flags struct {
+	host           string
+	port           string
+	implementation string
+}
+
 func main() {
-	host := flag.String("host", "127.0.0.1", "the host name of the test server, defaults to 127.0.0.1")
-	port := flag.String("port", "", "the port of the test server")
-	implementation := flag.String(
+	flagset := flags{}
+	rootCmd := &cobra.Command{
+		Use:   "client",
+		Short: "Starts a grpc or connect client, based on implementation",
+		Run: func(cmd *cobra.Command, args []string) {
+			run(flagset)
+		},
+	}
+	rootCmd.Flags().StringVar(&flagset.host, "host", "127.0.0.1", "the host name of the test server")
+	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port of the test server")
+	rootCmd.Flags().StringVarP(
+		&flagset.implementation,
 		"implementation",
+		"i",
 		"connect",
-		`the client implementation tested, accepted values are "connect" or "grpc-go", defaults to "connect"`,
+		`the client implementation tested, accepted values are "connect" or "grpc-go"`,
 	)
-	flag.Parse()
-	if *port == "" {
-		log.Fatalf("--port must both be set")
-	}
-	if *implementation != "connect" && *implementation != "grpc-go" {
-		log.Fatalf(`--implementation must be set to "connect" or "grpc-go": %q`, *implementation)
-	}
-	switch *implementation {
+	rootCmd.MarkFlagRequired("port")
+	rootCmd.Execute()
+}
+
+func run(flagset flags) {
+	switch flagset.implementation {
 	case "connect":
-		serverURL, err := url.ParseRequestURI("http://" + net.JoinHostPort(*host, *port))
+		serverURL, err := url.ParseRequestURI("http://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
-			log.Fatalf("invalid url: %s", "http://"+net.JoinHostPort(*host, *port))
+			log.Fatalf("invalid url: %s", "http://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
 		client, err := connectpb.NewTestServiceClient(
 			newClientH2C(),
@@ -78,7 +92,7 @@ func main() {
 		interopconnect.DoFailWithNonASCIIError(t, client)
 	case "grpc-go":
 		gconn, err := grpc.Dial(
-			net.JoinHostPort(*host, *port),
+			net.JoinHostPort(flagset.host, flagset.port),
 			grpc.WithInsecure(),
 		)
 		if err != nil {
@@ -102,6 +116,8 @@ func main() {
 		interopgrpc.DoUnimplementedMethod(t, gconn)
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
+	default:
+		log.Fatalf(`must set --implementation or -i to "connect" or "grpc-go"`)
 	}
 }
 

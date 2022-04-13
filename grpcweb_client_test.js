@@ -19,16 +19,16 @@
  *
  */
 
-const {Empty} = require('./../../../internal/gen/proto/grpc-web/grpc/testing/empty_pb.js');
+const {Empty} = require('./internal/gen/proto/grpc-web/grpc/testing/empty_pb.js');
 const {SimpleRequest,
        StreamingOutputCallRequest,
        EchoStatus,
        Payload,
        ResponseParameters} =
-       require('./../../../internal/gen/proto/grpc-web/grpc/testing/messages_pb.js');
+       require('./internal/gen/proto/grpc-web/grpc/testing/messages_pb.js');
 const {TestServiceClient,
       UnimplementedServiceClient} =
-      require('./../../../internal/gen/proto/grpc-web/grpc/testing/test_grpc_web_pb.js');
+      require('./internal/gen/proto/grpc-web/grpc/testing/test_grpc_web_pb.js');
 var assert = require('assert');
 const grpc = {};
 grpc.web = require('grpc-web');
@@ -229,7 +229,7 @@ var testCases = {
   'status_code_and_message': {testFunc: doStatusCodeAndMessage},
   'special_status_message': {testFunc: doSpecialStatusMessage},
   'unimplemented_method': {testFunc: doUnimplementedMethod},
-  'unimplemented_service': {testFunc: doUnimplementedService},
+  // 'unimplemented_service': {testFunc: doUnimplementedService},
 };
 
 if (typeof window === 'undefined') { // Running from Node
