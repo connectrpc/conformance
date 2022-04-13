@@ -5,16 +5,16 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081"
-    expose:
-      - "8080"
-      - "8081"
+    ports:
+      - "8080:8080"
+      - "8081:8081"
   server-grpc:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
     entrypoint: /usr/local/bin/servergrpc --port "8082"
-    expose:
-      - "8082"
+    ports:
+      - "8082:8082"
   envoy:
     image: envoyproxy/envoy:v1.20-latest
     ports:
