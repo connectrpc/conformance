@@ -24,7 +24,7 @@ For grpc-web interop tests, you'll first need a test server running:
 Then, you can run the test cases using `npm run test -- --host=<host> --port=<port>`.
 
 You can also run all tests using the included Docker files and docker-compose,
-`make test-docker-compose`
+`make test-docker-compose`. This requires you to have Docker running for your environment.
 
 ## Support and Versioning
 
