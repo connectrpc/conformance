@@ -34,6 +34,7 @@ jobs:
         with:
           ssh-private-key: |
             ${{ secrets.CONNECT_DEPLOY_KEY }}
+            ${{ secrets.CONNECT_WEB_DEPLOY_KEY }}
             ${{ secrets.PROTOBUF_ES_DEPLOY_KEY }}
       - name: Cache
         uses: actions/cache@v3
