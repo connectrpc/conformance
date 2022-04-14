@@ -11,6 +11,21 @@ implementation][connect-go] and `grpc-go`. The test suite is a superset of the
 As long as you have `bash` and `curl` installed, you can run the tests yourself
 by cloning this repository and running `make`.
 
+## Steps
+
+For grpc and connect-go interop tests, these are available as Go unit tests, using
+`make test`.
+
+For grpc-web interop tests, you'll first need a test server running:
+
+* [grpc-go test server][grpc-go-server]
+* [connect-go test server][connect-go-server]
+
+Then, you can run the test cases using `npm run test -- --host=<host> --port=<port>`.
+
+You can also run all tests using the included Docker files and docker-compose,
+`make test-docker-compose`. This requires you to have Docker running for your environment.
+
 ## Support and Versioning
 
 `connect-crosstest` works with:
@@ -32,3 +47,5 @@ Offered under the [Apache 2 license][license].
 [interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE.txt
+[grpc-go-server]: https://github.com/bufbuild/connect-crosstest/blob/main/cmd/server/servergrpc/main.go
+[connect-go-server]: https://github.com/bufbuild/connect-crosstest/blob/main/cmd/server/serverconnect/main.go
