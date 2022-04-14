@@ -32,7 +32,10 @@ jobs:
       - name: Configure Private Repo Access
         uses: webfactory/ssh-agent@v0.5.4
         with:
-          ssh-private-key: ${{ secrets.CONNECT_DEPLOY_KEY }}
+          ssh-private-key: |
+            ${{ secrets.CONNECT_DEPLOY_KEY }}
+            ${{ secrets.CONNECT_WEB_DEPLOY_KEY }}
+            ${{ secrets.PROTOBUF_ES_DEPLOY_KEY }}
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -41,6 +44,8 @@ jobs:
           restore-keys: ${{ runner.os }}-connect-crosstest-ci-
       - name: Test
         run: make test
+        env:
+          GOPRIVATE: github.com/bufbuild
       - name: Lint
         # Often, lint & gofmt guidelines depend on the Go version. To prevent
         # conflicting guidance, run only on the most recent supported version.

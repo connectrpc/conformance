@@ -3,3 +3,5 @@
 *.svg
 cover.out
 node_modules
+web/node_modules
+web/dist
