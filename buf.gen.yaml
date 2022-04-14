@@ -21,3 +21,9 @@ plugins:
     opt:
       - import_style=commonjs
       - mode=grpcweb
+  - name: es
+    out: internal/gen/proto/connect-web
+    opt: target=ts
+  - name: connect-web
+    out: internal/gen/proto/connect-web
+    opt: target=ts
