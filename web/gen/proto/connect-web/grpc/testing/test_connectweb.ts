@@ -23,9 +23,24 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 
-import {Empty} from "./empty_pb.js";
-import {MethodKind} from "@bufbuild/protobuf";
-import {ClientConfigureRequest, ClientConfigureResponse, LoadBalancerAccumulatedStatsRequest, LoadBalancerAccumulatedStatsResponse, LoadBalancerStatsRequest, LoadBalancerStatsResponse, ReconnectInfo, ReconnectParams, SimpleRequest, SimpleResponse, StreamingInputCallRequest, StreamingInputCallResponse, StreamingOutputCallRequest, StreamingOutputCallResponse} from "./messages_pb.js";
+import { Empty } from "./empty_pb.js";
+import { MethodKind } from "@bufbuild/protobuf";
+import {
+  ClientConfigureRequest,
+  ClientConfigureResponse,
+  LoadBalancerAccumulatedStatsRequest,
+  LoadBalancerAccumulatedStatsResponse,
+  LoadBalancerStatsRequest,
+  LoadBalancerStatsResponse,
+  ReconnectInfo,
+  ReconnectParams,
+  SimpleRequest,
+  SimpleResponse,
+  StreamingInputCallRequest,
+  StreamingInputCallResponse,
+  StreamingOutputCallRequest,
+  StreamingOutputCallResponse,
+} from "./messages_pb.js";
 
 /**
  * A simple service to test the various types of RPCs and experiment with
@@ -145,7 +160,7 @@ export const TestService = {
       O: Empty,
       kind: MethodKind.Unary,
     },
-  }
+  },
 } as const;
 
 /**
@@ -168,7 +183,7 @@ export const UnimplementedService = {
       O: Empty,
       kind: MethodKind.Unary,
     },
-  }
+  },
 } as const;
 
 /**
@@ -197,7 +212,7 @@ export const ReconnectService = {
       O: ReconnectInfo,
       kind: MethodKind.Unary,
     },
-  }
+  },
 } as const;
 
 /**
@@ -230,7 +245,7 @@ export const LoadBalancerStatsService = {
       O: LoadBalancerAccumulatedStatsResponse,
       kind: MethodKind.Unary,
     },
-  }
+  },
 } as const;
 
 /**
@@ -259,7 +274,7 @@ export const XdsUpdateHealthService = {
       O: Empty,
       kind: MethodKind.Unary,
     },
-  }
+  },
 } as const;
 
 /**
@@ -281,6 +296,5 @@ export const XdsUpdateClientConfigureService = {
       O: ClientConfigureResponse,
       kind: MethodKind.Unary,
     },
-  }
+  },
 } as const;
-

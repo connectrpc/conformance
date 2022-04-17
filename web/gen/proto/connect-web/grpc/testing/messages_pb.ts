@@ -21,8 +21,15 @@
 /* eslint-disable */
 /* @ts-nocheck */
 
-import type {BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage} from "@bufbuild/protobuf";
-import {Message, proto3} from "@bufbuild/protobuf";
+import type {
+  BinaryReadOptions,
+  FieldList,
+  JsonReadOptions,
+  JsonValue,
+  PartialMessage,
+  PlainMessage,
+} from "@bufbuild/protobuf";
+import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
  * The type of payload that should be returned.
@@ -107,19 +114,31 @@ export class BoolValue extends Message<BoolValue> {
     { no: 1, name: "value", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): BoolValue {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): BoolValue {
     return new BoolValue().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): BoolValue {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): BoolValue {
     return new BoolValue().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): BoolValue {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): BoolValue {
     return new BoolValue().fromJsonString(jsonString, options);
   }
 
-  static equals(a: BoolValue | PlainMessage<BoolValue> | undefined, b: BoolValue | PlainMessage<BoolValue> | undefined): boolean {
+  static equals(
+    a: BoolValue | PlainMessage<BoolValue> | undefined,
+    b: BoolValue | PlainMessage<BoolValue> | undefined
+  ): boolean {
     return proto3.util.equals(BoolValue, a, b);
   }
 }
@@ -156,19 +175,31 @@ export class Payload extends Message<Payload> {
     { no: 2, name: "body", kind: "scalar", T: 12 /* ScalarType.BYTES */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Payload {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): Payload {
     return new Payload().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Payload {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): Payload {
     return new Payload().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Payload {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): Payload {
     return new Payload().fromJsonString(jsonString, options);
   }
 
-  static equals(a: Payload | PlainMessage<Payload> | undefined, b: Payload | PlainMessage<Payload> | undefined): boolean {
+  static equals(
+    a: Payload | PlainMessage<Payload> | undefined,
+    b: Payload | PlainMessage<Payload> | undefined
+  ): boolean {
     return proto3.util.equals(Payload, a, b);
   }
 }
@@ -202,19 +233,31 @@ export class EchoStatus extends Message<EchoStatus> {
     { no: 2, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): EchoStatus {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): EchoStatus {
     return new EchoStatus().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): EchoStatus {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): EchoStatus {
     return new EchoStatus().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): EchoStatus {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): EchoStatus {
     return new EchoStatus().fromJsonString(jsonString, options);
   }
 
-  static equals(a: EchoStatus | PlainMessage<EchoStatus> | undefined, b: EchoStatus | PlainMessage<EchoStatus> | undefined): boolean {
+  static equals(
+    a: EchoStatus | PlainMessage<EchoStatus> | undefined,
+    b: EchoStatus | PlainMessage<EchoStatus> | undefined
+  ): boolean {
     return proto3.util.equals(EchoStatus, a, b);
   }
 }
@@ -307,31 +350,73 @@ export class SimpleRequest extends Message<SimpleRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.SimpleRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "response_type", kind: "enum", T: proto3.getEnumType(PayloadType) },
-    { no: 2, name: "response_size", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    {
+      no: 1,
+      name: "response_type",
+      kind: "enum",
+      T: proto3.getEnumType(PayloadType),
+    },
+    {
+      no: 2,
+      name: "response_size",
+      kind: "scalar",
+      T: 5 /* ScalarType.INT32 */,
+    },
     { no: 3, name: "payload", kind: "message", T: Payload },
-    { no: 4, name: "fill_username", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 5, name: "fill_oauth_scope", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    {
+      no: 4,
+      name: "fill_username",
+      kind: "scalar",
+      T: 8 /* ScalarType.BOOL */,
+    },
+    {
+      no: 5,
+      name: "fill_oauth_scope",
+      kind: "scalar",
+      T: 8 /* ScalarType.BOOL */,
+    },
     { no: 6, name: "response_compressed", kind: "message", T: BoolValue },
     { no: 7, name: "response_status", kind: "message", T: EchoStatus },
     { no: 8, name: "expect_compressed", kind: "message", T: BoolValue },
-    { no: 9, name: "fill_server_id", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 10, name: "fill_grpclb_route_type", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    {
+      no: 9,
+      name: "fill_server_id",
+      kind: "scalar",
+      T: 8 /* ScalarType.BOOL */,
+    },
+    {
+      no: 10,
+      name: "fill_grpclb_route_type",
+      kind: "scalar",
+      T: 8 /* ScalarType.BOOL */,
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SimpleRequest {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): SimpleRequest {
     return new SimpleRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SimpleRequest {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): SimpleRequest {
     return new SimpleRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SimpleRequest {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): SimpleRequest {
     return new SimpleRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SimpleRequest | PlainMessage<SimpleRequest> | undefined, b: SimpleRequest | PlainMessage<SimpleRequest> | undefined): boolean {
+  static equals(
+    a: SimpleRequest | PlainMessage<SimpleRequest> | undefined,
+    b: SimpleRequest | PlainMessage<SimpleRequest> | undefined
+  ): boolean {
     return proto3.util.equals(SimpleRequest, a, b);
   }
 }
@@ -396,25 +481,47 @@ export class SimpleResponse extends Message<SimpleResponse> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "payload", kind: "message", T: Payload },
     { no: 2, name: "username", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "oauth_scope", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    {
+      no: 3,
+      name: "oauth_scope",
+      kind: "scalar",
+      T: 9 /* ScalarType.STRING */,
+    },
     { no: 4, name: "server_id", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "grpclb_route_type", kind: "enum", T: proto3.getEnumType(GrpclbRouteType) },
+    {
+      no: 5,
+      name: "grpclb_route_type",
+      kind: "enum",
+      T: proto3.getEnumType(GrpclbRouteType),
+    },
     { no: 6, name: "hostname", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): SimpleResponse {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): SimpleResponse {
     return new SimpleResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): SimpleResponse {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): SimpleResponse {
     return new SimpleResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): SimpleResponse {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): SimpleResponse {
     return new SimpleResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: SimpleResponse | PlainMessage<SimpleResponse> | undefined, b: SimpleResponse | PlainMessage<SimpleResponse> | undefined): boolean {
+  static equals(
+    a: SimpleResponse | PlainMessage<SimpleResponse> | undefined,
+    b: SimpleResponse | PlainMessage<SimpleResponse> | undefined
+  ): boolean {
     return proto3.util.equals(SimpleResponse, a, b);
   }
 }
@@ -454,19 +561,37 @@ export class StreamingInputCallRequest extends Message<StreamingInputCallRequest
     { no: 2, name: "expect_compressed", kind: "message", T: BoolValue },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamingInputCallRequest {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): StreamingInputCallRequest {
     return new StreamingInputCallRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamingInputCallRequest {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): StreamingInputCallRequest {
     return new StreamingInputCallRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamingInputCallRequest {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): StreamingInputCallRequest {
     return new StreamingInputCallRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: StreamingInputCallRequest | PlainMessage<StreamingInputCallRequest> | undefined, b: StreamingInputCallRequest | PlainMessage<StreamingInputCallRequest> | undefined): boolean {
+  static equals(
+    a:
+      | StreamingInputCallRequest
+      | PlainMessage<StreamingInputCallRequest>
+      | undefined,
+    b:
+      | StreamingInputCallRequest
+      | PlainMessage<StreamingInputCallRequest>
+      | undefined
+  ): boolean {
     return proto3.util.equals(StreamingInputCallRequest, a, b);
   }
 }
@@ -492,22 +617,45 @@ export class StreamingInputCallResponse extends Message<StreamingInputCallRespon
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.StreamingInputCallResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "aggregated_payload_size", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    {
+      no: 1,
+      name: "aggregated_payload_size",
+      kind: "scalar",
+      T: 5 /* ScalarType.INT32 */,
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamingInputCallResponse {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): StreamingInputCallResponse {
     return new StreamingInputCallResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamingInputCallResponse {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): StreamingInputCallResponse {
     return new StreamingInputCallResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamingInputCallResponse {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): StreamingInputCallResponse {
     return new StreamingInputCallResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: StreamingInputCallResponse | PlainMessage<StreamingInputCallResponse> | undefined, b: StreamingInputCallResponse | PlainMessage<StreamingInputCallResponse> | undefined): boolean {
+  static equals(
+    a:
+      | StreamingInputCallResponse
+      | PlainMessage<StreamingInputCallResponse>
+      | undefined,
+    b:
+      | StreamingInputCallResponse
+      | PlainMessage<StreamingInputCallResponse>
+      | undefined
+  ): boolean {
     return proto3.util.equals(StreamingInputCallResponse, a, b);
   }
 }
@@ -556,19 +704,31 @@ export class ResponseParameters extends Message<ResponseParameters> {
     { no: 3, name: "compressed", kind: "message", T: BoolValue },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ResponseParameters {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ResponseParameters {
     return new ResponseParameters().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ResponseParameters {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ResponseParameters {
     return new ResponseParameters().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ResponseParameters {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ResponseParameters {
     return new ResponseParameters().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ResponseParameters | PlainMessage<ResponseParameters> | undefined, b: ResponseParameters | PlainMessage<ResponseParameters> | undefined): boolean {
+  static equals(
+    a: ResponseParameters | PlainMessage<ResponseParameters> | undefined,
+    b: ResponseParameters | PlainMessage<ResponseParameters> | undefined
+  ): boolean {
     return proto3.util.equals(ResponseParameters, a, b);
   }
 }
@@ -618,25 +778,54 @@ export class StreamingOutputCallRequest extends Message<StreamingOutputCallReque
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.StreamingOutputCallRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "response_type", kind: "enum", T: proto3.getEnumType(PayloadType) },
-    { no: 2, name: "response_parameters", kind: "message", T: ResponseParameters, repeated: true },
+    {
+      no: 1,
+      name: "response_type",
+      kind: "enum",
+      T: proto3.getEnumType(PayloadType),
+    },
+    {
+      no: 2,
+      name: "response_parameters",
+      kind: "message",
+      T: ResponseParameters,
+      repeated: true,
+    },
     { no: 3, name: "payload", kind: "message", T: Payload },
     { no: 7, name: "response_status", kind: "message", T: EchoStatus },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamingOutputCallRequest {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): StreamingOutputCallRequest {
     return new StreamingOutputCallRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamingOutputCallRequest {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): StreamingOutputCallRequest {
     return new StreamingOutputCallRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamingOutputCallRequest {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): StreamingOutputCallRequest {
     return new StreamingOutputCallRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: StreamingOutputCallRequest | PlainMessage<StreamingOutputCallRequest> | undefined, b: StreamingOutputCallRequest | PlainMessage<StreamingOutputCallRequest> | undefined): boolean {
+  static equals(
+    a:
+      | StreamingOutputCallRequest
+      | PlainMessage<StreamingOutputCallRequest>
+      | undefined,
+    b:
+      | StreamingOutputCallRequest
+      | PlainMessage<StreamingOutputCallRequest>
+      | undefined
+  ): boolean {
     return proto3.util.equals(StreamingOutputCallRequest, a, b);
   }
 }
@@ -665,19 +854,40 @@ export class StreamingOutputCallResponse extends Message<StreamingOutputCallResp
     { no: 1, name: "payload", kind: "message", T: Payload },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StreamingOutputCallResponse {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): StreamingOutputCallResponse {
     return new StreamingOutputCallResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StreamingOutputCallResponse {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): StreamingOutputCallResponse {
     return new StreamingOutputCallResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StreamingOutputCallResponse {
-    return new StreamingOutputCallResponse().fromJsonString(jsonString, options);
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): StreamingOutputCallResponse {
+    return new StreamingOutputCallResponse().fromJsonString(
+      jsonString,
+      options
+    );
   }
 
-  static equals(a: StreamingOutputCallResponse | PlainMessage<StreamingOutputCallResponse> | undefined, b: StreamingOutputCallResponse | PlainMessage<StreamingOutputCallResponse> | undefined): boolean {
+  static equals(
+    a:
+      | StreamingOutputCallResponse
+      | PlainMessage<StreamingOutputCallResponse>
+      | undefined,
+    b:
+      | StreamingOutputCallResponse
+      | PlainMessage<StreamingOutputCallResponse>
+      | undefined
+  ): boolean {
     return proto3.util.equals(StreamingOutputCallResponse, a, b);
   }
 }
@@ -702,22 +912,39 @@ export class ReconnectParams extends Message<ReconnectParams> {
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.ReconnectParams";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "max_reconnect_backoff_ms", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    {
+      no: 1,
+      name: "max_reconnect_backoff_ms",
+      kind: "scalar",
+      T: 5 /* ScalarType.INT32 */,
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReconnectParams {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ReconnectParams {
     return new ReconnectParams().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReconnectParams {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ReconnectParams {
     return new ReconnectParams().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReconnectParams {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ReconnectParams {
     return new ReconnectParams().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ReconnectParams | PlainMessage<ReconnectParams> | undefined, b: ReconnectParams | PlainMessage<ReconnectParams> | undefined): boolean {
+  static equals(
+    a: ReconnectParams | PlainMessage<ReconnectParams> | undefined,
+    b: ReconnectParams | PlainMessage<ReconnectParams> | undefined
+  ): boolean {
     return proto3.util.equals(ReconnectParams, a, b);
   }
 }
@@ -749,22 +976,40 @@ export class ReconnectInfo extends Message<ReconnectInfo> {
   static readonly typeName = "grpc.testing.ReconnectInfo";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "passed", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-    { no: 2, name: "backoff_ms", kind: "scalar", T: 5 /* ScalarType.INT32 */, repeated: true },
+    {
+      no: 2,
+      name: "backoff_ms",
+      kind: "scalar",
+      T: 5 /* ScalarType.INT32 */,
+      repeated: true,
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ReconnectInfo {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ReconnectInfo {
     return new ReconnectInfo().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ReconnectInfo {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ReconnectInfo {
     return new ReconnectInfo().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ReconnectInfo {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ReconnectInfo {
     return new ReconnectInfo().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ReconnectInfo | PlainMessage<ReconnectInfo> | undefined, b: ReconnectInfo | PlainMessage<ReconnectInfo> | undefined): boolean {
+  static equals(
+    a: ReconnectInfo | PlainMessage<ReconnectInfo> | undefined,
+    b: ReconnectInfo | PlainMessage<ReconnectInfo> | undefined
+  ): boolean {
     return proto3.util.equals(ReconnectInfo, a, b);
   }
 }
@@ -799,19 +1044,37 @@ export class LoadBalancerStatsRequest extends Message<LoadBalancerStatsRequest> 
     { no: 2, name: "timeout_sec", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoadBalancerStatsRequest {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): LoadBalancerStatsRequest {
     return new LoadBalancerStatsRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoadBalancerStatsRequest {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerStatsRequest {
     return new LoadBalancerStatsRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoadBalancerStatsRequest {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerStatsRequest {
     return new LoadBalancerStatsRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: LoadBalancerStatsRequest | PlainMessage<LoadBalancerStatsRequest> | undefined, b: LoadBalancerStatsRequest | PlainMessage<LoadBalancerStatsRequest> | undefined): boolean {
+  static equals(
+    a:
+      | LoadBalancerStatsRequest
+      | PlainMessage<LoadBalancerStatsRequest>
+      | undefined,
+    b:
+      | LoadBalancerStatsRequest
+      | PlainMessage<LoadBalancerStatsRequest>
+      | undefined
+  ): boolean {
     return proto3.util.equals(LoadBalancerStatsRequest, a, b);
   }
 }
@@ -847,24 +1110,59 @@ export class LoadBalancerStatsResponse extends Message<LoadBalancerStatsResponse
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.LoadBalancerStatsResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "rpcs_by_peer", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 5 /* ScalarType.0 */} },
-    { no: 2, name: "num_failures", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 3, name: "rpcs_by_method", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: LoadBalancerStatsResponse_RpcsByPeer} },
+    {
+      no: 1,
+      name: "rpcs_by_peer",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: { kind: "scalar", T: 5 /* ScalarType.0 */ },
+    },
+    {
+      no: 2,
+      name: "num_failures",
+      kind: "scalar",
+      T: 5 /* ScalarType.INT32 */,
+    },
+    {
+      no: 3,
+      name: "rpcs_by_method",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: { kind: "message", T: LoadBalancerStatsResponse_RpcsByPeer },
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoadBalancerStatsResponse {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): LoadBalancerStatsResponse {
     return new LoadBalancerStatsResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoadBalancerStatsResponse {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerStatsResponse {
     return new LoadBalancerStatsResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoadBalancerStatsResponse {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerStatsResponse {
     return new LoadBalancerStatsResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: LoadBalancerStatsResponse | PlainMessage<LoadBalancerStatsResponse> | undefined, b: LoadBalancerStatsResponse | PlainMessage<LoadBalancerStatsResponse> | undefined): boolean {
+  static equals(
+    a:
+      | LoadBalancerStatsResponse
+      | PlainMessage<LoadBalancerStatsResponse>
+      | undefined,
+    b:
+      | LoadBalancerStatsResponse
+      | PlainMessage<LoadBalancerStatsResponse>
+      | undefined
+  ): boolean {
     return proto3.util.equals(LoadBalancerStatsResponse, a, b);
   }
 }
@@ -886,24 +1184,58 @@ export class LoadBalancerStatsResponse_RpcsByPeer extends Message<LoadBalancerSt
   }
 
   static readonly runtime = proto3;
-  static readonly typeName = "grpc.testing.LoadBalancerStatsResponse.RpcsByPeer";
+  static readonly typeName =
+    "grpc.testing.LoadBalancerStatsResponse.RpcsByPeer";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "rpcs_by_peer", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 5 /* ScalarType.0 */} },
+    {
+      no: 1,
+      name: "rpcs_by_peer",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: { kind: "scalar", T: 5 /* ScalarType.0 */ },
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoadBalancerStatsResponse_RpcsByPeer {
-    return new LoadBalancerStatsResponse_RpcsByPeer().fromBinary(bytes, options);
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): LoadBalancerStatsResponse_RpcsByPeer {
+    return new LoadBalancerStatsResponse_RpcsByPeer().fromBinary(
+      bytes,
+      options
+    );
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoadBalancerStatsResponse_RpcsByPeer {
-    return new LoadBalancerStatsResponse_RpcsByPeer().fromJson(jsonValue, options);
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerStatsResponse_RpcsByPeer {
+    return new LoadBalancerStatsResponse_RpcsByPeer().fromJson(
+      jsonValue,
+      options
+    );
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoadBalancerStatsResponse_RpcsByPeer {
-    return new LoadBalancerStatsResponse_RpcsByPeer().fromJsonString(jsonString, options);
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerStatsResponse_RpcsByPeer {
+    return new LoadBalancerStatsResponse_RpcsByPeer().fromJsonString(
+      jsonString,
+      options
+    );
   }
 
-  static equals(a: LoadBalancerStatsResponse_RpcsByPeer | PlainMessage<LoadBalancerStatsResponse_RpcsByPeer> | undefined, b: LoadBalancerStatsResponse_RpcsByPeer | PlainMessage<LoadBalancerStatsResponse_RpcsByPeer> | undefined): boolean {
+  static equals(
+    a:
+      | LoadBalancerStatsResponse_RpcsByPeer
+      | PlainMessage<LoadBalancerStatsResponse_RpcsByPeer>
+      | undefined,
+    b:
+      | LoadBalancerStatsResponse_RpcsByPeer
+      | PlainMessage<LoadBalancerStatsResponse_RpcsByPeer>
+      | undefined
+  ): boolean {
     return proto3.util.equals(LoadBalancerStatsResponse_RpcsByPeer, a, b);
   }
 }
@@ -921,22 +1253,45 @@ export class LoadBalancerAccumulatedStatsRequest extends Message<LoadBalancerAcc
 
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.LoadBalancerAccumulatedStatsRequest";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
+  static readonly fields: FieldList = proto3.util.newFieldList(() => []);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoadBalancerAccumulatedStatsRequest {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): LoadBalancerAccumulatedStatsRequest {
     return new LoadBalancerAccumulatedStatsRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoadBalancerAccumulatedStatsRequest {
-    return new LoadBalancerAccumulatedStatsRequest().fromJson(jsonValue, options);
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerAccumulatedStatsRequest {
+    return new LoadBalancerAccumulatedStatsRequest().fromJson(
+      jsonValue,
+      options
+    );
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoadBalancerAccumulatedStatsRequest {
-    return new LoadBalancerAccumulatedStatsRequest().fromJsonString(jsonString, options);
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerAccumulatedStatsRequest {
+    return new LoadBalancerAccumulatedStatsRequest().fromJsonString(
+      jsonString,
+      options
+    );
   }
 
-  static equals(a: LoadBalancerAccumulatedStatsRequest | PlainMessage<LoadBalancerAccumulatedStatsRequest> | undefined, b: LoadBalancerAccumulatedStatsRequest | PlainMessage<LoadBalancerAccumulatedStatsRequest> | undefined): boolean {
+  static equals(
+    a:
+      | LoadBalancerAccumulatedStatsRequest
+      | PlainMessage<LoadBalancerAccumulatedStatsRequest>
+      | undefined,
+    b:
+      | LoadBalancerAccumulatedStatsRequest
+      | PlainMessage<LoadBalancerAccumulatedStatsRequest>
+      | undefined
+  ): boolean {
     return proto3.util.equals(LoadBalancerAccumulatedStatsRequest, a, b);
   }
 }
@@ -980,7 +1335,9 @@ export class LoadBalancerAccumulatedStatsResponse extends Message<LoadBalancerAc
    *
    * @generated from field: map<string, grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats> stats_per_method = 4;
    */
-  statsPerMethod: { [key: string]: LoadBalancerAccumulatedStatsResponse_MethodStats } = {};
+  statsPerMethod: {
+    [key: string]: LoadBalancerAccumulatedStatsResponse_MethodStats;
+  } = {};
 
   constructor(data?: PartialMessage<LoadBalancerAccumulatedStatsResponse>) {
     super();
@@ -988,27 +1345,82 @@ export class LoadBalancerAccumulatedStatsResponse extends Message<LoadBalancerAc
   }
 
   static readonly runtime = proto3;
-  static readonly typeName = "grpc.testing.LoadBalancerAccumulatedStatsResponse";
+  static readonly typeName =
+    "grpc.testing.LoadBalancerAccumulatedStatsResponse";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "num_rpcs_started_by_method", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 5 /* ScalarType.0 */} },
-    { no: 2, name: "num_rpcs_succeeded_by_method", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 5 /* ScalarType.0 */} },
-    { no: 3, name: "num_rpcs_failed_by_method", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 5 /* ScalarType.0 */} },
-    { no: 4, name: "stats_per_method", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "message", T: LoadBalancerAccumulatedStatsResponse_MethodStats} },
+    {
+      no: 1,
+      name: "num_rpcs_started_by_method",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: { kind: "scalar", T: 5 /* ScalarType.0 */ },
+    },
+    {
+      no: 2,
+      name: "num_rpcs_succeeded_by_method",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: { kind: "scalar", T: 5 /* ScalarType.0 */ },
+    },
+    {
+      no: 3,
+      name: "num_rpcs_failed_by_method",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: { kind: "scalar", T: 5 /* ScalarType.0 */ },
+    },
+    {
+      no: 4,
+      name: "stats_per_method",
+      kind: "map",
+      K: 9 /* ScalarType.STRING */,
+      V: {
+        kind: "message",
+        T: LoadBalancerAccumulatedStatsResponse_MethodStats,
+      },
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoadBalancerAccumulatedStatsResponse {
-    return new LoadBalancerAccumulatedStatsResponse().fromBinary(bytes, options);
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): LoadBalancerAccumulatedStatsResponse {
+    return new LoadBalancerAccumulatedStatsResponse().fromBinary(
+      bytes,
+      options
+    );
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoadBalancerAccumulatedStatsResponse {
-    return new LoadBalancerAccumulatedStatsResponse().fromJson(jsonValue, options);
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerAccumulatedStatsResponse {
+    return new LoadBalancerAccumulatedStatsResponse().fromJson(
+      jsonValue,
+      options
+    );
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoadBalancerAccumulatedStatsResponse {
-    return new LoadBalancerAccumulatedStatsResponse().fromJsonString(jsonString, options);
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerAccumulatedStatsResponse {
+    return new LoadBalancerAccumulatedStatsResponse().fromJsonString(
+      jsonString,
+      options
+    );
   }
 
-  static equals(a: LoadBalancerAccumulatedStatsResponse | PlainMessage<LoadBalancerAccumulatedStatsResponse> | undefined, b: LoadBalancerAccumulatedStatsResponse | PlainMessage<LoadBalancerAccumulatedStatsResponse> | undefined): boolean {
+  static equals(
+    a:
+      | LoadBalancerAccumulatedStatsResponse
+      | PlainMessage<LoadBalancerAccumulatedStatsResponse>
+      | undefined,
+    b:
+      | LoadBalancerAccumulatedStatsResponse
+      | PlainMessage<LoadBalancerAccumulatedStatsResponse>
+      | undefined
+  ): boolean {
     return proto3.util.equals(LoadBalancerAccumulatedStatsResponse, a, b);
   }
 }
@@ -1032,32 +1444,77 @@ export class LoadBalancerAccumulatedStatsResponse_MethodStats extends Message<Lo
    */
   result: { [key: number]: number } = {};
 
-  constructor(data?: PartialMessage<LoadBalancerAccumulatedStatsResponse_MethodStats>) {
+  constructor(
+    data?: PartialMessage<LoadBalancerAccumulatedStatsResponse_MethodStats>
+  ) {
     super();
     proto3.util.initPartial(data, this);
   }
 
   static readonly runtime = proto3;
-  static readonly typeName = "grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats";
+  static readonly typeName =
+    "grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "rpcs_started", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
-    { no: 2, name: "result", kind: "map", K: 5 /* ScalarType.INT32 */, V: {kind: "scalar", T: 5 /* ScalarType.0 */} },
+    {
+      no: 1,
+      name: "rpcs_started",
+      kind: "scalar",
+      T: 5 /* ScalarType.INT32 */,
+    },
+    {
+      no: 2,
+      name: "result",
+      kind: "map",
+      K: 5 /* ScalarType.INT32 */,
+      V: { kind: "scalar", T: 5 /* ScalarType.0 */ },
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): LoadBalancerAccumulatedStatsResponse_MethodStats {
-    return new LoadBalancerAccumulatedStatsResponse_MethodStats().fromBinary(bytes, options);
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): LoadBalancerAccumulatedStatsResponse_MethodStats {
+    return new LoadBalancerAccumulatedStatsResponse_MethodStats().fromBinary(
+      bytes,
+      options
+    );
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): LoadBalancerAccumulatedStatsResponse_MethodStats {
-    return new LoadBalancerAccumulatedStatsResponse_MethodStats().fromJson(jsonValue, options);
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerAccumulatedStatsResponse_MethodStats {
+    return new LoadBalancerAccumulatedStatsResponse_MethodStats().fromJson(
+      jsonValue,
+      options
+    );
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): LoadBalancerAccumulatedStatsResponse_MethodStats {
-    return new LoadBalancerAccumulatedStatsResponse_MethodStats().fromJsonString(jsonString, options);
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): LoadBalancerAccumulatedStatsResponse_MethodStats {
+    return new LoadBalancerAccumulatedStatsResponse_MethodStats().fromJsonString(
+      jsonString,
+      options
+    );
   }
 
-  static equals(a: LoadBalancerAccumulatedStatsResponse_MethodStats | PlainMessage<LoadBalancerAccumulatedStatsResponse_MethodStats> | undefined, b: LoadBalancerAccumulatedStatsResponse_MethodStats | PlainMessage<LoadBalancerAccumulatedStatsResponse_MethodStats> | undefined): boolean {
-    return proto3.util.equals(LoadBalancerAccumulatedStatsResponse_MethodStats, a, b);
+  static equals(
+    a:
+      | LoadBalancerAccumulatedStatsResponse_MethodStats
+      | PlainMessage<LoadBalancerAccumulatedStatsResponse_MethodStats>
+      | undefined,
+    b:
+      | LoadBalancerAccumulatedStatsResponse_MethodStats
+      | PlainMessage<LoadBalancerAccumulatedStatsResponse_MethodStats>
+      | undefined
+  ): boolean {
+    return proto3.util.equals(
+      LoadBalancerAccumulatedStatsResponse_MethodStats,
+      a,
+      b
+    );
   }
 }
 
@@ -1097,24 +1554,51 @@ export class ClientConfigureRequest extends Message<ClientConfigureRequest> {
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.ClientConfigureRequest";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "types", kind: "enum", T: proto3.getEnumType(ClientConfigureRequest_RpcType), repeated: true },
-    { no: 2, name: "metadata", kind: "message", T: ClientConfigureRequest_Metadata, repeated: true },
+    {
+      no: 1,
+      name: "types",
+      kind: "enum",
+      T: proto3.getEnumType(ClientConfigureRequest_RpcType),
+      repeated: true,
+    },
+    {
+      no: 2,
+      name: "metadata",
+      kind: "message",
+      T: ClientConfigureRequest_Metadata,
+      repeated: true,
+    },
     { no: 3, name: "timeout_sec", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ClientConfigureRequest {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ClientConfigureRequest {
     return new ClientConfigureRequest().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ClientConfigureRequest {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ClientConfigureRequest {
     return new ClientConfigureRequest().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ClientConfigureRequest {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ClientConfigureRequest {
     return new ClientConfigureRequest().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ClientConfigureRequest | PlainMessage<ClientConfigureRequest> | undefined, b: ClientConfigureRequest | PlainMessage<ClientConfigureRequest> | undefined): boolean {
+  static equals(
+    a:
+      | ClientConfigureRequest
+      | PlainMessage<ClientConfigureRequest>
+      | undefined,
+    b: ClientConfigureRequest | PlainMessage<ClientConfigureRequest> | undefined
+  ): boolean {
     return proto3.util.equals(ClientConfigureRequest, a, b);
   }
 }
@@ -1136,10 +1620,14 @@ export enum ClientConfigureRequest_RpcType {
   UNARY_CALL = 1,
 }
 // Retrieve enum metadata with: proto3.getEnumType(ClientConfigureRequest_RpcType)
-proto3.util.setEnumType(ClientConfigureRequest_RpcType, "grpc.testing.ClientConfigureRequest.RpcType", [
-  { no: 0, name: "EMPTY_CALL" },
-  { no: 1, name: "UNARY_CALL" },
-]);
+proto3.util.setEnumType(
+  ClientConfigureRequest_RpcType,
+  "grpc.testing.ClientConfigureRequest.RpcType",
+  [
+    { no: 0, name: "EMPTY_CALL" },
+    { no: 1, name: "UNARY_CALL" },
+  ]
+);
 
 /**
  * Metadata to be attached for the given type of RPCs.
@@ -1170,24 +1658,50 @@ export class ClientConfigureRequest_Metadata extends Message<ClientConfigureRequ
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.ClientConfigureRequest.Metadata";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "type", kind: "enum", T: proto3.getEnumType(ClientConfigureRequest_RpcType) },
+    {
+      no: 1,
+      name: "type",
+      kind: "enum",
+      T: proto3.getEnumType(ClientConfigureRequest_RpcType),
+    },
     { no: 2, name: "key", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "value", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ClientConfigureRequest_Metadata {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ClientConfigureRequest_Metadata {
     return new ClientConfigureRequest_Metadata().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ClientConfigureRequest_Metadata {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ClientConfigureRequest_Metadata {
     return new ClientConfigureRequest_Metadata().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ClientConfigureRequest_Metadata {
-    return new ClientConfigureRequest_Metadata().fromJsonString(jsonString, options);
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ClientConfigureRequest_Metadata {
+    return new ClientConfigureRequest_Metadata().fromJsonString(
+      jsonString,
+      options
+    );
   }
 
-  static equals(a: ClientConfigureRequest_Metadata | PlainMessage<ClientConfigureRequest_Metadata> | undefined, b: ClientConfigureRequest_Metadata | PlainMessage<ClientConfigureRequest_Metadata> | undefined): boolean {
+  static equals(
+    a:
+      | ClientConfigureRequest_Metadata
+      | PlainMessage<ClientConfigureRequest_Metadata>
+      | undefined,
+    b:
+      | ClientConfigureRequest_Metadata
+      | PlainMessage<ClientConfigureRequest_Metadata>
+      | undefined
+  ): boolean {
     return proto3.util.equals(ClientConfigureRequest_Metadata, a, b);
   }
 }
@@ -1205,23 +1719,39 @@ export class ClientConfigureResponse extends Message<ClientConfigureResponse> {
 
   static readonly runtime = proto3;
   static readonly typeName = "grpc.testing.ClientConfigureResponse";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-  ]);
+  static readonly fields: FieldList = proto3.util.newFieldList(() => []);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ClientConfigureResponse {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ClientConfigureResponse {
     return new ClientConfigureResponse().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ClientConfigureResponse {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ClientConfigureResponse {
     return new ClientConfigureResponse().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ClientConfigureResponse {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ClientConfigureResponse {
     return new ClientConfigureResponse().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ClientConfigureResponse | PlainMessage<ClientConfigureResponse> | undefined, b: ClientConfigureResponse | PlainMessage<ClientConfigureResponse> | undefined): boolean {
+  static equals(
+    a:
+      | ClientConfigureResponse
+      | PlainMessage<ClientConfigureResponse>
+      | undefined,
+    b:
+      | ClientConfigureResponse
+      | PlainMessage<ClientConfigureResponse>
+      | undefined
+  ): boolean {
     return proto3.util.equals(ClientConfigureResponse, a, b);
   }
 }
-

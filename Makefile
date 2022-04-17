@@ -57,6 +57,7 @@ lintfix: $(BIN)/gofmt $(BIN)/buf ## Automatically fix some lint errors
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/protoc-gen-es $(BIN)/protoc-gen-connect-web $(BIN)/license-header ## Regenerate code and licenses
 	rm -rf internal/gen
+	rm -rf web/gen
 	PATH=$(BIN) $(BIN)/buf generate
 	@# We want to operate on a list of modified and new files, excluding
 	@# deleted and ignored files. git-ls-files can't do this alone. comm -23 takes

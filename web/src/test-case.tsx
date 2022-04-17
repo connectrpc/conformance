@@ -12,13 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import * as React from "react";
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  plugins: [react()],
-  build: {
-    target: "esnext",
-  },
-});
+interface TestCaseProps {
+  name: string;
+  testFunc: () => void;
+}
+
+const TestCase: React.FC<TestCaseProps> = (props: TestCaseProps) => {
+  const { name, testFunc } = props;
+  let result = "success";
+  try {
+    testFunc();
+  } catch (e) {
+    result = "fail";
+  }
+  return (
+    <tr>
+      <td>{name}</td>
+      <td>{result}</td>
+    </tr>
+  );
+};
+
+export default TestCase;

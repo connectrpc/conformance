@@ -17,8 +17,15 @@
 /* eslint-disable */
 /* @ts-nocheck */
 
-import type {BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage} from "@bufbuild/protobuf";
-import {Message, proto3} from "@bufbuild/protobuf";
+import type {
+  BinaryReadOptions,
+  FieldList,
+  JsonReadOptions,
+  JsonValue,
+  PartialMessage,
+  PlainMessage,
+} from "@bufbuild/protobuf";
+import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
  * @generated from enum server.v1.Protocol
@@ -71,22 +78,40 @@ export class ServerMetadata extends Message<ServerMetadata> {
   static readonly typeName = "server.v1.ServerMetadata";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "host", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "protocols", kind: "message", T: ProtocolSupport, repeated: true },
+    {
+      no: 2,
+      name: "protocols",
+      kind: "message",
+      T: ProtocolSupport,
+      repeated: true,
+    },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ServerMetadata {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ServerMetadata {
     return new ServerMetadata().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ServerMetadata {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ServerMetadata {
     return new ServerMetadata().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ServerMetadata {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ServerMetadata {
     return new ServerMetadata().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ServerMetadata | PlainMessage<ServerMetadata> | undefined, b: ServerMetadata | PlainMessage<ServerMetadata> | undefined): boolean {
+  static equals(
+    a: ServerMetadata | PlainMessage<ServerMetadata> | undefined,
+    b: ServerMetadata | PlainMessage<ServerMetadata> | undefined
+  ): boolean {
     return proto3.util.equals(ServerMetadata, a, b);
   }
 }
@@ -119,23 +144,41 @@ export class ProtocolSupport extends Message<ProtocolSupport> {
   static readonly typeName = "server.v1.ProtocolSupport";
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "protocol", kind: "enum", T: proto3.getEnumType(Protocol) },
-    { no: 2, name: "http_versions", kind: "message", T: HTTPVersion, repeated: true },
+    {
+      no: 2,
+      name: "http_versions",
+      kind: "message",
+      T: HTTPVersion,
+      repeated: true,
+    },
     { no: 3, name: "port", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ProtocolSupport {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): ProtocolSupport {
     return new ProtocolSupport().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ProtocolSupport {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): ProtocolSupport {
     return new ProtocolSupport().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ProtocolSupport {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): ProtocolSupport {
     return new ProtocolSupport().fromJsonString(jsonString, options);
   }
 
-  static equals(a: ProtocolSupport | PlainMessage<ProtocolSupport> | undefined, b: ProtocolSupport | PlainMessage<ProtocolSupport> | undefined): boolean {
+  static equals(
+    a: ProtocolSupport | PlainMessage<ProtocolSupport> | undefined,
+    b: ProtocolSupport | PlainMessage<ProtocolSupport> | undefined
+  ): boolean {
     return proto3.util.equals(ProtocolSupport, a, b);
   }
 }
@@ -166,20 +209,31 @@ export class HTTPVersion extends Message<HTTPVersion> {
     { no: 2, name: "minor", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
   ]);
 
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): HTTPVersion {
+  static fromBinary(
+    bytes: Uint8Array,
+    options?: Partial<BinaryReadOptions>
+  ): HTTPVersion {
     return new HTTPVersion().fromBinary(bytes, options);
   }
 
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): HTTPVersion {
+  static fromJson(
+    jsonValue: JsonValue,
+    options?: Partial<JsonReadOptions>
+  ): HTTPVersion {
     return new HTTPVersion().fromJson(jsonValue, options);
   }
 
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): HTTPVersion {
+  static fromJsonString(
+    jsonString: string,
+    options?: Partial<JsonReadOptions>
+  ): HTTPVersion {
     return new HTTPVersion().fromJsonString(jsonString, options);
   }
 
-  static equals(a: HTTPVersion | PlainMessage<HTTPVersion> | undefined, b: HTTPVersion | PlainMessage<HTTPVersion> | undefined): boolean {
+  static equals(
+    a: HTTPVersion | PlainMessage<HTTPVersion> | undefined,
+    b: HTTPVersion | PlainMessage<HTTPVersion> | undefined
+  ): boolean {
     return proto3.util.equals(HTTPVersion, a, b);
   }
 }
-

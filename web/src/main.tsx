@@ -12,11 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import TestCases from "./test-cases";
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+// TODO(doria): figure out how to pass these props through config properly
+ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <TestCases host="localhost" port="8081" />
   </React.StrictMode>
-)
+);
