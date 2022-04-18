@@ -264,17 +264,52 @@ var (
 		initialMetadataKey, initialMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 	)
+	duplicatedCustomMetadata = metadata.Pairs(
+		initialMetadataKey, initialMetadataValue,
+		trailingMetadataKey, trailingMetadataValue,
+		initialMetadataKey, initialMetadataValue+"_more_stuff",
+	)
 )
 
-func validateMetadata(t testing.TB, header, trailer metadata.MD) {
-	assert.Equal(t, len(header.Get(initialMetadataKey)), 1)
-	assert.Equal(t, header[initialMetadataKey][0], initialMetadataValue)
-	assert.Equal(t, len(trailer[trailingMetadataKey]), 1)
-	assert.Equal(t, trailer[trailingMetadataKey][0], trailingMetadataValue)
+func validateMetadata(t testing.TB, header, trailer, sent metadata.MD) {
+	expectedHeaderValues := sent.Get(initialMetadataKey)
+	headerValues := header.Get(initialMetadataKey)
+	assert.Equal(t, len(expectedHeaderValues), len(headerValues))
+	expectedValuesMap := map[string]struct{}{}
+	for _, expected := range expectedHeaderValues {
+		expectedValuesMap[expected] = struct{}{}
+	}
+	for _, headerValue := range headerValues {
+		_, ok := expectedValuesMap[headerValue]
+		assert.True(t, ok)
+	}
+	expectedTrailerValues := sent.Get(trailingMetadataKey)
+	trailerValues := trailer.Get(trailingMetadataKey)
+	assert.Equal(t, len(expectedTrailerValues), len(trailerValues))
+	expectedTrailersMap := map[string]struct{}{}
+	for _, expected := range expectedTrailerValues {
+		expectedTrailersMap[expected] = struct{}{}
+	}
+	for _, trailerValue := range trailerValues {
+		_, ok := expectedTrailersMap[trailerValue]
+		assert.True(t, ok)
+	}
 }
 
 // DoCustomMetadata checks that metadata is echoed back to the client.
 func DoCustomMetadata(t testing.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	customMetadataTest(t, client, customMetadata, args...)
+	t.Successf("successful custom metadata")
+}
+
+// DoDuplicateCustomMetadata adds duplicated metadata keys and checks that the metadata is echoed back
+// to the client.
+func DoDuplicatedCustomMetadata(t testing.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	customMetadataTest(t, client, duplicatedCustomMetadata, args...)
+	t.Successf("successful duplicated custom metadata")
+}
+
+func customMetadataTest(t testing.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	// Testing with UnaryCall.
 	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
@@ -294,7 +329,7 @@ func DoCustomMetadata(t testing.TB, client testpb.TestServiceClient, args ...grp
 	require.NoError(t, err)
 	assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.GetPayload().GetBody()), 1)
-	validateMetadata(t, header, trailer)
+	validateMetadata(t, header, trailer, customMetadata)
 
 	// Testing with FullDuplex.
 	stream, err := client.FullDuplexCall(ctx, args...)
@@ -318,8 +353,7 @@ func DoCustomMetadata(t testing.TB, client testpb.TestServiceClient, args ...grp
 	_, err = stream.Recv()
 	assert.Equal(t, err, io.EOF)
 	streamTrailer := stream.Trailer()
-	validateMetadata(t, streamHeader, streamTrailer)
-	t.Successf("successful custom metadata")
+	validateMetadata(t, streamHeader, streamTrailer, customMetadata)
 }
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.

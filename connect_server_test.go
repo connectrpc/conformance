@@ -68,6 +68,7 @@ func TestConnectServer(t *testing.T) {
 		interopgrpc.DoCancelAfterBegin(t, client)
 		interopgrpc.DoCancelAfterFirstResponse(t, client)
 		interopgrpc.DoCustomMetadata(t, client)
+		interopgrpc.DoDuplicatedCustomMetadata(t, client)
 		interopgrpc.DoStatusCodeAndMessage(t, client)
 		interopgrpc.DoSpecialStatusMessage(t, client)
 		interopgrpc.DoUnimplementedMethod(t, gconn)

@@ -68,11 +68,21 @@ func (s *testServer) UnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*
 	st := in.GetResponseStatus()
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
 		if initialMetadata, ok := md[initialMetadataKey]; ok {
-			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
+			var metadataPairs []string
+			for _, metadataValue := range initialMetadata {
+				metadataPairs = append(metadataPairs, initialMetadataKey)
+				metadataPairs = append(metadataPairs, metadataValue)
+			}
+			header := metadata.Pairs(metadataPairs...)
 			grpc.SendHeader(ctx, header)
 		}
 		if trailingMetadata, ok := md[trailingMetadataKey]; ok {
-			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
+			var trailingMetadataPairs []string
+			for _, trailingMetadataValue := range trailingMetadata {
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
+			}
+			trailer := metadata.Pairs(trailingMetadataPairs...)
 			grpc.SetTrailer(ctx, trailer)
 		}
 	}
@@ -132,11 +142,21 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServer) error {
 	if md, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		if initialMetadata, ok := md[initialMetadataKey]; ok {
-			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
+			var metadataPairs []string
+			for _, metadataValue := range initialMetadata {
+				metadataPairs = append(metadataPairs, initialMetadataKey)
+				metadataPairs = append(metadataPairs, metadataValue)
+			}
+			header := metadata.Pairs(metadataPairs...)
 			stream.SendHeader(header)
 		}
 		if trailingMetadata, ok := md[trailingMetadataKey]; ok {
-			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
+			var trailingMetadataPairs []string
+			for _, trailingMetadataValue := range trailingMetadata {
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
+			}
+			trailer := metadata.Pairs(trailingMetadataPairs...)
 			stream.SetTrailer(trailer)
 		}
 	}

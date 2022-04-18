@@ -67,15 +67,19 @@ func (s *testServer) UnaryCall(ctx context.Context, in *connect.Request[testpb.S
 	res := connect.NewResponse(&testpb.SimpleResponse{
 		Payload: pl,
 	})
-	if initialMetadata := in.Header().Get(initialMetadataKey); initialMetadata != "" {
-		res.Header().Set(initialMetadataKey, initialMetadata)
-	}
-	if trailingMetadata := in.Header().Get(trailingMetadataKey); trailingMetadata != "" {
-		decodedTrailingMetadata, err := connect.DecodeBinaryHeader(trailingMetadata)
-		if err != nil {
-			return nil, err
+	if initialMetadata := in.Header().Values(initialMetadataKey); len(initialMetadata) != 0 {
+		for _, value := range initialMetadata {
+			res.Header().Add(initialMetadataKey, value)
 		}
-		res.Trailer().Set(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
+	}
+	if trailingMetadata := in.Header().Values(trailingMetadataKey); len(trailingMetadata) != 0 {
+		for _, value := range trailingMetadata {
+			decodedTrailingMetadata, err := connect.DecodeBinaryHeader(value)
+			if err != nil {
+				return nil, err
+			}
+			res.Trailer().Add(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
+		}
 	}
 	return res, nil
 }
@@ -120,15 +124,19 @@ func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.Cli
 }
 
 func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
-	if initialMetadata := stream.RequestHeader().Get(initialMetadataKey); initialMetadata != "" {
-		stream.ResponseHeader().Set(initialMetadataKey, initialMetadata)
-	}
-	if trailingMetadata := stream.RequestHeader().Get(trailingMetadataKey); trailingMetadata != "" {
-		decodedTrailingMetadata, err := connect.DecodeBinaryHeader(trailingMetadata)
-		if err != nil {
-			return err
+	if initialMetadata := stream.RequestHeader().Values(initialMetadataKey); len(initialMetadata) != 0 {
+		for _, value := range initialMetadata {
+			stream.ResponseHeader().Add(initialMetadataKey, value)
 		}
-		stream.ResponseTrailer().Set(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
+	}
+	if trailingMetadata := stream.RequestHeader().Values(trailingMetadataKey); len(trailingMetadata) != 0 {
+		for _, value := range trailingMetadata {
+			decodedTrailingMetadata, err := connect.DecodeBinaryHeader(value)
+			if err != nil {
+				return err
+			}
+			stream.ResponseTrailer().Add(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
+		}
 	}
 	for {
 		if err := ctx.Err(); err != nil {
