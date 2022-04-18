@@ -94,6 +94,7 @@ func TestGRPCServer(t *testing.T) {
 		interopconnect.DoCancelAfterBegin(t, client)
 		interopconnect.DoCancelAfterFirstResponse(t, client)
 		interopconnect.DoCustomMetadata(t, client)
+		interopconnect.DoDuplicatedCustomMetadata(t, client)
 		interopconnect.DoStatusCodeAndMessage(t, client)
 		interopconnect.DoSpecialStatusMessage(t, client)
 		interopconnect.DoUnimplementedService(t, client)

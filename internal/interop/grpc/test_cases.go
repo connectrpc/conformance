@@ -267,7 +267,8 @@ var (
 	duplicatedCustomMetadata = metadata.Pairs(
 		initialMetadataKey, initialMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
-		initialMetadataKey, initialMetadataValue+"_more_stuff",
+		initialMetadataKey, initialMetadataValue+",more_stuff",
+		trailingMetadataKey, trailingMetadataValue+"\x0a",
 	)
 )
 
