@@ -286,10 +286,10 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 		t,
 		client,
 		map[string][]string{
-			initialMetadataKey: []string{initialMetadataValue},
+			initialMetadataKey: {initialMetadataValue},
 		},
 		map[string][][]byte{
-			trailingMetadataKey: [][]byte{[]byte(trailingMetadataValue)},
+			trailingMetadataKey: {[]byte(trailingMetadataValue)},
 		},
 	)
 	t.Successf("successful custom metadata")
@@ -302,10 +302,10 @@ func DoDuplicatedCustomMetadata(t testing.TB, client connectpb.TestServiceClient
 		t,
 		client,
 		map[string][]string{
-			initialMetadataKey: []string{initialMetadataValue, initialMetadataValue + ",more_stuff"},
+			initialMetadataKey: {initialMetadataValue, initialMetadataValue + ",more_stuff"},
 		},
 		map[string][][]byte{
-			trailingMetadataKey: [][]byte{[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
+			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
 		},
 	)
 	t.Successf("successful duplicated custom metadata")
