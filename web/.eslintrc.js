@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+const ignoreFiles = [
+  "dist/**",
+]
+
 module.exports = {
   env: {
     browser: true,
-    es2021: true,
+    es2022: true,
   },
+  ignorePatterns: ignoreFiles,
   extends: [
     "eslint:recommended",
     "plugin:react/recommended",
