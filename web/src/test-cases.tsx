@@ -27,7 +27,6 @@ interface TestCasesProps {
 
 const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
   const { host, port } = props;
-  // TODO(doria): this should probably be a hook right?
   const transport = createConnectTransport({
     baseUrl: `http://${host}:${port}`,
   });
