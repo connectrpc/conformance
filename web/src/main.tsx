@@ -20,6 +20,6 @@ import TestCases from "./test-cases";
 // TODO(doria): figure out how to pass these props through config properly
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <TestCases host="localhost" port="8081" />
+    <TestCases host="localhost" port="9092" />
   </React.StrictMode>
 );
