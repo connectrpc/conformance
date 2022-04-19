@@ -16,21 +16,27 @@ import * as React from "react";
 
 interface TestCaseProps {
   name: string;
-  testFunc: () => void;
+  testFunc: () => Promise<string>;
 }
 
 const TestCase: React.FC<TestCaseProps> = (props: TestCaseProps) => {
   const { name, testFunc } = props;
-  let result = "success";
-  try {
-    testFunc();
-  } catch (e) {
-    result = "fail";
-  }
+  const [data, setData] = React.useState<string>();
+
+  React.useEffect(() => {
+    async function asyncEffect() {
+      const result = await testFunc();
+      setData(result);
+    }
+    asyncEffect().catch((e) => {
+      setData("fail");
+      console.log(`Test ${name} failed: ${e}`);
+    });
+  });
   return (
     <tr>
       <td>{name}</td>
-      <td>{result}</td>
+      <td>{data}</td>
     </tr>
   );
 };

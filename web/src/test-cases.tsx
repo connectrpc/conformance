@@ -18,6 +18,7 @@ import {
   makePromiseClient,
 } from "@bufbuild/connect-web";
 import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import * as React from "react";
 
 interface TestCasesProps {
@@ -35,93 +36,51 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
     <table>
       <TestCase
         name="empty_unary"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        testFunc={async () => {
+          const response = await client.emptyCall({});
+          if (!(response instanceof Empty)) throw "response is not an Empty";
+          return "success";
+        }}
       />
       <TestCase
         name="empty_unary_with_deadline"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="large_unary"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="server_stream"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="custom_metadata"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="status_code_and_message"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="special_status"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="unimplemented_method"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
       <TestCase
         name="unimplemented_service"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
-        }
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
       />
     </table>
   );

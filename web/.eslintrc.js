@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const ignoreFiles = [
-  "dist/**",
-]
+const ignoreFiles = ["dist/**"];
 
 module.exports = {
   env: {
