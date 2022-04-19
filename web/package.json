@@ -12,6 +12,7 @@
   "dependencies": {
     "@bufbuild/connect-web": "^0.0.2-alpha.2",
     "@bufbuild/protobuf": "^0.0.2-alpha.2",
+    "@types/node": "^17.0.25",
     "prettier": "^2.6.2",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"

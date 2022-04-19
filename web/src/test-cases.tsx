@@ -18,6 +18,7 @@ import {
   makePromiseClient,
 } from "@bufbuild/connect-web";
 import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import * as React from "react";
 
 interface TestCasesProps {
@@ -35,17 +36,15 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
     <table>
       <TestCase
         name="empty_unary"
-        testFunc={() =>
-          void (
-            {
-              // TODO: fill in test case using `client`
-            }
-          )
+        testFunc={async () => {
+            const response = await client.emptyCall({});
+            if (response instanceof Empty) throw "err is not null"
+        }
         }
       />
       <TestCase
         name="empty_unary_with_deadline"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -55,7 +54,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="large_unary"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -65,7 +64,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="server_stream"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -75,7 +74,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="custom_metadata"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -85,7 +84,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="status_code_and_message"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -95,7 +94,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="special_status"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -105,7 +104,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="unimplemented_method"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
@@ -115,7 +114,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="unimplemented_service"
-        testFunc={() =>
+        testFunc={async () =>
           void (
             {
               // TODO: fill in test case using `client`
