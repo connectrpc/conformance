@@ -33,7 +33,6 @@ jobs:
         uses: webfactory/ssh-agent@v0.5.4
         with:
           ssh-private-key: |
-            ${{ secrets.CONNECT_DEPLOY_KEY }}
             ${{ secrets.CONNECT_WEB_DEPLOY_KEY }}
             ${{ secrets.PROTOBUF_ES_DEPLOY_KEY }}
       - name: Cache
