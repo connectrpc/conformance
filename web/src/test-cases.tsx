@@ -19,7 +19,6 @@ import {
 } from "@bufbuild/connect-web";
 import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
-// import { ResponseParameters } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
 
 interface TestCasesProps {
@@ -61,25 +60,25 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
             return {
               size: size,
               intervalUs: index * 10,
-            }
+            };
           });
           let responseCount = 0;
           for await (const response of await client.streamingOutputCall({
             responseParameters: responseParams,
           })) {
             if (response === undefined) {
-              throw "response is undefined"
+              throw "response is undefined";
             }
             if (response.payload === undefined) {
-              throw "response.payload is undefined"
+              throw "response.payload is undefined";
             }
             if (response.payload.body.length !== sizes[responseCount]) {
-              throw "response.payload.body is not the same size as requested"
+              throw "response.payload.body is not the same size as requested";
             }
-            responseCount++
+            responseCount++;
           }
           if (responseCount !== sizes.length) {
-            throw "not enough response received"
+            throw "not enough response received";
           }
           return "success";
         }}
