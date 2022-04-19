@@ -19,6 +19,7 @@ import {
 } from "@bufbuild/connect-web";
 import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
+// import { ResponseParameters } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
 
 interface TestCasesProps {
@@ -54,8 +55,34 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="server_stream"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const sizes = [31415, 9, 2653, 58979];
+          const responseParams = sizes.map((size, index) => {
+            return {
+              size: size,
+              intervalUs: index * 10,
+            }
+          });
+          let responseCount = 0;
+          for await (const response of await client.streamingOutputCall({
+            responseParameters: responseParams,
+          })) {
+            if (response === undefined) {
+              throw "response is undefined"
+            }
+            if (response.payload === undefined) {
+              throw "response.payload is undefined"
+            }
+            if (response.payload.body.length !== sizes[responseCount]) {
+              throw "response.payload.body is not the same size as requested"
+            }
+            responseCount++
+          }
+          if (responseCount !== sizes.length) {
+            throw "not enough response received"
+          }
+          return "success";
+        }}
       />
       <TestCase
         name="custom_metadata"
