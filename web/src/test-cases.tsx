@@ -44,18 +44,44 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="empty_unary_with_deadline"
+        // TODO: fill in test case using `client`
         testFunc={async () => "success"}
       />
-      <TestCase name="large_unary" testFunc={async () => "success"} />
-      <TestCase name="server_stream" testFunc={async () => "success"} />
-      <TestCase name="custom_metadata" testFunc={async () => "success"} />
+      <TestCase
+        name="large_unary"
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
+      />
+      <TestCase
+        name="server_stream"
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
+      />
+      <TestCase
+        name="custom_metadata"
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
+      />
       <TestCase
         name="status_code_and_message"
+        // TODO: fill in test case using `client`
         testFunc={async () => "success"}
       />
-      <TestCase name="special_status" testFunc={async () => "success"} />
-      <TestCase name="unimplemented_method" testFunc={async () => "success"} />
-      <TestCase name="unimplemented_service" testFunc={async () => "success"} />
+      <TestCase
+        name="special_status"
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
+      />
+      <TestCase
+        name="unimplemented_method"
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
+      />
+      <TestCase
+        name="unimplemented_service"
+        // TODO: fill in test case using `client`
+        testFunc={async () => "success"}
+      />
     </table>
   );
 };
