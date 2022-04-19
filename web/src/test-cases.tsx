@@ -37,52 +37,25 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       <TestCase
         name="empty_unary"
         testFunc={async () => {
-            const response = await client.emptyCall({});
-            if (!(response instanceof Empty)) throw "response is not an Empty"
-            return "success"
-        }
-        }
+          const response = await client.emptyCall({});
+          if (!(response instanceof Empty)) throw "response is not an Empty";
+          return "success";
+        }}
       />
       <TestCase
         name="empty_unary_with_deadline"
-        testFunc={async () => "success"
-        }
+        testFunc={async () => "success"}
       />
-      <TestCase
-        name="large_unary"
-        testFunc={async () => "success"
-        }
-      />
-      <TestCase
-        name="server_stream"
-        testFunc={async () => "success"
-        }
-      />
-      <TestCase
-        name="custom_metadata"
-        testFunc={async () => "success"
-        }
-      />
+      <TestCase name="large_unary" testFunc={async () => "success"} />
+      <TestCase name="server_stream" testFunc={async () => "success"} />
+      <TestCase name="custom_metadata" testFunc={async () => "success"} />
       <TestCase
         name="status_code_and_message"
-        testFunc={async () => "success"
-        }
+        testFunc={async () => "success"}
       />
-      <TestCase
-        name="special_status"
-        testFunc={async () => "success"
-        }
-      />
-      <TestCase
-        name="unimplemented_method"
-        testFunc={async () => "success"
-        }
-      />
-      <TestCase
-        name="unimplemented_service"
-        testFunc={async () => "success"
-        }
-      />
+      <TestCase name="special_status" testFunc={async () => "success"} />
+      <TestCase name="unimplemented_method" testFunc={async () => "success"} />
+      <TestCase name="unimplemented_service" testFunc={async () => "success"} />
     </table>
   );
 };

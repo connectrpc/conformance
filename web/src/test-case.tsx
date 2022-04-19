@@ -26,13 +26,13 @@ const TestCase: React.FC<TestCaseProps> = (props: TestCaseProps) => {
   React.useEffect(() => {
     async function asyncEffect() {
       const result = await testFunc();
-      setData(result)
+      setData(result);
     }
-    asyncEffect().catch((e)=> {
-      setData("fail")
-      console.log(`Test ${name} failed: ${e}`)
-    })
-  })
+    asyncEffect().catch((e) => {
+      setData("fail");
+      console.log(`Test ${name} failed: ${e}`);
+    });
+  });
   return (
     <tr>
       <td>{name}</td>
