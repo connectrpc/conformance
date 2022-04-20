@@ -14,11 +14,19 @@
 
 import TestCase from "./test-case";
 import {
+  ConnectError,
   createConnectTransport,
   makePromiseClient,
+  StatusCode,
 } from "@bufbuild/connect-web";
 import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
+import {
+  EchoStatus,
+  Payload,
+  SimpleRequest,
+  SimpleResponse,
+} from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
 
 interface TestCasesProps {
@@ -43,14 +51,34 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
         }}
       />
       <TestCase
-        name="empty_unary_with_deadline"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        name="empty_unary_with_timeout"
+        testFunc={async () => {
+          const deadlineMs = 1000; // 1 second
+          const response = await client.emptyCall({}, { timeout: deadlineMs });
+          if (!(response instanceof Empty)) throw "response is not an Empty";
+          return "success";
+        }}
       />
       <TestCase
         name="large_unary"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const req = new SimpleRequest();
+          const size = 314159;
+
+          req.responseSize = size;
+          req.payload = new Payload();
+          req.payload.body = new Uint8Array(271828).fill(0);
+
+          const response = await client.unaryCall(req);
+          if (!(response instanceof SimpleResponse))
+            throw "response is not an SimpleResponse";
+          if (response.payload === undefined)
+            throw "response payload is undefined";
+          if (response.payload.body.length !== size)
+            throw "response payload body length not match";
+
+          return "success";
+        }}
       />
       <TestCase
         name="server_stream"
@@ -85,18 +113,78 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="custom_metadata"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const req = new SimpleRequest();
+          const size = 314159;
+          const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
+          const ECHO_INITIAL_VALUE = "test_initial_metadata_value";
+          const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+          const ECHO_TRAILING_VALUE = 0xababab;
+
+          req.responseSize = size;
+          req.payload = new Payload();
+          req.payload.body = new Uint8Array(271828).fill(0);
+
+          const metadata = {
+            headers: {
+              [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
+              [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
+            },
+          };
+
+          const call = await client.unaryCall(req, metadata);
+          // TODO: assert the response header
+
+          return "success";
+        }}
       />
       <TestCase
         name="status_code_and_message"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const req = new SimpleRequest();
+          const TEST_STATUS_MESSAGE = "test status message";
+
+          req.responseStatus = new EchoStatus();
+          req.responseStatus.code = 2;
+          req.responseStatus.message = TEST_STATUS_MESSAGE;
+
+          try {
+            const response = await client.unaryCall(req);
+            if (response instanceof SimpleResponse)
+              throw "unexpected successful call";
+          } catch (e) {
+            if (!(e instanceof ConnectError)) throw e;
+            if (e.code !== 2) throw "unexpected error code";
+            if (e.message !== `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`)
+              throw "unexpected error message";
+          }
+
+          return "success";
+        }}
       />
       <TestCase
         name="special_status"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const req = new SimpleRequest();
+          const TEST_STATUS_MESSAGE = `\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n`;
+
+          req.responseStatus = new EchoStatus();
+          req.responseStatus.code = 2;
+          req.responseStatus.message = TEST_STATUS_MESSAGE;
+
+          try {
+            const response = await client.unaryCall(req);
+            if (response instanceof SimpleResponse)
+              throw "unexpected successful call";
+          } catch (e) {
+            if (!(e instanceof ConnectError)) throw e;
+            if (e.code !== 2) throw "unexpected error code";
+            if (e.message !== `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`)
+              throw "unexpected error message";
+          }
+
+          return "success";
+        }}
       />
       <TestCase
         name="unimplemented_method"
