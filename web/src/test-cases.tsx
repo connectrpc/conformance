@@ -46,7 +46,8 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
         name="empty_unary"
         testFunc={async () => {
           const response = await client.emptyCall({});
-          if (!(response instanceof Empty)) throw "response is not an Empty";
+          assert(response.equals({}), `unexpected response: ${response}`);
+
           return "success";
         }}
       />
@@ -55,27 +56,31 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
         testFunc={async () => {
           const deadlineMs = 1000; // 1 second
           const response = await client.emptyCall({}, { timeout: deadlineMs });
-          if (!(response instanceof Empty)) throw "response is not an Empty";
+          assert(response.equals({}), `unexpected response: ${response}`);
+
           return "success";
         }}
       />
       <TestCase
         name="large_unary"
         testFunc={async () => {
-          const req = new SimpleRequest();
           const size = 314159;
-
-          req.responseSize = size;
-          req.payload = new Payload();
-          req.payload.body = new Uint8Array(271828).fill(0);
+          const req = new SimpleRequest({
+            responseSize: size,
+            payload: {
+              body: new Uint8Array(271828).fill(0),
+            },
+          });
 
           const response = await client.unaryCall(req);
-          if (!(response instanceof SimpleResponse))
-            throw "response is not an SimpleResponse";
-          if (response.payload === undefined)
-            throw "response payload is undefined";
-          if (response.payload.body.length !== size)
-            throw "response payload body length not match";
+          assert(
+            response.payload !== undefined,
+            "response payload is undefined"
+          );
+          assert(
+            response.payload.body.length === size,
+            "response payload body length not match"
+          );
 
           return "success";
         }}
@@ -94,36 +99,39 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
           for await (const response of await client.streamingOutputCall({
             responseParameters: responseParams,
           })) {
-            if (response === undefined) {
-              throw "response is undefined";
-            }
-            if (response.payload === undefined) {
-              throw "response.payload is undefined";
-            }
-            if (response.payload.body.length !== sizes[responseCount]) {
-              throw "response.payload.body is not the same size as requested";
-            }
+            assert(response !== undefined, "response is undefined");
+            assert(
+              response.payload !== undefined,
+              "response.payload is undefined"
+            );
+            assert(
+              response.payload.body.length === sizes[responseCount],
+              "response.payload.body is not the same size as requested"
+            );
             responseCount++;
           }
-          if (responseCount !== sizes.length) {
-            throw "not enough response received";
-          }
+          assert(
+            responseCount === sizes.length,
+            "not enough response received"
+          );
           return "success";
         }}
       />
       <TestCase
         name="custom_metadata"
         testFunc={async () => {
-          const req = new SimpleRequest();
           const size = 314159;
           const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
           const ECHO_INITIAL_VALUE = "test_initial_metadata_value";
           const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
           const ECHO_TRAILING_VALUE = 0xababab;
 
-          req.responseSize = size;
-          req.payload = new Payload();
-          req.payload.body = new Uint8Array(271828).fill(0);
+          const req = new SimpleRequest({
+            responseSize: size,
+            payload: {
+              body: new Uint8Array(271828).fill(0),
+            },
+          });
 
           const metadata = {
             headers: {
@@ -141,22 +149,30 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       <TestCase
         name="status_code_and_message"
         testFunc={async () => {
-          const req = new SimpleRequest();
           const TEST_STATUS_MESSAGE = "test status message";
-
-          req.responseStatus = new EchoStatus();
-          req.responseStatus.code = 2;
-          req.responseStatus.message = TEST_STATUS_MESSAGE;
+          const req = new SimpleRequest({
+            responseStatus: {
+              code: StatusCode.Unknown,
+              message: TEST_STATUS_MESSAGE,
+            },
+          });
 
           try {
             const response = await client.unaryCall(req);
-            if (response instanceof SimpleResponse)
-              throw "unexpected successful call";
+            throw "unexpected successful call";
           } catch (e) {
-            if (!(e instanceof ConnectError)) throw e;
-            if (e.code !== 2) throw "unexpected error code";
-            if (e.message !== `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`)
-              throw "unexpected error message";
+            assert(
+              e instanceof ConnectError,
+              `error is not a ConnectError: ${e}`
+            );
+            assert(
+              e.code === StatusCode.Unknown,
+              `unexpected error code: ${e.code}`
+            );
+            assert(
+              e.message === `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`,
+              `unexpected error message: ${e.message}`
+            );
           }
 
           return "success";
@@ -165,22 +181,30 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       <TestCase
         name="special_status"
         testFunc={async () => {
-          const req = new SimpleRequest();
           const TEST_STATUS_MESSAGE = `\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n`;
-
-          req.responseStatus = new EchoStatus();
-          req.responseStatus.code = 2;
-          req.responseStatus.message = TEST_STATUS_MESSAGE;
+          const req = new SimpleRequest({
+            responseStatus: {
+              code: StatusCode.Unknown,
+              message: TEST_STATUS_MESSAGE,
+            },
+          });
 
           try {
             const response = await client.unaryCall(req);
-            if (response instanceof SimpleResponse)
-              throw "unexpected successful call";
+            throw "unexpected successful call";
           } catch (e) {
-            if (!(e instanceof ConnectError)) throw e;
-            if (e.code !== 2) throw "unexpected error code";
-            if (e.message !== `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`)
-              throw "unexpected error message";
+            assert(
+              e instanceof ConnectError,
+              `error is not a ConnectError: ${e}`
+            );
+            assert(
+              e.code === StatusCode.Unknown,
+              `unexpected error code: ${e.code}`
+            );
+            assert(
+              e.message === `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`,
+              `unexpected error message: ${e.message}`
+            );
           }
 
           return "success";
@@ -199,5 +223,15 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
     </table>
   );
 };
+
+/**
+ * Assert that condition is truthy or throw error (with message)
+ */
+export function assert(condition: unknown, msg?: string): asserts condition {
+  // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions -- we want the implicit conversion to boolean
+  if (!condition) {
+    throw new Error(msg);
+  }
+}
 
 export default TestCases;
