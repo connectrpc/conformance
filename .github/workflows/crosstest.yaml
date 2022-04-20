@@ -3,7 +3,9 @@ on:
   schedule:
     - cron: 0 15 * * * # Runs 15:00 UTC, 11:00 Eastern
   workflow_dispatch: {} # support manual runs
-permissions: read-all
+permissions:
+  contents: read
+  issues: write
 jobs:
   connect-go-crosstest:
     runs-on: ubuntu-latest
@@ -34,3 +36,12 @@ jobs:
         run: make upgrade && make test
         env:
           GOPRIVATE: github.com/bufbuild
+      - name: Open Issue on Fail
+        uses: dblock/create-a-github-issue@v3
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          filename: .github/crosstest-issue-template.md
+          update_existing: true
+          search_existing: open
