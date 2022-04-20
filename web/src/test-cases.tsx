@@ -16,8 +16,13 @@ import TestCase from "./test-case";
 import {
   createConnectTransport,
   makePromiseClient,
+  ConnectError,
+  StatusCode,
 } from "@bufbuild/connect-web";
-import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+import {
+  TestService,
+  UnimplementedService,
+} from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import * as React from "react";
 
@@ -100,13 +105,38 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
       />
       <TestCase
         name="unimplemented_method"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          try {
+            const response = await client.unimplementedCall({});
+          } catch (e) {
+            if (!(e instanceof ConnectError)) {
+              throw `error returned is not a ConnectError, ${e}`;
+            }
+            if (e.code !== StatusCode.Unimplemented) {
+              throw `did not receive StatusCode.Unimplemented, ${e.code}`;
+            }
+            return "success";
+          }
+          throw "unimplemented method should throw an error";
+        }}
       />
       <TestCase
         name="unimplemented_service"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const badClient = makePromiseClient(UnimplementedService, transport);
+          try {
+            const response = await badClient.unimplementedCall({});
+          } catch (e) {
+            if (!(e instanceof ConnectError)) {
+              throw `error returned is not a ConnectError, ${e}`;
+            }
+            if (e.code !== StatusCode.Unimplemented) {
+              throw `did not receive StatusCode.Unimplemented, ${e.code}`;
+            }
+            return "success";
+          }
+          throw "unimplemented service should throw an error";
+        }}
       />
     </table>
   );
