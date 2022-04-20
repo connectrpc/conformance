@@ -20,13 +20,7 @@ import {
   StatusCode,
 } from "@bufbuild/connect-web";
 import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
-import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
-import {
-  EchoStatus,
-  Payload,
-  SimpleRequest,
-  SimpleResponse,
-} from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
 
 interface TestCasesProps {
