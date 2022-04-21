@@ -81,8 +81,7 @@ func TestGRPCServer(t *testing.T) {
 	})
 	t.Run("connect_client", func(testingT *testing.T) {
 		t := crosstesting.NewCrossTestT(testingT)
-		client, err := connectpb.NewTestServiceClient(newClientH2C(), "http://"+lis.Addr().String(), connect.WithGRPC())
-		assert.NoError(t, err)
+		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+lis.Addr().String(), connect.WithGRPC())
 		interopconnect.DoEmptyUnaryCall(t, client)
 		interopconnect.DoLargeUnaryCall(t, client)
 		interopconnect.DoClientStreaming(t, client)

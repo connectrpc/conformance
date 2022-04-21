@@ -385,10 +385,7 @@ func doOneSoakIteration(t testing.TB, ctx context.Context, tc connectpb.TestServ
 	start := time.Now()
 	client := tc
 	if resetChannel {
-		newClient, err := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
-		if err != nil {
-			return time.Nanosecond, err
-		}
+		newClient := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
 		client = newClient
 	}
 	// per test spec, don't include channel shutdown in latency measurement
