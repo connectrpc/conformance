@@ -27,6 +27,7 @@ import (
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -59,9 +60,21 @@ func run(flagset flags) {
 	mux.Handle(testrpc.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),
 	))
+	corsHandler := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost*"},
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+		},
+		AllowedHeaders: []string{"*"},
+	}).Handler(mux)
 	h1Server := http.Server{
 		Addr:    ":" + flagset.h1Port,
-		Handler: mux,
+		Handler: corsHandler,
 	}
 	h2Server := http.Server{
 		Addr:    ":" + flagset.h2Port,

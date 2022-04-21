@@ -1,22 +1,14 @@
-name: ci
+name: crosstest
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: 10 15 * * * # Runs 00:10 UTC, 20:10 Eastern
   workflow_dispatch: {} # support manual runs
-# Prevent writing to the repository using the CI token.
-# Ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#permissions
-permissions: read-all
+permissions:
+  contents: read
+  issues: write
 jobs:
-  ci:
+  connect-go-crosstest:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: [1.18.x]
-        include:
-          - go: 1.18.x
-            latest: true
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -39,12 +31,17 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-connect-crosstest-ci-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-connect-crosstest-ci-
-      - name: Test
-        run: make test
+          # upgrades all dependencies to latest version
+      - name: Upgrade and Test
+        run: make upgrade && make test
         env:
           GOPRIVATE: github.com/bufbuild
-      - name: Lint
-        # Often, lint & gofmt guidelines depend on the Go version. To prevent
-        # conflicting guidance, run only on the most recent supported version.
-        if: matrix.latest
-        run: make lint && make checkgenerate
+      - name: Open Issue on Fail
+        uses: dblock/create-a-github-issue@v3
+        if: failure()
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          filename: .github/crosstest-issue-template.md
+          update_existing: true
+          search_existing: open

@@ -67,14 +67,11 @@ func run(flagset flags) {
 		if err != nil {
 			log.Fatalf("invalid url: %s", "http://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
-		client, err := connectpb.NewTestServiceClient(
+		client := connectpb.NewTestServiceClient(
 			newClientH2C(),
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
-		if err != nil {
-			log.Fatalf("failed to create connect client: %v", err)
-		}
 		t := console.NewTB()
 		interopconnect.DoEmptyUnaryCall(t, client)
 		interopconnect.DoLargeUnaryCall(t, client)
