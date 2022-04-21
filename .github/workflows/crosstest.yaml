@@ -17,7 +17,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v3
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version: '1.18.1'
       # TODO: Remove when connect-web is public.
       - name: Configure Private Repo Access
         uses: webfactory/ssh-agent@v0.5.4
