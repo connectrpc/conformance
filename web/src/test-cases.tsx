@@ -23,9 +23,9 @@ import {
   TestService,
   UnimplementedService,
 } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
-import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
+import { ClientInterceptor } from "@bufbuild/connect-web/dist/types/client-interceptor";
 
 interface TestCasesProps {
   host: string;
@@ -132,9 +132,64 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
             },
           };
-          const call = await client.unaryCall(req, metadata);
-          // TODO: assert the response header
 
+          const interceptor: ClientInterceptor = (
+            service,
+            method,
+            options,
+            request,
+            response
+          ) => {
+            return [
+              request,
+              {
+                receive(handler) {
+                  response.receive({
+                    onHeader(header) {
+                      handler.onHeader?.(header);
+                    },
+                    onMessage(message) {
+                      handler.onMessage(message);
+                    },
+                    onTrailer(trailer) {
+                      assert(
+                        trailer.has(ECHO_TRAILING_KEY),
+                        "ECHO_TRAILING_KEY is missing"
+                      );
+                      assert(
+                        trailer.get(ECHO_TRAILING_KEY) ===
+                          ECHO_TRAILING_VALUE.toString(),
+                        `unexpected ECHO_TRAILING_KEY value: ${trailer.get(
+                          ECHO_TRAILING_KEY
+                        )}`
+                      );
+                      handler.onTrailer?.(trailer);
+                    },
+                    onClose(error) {
+                      handler.onClose(error);
+                    },
+                  });
+                },
+              },
+            ];
+          };
+          const transportWithInterceptor = createConnectTransport({
+            baseUrl: `http://${host}:${port}`,
+            interceptors: [interceptor],
+          });
+          const clientWithInterceptor = makePromiseClient(
+            TestService,
+            transportWithInterceptor
+          );
+          const response = await clientWithInterceptor.unaryCall(req, metadata);
+          assert(
+            response.payload !== undefined,
+            "response payload is undefined"
+          );
+          assert(
+            response.payload.body.length === size,
+            "response payload body length not match"
+          );
           return "success";
         }}
       />
