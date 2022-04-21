@@ -212,7 +212,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               `error is not a ConnectError: ${e}`
             );
             assert(
-              e.code !== StatusCode.Unimplemented,
+              e.code === StatusCode.Unimplemented,
               `unexpected error code: ${e.code}`
             );
             return "success";
@@ -232,7 +232,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               `error is not a ConnectError: ${e}`
             );
             assert(
-              e.code !== StatusCode.Unimplemented,
+              e.code === StatusCode.Unimplemented,
               `unexpected error code: ${e.code}`
             );
             return "success";
