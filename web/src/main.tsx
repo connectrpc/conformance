@@ -17,7 +17,7 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import TestCases from "./test-cases";
 
-// TODO(doria): figure out how to pass these props through config properly
+// TODO(doria): figure out how to pass the host and port through config.
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <TestCases host="localhost" port="9092" />

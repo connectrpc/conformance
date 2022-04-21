@@ -19,7 +19,11 @@ import {
   makePromiseClient,
   StatusCode,
 } from "@bufbuild/connect-web";
-import { TestService } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+import {
+  TestService,
+  UnimplementedService,
+} from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
 
@@ -41,7 +45,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
         testFunc={async () => {
           const response = await client.emptyCall({});
           assert(response.equals({}), `unexpected response: ${response}`);
-
           return "success";
         }}
       />
@@ -51,7 +54,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
           const deadlineMs = 1000; // 1 second
           const response = await client.emptyCall({}, { timeout: deadlineMs });
           assert(response.equals({}), `unexpected response: ${response}`);
-
           return "success";
         }}
       />
@@ -65,7 +67,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               body: new Uint8Array(271828).fill(0),
             },
           });
-
           const response = await client.unaryCall(req);
           assert(
             response.payload !== undefined,
@@ -75,7 +76,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
             response.payload.body.length === size,
             "response payload body length not match"
           );
-
           return "success";
         }}
       />
@@ -126,14 +126,12 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               body: new Uint8Array(271828).fill(0),
             },
           });
-
           const metadata = {
             headers: {
               [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
               [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
             },
           };
-
           const call = await client.unaryCall(req, metadata);
           // TODO: assert the response header
 
@@ -153,7 +151,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
 
           try {
             const response = await client.unaryCall(req);
-            throw "unexpected successful call";
           } catch (e) {
             assert(
               e instanceof ConnectError,
@@ -167,9 +164,9 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               e.message === `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`,
               `unexpected error message: ${e.message}`
             );
+            return "success";
           }
-
-          return "success";
+          throw "status_code_and_message should return an error";
         }}
       />
       <TestCase
@@ -182,10 +179,8 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               message: TEST_STATUS_MESSAGE,
             },
           });
-
           try {
             const response = await client.unaryCall(req);
-            throw "unexpected successful call";
           } catch (e) {
             assert(
               e instanceof ConnectError,
@@ -199,20 +194,49 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
               e.message === `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`,
               `unexpected error message: ${e.message}`
             );
+            return "success";
           }
-
-          return "success";
+          throw "special_status should return an error";
         }}
       />
       <TestCase
         name="unimplemented_method"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          try {
+            const response = await client.unimplementedCall({});
+          } catch (e) {
+            assert(
+              e instanceof ConnectError,
+              `error is not a ConnectError: ${e}`
+            );
+            assert(
+              e.code === StatusCode.Unimplemented,
+              `unexpected error code: ${e.code}`
+            );
+            return "success";
+          }
+          throw "unimplemented method should throw an error";
+        }}
       />
       <TestCase
         name="unimplemented_service"
-        // TODO: fill in test case using `client`
-        testFunc={async () => "success"}
+        testFunc={async () => {
+          const badClient = makePromiseClient(UnimplementedService, transport);
+          try {
+            const response = await badClient.unimplementedCall({});
+          } catch (e) {
+            assert(
+              e instanceof ConnectError,
+              `error is not a ConnectError: ${e}`
+            );
+            assert(
+              e.code === StatusCode.Unimplemented,
+              `unexpected error code: ${e.code}`
+            );
+            return "success";
+          }
+          throw "unimplemented service should throw an error";
+        }}
       />
     </table>
   );
