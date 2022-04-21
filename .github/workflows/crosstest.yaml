@@ -1,7 +1,7 @@
 name: crosstest
 on:
   schedule:
-    - cron: 0 15 * * * # Runs 15:00 UTC, 11:00 Eastern
+    - cron: 10 15 * * * # Runs 00:10 UTC, 20:10 Eastern
   workflow_dispatch: {} # support manual runs
 permissions:
   contents: read
