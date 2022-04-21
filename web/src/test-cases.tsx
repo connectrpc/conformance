@@ -151,7 +151,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
 
           try {
             const response = await client.unaryCall(req);
-            throw "unexpected successful call";
           } catch (e) {
             assert(
               e instanceof ConnectError,
@@ -182,7 +181,6 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
           });
           try {
             const response = await client.unaryCall(req);
-            throw "unexpected successful call";
           } catch (e) {
             assert(
               e instanceof ConnectError,
