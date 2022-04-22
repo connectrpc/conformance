@@ -73,6 +73,21 @@ func TestConnectServer(t *testing.T) {
 		interopgrpc.DoUnimplementedMethod(t, gconn)
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
+	})
+	t.Run("grpc_client soak test", func(testingT *testing.T) {
+		if testing.Short() {
+			testingT.Skip("skipping test in short mode")
+		}
+		t := crosstesting.NewCrossTestT(testingT)
+		pool := x509.NewCertPool()
+		pool.AddCert(server.Certificate())
+		gconn, err := grpc.Dial(
+			server.Listener.Addr().String(),
+			grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(pool, "")),
+		)
+		assert.NoError(t, err)
+		defer gconn.Close()
+		client := testgrpc.NewTestServiceClient(gconn)
 		interopgrpc.DoSoakTest(
 			t,
 			client,
@@ -102,6 +117,13 @@ func TestConnectServer(t *testing.T) {
 		interopconnect.DoSpecialStatusMessage(t, client)
 		interopconnect.DoUnimplementedService(t, client)
 		interopconnect.DoFailWithNonASCIIError(t, client)
+	})
+	t.Run("connect_client soak test", func(testingT *testing.T) {
+		if testing.Short() {
+			testingT.Skip("skipping test in short mode")
+		}
+		t := crosstesting.NewCrossTestT(testingT)
+		client := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
 		interopconnect.DoSoakTest(
 			t,
 			client,
