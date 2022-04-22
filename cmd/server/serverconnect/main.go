@@ -61,7 +61,6 @@ func run(flagset flags) {
 		interopconnect.NewTestConnectServer(),
 	))
 	corsHandler := cors.New(cors.Options{
-		AllowedOrigins: []string{"http://localhost*"},
 		AllowedMethods: []string{
 			http.MethodHead,
 			http.MethodGet,
@@ -70,7 +69,24 @@ func run(flagset flags) {
 			http.MethodPatch,
 			http.MethodDelete,
 		},
+		// Mirror the `Origin` header value in the `Access-Control-Allow-Origin`
+		// preflight response header.
+		// This is equivalent to `Access-Control-Allow-Origin: *`, but allows
+		// for requests with credentials.
+		// Note that this effectively disables CORS and is not safe for use in
+		// production environments.
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		// Note that rs/cors does not return `Access-Control-Allow-Headers: *`
+		// in response to preflight requests with the following configuration.
+		// It simply mirrors all headers listed in the `Access-Control-Request-Headers`
+		// preflight request header.
 		AllowedHeaders: []string{"*"},
+		// We explicitly set the exposed header names instead of using the wildcard *,
+		// because in requests with credentials, it is treated as the literal header
+		// name "*" without special semantics.
+		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin"},
 	}).Handler(mux)
 	h1Server := http.Server{
 		Addr:    ":" + flagset.h1Port,
