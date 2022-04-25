@@ -1,0 +1,10 @@
+.table {
+  margin: 1.25rem; /* m-5 */
+  border-collapse: collapse;
+  border-style: hidden;
+}
+
+.th {
+  text-align: left;
+  padding: 0.75rem; /* p-3 */
+}

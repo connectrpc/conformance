@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as React from "react";
+import classes from "./test-case.module.css";
 
 interface TestCaseProps {
   name: string;
@@ -35,8 +36,8 @@ const TestCase: React.FC<TestCaseProps> = (props: TestCaseProps) => {
   }, []);
   return (
     <tr>
-      <td>{name}</td>
-      <td>{data}</td>
+      <td className={classes.td}>{name}</td>
+      <td className={classes.td}>{data}</td>
     </tr>
   );
 };
