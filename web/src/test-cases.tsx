@@ -26,6 +26,7 @@ import {
 import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 import * as React from "react";
 import { ClientInterceptor } from "@bufbuild/connect-web/dist/types/client-interceptor";
+import classes from "./test-cases.module.css";
 
 interface TestCasesProps {
   host: string;
@@ -39,7 +40,11 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
   });
   const client = makePromiseClient(TestService, transport);
   return (
-    <table>
+    <table className={classes.table}>
+      <tr>
+        <th className={classes.th}>Test Case</th>
+        <th className={classes.th}>Result</th>
+      </tr>
       <TestCase
         name="empty_unary"
         testFunc={async () => {
