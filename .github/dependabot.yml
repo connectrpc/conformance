@@ -4,6 +4,10 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      # We would like to manage this manually and use the Active LTS for Node.
+      - dependency-name: "node"
+        versions: ["17.x", "18.x"]
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
