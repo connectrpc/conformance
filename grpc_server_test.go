@@ -35,18 +35,14 @@ import (
 type T testing.T
 
 func TestGRPCServer(t *testing.T) {
-	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NoError(t, err)
-	server := grpc.NewServer()
-	testgrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
-	go func() {
-		server.Serve(lis)
-	}()
-	defer server.GracefulStop()
+	t.Parallel()
 	t.Run("grpc_client", func(testingT *testing.T) {
+		testingT.Parallel()
 		t := crosstesting.NewCrossTestT(testingT)
+		server, address := newTestServiceServer(t)
+		defer server.GracefulStop()
 		gconn, err := grpc.Dial(
-			lis.Addr().String(),
+			address,
 			grpc.WithInsecure(),
 		)
 		assert.NoError(t, err)
@@ -69,12 +65,15 @@ func TestGRPCServer(t *testing.T) {
 		interopgrpc.DoFailWithNonASCIIError(t, client)
 	})
 	t.Run("grpc_client soak test", func(testingT *testing.T) {
+		testingT.Parallel()
 		if testing.Short() {
 			testingT.Skip("skipping test in short mode")
 		}
 		t := crosstesting.NewCrossTestT(testingT)
+		server, address := newTestServiceServer(t)
+		defer server.GracefulStop()
 		gconn, err := grpc.Dial(
-			lis.Addr().String(),
+			address,
 			grpc.WithInsecure(),
 		)
 		assert.NoError(t, err)
@@ -83,7 +82,7 @@ func TestGRPCServer(t *testing.T) {
 		interopgrpc.DoSoakTest(
 			t,
 			client,
-			lis.Addr().String(),
+			address,
 			nil,
 			false, /* resetChannel */
 			soakIterations,
@@ -93,8 +92,11 @@ func TestGRPCServer(t *testing.T) {
 		)
 	})
 	t.Run("connect_client", func(testingT *testing.T) {
+		testingT.Parallel()
 		t := crosstesting.NewCrossTestT(testingT)
-		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+lis.Addr().String(), connect.WithGRPC())
+		server, address := newTestServiceServer(t)
+		defer server.GracefulStop()
+		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+address, connect.WithGRPC())
 		interopconnect.DoEmptyUnaryCall(t, client)
 		interopconnect.DoLargeUnaryCall(t, client)
 		interopconnect.DoClientStreaming(t, client)
@@ -111,15 +113,18 @@ func TestGRPCServer(t *testing.T) {
 		interopconnect.DoFailWithNonASCIIError(t, client)
 	})
 	t.Run("connect_client soak test", func(testingT *testing.T) {
+		testingT.Parallel()
 		if testing.Short() {
 			testingT.Skip("skipping test in short mode")
 		}
 		t := crosstesting.NewCrossTestT(testingT)
-		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+lis.Addr().String(), connect.WithGRPC())
+		server, address := newTestServiceServer(t)
+		defer server.GracefulStop()
+		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+address, connect.WithGRPC())
 		interopconnect.DoSoakTest(
 			t,
 			client,
-			"http://"+lis.Addr().String(),
+			"http://"+address,
 			false, /* resetChannel */
 			soakIterations,
 			0,
@@ -139,4 +144,15 @@ func newClientH2C() *http.Client {
 			},
 		},
 	}
+}
+
+func newTestServiceServer(t crosstesting.TB) (*grpc.Server, string) {
+	lis, err := net.Listen("tcp", "localhost:0")
+	assert.NoError(t, err)
+	server := grpc.NewServer()
+	testgrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
+	go func() {
+		server.Serve(lis)
+	}()
+	return server, lis.Addr().String()
 }

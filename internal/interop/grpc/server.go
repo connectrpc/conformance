@@ -88,7 +88,7 @@ func (s *testServer) UnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*
 	}, nil
 }
 
-// This is an addtional RPC added for cross tests
+// This is an additional RPC added for cross tests
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
 	return nil, status.Error(codes.ResourceExhausted, interopconnect.NonASCIIErrMsg)
 }

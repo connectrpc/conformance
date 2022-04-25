@@ -39,19 +39,15 @@ build: generate ## Build all packages
 	$(GO) build ./...
 
 .PHONY: lint
-lint: $(BIN)/gofmt $(BIN)/buf ## Lint Go and protobuf
-	test -z "$$($(BIN)/gofmt -s -l . | tee /dev/stderr)"
+lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
 	test -z "$$($(BIN)/buf format -d . | tee /dev/stderr)"
-	@# TODO: replace vet with golangci-lint when it supports 1.18
-	@# Configure staticcheck to target the correct Go version and enable
-	@# ST1020, ST1021, and ST1022.
 	$(GO) vet ./...
-	@# We only have vendored protobuf for now, and it fails all lint checks.
-	@# $(BIN)/buf lint --exclude-path proto/grpc
+	$(BIN)/golangci-lint run
+	$(BIN)/buf lint
 
 .PHONY: lintfix
-lintfix: $(BIN)/gofmt $(BIN)/buf ## Automatically fix some lint errors
-	$(BIN)/gofmt -s -w .
+lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
+	$(BIN)/golangci-lint run --fix
 	$(BIN)/buf format -w .
 
 .PHONY: generate
@@ -94,6 +90,10 @@ $(BIN)/license-header: Makefile
 	@mkdir -p $(@D)
 	GOBIN=$(abspath $(@D)) $(GO) install \
 		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.2.1
+
+$(BIN)/golangci-lint: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.45.2
 
 $(BIN)/protoc-gen-connect-go: Makefile
 	@mkdir -p $(@D)
