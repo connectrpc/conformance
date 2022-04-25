@@ -32,7 +32,7 @@ const TestCase: React.FC<TestCaseProps> = (props: TestCaseProps) => {
       setData("fail");
       console.log(`Test ${name} failed: ${e}`);
     });
-  });
+  }, []);
   return (
     <tr>
       <td>{name}</td>
