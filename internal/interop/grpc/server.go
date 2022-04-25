@@ -23,6 +23,7 @@ package interopgrpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -48,38 +49,38 @@ func (s *testServer) EmptyCall(ctx context.Context, in *testpb.Empty) (*testpb.E
 	return new(testpb.Empty), nil
 }
 
-func serverNewPayload(t testpb.PayloadType, size int32) (*testpb.Payload, error) {
+func serverNewPayload(payloadType testpb.PayloadType, size int32) (*testpb.Payload, error) {
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
-	switch t {
+	switch payloadType {
 	case testpb.PayloadType_COMPRESSABLE:
 	default:
-		return nil, fmt.Errorf("unsupported payload type: %d", t)
+		return nil, fmt.Errorf("unsupported payload type: %d", payloadType)
 	}
 	return &testpb.Payload{
-		Type: t,
+		Type: payloadType,
 		Body: body,
 	}, nil
 }
 
-func (s *testServer) UnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
-	st := in.GetResponseStatus()
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if initialMetadata, ok := md[initialMetadataKey]; ok {
+func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+	responseStatus := req.GetResponseStatus()
+	if data, ok := metadata.FromIncomingContext(ctx); ok {
+		if initialMetadata, ok := data[initialMetadataKey]; ok {
 			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
-			grpc.SendHeader(ctx, header)
+			_ = grpc.SendHeader(ctx, header)
 		}
-		if trailingMetadata, ok := md[trailingMetadataKey]; ok {
+		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
 			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
-			grpc.SetTrailer(ctx, trailer)
+			_ = grpc.SetTrailer(ctx, trailer)
 		}
 	}
-	if st != nil && st.Code != 0 {
-		return nil, status.Error(codes.Code(st.Code), st.Message)
+	if responseStatus != nil && responseStatus.Code != 0 {
+		return nil, status.Error(codes.Code(responseStatus.Code), responseStatus.Message)
 	}
-	pl, err := serverNewPayload(in.GetResponseType(), in.GetResponseSize())
+	pl, err := serverNewPayload(req.GetResponseType(), req.GetResponseSize())
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +89,7 @@ func (s *testServer) UnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*
 	}, nil
 }
 
-// This is an additional RPC added for cross tests
+// FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
 	return nil, status.Error(codes.ResourceExhausted, interopconnect.NonASCIIErrMsg)
 }
@@ -115,8 +116,8 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInputCallServer) error {
 	var sum int
 	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
 			return stream.SendAndClose(&testpb.StreamingInputCallResponse{
 				AggregatedPayloadSize: int32(sum),
 			})
@@ -124,41 +125,44 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 		if err != nil {
 			return err
 		}
-		p := in.GetPayload().GetBody()
+		p := req.GetPayload().GetBody()
 		sum += len(p)
 	}
 }
 
 func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServer) error {
-	if md, ok := metadata.FromIncomingContext(stream.Context()); ok {
-		if initialMetadata, ok := md[initialMetadataKey]; ok {
+	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
+		if initialMetadata, ok := data[initialMetadataKey]; ok {
 			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
-			stream.SendHeader(header)
+			err := stream.SendHeader(header)
+			if err != nil {
+				return err
+			}
 		}
-		if trailingMetadata, ok := md[trailingMetadataKey]; ok {
+		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
 			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
 			stream.SetTrailer(trailer)
 		}
 	}
 	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
 			// read done.
 			return nil
 		}
 		if err != nil {
 			return err
 		}
-		st := in.GetResponseStatus()
+		st := req.GetResponseStatus()
 		if st != nil && st.Code != 0 {
 			return status.Error(codes.Code(st.Code), st.Message)
 		}
-		cs := in.GetResponseParameters()
+		cs := req.GetResponseParameters()
 		for _, c := range cs {
 			if us := c.GetIntervalUs(); us > 0 {
 				time.Sleep(time.Duration(us) * time.Microsecond)
 			}
-			pl, err := serverNewPayload(in.GetResponseType(), c.GetSize())
+			pl, err := serverNewPayload(req.GetResponseType(), c.GetSize())
 			if err != nil {
 				return err
 			}
@@ -174,23 +178,23 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 func (s *testServer) HalfDuplexCall(stream testpb.TestService_HalfDuplexCallServer) error {
 	var msgBuf []*testpb.StreamingOutputCallRequest
 	for {
-		in, err := stream.Recv()
-		if err == io.EOF {
+		req, err := stream.Recv()
+		if errors.Is(err, io.EOF) {
 			// read done.
 			break
 		}
 		if err != nil {
 			return err
 		}
-		msgBuf = append(msgBuf, in)
+		msgBuf = append(msgBuf, req)
 	}
-	for _, m := range msgBuf {
-		cs := m.GetResponseParameters()
+	for _, msg := range msgBuf {
+		cs := msg.GetResponseParameters()
 		for _, c := range cs {
 			if us := c.GetIntervalUs(); us > 0 {
 				time.Sleep(time.Duration(us) * time.Microsecond)
 			}
-			pl, err := serverNewPayload(m.GetResponseType(), c.GetSize())
+			pl, err := serverNewPayload(msg.GetResponseType(), c.GetSize())
 			if err != nil {
 				return err
 			}

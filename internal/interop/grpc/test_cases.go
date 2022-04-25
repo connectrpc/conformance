@@ -100,14 +100,14 @@ func DoClientStreaming(t testing.TB, client testpb.TestServiceClient, args ...gr
 	stream, err := client.StreamingInputCall(context.Background(), args...)
 	require.NoError(t, err)
 	var sum int
-	for _, s := range reqSizes {
-		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, s)
+	for _, size := range reqSizes {
+		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
 		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
 		}
 		require.NoError(t, stream.Send(req))
-		sum += s
+		sum += size
 	}
 	reply, err := stream.CloseAndRecv()
 	require.NoError(t, err)
@@ -276,12 +276,12 @@ func validateMetadata(t testing.TB, header, trailer metadata.MD) {
 // DoCustomMetadata checks that metadata is echoed back to the client.
 func DoCustomMetadata(t testing.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
 	// Testing with UnaryCall.
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(1),
-		Payload:      pl,
+		Payload:      payload,
 	}
 	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
 	var header, trailer metadata.MD
@@ -307,7 +307,7 @@ func DoCustomMetadata(t testing.TB, client testpb.TestServiceClient, args ...grp
 	streamReq := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
-		Payload:            pl,
+		Payload:            payload,
 	}
 	require.NoError(t, stream.Send(streamReq))
 	streamHeader, err := stream.Header()
@@ -403,7 +403,7 @@ func DoFailWithNonASCIIError(t testing.TB, client testpb.TestServiceClient, args
 	t.Successf("successful fail call with non-ASCII error")
 }
 
-func doOneSoakIteration(t testing.TB, ctx context.Context, tc testpb.TestServiceClient, resetChannel bool, serverAddr string, dopts []grpc.DialOption) (latency time.Duration, err error) {
+func doOneSoakIteration(ctx context.Context, t testing.TB, tc testpb.TestServiceClient, resetChannel bool, serverAddr string, dopts []grpc.DialOption) (latency time.Duration, err error) {
 	start := time.Now()
 	client := tc
 	if resetChannel {
@@ -447,32 +447,32 @@ func DoSoakTest(t testing.TB, client testpb.TestServiceClient, serverAddr string
 		BaseBucketSize: 1,
 		MinValue:       0,
 	}
-	h := stats.NewHistogram(hopts)
+	histogram := stats.NewHistogram(hopts)
 	for i := 0; i < soakIterations; i++ {
 		if time.Now().After(overallDeadline) {
 			break
 		}
 		iterationsDone++
-		latency, err := doOneSoakIteration(t, ctx, client, resetChannel, serverAddr, dopts)
+		latency, err := doOneSoakIteration(ctx, t, client, resetChannel, serverAddr, dopts)
 		latencyMs := int64(latency / time.Millisecond)
-		h.Add(latencyMs)
+		_ = histogram.Add(latencyMs)
 		if err != nil {
 			totalFailures++
-			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
+			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
 			continue
 		}
 		if latency > perIterationMaxAcceptableLatency {
 			totalFailures++
-			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
+			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
+		_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
 	}
 	var b bytes.Buffer
-	h.Print(&b)
-	fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
-	fmt.Fprintln(os.Stderr, b.String())
-	fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
+	histogram.Print(&b)
+	_, _ = fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
+	_, _ = fmt.Fprintln(os.Stderr, b.String())
+	_, _ = fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
 	assert.True(t, iterationsDone >= soakIterations)
 	assert.True(t, totalFailures <= maxFailures)
 }

@@ -28,6 +28,7 @@ import (
 	crosstesting "github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 )
@@ -148,11 +149,12 @@ func newClientH2C() *http.Client {
 
 func newTestServiceServer(t crosstesting.TB) (*grpc.Server, string) {
 	lis, err := net.Listen("tcp", "localhost:0")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	server := grpc.NewServer()
 	testgrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
 	go func() {
-		server.Serve(lis)
+		err := server.Serve(lis)
+		require.NoError(t, err)
 	}()
 	return server, lis.Addr().String()
 }

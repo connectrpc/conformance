@@ -94,14 +94,14 @@ func DoLargeUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 func DoClientStreaming(t testing.TB, client connectpb.TestServiceClient) {
 	stream := client.StreamingInputCall(context.Background())
 	var sum int
-	for _, s := range reqSizes {
-		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, s)
+	for _, size := range reqSizes {
+		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
 		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
 		}
 		require.NoError(t, stream.Send(req))
-		sum += s
+		sum += size
 	}
 	reply, err := stream.CloseAndReceive()
 	require.NoError(t, err)
@@ -258,12 +258,12 @@ func validateMetadata(t testing.TB, header, trailer http.Header) {
 // DoCustomMetadata checks that metadata is echoed back to the client.
 func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	// Testing with UnaryCall.
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(1),
-		Payload:      pl,
+		Payload:      payload,
 	}
 	ctx := context.Background()
 	connectReq := connect.NewRequest(req)
@@ -289,7 +289,7 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	streamReq := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
-		Payload:            pl,
+		Payload:            payload,
 	}
 	stream.RequestHeader().Set(initialMetadataKey, initialMetadataValue)
 	stream.RequestHeader().Set(trailingMetadataKey, connect.EncodeBinaryHeader(trailingMetadataValue))
@@ -381,7 +381,7 @@ func DoFailWithNonASCIIError(t testing.TB, client connectpb.TestServiceClient, a
 	t.Successf("successful fail call with non-ASCII error")
 }
 
-func doOneSoakIteration(t testing.TB, ctx context.Context, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
+func doOneSoakIteration(ctx context.Context, t testing.TB, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
 	start := time.Now()
 	client := tc
 	if resetChannel {
@@ -419,15 +419,15 @@ func DoSoakTest(t testing.TB, client connectpb.TestServiceClient, serverAddr str
 		BaseBucketSize: 1,
 		MinValue:       0,
 	}
-	h := stats.NewHistogram(hopts)
+	histogram := stats.NewHistogram(hopts)
 	for i := 0; i < soakIterations; i++ {
 		if time.Now().After(overallDeadline) {
 			break
 		}
 		iterationsDone++
-		latency, err := doOneSoakIteration(t, ctx, client, resetChannel, serverAddr)
+		latency, err := doOneSoakIteration(ctx, t, client, resetChannel, serverAddr)
 		latencyMs := int64(latency / time.Millisecond)
-		h.Add(latencyMs)
+		_ = histogram.Add(latencyMs)
 		if err != nil {
 			totalFailures++
 			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
@@ -441,7 +441,7 @@ func DoSoakTest(t testing.TB, client connectpb.TestServiceClient, serverAddr str
 		fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
 	}
 	var b bytes.Buffer
-	h.Print(&b)
+	histogram.Print(&b)
 	fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
 	fmt.Fprintln(os.Stderr, b.String())
 	fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)

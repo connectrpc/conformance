@@ -56,8 +56,8 @@ func main() {
 		"connect",
 		`the client implementation tested, accepted values are "connect" or "grpc-go"`,
 	)
-	rootCmd.MarkFlagRequired("port")
-	rootCmd.Execute()
+	_ = rootCmd.MarkFlagRequired("port")
+	_ = rootCmd.Execute()
 }
 
 func run(flagset flags) {

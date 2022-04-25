@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -50,9 +51,9 @@ func main() {
 	}
 	rootCmd.Flags().StringVar(&flagset.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
 	rootCmd.Flags().StringVar(&flagset.h2Port, "h2port", "", "port for HTTP/2 traffic")
-	rootCmd.MarkFlagRequired("h1port")
-	rootCmd.MarkFlagRequired("h2port")
-	rootCmd.Execute()
+	_ = rootCmd.MarkFlagRequired("h1port")
+	_ = rootCmd.MarkFlagRequired("h2port")
+	_ = rootCmd.Execute()
 }
 
 func run(flagset flags) {
@@ -134,16 +135,16 @@ func run(flagset flags) {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	fmt.Println(string(bytes))
+	fmt.Println(string(bytes)) // nolint:forbidigo
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		if err := h1Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := h1Server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	go func() {
-		if err := h2Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := h2Server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()

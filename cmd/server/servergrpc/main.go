@@ -41,8 +41,8 @@ func main() {
 		},
 	}
 	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port the server will listen on")
-	rootCmd.MarkFlagRequired("port")
-	rootCmd.Execute()
+	_ = rootCmd.MarkFlagRequired("port")
+	_ = rootCmd.Execute()
 }
 
 func run(flagset flags) {
@@ -70,8 +70,8 @@ func run(flagset flags) {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	fmt.Println(string(bytes))
+	fmt.Println(string(bytes)) // nolint:forbidigo
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
-	server.Serve(lis)
+	_ = server.Serve(lis)
 	defer server.GracefulStop()
 }
