@@ -33,7 +33,8 @@ jobs:
           restore-keys: ${{ runner.os }}-connect-crosstest-ci-
           # upgrades all dependencies to latest version
       - name: Upgrade and Test
-        run: make upgrade && make test
+        # we don't need the soak tests for this job, we only need the base interop functionality
+        run: make upgrade && make shorttest
         env:
           GOPRIVATE: github.com/bufbuild
       - name: Open Issue on Fail
