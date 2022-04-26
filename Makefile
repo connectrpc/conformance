@@ -78,10 +78,6 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
-$(BIN)/gofmt:
-	@mkdir -p $(@D)
-	$(GO) build -o $(@) cmd/gofmt
-
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
 	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.2.1
