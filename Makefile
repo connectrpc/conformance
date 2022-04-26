@@ -11,6 +11,7 @@ COPYRIGHT_YEARS := 2022
 LICENSE_IGNORE := -e internal/proto/grpc -e internal/interop/grpc -e grpcweb_client_test.js
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
+NPX ?= npx
 
 .PHONY: help
 help: ## Describe useful make targets
@@ -44,7 +45,7 @@ lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
 	$(GO) vet ./...
 	$(BIN)/golangci-lint run
 	$(BIN)/buf lint
-	npx eslint --max-warnings 0 web
+	$(NPX) eslint --max-warnings 0 web
 
 .PHONY: lintfix
 lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors

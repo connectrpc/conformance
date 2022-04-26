@@ -430,21 +430,21 @@ func DoSoakTest(t testing.TB, client connectpb.TestServiceClient, serverAddr str
 		_ = histogram.Add(latencyMs)
 		if err != nil {
 			totalFailures++
-			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
+			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
 			continue
 		}
 		if latency > perIterationMaxAcceptableLatency {
 			totalFailures++
-			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
+			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
+		_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
 	}
 	var b bytes.Buffer
 	histogram.Print(&b)
-	fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
-	fmt.Fprintln(os.Stderr, b.String())
-	fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
+	_, _ = fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
+	_, _ = fmt.Fprintln(os.Stderr, b.String())
+	_, _ = fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
 	assert.True(t, iterationsDone >= soakIterations)
 	assert.True(t, totalFailures <= maxFailures)
 }

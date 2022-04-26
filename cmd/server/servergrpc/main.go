@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
@@ -70,7 +71,7 @@ func run(flagset flags) {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	fmt.Println(string(bytes)) // nolint:forbidigo
+	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
 	_ = server.Serve(lis)
 	defer server.GracefulStop()

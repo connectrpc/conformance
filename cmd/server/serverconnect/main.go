@@ -135,7 +135,7 @@ func run(flagset flags) {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	fmt.Println(string(bytes)) // nolint:forbidigo
+	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
