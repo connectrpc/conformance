@@ -45,7 +45,7 @@ lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
 	$(GO) vet ./...
 	$(BIN)/golangci-lint run
 	$(BIN)/buf lint
-	$(NPX) eslint --max-warnings 0 web
+	cd web && $(NPX) eslint --max-warnings 0 .
 
 .PHONY: lintfix
 lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
