@@ -210,7 +210,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
           });
 
           try {
-            const response = await client.unaryCall(req);
+            await client.unaryCall(req);
           } catch (e) {
             assert(
               e instanceof ConnectError,
@@ -240,7 +240,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
             },
           });
           try {
-            const response = await client.unaryCall(req);
+            await client.unaryCall(req);
           } catch (e) {
             assert(
               e instanceof ConnectError,
@@ -263,7 +263,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
         name="unimplemented_method"
         testFunc={async () => {
           try {
-            const response = await client.unimplementedCall({});
+            await client.unimplementedCall({});
           } catch (e) {
             assert(
               e instanceof ConnectError,
@@ -283,7 +283,7 @@ const TestCases: React.FC<TestCasesProps> = (props: TestCasesProps) => {
         testFunc={async () => {
           const badClient = makePromiseClient(UnimplementedService, transport);
           try {
-            const response = await badClient.unimplementedCall({});
+            await badClient.unimplementedCall({});
           } catch (e) {
             assert(
               e instanceof ConnectError,

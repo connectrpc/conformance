@@ -17,8 +17,13 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 import TestCases from "./test-cases";
 
+const root = document.getElementById("root")
+if (root === null) {
+    throw "root is not existed"
+}
+
 // TODO(doria): figure out how to pass the host and port through config.
-ReactDOM.createRoot(document.getElementById("root")!).render(
+ReactDOM.createRoot(root).render(
   <React.StrictMode>
     <TestCases host="localhost" port="9092" />
   </React.StrictMode>
