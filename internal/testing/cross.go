@@ -16,32 +16,33 @@ package testing
 
 import "testing"
 
-type t struct {
+type tb struct {
 	internal *testing.T
 }
 
-func NewCrossTestT(internal *testing.T) TB {
-	return &t{
-		internal: internal,
+func NewCrossTestT(t *testing.T) TB {
+	t.Helper()
+	return &tb{
+		internal: t,
 	}
 }
 
-func (t *t) Helper() {
+func (t *tb) Helper() {
 	t.internal.Helper()
 }
 
-func (t *t) Errorf(format string, args ...any) {
+func (t *tb) Errorf(format string, args ...any) {
 	t.internal.Errorf(format, args...)
 }
 
-func (t *t) Fatalf(format string, args ...any) {
+func (t *tb) Fatalf(format string, args ...any) {
 	t.internal.Fatalf(format, args...)
 }
 
-func (t *t) Successf(format string, args ...any) {
+func (t *tb) Successf(format string, args ...any) {
 	t.internal.Logf(format, args...)
 }
 
-func (t *t) FailNow() {
+func (t *tb) FailNow() {
 	t.internal.FailNow()
 }
