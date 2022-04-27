@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import React from "react";
-import ReactDOM from "react-dom/client";
-import "./index.css";
-import TestCases from "./test-cases";
-
-// TODO(doria): figure out how to pass the host and port through config.
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <TestCases host="localhost" port="9092" />
-  </React.StrictMode>
-);
+module.exports = function (config) {
+  config.set({
+    frameworks: ["jasmine"],
+    files: ["spec/**/*.ts", "gen/**/*.ts"],
+    preprocessors: {
+      "/**/*.ts": "esbuild",
+    },
+    reporters: ["progress"],
+    browsers: ["ChromeHeadless"],
+    singleRun: true,
+    esbuild: {
+      target: "esnext",
+      tsconfig: "./tsconfig.json",
+    },
+  });
+};

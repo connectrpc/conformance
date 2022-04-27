@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const ignoreFiles = ["dist/**"];
+const ignoreFiles = [".eslintrc.js", "karma.conf.js"];
 
 module.exports = {
   env: {
@@ -20,11 +20,7 @@ module.exports = {
     es2022: true,
   },
   ignorePatterns: ignoreFiles,
-  extends: [
-    "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:@typescript-eslint/recommended",
-  ],
+  extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
   parser: "@typescript-eslint/parser",
   parserOptions: {
     ecmaFeatures: {
@@ -33,6 +29,6 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: "module",
   },
-  plugins: ["react", "@typescript-eslint"],
+  plugins: ["@typescript-eslint"],
   rules: {},
 };
