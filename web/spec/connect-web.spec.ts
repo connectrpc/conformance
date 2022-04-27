@@ -53,7 +53,7 @@ describe("connect_web", function () {
     });
     const response = await client.unaryCall(req);
     expect(response.payload).toBeDefined();
-    expect(response.payload.body.length).toEqual(size);
+    expect(response.payload?.body.length).toEqual(size);
   });
   it("server_stream", async function () {
     const sizes = [31415, 9, 2653, 58979];
@@ -67,9 +67,8 @@ describe("connect_web", function () {
     for await (const response of await client.streamingOutputCall({
       responseParameters: responseParams,
     })) {
-      expect(response).toBeDefined();
       expect(response.payload).toBeDefined();
-      expect(response.payload.body.length).toEqual(sizes[responseCount]);
+      expect(response.payload?.body.length).toEqual(sizes[responseCount]);
       responseCount++;
     }
     expect(responseCount).toEqual(sizes.length);
@@ -138,7 +137,7 @@ describe("connect_web", function () {
     );
     const response = await clientWithInterceptor.unaryCall(req, metadata);
     expect(response.payload).toBeDefined();
-    expect(response.payload.body.length).toEqual(size);
+    expect(response.payload?.body.length).toEqual(size);
   });
   it("status_code_and_message", async function () {
     const TEST_STATUS_MESSAGE = "test status message";
