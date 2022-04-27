@@ -18,6 +18,11 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: '1.18.1'
+      - name: Setup Docker Buildx # Docker Buildkit required for docker-compose
+        uses: docker/setup-buildx-action@v1
+        with:
+          driver: docker
+          install: true
       # TODO: Remove when connect-web is public.
       - name: Configure Private Repo Access
         uses: webfactory/ssh-agent@v0.5.4
@@ -34,9 +39,11 @@ jobs:
           # upgrades all dependencies to latest version
       - name: Upgrade and Test
         # we don't need the soak tests for this job, we only need the base interop functionality
-        run: make upgrade && make shorttest
+        run: make upgrade && make test-docker-compose # Make target includes clean-up
         env:
           GOPRIVATE: github.com/bufbuild
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
       - name: Open Issue on Fail
         uses: dblock/create-a-github-issue@v3
         if: failure()

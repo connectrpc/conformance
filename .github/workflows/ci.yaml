@@ -26,6 +26,11 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Setup Docker Buildx # Docker Buildkit required for docker-compose
+        uses: docker/setup-buildx-action@v1
+        with:
+          driver: docker
+          install: true
       # TODO: Remove when connect-web is public.
       - name: Configure Private Repo Access
         uses: webfactory/ssh-agent@v0.5.4
@@ -40,11 +45,13 @@ jobs:
           key: ${{ runner.os }}-connect-crosstest-ci-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-connect-crosstest-ci-
       - name: Test
-        run: make test && make checkgenerate
+        run: make test-docker-compose # Make target includes clean-up
         env:
           GOPRIVATE: github.com/bufbuild
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
       - name: Lint
         # Often, lint & gofmt guidelines depend on the Go version. To prevent
         # conflicting guidance, run only on the most recent supported version.
         if: matrix.latest
-        run: make lint
+        run: make lint && make checkgenerate
