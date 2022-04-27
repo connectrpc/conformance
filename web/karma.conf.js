@@ -14,17 +14,29 @@
 
 module.exports = function (config) {
   config.set({
+    customLaunchers: {
+      ChromeCustom: {
+        base: 'ChromeHeadless',
+        // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
+        // more permissions than Docker allows by default)
+        flags: config.docker ? ['--no-sandbox'] : [],
+      }
+    },
     frameworks: ["jasmine"],
     files: ["spec/**/*.ts", "gen/**/*.ts"],
     preprocessors: {
       "/**/*.ts": "esbuild",
     },
     reporters: ["progress"],
-    browsers: ["ChromeHeadless"],
+    browsers: ["ChromeCustom"],
     singleRun: true,
     esbuild: {
       target: "esnext",
       tsconfig: "./tsconfig.json",
+    },
+    client: {
+      host: config.host,
+      port: config.port,
     },
   });
 };

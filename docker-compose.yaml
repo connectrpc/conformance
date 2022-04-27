@@ -73,3 +73,32 @@ services:
     depends_on:
       - server-grpc
       - envoy
+  client-connect-web-to-server-connect-h1:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestwebts
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="server-connect" --port="8080"
+    depends_on:
+      - server-connect
+  client-connect-web-to-envoy-server-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestwebts
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9091"
+    depends_on:
+      - server-connect
+      - envoy
+  client-connect-web-to-envoy-server-grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestwebts
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9092"
+    depends_on:
+      - server-grpc
+      - envoy
