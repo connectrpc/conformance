@@ -116,11 +116,11 @@ docker-compose-clean:
 	docker-compose down --rmi local --remove-orphans
 
 test-docker-compose: docker-compose-clean
-	docker-compose run client-connect-to-connect
-	docker-compose run client-connect-to-grpc
-	docker-compose run client-grpc-to-connect
-	docker-compose run client-grpc-to-grpc
-	docker-compose run client-grpc-web-to-connect-h1
-	docker-compose run client-grpc-web-to-envoy-connect
-	docker-compose run client-grpc-web-to-envoy-grpc
+	docker-compose run client-connect-to-server-connect
+	docker-compose run client-connect-to-server-grpc
+	docker-compose run client-grpc-to-server-connect
+	docker-compose run client-grpc-to-server-grpc
+	docker-compose run client-grpc-web-to-server-connect-h1
+	docker-compose run client-grpc-web-to-envoy-server-connect
+	docker-compose run client-grpc-web-to-envoy-server-grpc
 	$(MAKE) docker-compose-clean
