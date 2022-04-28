@@ -55,3 +55,6 @@ jobs:
         # conflicting guidance, run only on the most recent supported version.
         if: matrix.latest
         run: make lint && make checkgenerate
+        env:
+          # TODO: Remove when connect-web is public.
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
