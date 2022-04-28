@@ -25,6 +25,13 @@ ensure that we are continuously testing for compatibility.
 You'll need Docker running on your machine and the test suite uses Docker Compose.
 You can run the tests using `make test-docker-compose`.
 
+
+> The following will no longer be needed once `connect-go` is public.
+
+For our NPM tests, we need to pull private packages, `connect-web` and `protobuf-es` from
+the NPM registry. This requires you to set a `NPM_TOKEN` env var in the environment you are
+running the tests from.
+
 ## Support and Versioning
 
 `connect-crosstest` works with:
