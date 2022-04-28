@@ -114,9 +114,14 @@ $(BIN)/protoc-gen-connect-web: Makefile
 	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220407075159-6fda16455846
 
 docker-compose-clean:
-	docker-compose down --rmi local --remove-orphans
+	-docker-compose down --rmi local --remove-orphans
+	# clean up errors are ignored
 
 test-docker-compose: docker-compose-clean
+	@# The NPM_TOKEN checking can be remove when connect-web and protobuf-es become public
+ifeq ($(NPM_TOKEN),)
+	$(error "$$NPM_TOKEN must be set to run docker tests")
+endif
 	docker-compose run client-connect-to-server-connect
 	docker-compose run client-connect-to-server-grpc
 	docker-compose run client-grpc-to-server-connect
@@ -124,4 +129,7 @@ test-docker-compose: docker-compose-clean
 	docker-compose run client-grpc-web-to-server-connect-h1
 	docker-compose run client-grpc-web-to-envoy-server-connect
 	docker-compose run client-grpc-web-to-envoy-server-grpc
+	docker-compose run client-connect-web-to-server-connect-h1
+	docker-compose run client-connect-web-to-envoy-server-connect
+	docker-compose run client-connect-web-to-envoy-server-grpc
 	$(MAKE) docker-compose-clean
