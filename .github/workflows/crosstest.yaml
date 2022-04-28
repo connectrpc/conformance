@@ -44,6 +44,8 @@ jobs:
           GOPRIVATE: github.com/bufbuild
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
+          # TODO: Remove when connect-web is public.
+          NPM_TOKEN: ${{ secrets.NPM_RO_TOKEN }}
       - name: Open Issue on Fail
         uses: dblock/create-a-github-issue@v3
         if: failure()
