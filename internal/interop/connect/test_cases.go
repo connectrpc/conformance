@@ -196,6 +196,7 @@ func DoTimeoutOnSleepingServer(t testing.TB, client connectpb.TestServiceClient)
 		// the stream has already timed out before the `Send` and so this would
 		// return a EOF.
 		assert.True(t, errors.Is(err, io.EOF))
+		return
 	}
 	require.NoError(t, err)
 	_, err = stream.Receive()
