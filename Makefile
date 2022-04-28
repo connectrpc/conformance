@@ -44,7 +44,7 @@ lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
 	$(GO) vet ./...
 	$(BIN)/golangci-lint run
 	$(BIN)/buf lint
-	NPM_TOKEN=$(NPM_TOKEN) cd web; npm install; npm run lint
+	cd web; NPM_TOKEN=$(NPM_TOKEN) npm install; npm run lint
 
 .PHONY: lintfix
 lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
