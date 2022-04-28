@@ -4,27 +4,26 @@ connect-crosstest
 [![Build](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml)
 
 `connect-crosstest` runs a suite of cross-compatibility tests using every
-combination of clients and servers from [Connect's Go
-implementation][connect-go] and `grpc-go`. The test suite is a superset of the
-[gRPC interop tests][interop].
+combination of the following clients and servers:
 
-As long as you have `bash` and `curl` installed, you can run the tests yourself
-by cloning this repository and running `make`.
+**Servers:**
+- Connect, using [Connect's Go implementation][connect-go]
+- gRPC, using [grpc-go][grpc-go]
 
-## Steps
+**Clients:**
+- Connect, using [Connect's Go implementation][connect-go]
+- gRPC, using [grpc-go][grpc-go]
+- [grpc-web][grpc-web]
+- [connect-web][connect-web]
 
-For grpc and connect-go interop tests, these are available as Go unit tests, using
-`make test`.
+The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop tests.
+The test suite is also run nightly against the latest versions of [connect-go][connect-go] to
+ensure that we are continuously testing for compatibility.
 
-For grpc-web interop tests, you'll first need a test server running:
+## Requirements and Running the Tests
 
-* [grpc-go test server][grpc-go-server]
-* [connect-go test server][connect-go-server]
-
-Then, you can run the test cases using `npm run test -- --host=<host> --port=<port>`.
-
-You can also run all tests using the included Docker files and docker-compose,
-`make test-docker-compose`. This requires you to have Docker running for your environment.
+You'll need Docker running on your machine and the test suite uses Docker Compose.
+You can run the tests using `make test-docker-compose`.
 
 ## Support and Versioning
 
@@ -43,9 +42,11 @@ in mind.
 Offered under the [Apache 2 license][license].
 
 [APIv2]: https://blog.golang.org/protobuf-apiv2
-[Connect]: https://github.com/bufbuild/connect-go
-[interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+[connect-go]: https://github.com/bufbuild/connect-go
+[grpc-go]: https://github.com/grpc/grpc-go
+[grpc-web]: https://github.com/grpc/grpc-web
+[connect-web]: https://github.com/bufbuild/connect-web
+[grpc-interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+[grpc-web-interop]: https://github.com/grpc/grpc-web/blob/master/doc/interop-test-descriptions.md
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE.txt
-[grpc-go-server]: https://github.com/bufbuild/connect-crosstest/blob/main/cmd/server/servergrpc/main.go
-[connect-go-server]: https://github.com/bufbuild/connect-crosstest/blob/main/cmd/server/serverconnect/main.go
