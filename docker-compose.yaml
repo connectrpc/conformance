@@ -67,7 +67,7 @@ services:
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
-    entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
     depends_on:
       - server-connect
       - envoy
@@ -78,7 +78,7 @@ services:
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
-    entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
     depends_on:
       - server-grpc
       - envoy
