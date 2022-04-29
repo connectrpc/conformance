@@ -54,14 +54,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
-    entrypoint: npm run test -- --host="server-connect" --port="8080"
+      # TODO: Remove when connect-web is public.
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
       - server-connect
   client-grpc-web-to-envoy-server-connect:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
-    entrypoint: npm run test -- --host="envoy" --port="9091"
+      # TODO: Remove when connect-web is public.
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
       - server-connect
       - envoy
@@ -69,36 +75,42 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
-    entrypoint: npm run test -- --host="envoy" --port="9092"
+      # TODO: Remove when connect-web is public.
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
       - server-grpc
       - envoy
   client-connect-web-to-server-connect-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestwebts
+      dockerfile: Dockerfile.crosstestweb
+      # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
-    entrypoint: npm run test -- --docker --host="server-connect" --port="8080"
+    entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
     depends_on:
       - server-connect
   client-connect-web-to-envoy-server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestwebts
+      dockerfile: Dockerfile.crosstestweb
+      # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
-    entrypoint: npm run test -- --docker --host="envoy" --port="9091"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-web"
     depends_on:
       - server-connect
       - envoy
   client-connect-web-to-envoy-server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestwebts
+      dockerfile: Dockerfile.crosstestweb
+      # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
-    entrypoint: npm run test -- --docker --host="envoy" --port="9092"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-web"
     depends_on:
       - server-grpc
       - envoy

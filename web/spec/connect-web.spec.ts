@@ -192,8 +192,7 @@ describe("connect_web", function () {
       fail("expected to catch an error");
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      // TODO: enable this check after new connect-web release
-      // expect(e.code).toEqual(StatusCode.Unimplemented);
+      expect(e.code).toEqual(StatusCode.Unimplemented);
     }
   });
 });
