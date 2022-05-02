@@ -141,9 +141,8 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 }
 
 func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServer) error {
-<<<<<<< HEAD
-	if md, ok := metadata.FromIncomingContext(stream.Context()); ok {
-		if initialMetadata, ok := md[initialMetadataKey]; ok {
+	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
+		if initialMetadata, ok := data[initialMetadataKey]; ok {
 			var metadataPairs []string
 			for _, metadataValue := range initialMetadata {
 				metadataPairs = append(metadataPairs, initialMetadataKey)
@@ -152,25 +151,13 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 			header := metadata.Pairs(metadataPairs...)
 			stream.SendHeader(header)
 		}
-		if trailingMetadata, ok := md[trailingMetadataKey]; ok {
+		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
 			var trailingMetadataPairs []string
 			for _, trailingMetadataValue := range trailingMetadata {
 				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
 				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
 			}
 			trailer := metadata.Pairs(trailingMetadataPairs...)
-=======
-	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
-		if initialMetadata, ok := data[initialMetadataKey]; ok {
-			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
-			err := stream.SendHeader(header)
-			if err != nil {
-				return err
-			}
-		}
-		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
-			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
->>>>>>> origin/main
 			stream.SetTrailer(trailer)
 		}
 	}
