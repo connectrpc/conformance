@@ -94,14 +94,14 @@ func DoLargeUnaryCall(t testing.TB, client connectpb.TestServiceClient) {
 func DoClientStreaming(t testing.TB, client connectpb.TestServiceClient) {
 	stream := client.StreamingInputCall(context.Background())
 	var sum int
-	for _, s := range reqSizes {
-		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, s)
+	for _, size := range reqSizes {
+		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
 		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
 		}
 		require.NoError(t, stream.Send(req))
-		sum += s
+		sum += size
 	}
 	reply, err := stream.CloseAndReceive()
 	require.NoError(t, err)
@@ -191,6 +191,13 @@ func DoTimeoutOnSleepingServer(t testing.TB, client connectpb.TestServiceClient)
 		Payload:      pl,
 	}
 	err = stream.Send(req)
+	if err != nil {
+		// This emulates the original test case, where due to network issues,
+		// the stream has already timed out before the `Send` and so this would
+		// return a EOF.
+		assert.True(t, errors.Is(err, io.EOF))
+		return
+	}
 	require.NoError(t, err)
 	_, err = stream.Receive()
 	assert.Error(t, err)
@@ -318,12 +325,12 @@ func customMetadataTest(
 	customMetadataBinary map[string][][]byte,
 ) {
 	// Testing with UnaryCall.
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(1),
-		Payload:      pl,
+		Payload:      payload,
 	}
 	ctx := context.Background()
 	connectReq := connect.NewRequest(req)
@@ -357,7 +364,7 @@ func customMetadataTest(
 	streamReq := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
-		Payload:            pl,
+		Payload:            payload,
 	}
 	for key, values := range customMetadataString {
 		for _, value := range values {
@@ -456,14 +463,11 @@ func DoFailWithNonASCIIError(t testing.TB, client connectpb.TestServiceClient, a
 	t.Successf("successful fail call with non-ASCII error")
 }
 
-func doOneSoakIteration(t testing.TB, ctx context.Context, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
+func doOneSoakIteration(ctx context.Context, t testing.TB, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
 	start := time.Now()
 	client := tc
 	if resetChannel {
-		newClient, err := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
-		if err != nil {
-			return time.Nanosecond, err
-		}
+		newClient := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
 		client = newClient
 	}
 	// per test spec, don't include channel shutdown in latency measurement
@@ -497,32 +501,32 @@ func DoSoakTest(t testing.TB, client connectpb.TestServiceClient, serverAddr str
 		BaseBucketSize: 1,
 		MinValue:       0,
 	}
-	h := stats.NewHistogram(hopts)
+	histogram := stats.NewHistogram(hopts)
 	for i := 0; i < soakIterations; i++ {
 		if time.Now().After(overallDeadline) {
 			break
 		}
 		iterationsDone++
-		latency, err := doOneSoakIteration(t, ctx, client, resetChannel, serverAddr)
+		latency, err := doOneSoakIteration(ctx, t, client, resetChannel, serverAddr)
 		latencyMs := int64(latency / time.Millisecond)
-		h.Add(latencyMs)
+		_ = histogram.Add(latencyMs)
 		if err != nil {
 			totalFailures++
-			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
+			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
 			continue
 		}
 		if latency > perIterationMaxAcceptableLatency {
 			totalFailures++
-			fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
+			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
 			continue
 		}
-		fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
+		_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
 	}
 	var b bytes.Buffer
-	h.Print(&b)
-	fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
-	fmt.Fprintln(os.Stderr, b.String())
-	fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
+	histogram.Print(&b)
+	_, _ = fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
+	_, _ = fmt.Fprintln(os.Stderr, b.String())
+	_, _ = fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
 	assert.True(t, iterationsDone >= soakIterations)
 	assert.True(t, totalFailures <= maxFailures)
 }

@@ -28,10 +28,10 @@ import (
 )
 
 // This is a compile-time assertion to ensure that this generated file and the connect package are
-// compatible. If you get a compiler error that this constant isn't defined, this code was generated
-// with a version of connect newer than the one compiled into your binary. You can fix the problem
-// by either regenerating this code with an older version of connect or updating the connect version
-// compiled into your binary.
+// compatible. If you get a compiler error that this constant is not defined, this code was
+// generated with a version of connect newer than the one compiled into your binary. You can fix the
+// problem by either regenerating this code with an older version of connect or updating the connect
+// version compiled into your binary.
 const _ = connect_go.IsAtLeastVersion0_0_1
 
 const (
@@ -89,91 +89,55 @@ type TestServiceClient interface {
 //
 // The URL supplied here should be the base URL for the gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) (TestServiceClient, error) {
+func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) TestServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	emptyCallClient, err := connect_go.NewClient[testing.Empty, testing.Empty](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/EmptyCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	unaryCallClient, err := connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/UnaryCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	failUnaryCallClient, err := connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/FailUnaryCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	cacheableUnaryCallClient, err := connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/CacheableUnaryCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	streamingOutputCallClient, err := connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/StreamingOutputCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	streamingInputCallClient, err := connect_go.NewClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/StreamingInputCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	fullDuplexCallClient, err := connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/FullDuplexCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	halfDuplexCallClient, err := connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/HalfDuplexCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	unimplementedCallClient, err := connect_go.NewClient[testing.Empty, testing.Empty](
-		httpClient,
-		baseURL+"/grpc.testing.TestService/UnimplementedCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &testServiceClient{
-		emptyCall:           emptyCallClient,
-		unaryCall:           unaryCallClient,
-		failUnaryCall:       failUnaryCallClient,
-		cacheableUnaryCall:  cacheableUnaryCallClient,
-		streamingOutputCall: streamingOutputCallClient,
-		streamingInputCall:  streamingInputCallClient,
-		fullDuplexCall:      fullDuplexCallClient,
-		halfDuplexCall:      halfDuplexCallClient,
-		unimplementedCall:   unimplementedCallClient,
-	}, nil
+		emptyCall: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/EmptyCall",
+			opts...,
+		),
+		unaryCall: connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/UnaryCall",
+			opts...,
+		),
+		failUnaryCall: connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/FailUnaryCall",
+			opts...,
+		),
+		cacheableUnaryCall: connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/CacheableUnaryCall",
+			opts...,
+		),
+		streamingOutputCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/StreamingOutputCall",
+			opts...,
+		),
+		streamingInputCall: connect_go.NewClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/StreamingInputCall",
+			opts...,
+		),
+		fullDuplexCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/FullDuplexCall",
+			opts...,
+		),
+		halfDuplexCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/HalfDuplexCall",
+			opts...,
+		),
+		unimplementedCall: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/UnimplementedCall",
+			opts...,
+		),
+	}
 }
 
 // testServiceClient implements TestServiceClient.
@@ -325,39 +289,39 @@ func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOpt
 type UnimplementedTestServiceHandler struct{}
 
 func (UnimplementedTestServiceHandler) EmptyCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.EmptyCall isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.EmptyCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) UnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.UnaryCall isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.UnaryCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) FailUnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.FailUnaryCall isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.FailUnaryCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) CacheableUnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.CacheableUnaryCall isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.CacheableUnaryCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingOutputCall isn't implemented"))
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingOutputCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingInputCall isn't implemented"))
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingInputCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) FullDuplexCall(context.Context, *connect_go.BidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.FullDuplexCall isn't implemented"))
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.FullDuplexCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) HalfDuplexCall(context.Context, *connect_go.BidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.HalfDuplexCall isn't implemented"))
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.HalfDuplexCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.UnimplementedCall isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.UnimplementedCall is not implemented"))
 }
 
 // UnimplementedServiceClient is a client for the grpc.testing.UnimplementedService service.
@@ -373,19 +337,15 @@ type UnimplementedServiceClient interface {
 //
 // The URL supplied here should be the base URL for the gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) (UnimplementedServiceClient, error) {
+func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) UnimplementedServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	unimplementedCallClient, err := connect_go.NewClient[testing.Empty, testing.Empty](
-		httpClient,
-		baseURL+"/grpc.testing.UnimplementedService/UnimplementedCall",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &unimplementedServiceClient{
-		unimplementedCall: unimplementedCallClient,
-	}, nil
+		unimplementedCall: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.UnimplementedService/UnimplementedCall",
+			opts...,
+		),
+	}
 }
 
 // unimplementedServiceClient implements UnimplementedServiceClient.
@@ -424,7 +384,7 @@ func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...con
 type UnimplementedUnimplementedServiceHandler struct{}
 
 func (UnimplementedUnimplementedServiceHandler) UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.UnimplementedService.UnimplementedCall isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.UnimplementedService.UnimplementedCall is not implemented"))
 }
 
 // ReconnectServiceClient is a client for the grpc.testing.ReconnectService service.
@@ -440,28 +400,20 @@ type ReconnectServiceClient interface {
 //
 // The URL supplied here should be the base URL for the gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewReconnectServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) (ReconnectServiceClient, error) {
+func NewReconnectServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ReconnectServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	startClient, err := connect_go.NewClient[testing.ReconnectParams, testing.Empty](
-		httpClient,
-		baseURL+"/grpc.testing.ReconnectService/Start",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	stopClient, err := connect_go.NewClient[testing.Empty, testing.ReconnectInfo](
-		httpClient,
-		baseURL+"/grpc.testing.ReconnectService/Stop",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &reconnectServiceClient{
-		start: startClient,
-		stop:  stopClient,
-	}, nil
+		start: connect_go.NewClient[testing.ReconnectParams, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.ReconnectService/Start",
+			opts...,
+		),
+		stop: connect_go.NewClient[testing.Empty, testing.ReconnectInfo](
+			httpClient,
+			baseURL+"/grpc.testing.ReconnectService/Stop",
+			opts...,
+		),
+	}
 }
 
 // reconnectServiceClient implements ReconnectServiceClient.
@@ -510,11 +462,11 @@ func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect_go.
 type UnimplementedReconnectServiceHandler struct{}
 
 func (UnimplementedReconnectServiceHandler) Start(context.Context, *connect_go.Request[testing.ReconnectParams]) (*connect_go.Response[testing.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.ReconnectService.Start isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.ReconnectService.Start is not implemented"))
 }
 
 func (UnimplementedReconnectServiceHandler) Stop(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.ReconnectInfo], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.ReconnectService.Stop isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.ReconnectService.Stop is not implemented"))
 }
 
 // LoadBalancerStatsServiceClient is a client for the grpc.testing.LoadBalancerStatsService service.
@@ -532,28 +484,20 @@ type LoadBalancerStatsServiceClient interface {
 //
 // The URL supplied here should be the base URL for the gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewLoadBalancerStatsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) (LoadBalancerStatsServiceClient, error) {
+func NewLoadBalancerStatsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) LoadBalancerStatsServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	getClientStatsClient, err := connect_go.NewClient[testing.LoadBalancerStatsRequest, testing.LoadBalancerStatsResponse](
-		httpClient,
-		baseURL+"/grpc.testing.LoadBalancerStatsService/GetClientStats",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	getClientAccumulatedStatsClient, err := connect_go.NewClient[testing.LoadBalancerAccumulatedStatsRequest, testing.LoadBalancerAccumulatedStatsResponse](
-		httpClient,
-		baseURL+"/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &loadBalancerStatsServiceClient{
-		getClientStats:            getClientStatsClient,
-		getClientAccumulatedStats: getClientAccumulatedStatsClient,
-	}, nil
+		getClientStats: connect_go.NewClient[testing.LoadBalancerStatsRequest, testing.LoadBalancerStatsResponse](
+			httpClient,
+			baseURL+"/grpc.testing.LoadBalancerStatsService/GetClientStats",
+			opts...,
+		),
+		getClientAccumulatedStats: connect_go.NewClient[testing.LoadBalancerAccumulatedStatsRequest, testing.LoadBalancerAccumulatedStatsResponse](
+			httpClient,
+			baseURL+"/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats",
+			opts...,
+		),
+	}
 }
 
 // loadBalancerStatsServiceClient implements LoadBalancerStatsServiceClient.
@@ -605,11 +549,11 @@ func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opt
 type UnimplementedLoadBalancerStatsServiceHandler struct{}
 
 func (UnimplementedLoadBalancerStatsServiceHandler) GetClientStats(context.Context, *connect_go.Request[testing.LoadBalancerStatsRequest]) (*connect_go.Response[testing.LoadBalancerStatsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.LoadBalancerStatsService.GetClientStats isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.LoadBalancerStatsService.GetClientStats is not implemented"))
 }
 
 func (UnimplementedLoadBalancerStatsServiceHandler) GetClientAccumulatedStats(context.Context, *connect_go.Request[testing.LoadBalancerAccumulatedStatsRequest]) (*connect_go.Response[testing.LoadBalancerAccumulatedStatsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.LoadBalancerStatsService.GetClientAccumulatedStats isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.LoadBalancerStatsService.GetClientAccumulatedStats is not implemented"))
 }
 
 // XdsUpdateHealthServiceClient is a client for the grpc.testing.XdsUpdateHealthService service.
@@ -625,28 +569,20 @@ type XdsUpdateHealthServiceClient interface {
 //
 // The URL supplied here should be the base URL for the gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewXdsUpdateHealthServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) (XdsUpdateHealthServiceClient, error) {
+func NewXdsUpdateHealthServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) XdsUpdateHealthServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	setServingClient, err := connect_go.NewClient[testing.Empty, testing.Empty](
-		httpClient,
-		baseURL+"/grpc.testing.XdsUpdateHealthService/SetServing",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
-	setNotServingClient, err := connect_go.NewClient[testing.Empty, testing.Empty](
-		httpClient,
-		baseURL+"/grpc.testing.XdsUpdateHealthService/SetNotServing",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &xdsUpdateHealthServiceClient{
-		setServing:    setServingClient,
-		setNotServing: setNotServingClient,
-	}, nil
+		setServing: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.XdsUpdateHealthService/SetServing",
+			opts...,
+		),
+		setNotServing: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.XdsUpdateHealthService/SetNotServing",
+			opts...,
+		),
+	}
 }
 
 // xdsUpdateHealthServiceClient implements XdsUpdateHealthServiceClient.
@@ -696,11 +632,11 @@ func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ..
 type UnimplementedXdsUpdateHealthServiceHandler struct{}
 
 func (UnimplementedXdsUpdateHealthServiceHandler) SetServing(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.XdsUpdateHealthService.SetServing isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.XdsUpdateHealthService.SetServing is not implemented"))
 }
 
 func (UnimplementedXdsUpdateHealthServiceHandler) SetNotServing(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.XdsUpdateHealthService.SetNotServing isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.XdsUpdateHealthService.SetNotServing is not implemented"))
 }
 
 // XdsUpdateClientConfigureServiceClient is a client for the
@@ -717,19 +653,15 @@ type XdsUpdateClientConfigureServiceClient interface {
 //
 // The URL supplied here should be the base URL for the gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewXdsUpdateClientConfigureServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) (XdsUpdateClientConfigureServiceClient, error) {
+func NewXdsUpdateClientConfigureServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) XdsUpdateClientConfigureServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
-	configureClient, err := connect_go.NewClient[testing.ClientConfigureRequest, testing.ClientConfigureResponse](
-		httpClient,
-		baseURL+"/grpc.testing.XdsUpdateClientConfigureService/Configure",
-		opts...,
-	)
-	if err != nil {
-		return nil, err
-	}
 	return &xdsUpdateClientConfigureServiceClient{
-		configure: configureClient,
-	}, nil
+		configure: connect_go.NewClient[testing.ClientConfigureRequest, testing.ClientConfigureResponse](
+			httpClient,
+			baseURL+"/grpc.testing.XdsUpdateClientConfigureService/Configure",
+			opts...,
+		),
+	}
 }
 
 // xdsUpdateClientConfigureServiceClient implements XdsUpdateClientConfigureServiceClient.
@@ -768,5 +700,5 @@ func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServi
 type UnimplementedXdsUpdateClientConfigureServiceHandler struct{}
 
 func (UnimplementedXdsUpdateClientConfigureServiceHandler) Configure(context.Context, *connect_go.Request[testing.ClientConfigureRequest]) (*connect_go.Response[testing.ClientConfigureResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.XdsUpdateClientConfigureService.Configure isn't implemented"))
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.XdsUpdateClientConfigureService.Configure is not implemented"))
 }

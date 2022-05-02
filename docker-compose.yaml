@@ -22,42 +22,42 @@ services:
       - "9092:9092"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
-  client-connect-to-connect:
+  client-connect-to-server-connect:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect"
     depends_on:
       - server-connect
-  client-connect-to-grpc:
+  client-connect-to-server-grpc:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="connect"
     depends_on:
       - server-grpc
-  client-grpc-to-connect:
+  client-grpc-to-server-connect:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go"
     depends_on:
       - server-connect
-  client-grpc-to-grpc:
+  client-grpc-to-server-grpc:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="grpc-go"
     depends_on:
       - server-grpc
-  client-grpc-web-to-connect-h1:
+  client-grpc-web-to-server-connect-h1:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
     entrypoint: npm run test -- --host="server-connect" --port="8080"
     depends_on:
       - server-connect
-  client-grpc-web-to-envoy-connect:
+  client-grpc-web-to-envoy-server-connect:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -65,11 +65,40 @@ services:
     depends_on:
       - server-connect
       - envoy
-  client-grpc-web-to-envoy-grpc:
+  client-grpc-web-to-envoy-server-grpc:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
     entrypoint: npm run test -- --host="envoy" --port="9092"
+    depends_on:
+      - server-grpc
+      - envoy
+  client-connect-web-to-server-connect-h1:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestwebts
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="server-connect" --port="8080"
+    depends_on:
+      - server-connect
+  client-connect-web-to-envoy-server-connect:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestwebts
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9091"
+    depends_on:
+      - server-connect
+      - envoy
+  client-connect-web-to-envoy-server-grpc:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestwebts
+      args:
+        NPM_TOKEN: "${NPM_TOKEN}"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9092"
     depends_on:
       - server-grpc
       - envoy

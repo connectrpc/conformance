@@ -16,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,6 +28,7 @@ import (
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -49,9 +51,9 @@ func main() {
 	}
 	rootCmd.Flags().StringVar(&flagset.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
 	rootCmd.Flags().StringVar(&flagset.h2Port, "h2port", "", "port for HTTP/2 traffic")
-	rootCmd.MarkFlagRequired("h1port")
-	rootCmd.MarkFlagRequired("h2port")
-	rootCmd.Execute()
+	_ = rootCmd.MarkFlagRequired("h1port")
+	_ = rootCmd.MarkFlagRequired("h2port")
+	_ = rootCmd.Execute()
 }
 
 func run(flagset flags) {
@@ -59,9 +61,37 @@ func run(flagset flags) {
 	mux.Handle(testrpc.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),
 	))
+	corsHandler := cors.New(cors.Options{
+		AllowedMethods: []string{
+			http.MethodHead,
+			http.MethodGet,
+			http.MethodPost,
+			http.MethodPut,
+			http.MethodPatch,
+			http.MethodDelete,
+		},
+		// Mirror the `Origin` header value in the `Access-Control-Allow-Origin`
+		// preflight response header.
+		// This is equivalent to `Access-Control-Allow-Origin: *`, but allows
+		// for requests with credentials.
+		// Note that this effectively disables CORS and is not safe for use in
+		// production environments.
+		AllowOriginFunc: func(origin string) bool {
+			return true
+		},
+		// Note that rs/cors does not return `Access-Control-Allow-Headers: *`
+		// in response to preflight requests with the following configuration.
+		// It simply mirrors all headers listed in the `Access-Control-Request-Headers`
+		// preflight request header.
+		AllowedHeaders: []string{"*"},
+		// We explicitly set the exposed header names instead of using the wildcard *,
+		// because in requests with credentials, it is treated as the literal header
+		// name "*" without special semantics.
+		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin"},
+	}).Handler(mux)
 	h1Server := http.Server{
 		Addr:    ":" + flagset.h1Port,
-		Handler: mux,
+		Handler: corsHandler,
 	}
 	h2Server := http.Server{
 		Addr:    ":" + flagset.h2Port,
@@ -105,16 +135,16 @@ func run(flagset flags) {
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	fmt.Println(string(bytes))
+	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		if err := h1Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := h1Server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	go func() {
-		if err := h2Server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := h2Server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()

@@ -39,16 +39,16 @@ const (
 )
 
 func TestConnectServer(t *testing.T) {
+	t.Parallel()
 	mux := http.NewServeMux()
 	mux.Handle(connectpb.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),
 	))
-	server := httptest.NewUnstartedServer(mux)
-	server.EnableHTTP2 = true
-	server.StartTLS()
-	defer server.Close()
 	t.Run("grpc_client", func(testingT *testing.T) {
+		testingT.Parallel()
 		t := crosstesting.NewCrossTestT(testingT)
+		server := newUnstartedServer(mux)
+		defer server.Close()
 		pool := x509.NewCertPool()
 		pool.AddCert(server.Certificate())
 		gconn, err := grpc.Dial(
@@ -74,6 +74,24 @@ func TestConnectServer(t *testing.T) {
 		interopgrpc.DoUnimplementedMethod(t, gconn)
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
+	})
+	t.Run("grpc_client soak test", func(testingT *testing.T) {
+		testingT.Parallel()
+		if testing.Short() {
+			testingT.Skip("skipping test in short mode")
+		}
+		t := crosstesting.NewCrossTestT(testingT)
+		server := newUnstartedServer(mux)
+		defer server.Close()
+		pool := x509.NewCertPool()
+		pool.AddCert(server.Certificate())
+		gconn, err := grpc.Dial(
+			server.Listener.Addr().String(),
+			grpc.WithTransportCredentials(credentials.NewClientTLSFromCert(pool, "")),
+		)
+		assert.NoError(t, err)
+		defer gconn.Close()
+		client := testgrpc.NewTestServiceClient(gconn)
 		interopgrpc.DoSoakTest(
 			t,
 			client,
@@ -87,9 +105,11 @@ func TestConnectServer(t *testing.T) {
 		)
 	})
 	t.Run("connect_client", func(testingT *testing.T) {
+		testingT.Parallel()
 		t := crosstesting.NewCrossTestT(testingT)
-		client, err := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
-		assert.NoError(t, err)
+		server := newUnstartedServer(mux)
+		defer server.Close()
+		client := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
 		interopconnect.DoEmptyUnaryCall(t, client)
 		interopconnect.DoLargeUnaryCall(t, client)
 		interopconnect.DoClientStreaming(t, client)
@@ -105,6 +125,16 @@ func TestConnectServer(t *testing.T) {
 		interopconnect.DoSpecialStatusMessage(t, client)
 		interopconnect.DoUnimplementedService(t, client)
 		interopconnect.DoFailWithNonASCIIError(t, client)
+	})
+	t.Run("connect_client soak test", func(testingT *testing.T) {
+		testingT.Parallel()
+		if testing.Short() {
+			testingT.Skip("skipping test in short mode")
+		}
+		t := crosstesting.NewCrossTestT(testingT)
+		server := newUnstartedServer(mux)
+		defer server.Close()
+		client := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
 		interopconnect.DoSoakTest(
 			t,
 			client,
@@ -116,4 +146,11 @@ func TestConnectServer(t *testing.T) {
 			time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
 		)
 	})
+}
+
+func newUnstartedServer(handler http.Handler) *httptest.Server {
+	server := httptest.NewUnstartedServer(handler)
+	server.EnableHTTP2 = true
+	server.StartTLS()
+	return server
 }
