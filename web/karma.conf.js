@@ -13,6 +13,21 @@
 // limitations under the License.
 
 module.exports = function (config) {
+  // determine test files by implementation flag, run all tests if undefined
+  let testFiles = ["gen/**/*.ts"];
+  switch(config.implementation) {
+    case "connect-web":
+      testFiles.push("spec/connect-web.spec.ts")
+      break;
+    case "grpc-web":
+      testFiles.push("spec/grpc-web.spec.ts")
+      break;
+    case undefined:
+      testFiles.push("spec/**/*.ts")
+      break;
+    default:
+      throw "unknown implementation flag for web test"
+  }
   config.set({
     customLaunchers: {
       ChromeCustom: {
@@ -23,7 +38,7 @@ module.exports = function (config) {
       }
     },
     frameworks: ["jasmine"],
-    files: ["spec/**/*.ts", "gen/**/*.ts"],
+    files: testFiles,
     preprocessors: {
       "/**/*.ts": "esbuild",
     },

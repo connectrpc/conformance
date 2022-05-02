@@ -2,10 +2,22 @@ FROM node:16-alpine
 
 WORKDIR /workspace
 
-COPY package.json package-lock.json /workspace/
+COPY web/package.json web/package-lock.json /workspace/
 
-COPY internal/gen /workspace/internal/gen
+# These can be removed after the connect-web and protobuf-es become public
+ARG NPM_TOKEN
+ENV NPM_TOKEN=$NPM_TOKEN
+COPY web/.npmrc /workspace/
 
-COPY grpcweb_client_test.js /workspace/grpcweb_client_test.js
+COPY web/tsconfig.json web/karma.conf.js /workspace/
+
+COPY web/gen /workspace/gen
+
+COPY web/spec /workspace/spec
+
+RUN apk add chromium
+
+ENV CHROME_BIN /usr/bin/chromium-browser
 
 RUN npm install
+

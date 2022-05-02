@@ -12,23 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const ignoreFiles = [".eslintrc.js", "karma.conf.js", "gen/**/*"];
+import * as jspb from 'google-protobuf'
 
-module.exports = {
-  env: {
-    browser: true,
-    es2022: true,
-  },
-  ignorePatterns: ignoreFiles,
-  extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-    },
-    ecmaVersion: 12,
-    sourceType: "module",
-  },
-  plugins: ["@typescript-eslint"],
-  rules: {},
-};
+import * as grpc_testing_empty_pb from '../../grpc/testing/empty_pb';
+import * as grpc_testing_messages_pb from '../../grpc/testing/messages_pb';
+
+

@@ -229,7 +229,7 @@ var testCases = {
   'status_code_and_message': {testFunc: doStatusCodeAndMessage},
   'special_status_message': {testFunc: doSpecialStatusMessage},
   'unimplemented_method': {testFunc: doUnimplementedMethod},
-  // 'unimplemented_service': {testFunc: doUnimplementedService},
+  'unimplemented_service': {testFunc: doUnimplementedService},
 };
 
 if (typeof window === 'undefined') { // Running from Node
