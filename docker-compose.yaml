@@ -4,7 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
-    entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081"
+    entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -12,7 +12,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
-    entrypoint: /usr/local/bin/servergrpc --port "8082"
+    entrypoint: /usr/local/bin/servergrpc --port "8082" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8082:8082"
   envoy:
@@ -26,28 +26,28 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
-    entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect"
+    entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
   client-connect-to-server-grpc:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="connect"
+    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="connect" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
   client-grpc-to-server-connect:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
-    entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go"
+    entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
   client-grpc-to-server-grpc:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="grpc-go"
+    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
   client-grpc-web-to-server-connect-h1:
