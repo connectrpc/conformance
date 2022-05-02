@@ -67,12 +67,12 @@ func (s *testServer) UnaryCall(ctx context.Context, req *connect.Request[testpb.
 	res := connect.NewResponse(&testpb.SimpleResponse{
 		Payload: pl,
 	})
-	if initialMetadata := in.Header().Values(initialMetadataKey); len(initialMetadata) != 0 {
+	if initialMetadata := req.Header().Values(initialMetadataKey); len(initialMetadata) != 0 {
 		for _, value := range initialMetadata {
 			res.Header().Add(initialMetadataKey, value)
 		}
 	}
-	if trailingMetadata := in.Header().Values(trailingMetadataKey); len(trailingMetadata) != 0 {
+	if trailingMetadata := req.Header().Values(trailingMetadataKey); len(trailingMetadata) != 0 {
 		for _, value := range trailingMetadata {
 			decodedTrailingMetadata, err := connect.DecodeBinaryHeader(value)
 			if err != nil {
