@@ -16,6 +16,9 @@ package main
 
 import (
 	"crypto/tls"
+	"crypto/x509"
+	"google.golang.org/grpc/credentials"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -36,6 +39,8 @@ type flags struct {
 	host           string
 	port           string
 	implementation string
+	certFile       string
+	keyFile        string
 }
 
 func main() {
@@ -56,19 +61,23 @@ func main() {
 		"connect",
 		`the client implementation tested, accepted values are "connect" or "grpc-go"`,
 	)
+	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
+	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
 	_ = rootCmd.MarkFlagRequired("port")
+	_ = rootCmd.MarkFlagRequired("cert")
+	_ = rootCmd.MarkFlagRequired("key")
 	_ = rootCmd.Execute()
 }
 
 func run(flagset flags) {
 	switch flagset.implementation {
 	case "connect":
-		serverURL, err := url.ParseRequestURI("http://" + net.JoinHostPort(flagset.host, flagset.port))
+		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
-			log.Fatalf("invalid url: %s", "http://"+net.JoinHostPort(flagset.host, flagset.port))
+			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
 		client := connectpb.NewTestServiceClient(
-			newClientH2C(),
+			newClientH2C(flagset),
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
@@ -90,7 +99,7 @@ func run(flagset flags) {
 	case "grpc-go":
 		gconn, err := grpc.Dial(
 			net.JoinHostPort(flagset.host, flagset.port),
-			grpc.WithInsecure(),
+			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset))),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
@@ -118,14 +127,28 @@ func run(flagset flags) {
 	}
 }
 
-func newClientH2C() *http.Client {
+func newClientH2C(flagset flags) *http.Client {
 	// This is wildly insecure - don't do this in production!
 	return &http.Client{
 		Transport: &http2.Transport{
-			AllowHTTP: true,
-			DialTLS: func(netw, addr string, cfg *tls.Config) (net.Conn, error) {
-				return net.Dial(netw, addr)
-			},
+			TLSClientConfig: newTLSConfig(flagset),
 		},
+	}
+}
+
+func newTLSConfig(flagset flags) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+	if err != nil {
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+	}
+	caCert, err := ioutil.ReadFile("cert/ExampleCA.crt")
+	if err != nil {
+		log.Fatalf("Error opening cert file")
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	return &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
 	}
 }
