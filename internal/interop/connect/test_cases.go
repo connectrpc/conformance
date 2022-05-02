@@ -248,22 +248,81 @@ func DoCancelAfterFirstResponse(t testing.TB, client connectpb.TestServiceClient
 	t.Successf("successful cancel after first response")
 }
 
-var (
+const (
 	initialMetadataValue  = "test_initial_metadata_value"
-	trailingMetadataValue = []byte("\x0a\x0b\x0a\x0b\x0a\x0b")
+	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
 )
 
-func validateMetadata(t testing.TB, header, trailer http.Header) {
-	assert.Equal(t, len(header.Values(initialMetadataKey)), 1)
-	assert.Equal(t, header.Get(initialMetadataKey), initialMetadataValue)
-	assert.Equal(t, len(trailer.Values(trailingMetadataKey)), 1)
-	decodedTrailer, err := connect.DecodeBinaryHeader(trailer.Get(trailingMetadataKey))
-	require.NoError(t, err)
-	assert.Equal(t, string(decodedTrailer), string(trailingMetadataValue))
+func validateMetadata(
+	t testing.TB,
+	header http.Header,
+	trailer http.Header,
+	expectedStringHeaders map[string][]string,
+	expectedBinaryHeaders map[string][][]byte,
+) {
+	for key, values := range expectedStringHeaders {
+		assert.Equal(t, len(values), len(header.Values(key)))
+		valuesMap := map[string]struct{}{}
+		for _, value := range values {
+			valuesMap[value] = struct{}{}
+		}
+		for _, headerValue := range header.Values(key) {
+			_, ok := valuesMap[headerValue]
+			assert.True(t, ok)
+		}
+	}
+	for key, values := range expectedBinaryHeaders {
+		assert.Equal(t, len(values), len(trailer.Values(key)))
+		valuesMap := map[string]struct{}{}
+		for _, value := range values {
+			valuesMap[string(value)] = struct{}{}
+		}
+		for _, trailerValue := range trailer.Values(key) {
+			decodedTrailerValue, err := connect.DecodeBinaryHeader(trailerValue)
+			assert.NoError(t, err)
+			_, ok := valuesMap[string(decodedTrailerValue)]
+			assert.True(t, ok)
+		}
+	}
 }
 
 // DoCustomMetadata checks that metadata is echoed back to the client.
 func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
+	customMetadataTest(
+		t,
+		client,
+		map[string][]string{
+			initialMetadataKey: {initialMetadataValue},
+		},
+		map[string][][]byte{
+			trailingMetadataKey: {[]byte(trailingMetadataValue)},
+		},
+	)
+	t.Successf("successful custom metadata")
+}
+
+// DoDuplicateCustomMetadata adds duplicated metadata keys and checks that the metadata is echoed back
+// to the client.
+func DoDuplicatedCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
+	customMetadataTest(
+		t,
+		client,
+		map[string][]string{
+			initialMetadataKey: {initialMetadataValue, initialMetadataValue + ",more_stuff"},
+		},
+		map[string][][]byte{
+			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
+		},
+	)
+	t.Successf("successful duplicated custom metadata")
+}
+
+func customMetadataTest(
+	t testing.TB,
+	client connectpb.TestServiceClient,
+	customMetadataString map[string][]string,
+	customMetadataBinary map[string][][]byte,
+) {
 	// Testing with UnaryCall.
 	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
@@ -274,8 +333,16 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	}
 	ctx := context.Background()
 	connectReq := connect.NewRequest(req)
-	connectReq.Header().Set(initialMetadataKey, initialMetadataValue)
-	connectReq.Header().Set(trailingMetadataKey, connect.EncodeBinaryHeader(trailingMetadataValue))
+	for key, values := range customMetadataString {
+		for _, value := range values {
+			connectReq.Header().Add(key, value)
+		}
+	}
+	for key, values := range customMetadataBinary {
+		for _, value := range values {
+			connectReq.Header().Add(key, connect.EncodeBinaryHeader(value))
+		}
+	}
 	reply, err := client.UnaryCall(
 		ctx,
 		connectReq,
@@ -283,7 +350,7 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 	require.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), 1)
-	validateMetadata(t, reply.Header(), reply.Trailer())
+	validateMetadata(t, reply.Header(), reply.Trailer(), customMetadataString, customMetadataBinary)
 
 	// Testing with FullDuplex.
 	stream := client.FullDuplexCall(ctx)
@@ -298,16 +365,23 @@ func DoCustomMetadata(t testing.TB, client connectpb.TestServiceClient) {
 		ResponseParameters: respParam,
 		Payload:            payload,
 	}
-	stream.RequestHeader().Set(initialMetadataKey, initialMetadataValue)
-	stream.RequestHeader().Set(trailingMetadataKey, connect.EncodeBinaryHeader(trailingMetadataValue))
+	for key, values := range customMetadataString {
+		for _, value := range values {
+			stream.RequestHeader().Add(key, value)
+		}
+	}
+	for key, values := range customMetadataBinary {
+		for _, value := range values {
+			stream.RequestHeader().Add(key, connect.EncodeBinaryHeader(value))
+		}
+	}
 	require.NoError(t, stream.Send(streamReq))
 	_, err = stream.Receive()
 	require.NoError(t, err)
 	require.NoError(t, stream.CloseSend())
 	_, err = stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
-	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer())
-	t.Successf("successful custom metadata")
+	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
 }
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.

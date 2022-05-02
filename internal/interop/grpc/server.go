@@ -65,16 +65,35 @@ func serverNewPayload(payloadType testpb.PayloadType, size int32) (*testpb.Paylo
 	}, nil
 }
 
+func createMetadataPairs(metadataKey string, metadata []string) []string {
+	metadataPairs := make([]string, len(metadata)*2)
+	for i, metadataValue := range metadata {
+		metadataPairs[i*2] = metadataKey
+		metadataPairs[i*2+1] = metadataValue
+	}
+	return metadataPairs
+}
+
 func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
 	responseStatus := req.GetResponseStatus()
+	var header, trailer metadata.MD
 	if data, ok := metadata.FromIncomingContext(ctx); ok {
 		if initialMetadata, ok := data[initialMetadataKey]; ok {
-			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
-			_ = grpc.SendHeader(ctx, header)
+			metadataPairs := createMetadataPairs(initialMetadataKey, initialMetadata)
+			header = metadata.Pairs(metadataPairs...)
 		}
 		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
-			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
-			_ = grpc.SetTrailer(ctx, trailer)
+			trailingMetadataPairs := createMetadataPairs(trailingMetadataKey, trailingMetadata)
+			trailer = metadata.Pairs(trailingMetadataPairs...)
+		}
+	}
+	if header != nil {
+		if err := grpc.SendHeader(ctx, header); err != nil {
+			return nil, err
+		}
+	}
+	if trailer != nil {
+		if err := grpc.SetTrailer(ctx, trailer); err != nil {
 		}
 	}
 	if responseStatus != nil && responseStatus.Code != 0 {
@@ -133,14 +152,23 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServer) error {
 	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		if initialMetadata, ok := data[initialMetadataKey]; ok {
-			header := metadata.Pairs(initialMetadataKey, initialMetadata[0])
-			err := stream.SendHeader(header)
-			if err != nil {
+			var metadataPairs []string
+			for _, metadataValue := range initialMetadata {
+				metadataPairs = append(metadataPairs, initialMetadataKey)
+				metadataPairs = append(metadataPairs, metadataValue)
+			}
+			header := metadata.Pairs(metadataPairs...)
+			if err := stream.SendHeader(header); err != nil {
 				return err
 			}
 		}
 		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
-			trailer := metadata.Pairs(trailingMetadataKey, trailingMetadata[0])
+			var trailingMetadataPairs []string
+			for _, trailingMetadataValue := range trailingMetadata {
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
+			}
+			trailer := metadata.Pairs(trailingMetadataPairs...)
 			stream.SetTrailer(trailer)
 		}
 	}
