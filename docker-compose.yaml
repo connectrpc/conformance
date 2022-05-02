@@ -22,6 +22,7 @@ services:
       - "9092:9092"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./cert:/cert/:ro
   client-connect-to-server-connect:
     build:
       context: .

@@ -86,6 +86,19 @@ static_resources:
                     socket_address:
                       address: server-connect
                       port_value: 8081
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: "/cert/client.crt"
+                private_key:
+                  filename: "/cert/client.key"
+            validation_context:
+              trusted_ca:
+                filename: "/cert/ExampleCA.crt"
     - name: interop_service_grpc
       connect_timeout: 0.25s
       type: logical_dns
@@ -100,3 +113,16 @@ static_resources:
                     socket_address:
                       address: server-grpc
                       port_value: 8082
+      transport_socket:
+        name: envoy.transport_sockets.tls
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+          common_tls_context:
+            tls_certificates:
+              - certificate_chain:
+                  filename: "/cert/client.crt"
+                private_key:
+                  filename: "/cert/client.key"
+            validation_context:
+              trusted_ca:
+                filename: "/cert/ExampleCA.crt"
