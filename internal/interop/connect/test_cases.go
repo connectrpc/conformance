@@ -250,7 +250,6 @@ func DoCancelAfterFirstResponse(t testing.TB, client connectpb.TestServiceClient
 
 const (
 	initialMetadataValue  = "test_initial_metadata_value"
-	extraMetadataValue    = initialMetadataValue + ",more_stuff"
 	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
 )
 

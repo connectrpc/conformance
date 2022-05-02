@@ -65,26 +65,35 @@ func serverNewPayload(payloadType testpb.PayloadType, size int32) (*testpb.Paylo
 	}, nil
 }
 
-func (s *testServer) UnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
-	st := in.GetResponseStatus()
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if initialMetadata, ok := md[initialMetadataKey]; ok {
-			var metadataPairs []string
-			for _, metadataValue := range initialMetadata {
-				metadataPairs = append(metadataPairs, initialMetadataKey)
-				metadataPairs = append(metadataPairs, metadataValue)
-			}
-			header := metadata.Pairs(metadataPairs...)
-			grpc.SendHeader(ctx, header)
+func createMetadataPairs(metadataKey string, metadata []string) []string {
+	metadataPairs := make([]string, len(metadata)*2)
+	for i, metadataValue := range metadata {
+		metadataPairs[i*2] = metadataKey
+		metadataPairs[i*2+1] = metadataValue
+	}
+	return metadataPairs
+}
+
+func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+	responseStatus := req.GetResponseStatus()
+	var header, trailer metadata.MD
+	if data, ok := metadata.FromIncomingContext(ctx); ok {
+		if initialMetadata, ok := data[initialMetadataKey]; ok {
+			metadataPairs := createMetadataPairs(initialMetadataKey, initialMetadata)
+			header = metadata.Pairs(metadataPairs...)
 		}
-		if trailingMetadata, ok := md[trailingMetadataKey]; ok {
-			var trailingMetadataPairs []string
-			for _, trailingMetadataValue := range trailingMetadata {
-				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
-				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
-			}
-			trailer := metadata.Pairs(trailingMetadataPairs...)
-			grpc.SetTrailer(ctx, trailer)
+		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
+			trailingMetadataPairs := createMetadataPairs(trailingMetadataKey, trailingMetadata)
+			trailer = metadata.Pairs(trailingMetadataPairs...)
+		}
+	}
+	if header != nil {
+		if err := grpc.SendHeader(ctx, header); err != nil {
+			return nil, err
+		}
+	}
+	if trailer != nil {
+		if err := grpc.SetTrailer(ctx, trailer); err != nil {
 		}
 	}
 	if responseStatus != nil && responseStatus.Code != 0 {
@@ -149,7 +158,9 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 				metadataPairs = append(metadataPairs, metadataValue)
 			}
 			header := metadata.Pairs(metadataPairs...)
-			stream.SendHeader(header)
+			if err := stream.SendHeader(header); err != nil {
+				return err
+			}
 		}
 		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
 			var trailingMetadataPairs []string
