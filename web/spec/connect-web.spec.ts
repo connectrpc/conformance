@@ -30,7 +30,7 @@ describe("connect_web", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const transport = createConnectTransport({
-    baseUrl: `http://${host}:${port}`,
+    baseUrl: `https://${host}:${port}`,
   });
   const client = makePromiseClient(TestService, transport);
   it("empty_unary", async function () {
@@ -127,7 +127,7 @@ describe("connect_web", function () {
       ];
     };
     const transportWithInterceptor = createConnectTransport({
-      baseUrl: `http://${host}:${port}`,
+      baseUrl: `https://${host}:${port}`,
       interceptors: [interceptor],
     });
     const clientWithInterceptor = makePromiseClient(

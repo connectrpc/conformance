@@ -5,6 +5,7 @@ WORKDIR /workspace
 COPY go.mod go.sum /workspace/
 COPY cmd /workspace/cmd
 COPY internal /workspace/internal
+COPY cert /workspace/cert
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 \
@@ -23,3 +24,4 @@ FROM alpine:3.15.4
 COPY --from=builder /go/bin/client /usr/local/bin/client
 COPY --from=builder /go/bin/serverconnect /usr/local/bin/serverconnect
 COPY --from=builder /go/bin/servergrpc /usr/local/bin/servergrpc
+COPY --from=builder /workspace/cert /cert

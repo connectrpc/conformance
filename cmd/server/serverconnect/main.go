@@ -16,8 +16,11 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -36,8 +39,10 @@ import (
 )
 
 type flags struct {
-	h1Port string
-	h2Port string
+	h1Port   string
+	h2Port   string
+	certFile string
+	keyFile  string
 }
 
 func main() {
@@ -51,8 +56,12 @@ func main() {
 	}
 	rootCmd.Flags().StringVar(&flagset.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
 	rootCmd.Flags().StringVar(&flagset.h2Port, "h2port", "", "port for HTTP/2 traffic")
+	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
+	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
 	_ = rootCmd.MarkFlagRequired("h1port")
 	_ = rootCmd.MarkFlagRequired("h2port")
+	_ = rootCmd.MarkFlagRequired("cert")
+	_ = rootCmd.MarkFlagRequired("key")
 	_ = rootCmd.Execute()
 }
 
@@ -89,13 +98,16 @@ func run(flagset flags) {
 		// name "*" without special semantics.
 		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial"},
 	}).Handler(mux)
+	tlsConfig := newTLSConfig(flagset)
 	h1Server := http.Server{
-		Addr:    ":" + flagset.h1Port,
-		Handler: corsHandler,
+		Addr:      ":" + flagset.h1Port,
+		Handler:   corsHandler,
+		TLSConfig: tlsConfig,
 	}
 	h2Server := http.Server{
-		Addr:    ":" + flagset.h2Port,
-		Handler: h2c.NewHandler(mux, &http2.Server{}),
+		Addr:      ":" + flagset.h2Port,
+		Handler:   h2c.NewHandler(mux, &http2.Server{}),
+		TLSConfig: tlsConfig,
 	}
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
@@ -139,12 +151,12 @@ func run(flagset flags) {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		if err := h1Server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := h1Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	go func() {
-		if err := h2Server.ListenAndServe(); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := h2Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
@@ -156,5 +168,23 @@ func run(flagset flags) {
 	}
 	if err := h2Server.Shutdown(ctx); err != nil {
 		log.Fatalln(err)
+	}
+}
+
+func newTLSConfig(flagset flags) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+	if err != nil {
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+	}
+	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
+	if err != nil {
+		log.Fatalf("Error opening cert file")
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	return &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
 	}
 }

@@ -15,7 +15,10 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -25,11 +28,14 @@ import (
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
 type flags struct {
-	port string
+	port     string
+	certFile string
+	keyFile  string
 }
 
 func main() {
@@ -42,7 +48,11 @@ func main() {
 		},
 	}
 	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port the server will listen on")
+	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
+	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
 	_ = rootCmd.MarkFlagRequired("port")
+	_ = rootCmd.MarkFlagRequired("cert")
+	_ = rootCmd.MarkFlagRequired("key")
 	_ = rootCmd.Execute()
 }
 
@@ -51,7 +61,9 @@ func run(flagset flags) {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		grpc.Creds(credentials.NewTLS(newTLSConfig(flagset))),
+	)
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
 			Host: "localhost",
@@ -75,4 +87,22 @@ func run(flagset flags) {
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
 	_ = server.Serve(lis)
 	defer server.GracefulStop()
+}
+
+func newTLSConfig(flagset flags) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+	if err != nil {
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+	}
+	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
+	if err != nil {
+		log.Fatalf("Error opening cert file")
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	return &tls.Config{
+		MinVersion:   tls.VersionTLS12,
+		Certificates: []tls.Certificate{cert},
+		RootCAs:      caCertPool,
+	}
 }
