@@ -11,6 +11,8 @@ COPYRIGHT_YEARS := 2022
 LICENSE_IGNORE := -e internal/proto/grpc -e internal/interop/grpc -e web/spec/grpc-web.spec.ts
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
+# Set to use a different test target, can be release or commit
+TEST_TARGET ?= release
 
 .PHONY: help
 help: ## Describe useful make targets
@@ -107,11 +109,11 @@ $(BIN)/protoc-gen-go: Makefile
 
 $(BIN)/protoc-gen-es: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.0-20220404100843-2bf5c0f2d1c3
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@latest
 
 $(BIN)/protoc-gen-connect-web: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220407075159-6fda16455846
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@latest
 
 docker-compose-clean:
 	-docker-compose down --rmi local --remove-orphans
@@ -122,14 +124,14 @@ test-docker-compose: docker-compose-clean
 ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
 endif
-	docker-compose run client-connect-to-server-connect
-	docker-compose run client-connect-to-server-grpc
-	docker-compose run client-grpc-to-server-connect
-	docker-compose run client-grpc-to-server-grpc
-	docker-compose run client-grpc-web-to-server-connect-h1
-	docker-compose run client-grpc-web-to-envoy-server-connect
-	docker-compose run client-grpc-web-to-envoy-server-grpc
-	docker-compose run client-connect-web-to-server-connect-h1
-	docker-compose run client-connect-web-to-envoy-server-connect
-	docker-compose run client-connect-web-to-envoy-server-grpc
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-connect-to-server-connect
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-connect-to-server-grpc
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-grpc-to-server-connect
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-grpc-to-server-grpc
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-grpc-web-to-server-connect-h1
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-grpc-web-to-envoy-server-connect
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-grpc-web-to-envoy-server-grpc
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-connect-web-to-server-connect-h1
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-connect-web-to-envoy-server-connect
+	TEST_TARGET=$(TEST_TARGET) docker-compose run client-connect-web-to-envoy-server-grpc
 	$(MAKE) docker-compose-clean

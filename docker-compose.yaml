@@ -3,7 +3,7 @@ services:
   server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: "Dockerfile.crosstest.${TEST_TARGET}"
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
     ports:
       - "8080:8080"
@@ -11,7 +11,7 @@ services:
   server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: "Dockerfile.crosstest.${TEST_TARGET}"
     entrypoint: /usr/local/bin/servergrpc --port "8082" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8082:8082"
@@ -26,35 +26,35 @@ services:
   client-connect-to-server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: "Dockerfile.crosstest.${TEST_TARGET}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
   client-connect-to-server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: "Dockerfile.crosstest.${TEST_TARGET}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
   client-grpc-to-server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: "Dockerfile.crosstest.${TEST_TARGET}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
   client-grpc-to-server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: "Dockerfile.crosstest.${TEST_TARGET}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8082" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
   client-grpc-web-to-server-connect-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: "Dockerfile.crosstestweb.${TEST_TARGET}"
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
@@ -64,7 +64,7 @@ services:
   client-grpc-web-to-envoy-server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: "Dockerfile.crosstestweb.${TEST_TARGET}"
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
@@ -75,7 +75,7 @@ services:
   client-grpc-web-to-envoy-server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: "Dockerfile.crosstestweb.${TEST_TARGET}"
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
@@ -86,7 +86,7 @@ services:
   client-connect-web-to-server-connect-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: "Dockerfile.crosstestweb.${TEST_TARGET}"
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
@@ -96,7 +96,7 @@ services:
   client-connect-web-to-envoy-server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: "Dockerfile.crosstestweb.${TEST_TARGET}"
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
@@ -107,7 +107,7 @@ services:
   client-connect-web-to-envoy-server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: "Dockerfile.crosstestweb.${TEST_TARGET}"
       # TODO: Remove when connect-web is public.
       args:
         NPM_TOKEN: "${NPM_TOKEN}"
