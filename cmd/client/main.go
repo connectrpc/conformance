@@ -29,6 +29,7 @@ import (
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
 	"github.com/bufbuild/connect-go"
+	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
@@ -59,7 +60,7 @@ func main() {
 		"implementation",
 		"i",
 		"connect",
-		`the client implementation tested, accepted values are "connect" or "grpc-go"`,
+		`the client implementation tested, accepted values are "connect-h2", "connect-h3" or "grpc-go"`,
 	)
 	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
 	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
@@ -71,13 +72,13 @@ func main() {
 
 func run(flagset flags) {
 	switch flagset.implementation {
-	case "connect":
+	case "connect-h2", "connect-h3":
 		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
 			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
 		client := connectpb.NewTestServiceClient(
-			newClientH2C(flagset),
+			newClient(flagset.implementation, flagset.certFile, flagset.keyFile),
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
@@ -99,7 +100,7 @@ func run(flagset flags) {
 	case "grpc-go":
 		gconn, err := grpc.Dial(
 			net.JoinHostPort(flagset.host, flagset.port),
-			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset))),
+			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
@@ -123,23 +124,35 @@ func run(flagset flags) {
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
 	default:
-		log.Fatalf(`must set --implementation or -i to "connect" or "grpc-go"`)
+		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)
 	}
 }
 
-func newClientH2C(flagset flags) *http.Client {
+func newClient(implementation, certFile, keyFile string) *http.Client {
+	tlsConfig := newTLSConfig(certFile, keyFile)
+	var transport http.RoundTripper
+	switch implementation {
+	case "connect-h2":
+		transport = &http2.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	case "connect-h3":
+		transport = &http3.RoundTripper{
+			TLSClientConfig: tlsConfig,
+		}
+	default:
+		log.Fatalf("unknown implementation flag to create client")
+	}
 	// This is wildly insecure - don't do this in production!
 	return &http.Client{
-		Transport: &http2.Transport{
-			TLSClientConfig: newTLSConfig(flagset),
-		},
+		Transport: transport,
 	}
 }
 
-func newTLSConfig(flagset flags) *tls.Config {
-	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+func newTLSConfig(certFile, keyFile string) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
 	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
 	if err != nil {

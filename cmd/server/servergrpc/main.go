@@ -62,7 +62,7 @@ func run(flagset flags) {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	server := grpc.NewServer(
-		grpc.Creds(credentials.NewTLS(newTLSConfig(flagset))),
+		grpc.Creds(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
 	)
 	bytes, err := protojson.Marshal(
 		&serverpb.ServerMetadata{
@@ -89,10 +89,10 @@ func run(flagset flags) {
 	defer server.GracefulStop()
 }
 
-func newTLSConfig(flagset flags) *tls.Config {
-	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+func newTLSConfig(certFile, keyFile string) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
 	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
 	if err != nil {
