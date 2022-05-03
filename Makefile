@@ -125,7 +125,6 @@ ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
 endif
 	TEST_TARGET=$(TEST_TARGET) docker-compose up
-	# clean up errors are ignored
 
 test-docker-compose: docker-compose-clean
 	@# The NPM_TOKEN checking can be remove when connect-web and protobuf-es become public
