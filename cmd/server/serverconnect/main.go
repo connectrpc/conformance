@@ -101,7 +101,7 @@ func run(flagset flags) {
 		// name "*" without special semantics.
 		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial"},
 	}).Handler(mux)
-	tlsConfig := newTLSConfig(flagset)
+	tlsConfig := newTLSConfig(flagset.certFile, flagset.keyFile)
 	h1Server := http.Server{
 		Addr:      ":" + flagset.h1Port,
 		Handler:   corsHandler,
@@ -208,10 +208,10 @@ func run(flagset flags) {
 	}
 }
 
-func newTLSConfig(flagset flags) *tls.Config {
-	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+func newTLSConfig(certFile, keyFile string) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
 	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
 	if err != nil {

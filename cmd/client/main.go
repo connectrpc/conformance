@@ -78,7 +78,7 @@ func run(flagset flags) {
 			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
 		client := connectpb.NewTestServiceClient(
-			newClient(flagset),
+			newClient(flagset.implementation, flagset.certFile, flagset.keyFile),
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
@@ -100,7 +100,7 @@ func run(flagset flags) {
 	case "grpc-go":
 		gconn, err := grpc.Dial(
 			net.JoinHostPort(flagset.host, flagset.port),
-			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset))),
+			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
@@ -128,10 +128,10 @@ func run(flagset flags) {
 	}
 }
 
-func newClient(flagset flags) *http.Client {
-	tlsConfig := newTLSConfig(flagset)
+func newClient(implementation, certFile, keyFile string) *http.Client {
+	tlsConfig := newTLSConfig(certFile, keyFile)
 	var transport http.RoundTripper
-	switch flagset.implementation {
+	switch implementation {
 	case "connect-h2":
 		transport = &http2.Transport{
 			TLSClientConfig: tlsConfig,
@@ -149,10 +149,10 @@ func newClient(flagset flags) *http.Client {
 	}
 }
 
-func newTLSConfig(flagset flags) *tls.Config {
-	cert, err := tls.LoadX509KeyPair(flagset.certFile, flagset.keyFile)
+func newTLSConfig(certFile, keyFile string) *tls.Config {
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
+		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
 	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
 	if err != nil {
