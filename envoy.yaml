@@ -50,7 +50,7 @@ static_resources:
                       filename: "/cert/envoy.key"
                 validation_context:
                   trusted_ca:
-                    filename: "/cert/ExampleCA.crt"
+                    filename: "/cert/CrosstestCA.crt"
     - name: listener_1
       address:
         socket_address: { address: 0.0.0.0, port_value: 9092 }
@@ -96,7 +96,7 @@ static_resources:
                       filename: "/cert/envoy.key"
                 validation_context:
                   trusted_ca:
-                    filename: "/cert/ExampleCA.crt"
+                    filename: "/cert/CrosstestCA.crt"
   clusters:
     - name: interop_service_connect
       connect_timeout: 0.25s
@@ -124,7 +124,7 @@ static_resources:
                   filename: "/cert/envoy.key"
             validation_context:
               trusted_ca:
-                filename: "/cert/ExampleCA.crt"
+                filename: "/cert/CrosstestCA.crt"
     - name: interop_service_grpc
       connect_timeout: 0.25s
       type: logical_dns
@@ -151,4 +151,4 @@ static_resources:
                   filename: "/cert/envoy.key"
             validation_context:
               trusted_ca:
-                filename: "/cert/ExampleCA.crt"
+                filename: "/cert/CrosstestCA.crt"

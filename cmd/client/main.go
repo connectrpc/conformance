@@ -141,7 +141,7 @@ func newTLSConfig(flagset flags) *tls.Config {
 	if err != nil {
 		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", flagset.certFile, flagset.keyFile)
 	}
-	caCert, err := ioutil.ReadFile("cert/ExampleCA.crt")
+	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
 	if err != nil {
 		log.Fatalf("Error opening cert file")
 	}
