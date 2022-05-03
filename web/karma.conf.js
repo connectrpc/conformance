@@ -32,9 +32,10 @@ module.exports = function (config) {
     customLaunchers: {
       ChromeCustom: {
         base: 'ChromeHeadless',
+        // We ignore the certificate errors as the client certificates are managed by the browser.
         // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
         // more permissions than Docker allows by default)
-        flags: config.docker ? ['--no-sandbox'] : [],
+        flags: config.docker ? ['--no-sandbox', '--ignore-certificate-errors'] : ['--ignore-certificate-errors'],
       }
     },
     frameworks: ["jasmine"],

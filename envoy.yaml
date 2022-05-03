@@ -38,6 +38,19 @@ static_resources:
                   - name: envoy.filters.http.grpc_web
                   - name: envoy.filters.http.cors
                   - name: envoy.filters.http.router
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain:
+                      filename: "/cert/envoy.crt"
+                    private_key:
+                      filename: "/cert/envoy.key"
+                validation_context:
+                  trusted_ca:
+                    filename: "/cert/ExampleCA.crt"
     - name: listener_1
       address:
         socket_address: { address: 0.0.0.0, port_value: 9092 }
@@ -71,6 +84,19 @@ static_resources:
                   - name: envoy.filters.http.grpc_web
                   - name: envoy.filters.http.cors
                   - name: envoy.filters.http.router
+          transport_socket:
+            name: envoy.transport_sockets.tls
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.DownstreamTlsContext
+              common_tls_context:
+                tls_certificates:
+                  - certificate_chain:
+                      filename: "/cert/envoy.crt"
+                    private_key:
+                      filename: "/cert/envoy.key"
+                validation_context:
+                  trusted_ca:
+                    filename: "/cert/ExampleCA.crt"
   clusters:
     - name: interop_service_connect
       connect_timeout: 0.25s
@@ -93,9 +119,9 @@ static_resources:
           common_tls_context:
             tls_certificates:
               - certificate_chain:
-                  filename: "/cert/client.crt"
+                  filename: "/cert/envoy.crt"
                 private_key:
-                  filename: "/cert/client.key"
+                  filename: "/cert/envoy.key"
             validation_context:
               trusted_ca:
                 filename: "/cert/ExampleCA.crt"
@@ -120,9 +146,9 @@ static_resources:
           common_tls_context:
             tls_certificates:
               - certificate_chain:
-                  filename: "/cert/client.crt"
+                  filename: "/cert/envoy.crt"
                 private_key:
-                  filename: "/cert/client.key"
+                  filename: "/cert/envoy.key"
             validation_context:
               trusted_ca:
                 filename: "/cert/ExampleCA.crt"
