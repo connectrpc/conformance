@@ -29,6 +29,7 @@ import (
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
 	"github.com/bufbuild/connect-go"
+	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
@@ -59,7 +60,7 @@ func main() {
 		"implementation",
 		"i",
 		"connect",
-		`the client implementation tested, accepted values are "connect" or "grpc-go"`,
+		`the client implementation tested, accepted values are "connect-h2", "connect-h3" or "grpc-go"`,
 	)
 	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
 	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
@@ -71,13 +72,13 @@ func main() {
 
 func run(flagset flags) {
 	switch flagset.implementation {
-	case "connect":
+	case "connect-h2", "connect-h3":
 		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
 			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
 		client := connectpb.NewTestServiceClient(
-			newClientH2C(flagset),
+			newClient(flagset),
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
@@ -123,16 +124,28 @@ func run(flagset flags) {
 		interopgrpc.DoUnimplementedService(t, client)
 		interopgrpc.DoFailWithNonASCIIError(t, client)
 	default:
-		log.Fatalf(`must set --implementation or -i to "connect" or "grpc-go"`)
+		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)
 	}
 }
 
-func newClientH2C(flagset flags) *http.Client {
+func newClient(flagset flags) *http.Client {
+	tlsConfig := newTLSConfig(flagset)
+	var transport http.RoundTripper
+	switch flagset.implementation {
+	case "connect-h2":
+		transport = &http2.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	case "connect-h3":
+		transport = &http3.RoundTripper{
+			TLSClientConfig: tlsConfig,
+		}
+	default:
+		log.Fatalf("unknown implementation flag to create client")
+	}
 	// This is wildly insecure - don't do this in production!
 	return &http.Client{
-		Transport: &http2.Transport{
-			TLSClientConfig: newTLSConfig(flagset),
-		},
+		Transport: transport,
 	}
 }
 
