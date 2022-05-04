@@ -2,9 +2,11 @@ FROM node:16-alpine
 
 WORKDIR /workspace
 
+ARG TEST_LATEST_COMMIT
+
 COPY web/package.json web/package-lock.json /workspace/
 
-# These can be removed after the connect-web and protobuf-es become public
+# These can be removed after the connect-web and protobuf-es become public on npm registry
 ARG NPM_TOKEN
 ENV NPM_TOKEN=$NPM_TOKEN
 COPY web/.npmrc /workspace/
@@ -21,3 +23,25 @@ ENV CHROME_BIN /usr/bin/chromium-browser
 
 RUN npm install
 
+# These can be removed after the connect-web and protobuf-es become public on github
+RUN apk add --update --no-cache \
+    ca-certificates \
+    git \
+    openssh-client && \
+    rm -rf /var/cache/apk/*
+
+# Download public key for github.com and use ssh key for auth for local development.
+RUN mkdir -p -m 0700 ~/.ssh && \
+    ssh-keyscan github.com >> ~/.ssh/known_hosts && \
+    git config --global --add url."git@github.com:".insteadOf "https://github.com/"
+
+# The mounting can be removed after the connect-web and protobuf-es become public on github
+RUN --mount=type=ssh \
+    if [ $TEST_LATEST_COMMIT ]; \
+    then \
+        git clone --depth 1 git@github.com:bufbuild/protobuf-es.git && \
+        git clone --depth 1 git@github.com:bufbuild/connect-web.git && \
+        npm --prefix ./protobuf-es/packages/protobuf/ run build && \
+        npm --prefix ./connect-web/packages/connect-web/ run build && \
+        npm link ./protobuf-es/packages/protobuf ./connect-web/packages/connect-web; \
+    fi

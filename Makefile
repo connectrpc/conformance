@@ -124,6 +124,8 @@ test-docker-compose: docker-compose-clean
 ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
 endif
+	@# docker build is a work around for the --ssh, can be removed when connect-web become public
+	docker build --ssh default -f Dockerfile.crosstestweb --build-arg TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) --build-arg NPM_TOKEN=$(NPM_TOKEN) .
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-to-server-connect
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-to-server-grpc
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-to-server-connect
