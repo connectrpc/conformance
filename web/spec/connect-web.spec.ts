@@ -196,9 +196,9 @@ describe("connect_web", function () {
       // In order to support a consistent behaviour for this case, the backend would need to
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
-      const unimplemented =
-        e.code === StatusCode.Unimplemented || e.code === StatusCode.NotFound;
-      expect(unimplemented).toBeTrue();
+      expect(
+        [StatusCode.Unimplemented, StatusCode.NotFound].includes(e.code)
+      ).toBeTrue();
     }
   });
 });

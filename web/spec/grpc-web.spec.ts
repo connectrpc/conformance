@@ -210,8 +210,7 @@ describe("grpc_web", function () {
       // In the case for grpc-web is talking to connect-go over HTTP1.x, net/http is returning
       // a 404, however this is not then handled by Connect, so grpc-web client throws an
       // Unknown based on Content-Type.
-      const unimplemented = err.code === 12 || err.code === 5 || err.code === 2;
-      expect(unimplemented).toBeTrue();
+      expect([2, 5, 12].includes(err.code)).toBeTrue();
       done();
     });
   });
