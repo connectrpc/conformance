@@ -185,16 +185,19 @@ describe("connect_web", function () {
       expect(e.code).toEqual(StatusCode.Unimplemented);
     }
   });
-  xit("unimplemented_service", async function () {
-    // This test case is currently skipped because the server implementations handle
-    // unimplemented services different between gRPC and Connect.
+  it("unimplemented_service", async function () {
     const badClient = makePromiseClient(UnimplementedService, transport);
     try {
       await badClient.unimplementedCall({});
       fail("expected to catch an error");
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unimplemented);
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      const unimplemented = (e.code === StatusCode.Unimplemented) || (e.code === StatusCode.NotFound);
+      expect(unimplemented).toBeTrue();
     }
   });
 });

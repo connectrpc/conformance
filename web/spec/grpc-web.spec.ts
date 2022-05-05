@@ -197,14 +197,17 @@ describe("grpc_web", function () {
       done();
     });
   });
-  xit("unimplemented_service", function (done) {
-    // This test case is currently skipped because the server implementations handle
-    // unimplemented services different between gRPC and Connect.
+  it("unimplemented_service", function (done) {
     const badClient = new UnimplementedServiceClient(SERVER_HOST, null, null);
     badClient.unimplementedCall(new Empty(), null, (err) => {
       expect(err).toBeDefined();
       expect("code" in err).toBeTrue();
-      expect(err.code).toEqual(12);
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      const unimplemented = (e.code === 12) || (e.code === 5);
+      expect(unimplemented).toBeTrue();
       done();
     });
   });
