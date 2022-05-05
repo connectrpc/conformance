@@ -18,6 +18,7 @@ import "testing"
 
 type tb struct {
 	internal *testing.T
+	failed   bool
 }
 
 func NewCrossTestT(t *testing.T) TB {
@@ -32,6 +33,9 @@ func (t *tb) Helper() {
 }
 
 func (t *tb) Errorf(format string, args ...any) {
+	// t.Errorf was called at least once, so a failed test case
+	// was found.
+	t.failed = true
 	t.internal.Errorf(format, args...)
 }
 
@@ -40,7 +44,11 @@ func (t *tb) Fatalf(format string, args ...any) {
 }
 
 func (t *tb) Successf(format string, args ...any) {
-	t.internal.Logf(format, args...)
+	// Only log a success message if no instances of `t.Errorf` was
+	// ever called.
+	if !t.failed {
+		t.internal.Logf(format, args...)
+	}
 }
 
 func (t *tb) FailNow() {
