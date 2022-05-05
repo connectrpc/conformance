@@ -40,7 +40,6 @@ jobs:
         # we don't need the soak tests for this job, we only need the base interop functionality
         run: make test-docker-compose # Make target includes clean-up
         env:
-          GOPRIVATE: github.com/bufbuild
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
           TEST_LATEST_COMMIT: true
