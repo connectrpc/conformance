@@ -11,6 +11,8 @@ COPYRIGHT_YEARS := 2022
 LICENSE_IGNORE := -e internal/proto/grpc -e internal/interop/grpc -e web/spec/grpc-web.spec.ts
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
+# Set to use latest commit of `connect-go`, `connect-web`, and/or `protobuf-es` for docker compose test. For example, `TEST_LATEST_COMMIT=true make test-docker-compose`
+TEST_LATEST_COMMIT ?= false
 
 .PHONY: help
 help: ## Describe useful make targets
@@ -122,14 +124,16 @@ test-docker-compose: docker-compose-clean
 ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
 endif
-	docker-compose run client-connect-to-server-connect
-	docker-compose run client-connect-to-server-grpc
-	docker-compose run client-grpc-to-server-connect
-	docker-compose run client-grpc-to-server-grpc
-	docker-compose run client-grpc-web-to-server-connect-h1
-	docker-compose run client-grpc-web-to-envoy-server-connect
-	docker-compose run client-grpc-web-to-envoy-server-grpc
-	docker-compose run client-connect-web-to-server-connect-h1
-	docker-compose run client-connect-web-to-envoy-server-connect
-	docker-compose run client-connect-web-to-envoy-server-grpc
+	@# TODO: docker build is a work around for the --ssh, can be removed when connect-web become public
+	docker build --ssh default -f Dockerfile.crosstestweb --build-arg TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) --build-arg NPM_TOKEN=$(NPM_TOKEN) .
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-to-server-connect
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-to-server-grpc
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-to-server-connect
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-to-server-grpc
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-server-connect-h1
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-envoy-server-connect
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-envoy-server-grpc
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-web-to-server-connect-h1
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-web-to-envoy-server-connect
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-web-to-envoy-server-grpc
 	$(MAKE) docker-compose-clean
