@@ -44,9 +44,8 @@ func TestConnectServer(t *testing.T) {
 	mux.Handle(connectpb.NewTestServiceHandler(
 		interopconnect.NewTestConnectServer(),
 	))
-	t.Run("grpc_client", func(testingT *testing.T) {
-		testingT.Parallel()
-		t := crosstesting.NewCrossTestT(testingT)
+	t.Run("grpc_client", func(t *testing.T) {
+		t.Parallel()
 		server := newUnstartedServer(mux)
 		defer server.Close()
 		pool := x509.NewCertPool()
@@ -58,29 +57,28 @@ func TestConnectServer(t *testing.T) {
 		assert.NoError(t, err)
 		defer gconn.Close()
 		client := testgrpc.NewTestServiceClient(gconn)
-		interopgrpc.DoEmptyUnaryCall(t, client)
-		interopgrpc.DoLargeUnaryCall(t, client)
-		interopgrpc.DoClientStreaming(t, client)
-		interopgrpc.DoServerStreaming(t, client)
-		interopgrpc.DoPingPong(t, client)
-		interopgrpc.DoEmptyStream(t, client)
-		interopgrpc.DoTimeoutOnSleepingServer(t, client)
-		interopgrpc.DoCancelAfterBegin(t, client)
-		interopgrpc.DoCancelAfterFirstResponse(t, client)
-		interopgrpc.DoCustomMetadata(t, client)
-		interopgrpc.DoDuplicatedCustomMetadata(t, client)
-		interopgrpc.DoStatusCodeAndMessage(t, client)
-		interopgrpc.DoSpecialStatusMessage(t, client)
-		interopgrpc.DoUnimplementedMethod(t, gconn)
-		interopgrpc.DoUnimplementedService(t, client)
-		interopgrpc.DoFailWithNonASCIIError(t, client)
+		interopgrpc.DoEmptyUnaryCall(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoLargeUnaryCall(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoClientStreaming(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoServerStreaming(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoPingPong(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoEmptyStream(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoTimeoutOnSleepingServer(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoCancelAfterBegin(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoCancelAfterFirstResponse(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoCustomMetadata(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoDuplicatedCustomMetadata(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoStatusCodeAndMessage(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoSpecialStatusMessage(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoUnimplementedMethod(crosstesting.NewCrossTestT(t), gconn)
+		interopgrpc.DoUnimplementedService(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoFailWithNonASCIIError(crosstesting.NewCrossTestT(t), client)
 	})
-	t.Run("grpc_client soak test", func(testingT *testing.T) {
-		testingT.Parallel()
+	t.Run("grpc_client soak test", func(t *testing.T) {
+		t.Parallel()
 		if testing.Short() {
-			testingT.Skip("skipping test in short mode")
+			t.Skip("skipping test in short mode")
 		}
-		t := crosstesting.NewCrossTestT(testingT)
 		server := newUnstartedServer(mux)
 		defer server.Close()
 		pool := x509.NewCertPool()
@@ -93,7 +91,7 @@ func TestConnectServer(t *testing.T) {
 		defer gconn.Close()
 		client := testgrpc.NewTestServiceClient(gconn)
 		interopgrpc.DoSoakTest(
-			t,
+			crosstesting.NewCrossTestT(t),
 			client,
 			server.Listener.Addr().String(),
 			nil,
@@ -104,39 +102,37 @@ func TestConnectServer(t *testing.T) {
 			time.Now().Add(10*1000*time.Millisecond), /* soakIterations * perIterationMaxAcceptableLatency */
 		)
 	})
-	t.Run("connect_client", func(testingT *testing.T) {
-		testingT.Parallel()
-		t := crosstesting.NewCrossTestT(testingT)
+	t.Run("connect_client", func(t *testing.T) {
+		t.Parallel()
 		server := newUnstartedServer(mux)
 		defer server.Close()
 		client := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
-		interopconnect.DoEmptyUnaryCall(t, client)
-		interopconnect.DoLargeUnaryCall(t, client)
-		interopconnect.DoClientStreaming(t, client)
-		interopconnect.DoServerStreaming(t, client)
-		interopconnect.DoPingPong(t, client)
-		interopconnect.DoEmptyStream(t, client)
-		interopconnect.DoTimeoutOnSleepingServer(t, client)
-		interopconnect.DoCancelAfterBegin(t, client)
-		interopconnect.DoCancelAfterFirstResponse(t, client)
-		interopconnect.DoCustomMetadata(t, client)
-		interopconnect.DoDuplicatedCustomMetadata(t, client)
-		interopconnect.DoStatusCodeAndMessage(t, client)
-		interopconnect.DoSpecialStatusMessage(t, client)
-		interopconnect.DoUnimplementedService(t, client)
-		interopconnect.DoFailWithNonASCIIError(t, client)
+		interopconnect.DoEmptyUnaryCall(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoLargeUnaryCall(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoClientStreaming(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoServerStreaming(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoPingPong(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoEmptyStream(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoTimeoutOnSleepingServer(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoCancelAfterBegin(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoCancelAfterFirstResponse(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoCustomMetadata(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoDuplicatedCustomMetadata(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoStatusCodeAndMessage(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoSpecialStatusMessage(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoUnimplementedService(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoFailWithNonASCIIError(crosstesting.NewCrossTestT(t), client)
 	})
-	t.Run("connect_client soak test", func(testingT *testing.T) {
-		testingT.Parallel()
+	t.Run("connect_client soak test", func(t *testing.T) {
+		t.Parallel()
 		if testing.Short() {
-			testingT.Skip("skipping test in short mode")
+			t.Skip("skipping test in short mode")
 		}
-		t := crosstesting.NewCrossTestT(testingT)
 		server := newUnstartedServer(mux)
 		defer server.Close()
 		client := connectpb.NewTestServiceClient(server.Client(), server.URL, connect.WithGRPC())
 		interopconnect.DoSoakTest(
-			t,
+			crosstesting.NewCrossTestT(t),
 			client,
 			server.Listener.Addr().String(),
 			false, /* resetChannel */

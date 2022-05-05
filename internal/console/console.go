@@ -20,7 +20,9 @@ import (
 	"os"
 )
 
-type TB struct{}
+type TB struct {
+	failed bool
+}
 
 func NewTB() *TB {
 	return &TB{}
@@ -29,6 +31,9 @@ func NewTB() *TB {
 func (t *TB) Helper() {}
 
 func (t *TB) Errorf(format string, args ...any) {
+	// t.Errorf was called at least once, so a failed test case
+	// was found.
+	t.failed = true
 	log.Printf("ERROR: "+format, args...)
 }
 
@@ -37,7 +42,9 @@ func (t *TB) Fatalf(format string, args ...any) {
 }
 
 func (t *TB) Successf(format string, args ...any) {
-	log.Printf("SUCCESS: "+format, args...)
+	if !t.failed {
+		log.Printf("SUCCESS: "+format, args...)
+	}
 }
 
 func (t *TB) FailNow() {
