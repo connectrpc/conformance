@@ -46,7 +46,6 @@ jobs:
       - name: Test
         run: make test-docker-compose # Make target includes clean-up
         env:
-          GOPRIVATE: github.com/bufbuild
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
           # TODO: Remove when connect-web is public.

@@ -37,7 +37,7 @@ RUN mkdir -p -m 0700 ~/.ssh && \
 
 # TODO: The mounting can be removed after the connect-web become public on github
 RUN --mount=type=ssh \
-    if [ $TEST_LATEST_COMMIT ]; \
+    if $TEST_LATEST_COMMIT; \
     then \
         git clone --depth 1 git@github.com:bufbuild/protobuf-es.git && \
         git clone --depth 1 git@github.com:bufbuild/connect-web.git && \
