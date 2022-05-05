@@ -146,6 +146,7 @@ func newClientH2C() *http.Client {
 }
 
 func newTestServiceServer(t *testing.T) (*grpc.Server, string) {
+	t.Helper()
 	lis, err := net.Listen("tcp", "localhost:0")
 	require.NoError(t, err)
 	server := grpc.NewServer()
