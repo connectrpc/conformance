@@ -185,7 +185,9 @@ describe("connect_web", function () {
       expect(e.code).toEqual(StatusCode.Unimplemented);
     }
   });
-  it("unimplemented_service", async function () {
+  xit("unimplemented_service", async function () {
+    // This test case is currently skipped because the server implementations handle
+    // unimplemented services different between gRPC and Connect.
     const badClient = makePromiseClient(UnimplementedService, transport);
     try {
       await badClient.unimplementedCall({});
