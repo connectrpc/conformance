@@ -206,7 +206,11 @@ describe("grpc_web", function () {
       // In order to support a consistent behaviour for this case, the backend would need to
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
-      const unimplemented = err.code === 12 || err.code === 5;
+      //
+      // In the case for grpc-web is talking to connect-go over HTTP1.x, net/http is returning
+      // a 404, however this is not then handled by Connect, so grpc-web client throws an
+      // Unknown based on Content-Type.
+      const unimplemented = err.code === 12 || err.code === 5 || err.code === 2;
       expect(unimplemented).toBeTrue();
       done();
     });
