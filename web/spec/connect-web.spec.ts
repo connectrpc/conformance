@@ -192,7 +192,13 @@ describe("connect_web", function () {
       fail("expected to catch an error");
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unimplemented);
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      expect(
+        [StatusCode.Unimplemented, StatusCode.NotFound].includes(e.code)
+      ).toBeTrue();
     }
   });
 });

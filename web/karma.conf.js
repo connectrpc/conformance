@@ -15,28 +15,30 @@
 module.exports = function (config) {
   // determine test files by implementation flag, run all tests if undefined
   let testFiles = ["gen/**/*.ts"];
-  switch(config.implementation) {
+  switch (config.implementation) {
     case "connect-web":
-      testFiles.push("spec/connect-web.spec.ts")
+      testFiles.push("spec/connect-web.spec.ts");
       break;
     case "grpc-web":
-      testFiles.push("spec/grpc-web.spec.ts")
+      testFiles.push("spec/grpc-web.spec.ts");
       break;
     case undefined:
-      testFiles.push("spec/**/*.ts")
+      testFiles.push("spec/**/*.ts");
       break;
     default:
-      throw "unknown implementation flag for web test"
+      throw "unknown implementation flag for web test";
   }
   config.set({
     customLaunchers: {
       ChromeCustom: {
-        base: 'ChromeHeadless',
+        base: "ChromeHeadless",
         // We ignore the certificate errors as the client certificates are managed by the browser.
         // We must disable the Chrome sandbox when running Chrome inside Docker (Chrome's sandbox needs
         // more permissions than Docker allows by default)
-        flags: config.docker ? ['--no-sandbox', '--ignore-certificate-errors'] : ['--ignore-certificate-errors'],
-      }
+        flags: config.docker
+          ? ["--no-sandbox", "--ignore-certificate-errors"]
+          : ["--ignore-certificate-errors"],
+      },
     },
     frameworks: ["jasmine"],
     files: testFiles,
