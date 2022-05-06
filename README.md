@@ -25,8 +25,15 @@ ensure that we are continuously testing for compatibility.
 You'll need Docker running on your machine and the test suite uses Docker Compose.
 You can run the tests using `make test-docker-compose`.
 
+To run the tests against the latest commits of `connect-go` and `connect-web` (instead of the
+latest release), set the env var `TEST_LATEST_COMMIT=1`.
 
-> The following will no longer be needed once `connect-go` is public.
+```
+$ TEST_LATEST_COMMIT=1 make test-docker-compose
+```
+
+
+> The following will no longer be needed once `connect-web` is public.
 
 For our NPM tests, we need to pull private packages, `connect-web` and `protobuf-es` from
 the NPM registry. This requires you to set a `NPM_TOKEN` env var in the environment you are

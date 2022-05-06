@@ -1,25 +1,19 @@
-connect-web test suite
-======================
+web crosstests
+===============
 
-The `connect-web` test suite is a small React web app that runs
-the same test cases as [gRPC-web interop test cases][grpc-web-interop].
+The `web` test suite uses Jasmine and Karma to test `connect-web` and `grpc-web` against gRPC
+and Connect servers. The test cases are at parity with [gRPC-web interop test cases][grpc-web-interop].
 
 ## Developers
 
-In order to have access to private `@bufbuild/connect-web` and `@bufbuild/protobuf` packages,
+In order to have access to the private `@bufbuild/connect-web` package,
 ensure that you have a `.npmrc` in your `$HOME` that sets an access token to the private
 package in the `@bufbuild` scope.
 
-To build a new version:
+To run the tests, use:
 
 ```
-$ npm run build
-```
-
-To preview the current build:
-
-```
-$ npm run preview
+$ npm run test --host="<server-host-name>" --port="<server-port-name>" --implementation="<grpc-web, connect-web>"
 ```
 
 To lint and format:
