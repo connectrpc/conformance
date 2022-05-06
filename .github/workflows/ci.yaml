@@ -27,7 +27,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup Docker Buildx # Docker Buildkit required for docker-compose
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v2
         with:
           driver: docker
           install: true
