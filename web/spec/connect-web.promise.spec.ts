@@ -26,7 +26,7 @@ import {
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
-describe("connect_web", function () {
+describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const transport = createConnectTransport({
@@ -106,6 +106,10 @@ describe("connect_web", function () {
           receive(handler) {
             response.receive({
               onHeader(header) {
+                expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
+                expect(header.get(ECHO_INITIAL_KEY)).toEqual(
+                    ECHO_INITIAL_VALUE
+                );
                 handler.onHeader?.(header);
               },
               onMessage(message) {
@@ -152,9 +156,7 @@ describe("connect_web", function () {
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
       expect(e.code).toEqual(StatusCode.Unknown);
-      expect(e.message).toEqual(
-        `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`
-      );
+      expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
     }
   });
   it("special_status", async function () {
@@ -171,9 +173,7 @@ describe("connect_web", function () {
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
       expect(e.code).toEqual(StatusCode.Unknown);
-      expect(e.message).toEqual(
-        `[${StatusCode[e.code]}] ${TEST_STATUS_MESSAGE}`
-      );
+      expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
     }
   });
   it("unimplemented_method", async function () {
