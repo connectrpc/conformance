@@ -35,7 +35,7 @@ function multiDone(done: DoneFn, count: number) {
   };
 }
 
-describe("connect_web callback client", function () {
+describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const transport = createConnectTransport({
