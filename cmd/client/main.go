@@ -36,6 +36,12 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+const (
+	connectH2 = "connect-h2"
+	connectH3 = "connect-h3"
+	grpcGo    = "grpc-go"
+)
+
 type flags struct {
 	host           string
 	port           string
@@ -72,7 +78,7 @@ func main() {
 
 func run(flagset flags) {
 	switch flagset.implementation {
-	case "connect-h2", "connect-h3":
+	case connectH2, connectH3:
 		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
 			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
@@ -87,16 +93,20 @@ func run(flagset flags) {
 		interopconnect.DoClientStreaming(console.NewTB(), client)
 		interopconnect.DoServerStreaming(console.NewTB(), client)
 		interopconnect.DoPingPong(console.NewTB(), client)
-		interopconnect.DoEmptyStream(console.NewTB(), client)
-		interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
-		interopconnect.DoCancelAfterBegin(console.NewTB(), client)
-		interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
-		interopconnect.DoCustomMetadata(console.NewTB(), client)
-		interopconnect.DoStatusCodeAndMessage(console.NewTB(), client)
-		interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-		interopconnect.DoUnimplementedService(console.NewTB(), client)
-		interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
-	case "grpc-go":
+		// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
+		// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
+		if flagset.implementation == connectH2 {
+			interopconnect.DoEmptyStream(console.NewTB(), client)
+			interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
+			interopconnect.DoCancelAfterBegin(console.NewTB(), client)
+			interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
+			interopconnect.DoCustomMetadata(console.NewTB(), client)
+			interopconnect.DoStatusCodeAndMessage(console.NewTB(), client)
+			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
+			interopconnect.DoUnimplementedService(console.NewTB(), client)
+			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+		}
+	case grpcGo:
 		gconn, err := grpc.Dial(
 			net.JoinHostPort(flagset.host, flagset.port),
 			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
