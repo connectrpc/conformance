@@ -138,7 +138,7 @@ static_resources:
                   address:
                     socket_address:
                       address: server-grpc
-                      port_value: 8082
+                      port_value: 8083
       transport_socket:
         name: envoy.transport_sockets.tls
         typed_config:

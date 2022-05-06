@@ -36,6 +36,12 @@ import (
 	"google.golang.org/grpc/credentials"
 )
 
+const (
+	connectH2 = "connect-h2"
+	connectH3 = "connect-h3"
+	grpcGo    = "grpc-go"
+)
+
 type flags struct {
 	host           string
 	port           string
@@ -72,13 +78,17 @@ func main() {
 
 func run(flagset flags) {
 	switch flagset.implementation {
-	case "connect-h2", "connect-h3":
+	case connectH2:
 		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
 			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
 		}
 		client := connectpb.NewTestServiceClient(
-			newClient(flagset.implementation, flagset.certFile, flagset.keyFile),
+			&http.Client{
+				Transport: &http2.Transport{
+					TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+				},
+			},
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
@@ -96,7 +106,28 @@ func run(flagset flags) {
 		interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 		interopconnect.DoUnimplementedService(console.NewTB(), client)
 		interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
-	case "grpc-go":
+	case connectH3:
+		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
+		if err != nil {
+			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
+		}
+		client := connectpb.NewTestServiceClient(
+			&http.Client{
+				Transport: &http3.RoundTripper{
+					TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+				},
+			},
+			serverURL.String(),
+			connect.WithGRPC(),
+		)
+		// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
+		// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
+		interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
+		interopconnect.DoLargeUnaryCall(console.NewTB(), client)
+		interopconnect.DoClientStreaming(console.NewTB(), client)
+		interopconnect.DoServerStreaming(console.NewTB(), client)
+		interopconnect.DoPingPong(console.NewTB(), client)
+	case grpcGo:
 		gconn, err := grpc.Dial(
 			net.JoinHostPort(flagset.host, flagset.port),
 			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
@@ -123,27 +154,6 @@ func run(flagset flags) {
 		interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client)
 	default:
 		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)
-	}
-}
-
-func newClient(implementation, certFile, keyFile string) *http.Client {
-	tlsConfig := newTLSConfig(certFile, keyFile)
-	var transport http.RoundTripper
-	switch implementation {
-	case "connect-h2":
-		transport = &http2.Transport{
-			TLSClientConfig: tlsConfig,
-		}
-	case "connect-h3":
-		transport = &http3.RoundTripper{
-			TLSClientConfig: tlsConfig,
-		}
-	default:
-		log.Fatalf("unknown implementation flag to create client")
-	}
-	// This is wildly insecure - don't do this in production!
-	return &http.Client{
-		Transport: transport,
 	}
 }
 
