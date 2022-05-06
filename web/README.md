@@ -1,14 +1,13 @@
 web crosstests
 ===============
 
-The `web` test suite uses Jasmine and Karma to test `connect-web` and `grpc-web` against gRPC
-and Connect servers. The test cases are at parity with [gRPC-web interop test cases][grpc-web-interop].
+The `web` test suite uses Jasmine and Karma to test `connect-web` and `grpc-web` against Connect
+and gRPC servers. The test cases are at parity with [gRPC-web interop test cases][grpc-web-interop].
 
 ## Developers
 
-In order to have access to the private `@bufbuild/connect-web` package,
-ensure that you have a `.npmrc` in your `$HOME` that sets an access token to the private
-package in the `@bufbuild` scope.
+In order to have access to the private `@bufbuild/connect-web` package, you'll need to use
+an `NPM_TOKEN` before running `npm install`.
 
 To lint and format:
 
