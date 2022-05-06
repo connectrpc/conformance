@@ -26,7 +26,7 @@ import {
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
-describe("connect_web", function () {
+describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const transport = createConnectTransport({

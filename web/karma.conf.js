@@ -17,7 +17,7 @@ module.exports = function (config) {
   let testFiles = ["gen/**/*.ts"];
   switch (config.implementation) {
     case "connect-web":
-      testFiles.push("spec/connect-web.spec.ts");
+      testFiles.push("spec/connect-web.*.spec.ts");
       break;
     case "grpc-web":
       testFiles.push("spec/grpc-web.spec.ts");
