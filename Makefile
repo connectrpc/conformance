@@ -130,10 +130,10 @@ endif
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-to-server-grpc
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-to-server-connect
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-to-server-grpc
-	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-server-connect-h1
-	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-envoy-server-connect
-	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-envoy-server-grpc
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-web-to-server-connect-h1
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-web-to-envoy-server-connect
 	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-connect-web-to-envoy-server-grpc
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-server-connect-h1
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-envoy-server-connect
+	TEST_LATEST_COMMIT=$(TEST_LATEST_COMMIT) docker-compose run client-grpc-web-to-envoy-server-grpc
 	$(MAKE) docker-compose-clean

@@ -15,7 +15,7 @@
 import {
   ConnectError,
   createConnectTransport,
-  makePromiseClient,
+  makeCallbackClient,
   StatusCode,
 } from "@bufbuild/connect-web";
 import { ClientInterceptor } from "@bufbuild/connect-web/dist/types/client-interceptor";
@@ -26,23 +26,42 @@ import {
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
-describe("connect_web_promise_client", function () {
+function multiDone(done: DoneFn, count: number) {
+  return function () {
+    count -= 1;
+    if (count <= 0) {
+      done();
+    }
+  };
+}
+
+describe("connect_web callback client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const transport = createConnectTransport({
     baseUrl: `https://${host}:${port}`,
   });
-  const client = makePromiseClient(TestService, transport);
-  it("empty_unary", async function () {
-    const response = await client.emptyCall({});
-    expect(response).toEqual(new Empty());
+  const client = makeCallbackClient(TestService, transport);
+  it("empty_unary", function (done) {
+    client.emptyCall({}, (err, response) => {
+      expect(err).toBeUndefined();
+      expect(response).toEqual(new Empty());
+      done();
+    });
   });
-  it("empty_unary_with_timeout", async function () {
+  it("empty_unary_with_timeout", function (done) {
     const deadlineMs = 1000; // 1 second
-    const response = await client.emptyCall({}, { timeout: deadlineMs });
-    expect(response).toEqual(new Empty());
+    client.emptyCall(
+      {},
+      (err, response) => {
+        expect(err).toBeUndefined();
+        expect(response).toEqual(new Empty());
+        done();
+      },
+      { timeout: deadlineMs }
+    );
   });
-  it("large_unary", async function () {
+  it("large_unary", function (done) {
     const size = 314159;
     const req = new SimpleRequest({
       responseSize: size,
@@ -50,12 +69,16 @@ describe("connect_web_promise_client", function () {
         body: new Uint8Array(271828).fill(0),
       },
     });
-    const response = await client.unaryCall(req);
-    expect(response.payload).toBeDefined();
-    expect(response.payload?.body.length).toEqual(size);
+    client.unaryCall(req, (err, response) => {
+      expect(err).toBeUndefined();
+      expect(response.payload).toBeDefined();
+      expect(response.payload?.body.length).toEqual(size);
+      done();
+    });
   });
-  it("server_stream", async function () {
+  it("server_stream", function (done) {
     const sizes = [31415, 9, 2653, 58979];
+    const doneFn = multiDone(done, sizes.length);
     const responseParams = sizes.map((size, index) => {
       return {
         size: size,
@@ -63,16 +86,23 @@ describe("connect_web_promise_client", function () {
       };
     });
     let responseCount = 0;
-    for await (const response of await client.streamingOutputCall({
-      responseParameters: responseParams,
-    })) {
-      expect(response.payload).toBeDefined();
-      expect(response.payload?.body.length).toEqual(sizes[responseCount]);
-      responseCount++;
-    }
-    expect(responseCount).toEqual(sizes.length);
+    client.streamingOutputCall(
+      {
+        responseParameters: responseParams,
+      },
+      (response) => {
+        expect(response.payload).toBeDefined();
+        expect(response.payload?.body.length).toEqual(sizes[responseCount]);
+        responseCount++;
+        doneFn();
+      },
+      (err) => {
+        expect(err).toBeUndefined();
+      }
+    );
   });
-  it("custom_metadata", async function () {
+  it("custom_metadata", function (done) {
+    const doneFn = multiDone(done, 3);
     // TODO: adjust this test once we land on the API for reading response headers and trailers
     const size = 314159;
     const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
@@ -108,9 +138,10 @@ describe("connect_web_promise_client", function () {
               onHeader(header) {
                 expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
                 expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-                    ECHO_INITIAL_VALUE
+                  ECHO_INITIAL_VALUE
                 );
                 handler.onHeader?.(header);
+                doneFn();
               },
               onMessage(message) {
                 handler.onMessage(message);
@@ -121,6 +152,7 @@ describe("connect_web_promise_client", function () {
                   ECHO_TRAILING_VALUE.toString()
                 );
                 handler.onTrailer?.(trailer);
+                doneFn();
               },
               onClose(error) {
                 handler.onClose(error);
@@ -134,15 +166,22 @@ describe("connect_web_promise_client", function () {
       baseUrl: `https://${host}:${port}`,
       interceptors: [interceptor],
     });
-    const clientWithInterceptor = makePromiseClient(
+    const clientWithInterceptor = makeCallbackClient(
       TestService,
       transportWithInterceptor
     );
-    const response = await clientWithInterceptor.unaryCall(req, metadata);
-    expect(response.payload).toBeDefined();
-    expect(response.payload?.body.length).toEqual(size);
+    clientWithInterceptor.unaryCall(
+      req,
+      (err, response) => {
+        expect(err).toBeUndefined();
+        expect(response.payload).toBeDefined();
+        expect(response.payload?.body.length).toEqual(size);
+        doneFn();
+      },
+      metadata
+    );
   });
-  it("status_code_and_message", async function () {
+  it("status_code_and_message", function (done) {
     const TEST_STATUS_MESSAGE = "test status message";
     const req = new SimpleRequest({
       responseStatus: {
@@ -150,16 +189,14 @@ describe("connect_web_promise_client", function () {
         message: TEST_STATUS_MESSAGE,
       },
     });
-    try {
-      await client.unaryCall(req);
-      fail("expected to catch an error");
-    } catch (e) {
-      expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unknown);
-      expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
-    }
+    client.unaryCall(req, (err) => {
+      expect(err).toBeInstanceOf(ConnectError);
+      expect(err.code).toEqual(StatusCode.Unknown);
+      expect(err.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+      done();
+    });
   });
-  it("special_status", async function () {
+  it("special_status", function (done) {
     const TEST_STATUS_MESSAGE = `\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n`;
     const req = new SimpleRequest({
       responseStatus: {
@@ -167,38 +204,32 @@ describe("connect_web_promise_client", function () {
         message: TEST_STATUS_MESSAGE,
       },
     });
-    try {
-      await client.unaryCall(req);
-      fail("expected to catch an error");
-    } catch (e) {
-      expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unknown);
-      expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
-    }
+    client.unaryCall(req, (err) => {
+      expect(err).toBeInstanceOf(ConnectError);
+      expect(err.code).toEqual(StatusCode.Unknown);
+      expect(err.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+      done();
+    });
   });
-  it("unimplemented_method", async function () {
-    try {
-      await client.unimplementedCall({});
-      fail("expected to catch an error");
-    } catch (e) {
-      expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unimplemented);
-    }
+  it("unimplemented_method", function (done) {
+    client.unimplementedCall({}, (err) => {
+      expect(err).toBeInstanceOf(ConnectError);
+      expect(err.code).toEqual(StatusCode.Unimplemented);
+      done();
+    });
   });
-  it("unimplemented_service", async function () {
-    const badClient = makePromiseClient(UnimplementedService, transport);
-    try {
-      await badClient.unimplementedCall({});
-      fail("expected to catch an error");
-    } catch (e) {
-      expect(e).toBeInstanceOf(ConnectError);
+  it("unimplemented_service", function (done) {
+    const badClient = makeCallbackClient(UnimplementedService, transport);
+    badClient.unimplementedCall({}, (err) => {
+      expect(err).toBeInstanceOf(ConnectError);
       // We expect this to be either Unimplemented or NotFound, depending on the implementation.
       // In order to support a consistent behaviour for this case, the backend would need to
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
       expect(
-        [StatusCode.Unimplemented, StatusCode.NotFound].includes(e.code)
+        [StatusCode.Unimplemented, StatusCode.NotFound].includes(err.code)
       ).toBeTrue();
-    }
+      done();
+    });
   });
 });
