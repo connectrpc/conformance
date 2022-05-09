@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@bufbuild/connect-web": "0.0.4",
-    "@bufbuild/protobuf": "^0.0.3",
+    "@bufbuild/protobuf": "^0.0.4",
     "prettier": "^2.6.2"
   },
   "devDependencies": {
