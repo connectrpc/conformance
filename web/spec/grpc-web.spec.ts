@@ -219,6 +219,7 @@ describe("grpc_web", function () {
       expect(err).toBeDefined();
       expect("code" in err).toBeTrue();
       expect(err.code).toEqual(8);
+      expect(err.message).toEqual("soirée 🎉");
       done();
     })
   });
