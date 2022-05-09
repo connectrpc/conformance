@@ -34,8 +34,6 @@ import (
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -109,7 +107,7 @@ func run(flagset flags) {
 	}
 	h2Server := http.Server{
 		Addr:      ":" + flagset.h2Port,
-		Handler:   h2c.NewHandler(mux, &http2.Server{}),
+		Handler:   mux,
 		TLSConfig: tlsConfig,
 	}
 	var h3Server http3.Server
