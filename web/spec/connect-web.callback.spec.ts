@@ -76,7 +76,7 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
-  it("server_stream", function (done) {
+  it("server_streaming", function (done) {
     const sizes = [31415, 9, 2653, 58979];
     const doneFn = multiDone(done, sizes.length);
     const responseParams = sizes.map((size, index) => {
@@ -210,6 +210,22 @@ describe("connect_web_callback_client", function () {
       expect(err.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
+  });
+  it("timeout_on_sleeping_server", function (done) {
+    client.streamingOutputCall(
+      {
+        payload: {
+          body: new Uint8Array(271828).fill(0),
+        },
+      },
+      {
+        timeout: 1, // 1ms
+      },
+      (err) => {
+        expect(err).toBeDefined();
+        expect(err.code).toEqual(StatusCode.DeadlineExceeded);
+      }
+    );
   });
   it("unimplemented_method", function (done) {
     client.unimplementedCall({}, (err) => {

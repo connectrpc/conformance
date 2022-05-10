@@ -82,7 +82,7 @@ describe("grpc_web", function () {
       done();
     });
   });
-  it("server_stream", function (done) {
+  it("server_streaming", function (done) {
     const sizes = [31415, 9, 2653, 58979];
     const doneFn = multiDone(done, sizes.length);
 
@@ -187,6 +187,25 @@ describe("grpc_web", function () {
       expect(err.code).toEqual(2);
       expect(err.message).toEqual(TEST_STATUS_MESSAGE);
       done();
+    });
+  });
+  it("timeout_on_sleeping_server", async function () {
+    const deadline = new Date();
+    deadline.setMilliseconds(deadline.getMilliseconds() + 3);
+    console.log(deadline.getTime());
+    const payload = new Payload();
+    payload.setBody("0".repeat(271828));
+    const req = new StreamingOutputCallRequest();
+    req.setPayload(payload);
+    const stream = client.streamingOutputCall(req, {
+      deadline: deadline.getTime(),
+    });
+    await new Promise((f) => setTimeout(f, 5));
+    stream.on("error", (err) => {
+      expect(err).toBeDefined();
+      console.log(err);
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(4);
     });
   });
   it("unimplemented_method", function (done) {

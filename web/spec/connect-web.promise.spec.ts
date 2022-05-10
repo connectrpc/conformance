@@ -54,7 +54,7 @@ describe("connect_web_promise_client", function () {
     expect(response.payload).toBeDefined();
     expect(response.payload?.body.length).toEqual(size);
   });
-  it("server_stream", async function () {
+  it("server_streaming", async function () {
     const sizes = [31415, 9, 2653, 58979];
     const responseParams = sizes.map((size, index) => {
       return {
@@ -108,7 +108,7 @@ describe("connect_web_promise_client", function () {
               onHeader(header) {
                 expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
                 expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-                    ECHO_INITIAL_VALUE
+                  ECHO_INITIAL_VALUE
                 );
                 handler.onHeader?.(header);
               },
@@ -174,6 +174,25 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect(e.code).toEqual(StatusCode.Unknown);
       expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+    }
+  });
+  it("timeout_on_sleeping_server", async function () {
+    let responseCount = 0;
+    try {
+      await client.streamingOutputCall(
+        {
+          payload: {
+            body: new Uint8Array(271828).fill(0),
+          },
+        },
+        {
+          timeout: 1,
+        }
+      );
+      fail("expected to catch an error");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect(e.code).toEqual(StatusCode.DeadlineExceeded);
     }
   });
   it("unimplemented_method", async function () {
