@@ -108,7 +108,7 @@ describe("connect_web_promise_client", function () {
               onHeader(header) {
                 expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
                 expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-                    ECHO_INITIAL_VALUE
+                  ECHO_INITIAL_VALUE
                 );
                 handler.onHeader?.(header);
               },
@@ -199,6 +199,15 @@ describe("connect_web_promise_client", function () {
       expect(
         [StatusCode.Unimplemented, StatusCode.NotFound].includes(e.code)
       ).toBeTrue();
+    }
+  });
+  it("fail_unary", async function () {
+    try {
+      await client.failUnaryCall({});
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect(e.code).toEqual(StatusCode.ResourceExhausted);
+      expect(e.rawMessage).toEqual("soirée 🎉");
     }
   });
 });

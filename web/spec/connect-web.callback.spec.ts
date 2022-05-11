@@ -232,4 +232,12 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
+  it("fail_unary", function (done) {
+    client.failUnaryCall({}, (err) => {
+      expect(err).toBeInstanceOf(ConnectError);
+      expect(err.code).toEqual(StatusCode.ResourceExhausted);
+      expect(err.rawMessage).toEqual("soirée 🎉");
+      done();
+    });
+  });
 });
