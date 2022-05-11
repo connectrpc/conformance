@@ -72,6 +72,18 @@ describe("connect_web_promise_client", function () {
     }
     expect(responseCount).toEqual(sizes.length);
   });
+  // TODO: enable this test when we have a fix on connect-web
+  xit("empty_stream", async function () {
+    try {
+      for await (const response of await client.streamingOutputCall({
+        responseParameters: [],
+      })) {
+        fail(`expecting no response in the empty stream, got: ${response}`);
+      }
+    } catch (e) {
+      fail(`expecting no error in the empty stream, got: ${e}`);
+    }
+  });
   it("custom_metadata", async function () {
     // TODO: adjust this test once we land on the API for reading response headers and trailers
     const size = 314159;

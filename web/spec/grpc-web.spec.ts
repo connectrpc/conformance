@@ -107,6 +107,19 @@ describe("grpc_web", function () {
       doneFn();
     });
   });
+  it("empty_stream", function (done) {
+    const req = new StreamingOutputCallRequest();
+    const call = client.streamingOutputCall(req, {});
+    call.on("data", (data) => {
+      fail(`expecting no response in the empty stream, got: ${data}`);
+    });
+    call.on("error", (err) => {
+      fail(`expecting no error in the empty stream, got: ${err}`);
+    });
+    call.on("end", () => {
+      done();
+    });
+  });
   it("custom_metadata", function (done) {
     const doneFn = multiDone(done, 3);
     const size = 314159;
@@ -215,12 +228,12 @@ describe("grpc_web", function () {
     });
   });
   it("fail_unary", function (done) {
-    client.failUnaryCall(new SimpleRequest(), null, (err)=>{
+    client.failUnaryCall(new SimpleRequest(), null, (err) => {
       expect(err).toBeDefined();
       expect("code" in err).toBeTrue();
       expect(err.code).toEqual(8);
       expect(err.message).toEqual("soirée 🎉");
       done();
-    })
+    });
   });
 });

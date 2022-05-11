@@ -101,6 +101,21 @@ describe("connect_web_callback_client", function () {
       }
     );
   });
+  // TODO: enable this test when we have a fix on connect-web
+  xit("empty_stream", function (done) {
+    client.streamingOutputCall(
+      {
+        responseParameters: [],
+      },
+      () => {
+        fail("expecting no response in the empty stream");
+      },
+      (err) => {
+        expect(err).toBeUndefined();
+        done();
+      }
+    );
+  });
   it("custom_metadata", function (done) {
     const doneFn = multiDone(done, 3);
     // TODO: adjust this test once we land on the API for reading response headers and trailers
