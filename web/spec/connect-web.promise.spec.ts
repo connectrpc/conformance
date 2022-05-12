@@ -75,8 +75,6 @@ describe("connect_web_promise_client", function () {
     }
     expect(responseCount).toEqual(sizes.length);
   });
-  // TODO: enable this test when we have a fix on connect-web
-  xit("empty_stream", async function () {
     try {
       for await (const response of await client.streamingOutputCall({
         responseParameters: [],
