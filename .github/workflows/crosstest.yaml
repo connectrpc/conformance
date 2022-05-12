@@ -41,7 +41,6 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
-          TEST_LATEST_COMMIT: true
           TEST_CONNECT_GO_BRANCH: main
           TEST_PROTOBUF_ES_BRANCH: main
           TEST_CONNECT_WEB_BRANCH: main

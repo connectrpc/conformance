@@ -78,7 +78,6 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
@@ -91,7 +90,6 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
@@ -105,7 +103,6 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
@@ -119,7 +116,6 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
@@ -132,7 +128,6 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
@@ -146,7 +141,6 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
