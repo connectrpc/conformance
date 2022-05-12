@@ -79,6 +79,8 @@ services:
       dockerfile: Dockerfile.crosstestweb
       args:
         TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
@@ -90,6 +92,8 @@ services:
       dockerfile: Dockerfile.crosstestweb
       args:
         TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
@@ -102,6 +106,8 @@ services:
       dockerfile: Dockerfile.crosstestweb
       args:
         TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
@@ -114,6 +120,8 @@ services:
       dockerfile: Dockerfile.crosstestweb
       args:
         TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
@@ -125,6 +133,8 @@ services:
       dockerfile: Dockerfile.crosstestweb
       args:
         TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-web"
@@ -137,6 +147,8 @@ services:
       dockerfile: Dockerfile.crosstestweb
       args:
         TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-web"
