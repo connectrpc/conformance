@@ -169,7 +169,19 @@ Client calls an unimplemented service and expects an error with the status `UNIM
 
 ## Requirements and Running the Tests
 
-To run these tests, you'll need Docker. The test suite uses Docker Compose.
+### Github Actions
+
+There is a Github Actions workflow configured for running the nightly crosstest. This can
+also be used to trigger a manual run.
+
+In the [Github Action crosstest workflow][github-action], you can trigger a manual run of
+crosstest using the "Run workflow" button. This will also allow you to configure a branch
+for `connect-go`, `protobuf-es`, or `connect-web` if you want to use the Github Actions to
+test against a development branch of any of these packages.
+
+### Locally
+
+To run these locally tests, you'll need Docker. The test suite uses Docker Compose.
 You can run the tests using `make test-docker-compose`.
 
 To run the tests against the latest commits of `connect-go` and `connect-web` (instead of the
@@ -212,3 +224,4 @@ Offered under the [Apache 2 license][license].
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE.txt
 [test.proto]: https://github.com/bufbuild/connect-crosstest/blob/main/internal/proto/grpc/testing/test.proto
+[github-action]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml
