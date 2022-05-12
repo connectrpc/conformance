@@ -5,7 +5,7 @@ on:
   workflow_dispatch: # support manual runs
     inputs:
       test_connect_go_branch:
-        description: 'Target connect-go branch to test (cannot including "/")'
+        description: 'Target connect-go branch to test (cannot include "/")'
         required: false
         default: 'main'
       test_protobuf_es_branch:
