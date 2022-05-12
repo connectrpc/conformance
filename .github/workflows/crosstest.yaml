@@ -16,6 +16,11 @@ on:
         description: 'Target connect-web branch to test'
         required: false
         default: 'main'
+      disable_open_issue:
+        description: 'Disable open issue on fail'
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
   issues: write
@@ -54,10 +59,12 @@ jobs:
           DEFAULT_TEST_CONNECT_GO_BRANCH: main
           DEFAULT_TEST_PROTOBUF_ES_BRANCH: main
           DEFAULT_TEST_CONNECT_WEB_BRANCH: main
+          DEFAULT_DISABLE_OPEN_ISSUE_ON_FAIL: false
         run: |
           echo "TEST_CONNECT_GO_BRANCH=${{ github.event.inputs.test_connect_go_branch || env.DEFAULT_TEST_CONNECT_GO_BRANCH }}" >> $GITHUB_ENV
           echo "TEST_PROTOBUF_ES_BRANCH=${{ github.event.inputs.test_protobuf_es_branch || env.DEFAULT_TEST_PROTOBUF_ES_BRANCH }}" >> $GITHUB_ENV
           echo "TEST_CONNECT_WEB_BRANCH=${{ github.event.inputs.test_connect_web_branch || env.DEFAULT_TEST_CONNECT_WEB_BRANCH }}" >> $GITHUB_ENV
+          echo "DISABLE_OPEN_ISSUE=${{ github.event.inputs.disable_open_issue || env.DEFAULT_DISABLE_OPEN_ISSUE }}" >> $GITHUB_ENV
       - name: Test With Latest Commit
         run: make test-docker-compose # Make target includes clean-up
         env:
@@ -67,7 +74,7 @@ jobs:
           NPM_TOKEN: ${{ secrets.NPM_RO_TOKEN }}
       - name: Open Issue on Fail
         uses: dblock/create-a-github-issue@v3
-        if: failure()
+        if: ${{ failure() && env.DISABLE_OPEN_ISSUE != 'true' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
