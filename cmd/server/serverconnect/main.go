@@ -97,7 +97,7 @@ func run(flagset flags) {
 		// We explicitly set the exposed header names instead of using the wildcard *,
 		// because in requests with credentials, it is treated as the literal header
 		// name "*" without special semantics.
-		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial"},
+		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Timeout", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial"},
 	}).Handler(mux)
 	tlsConfig := newTLSConfig(flagset.certFile, flagset.keyFile)
 	h1Server := http.Server{

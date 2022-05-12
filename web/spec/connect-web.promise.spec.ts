@@ -24,7 +24,10 @@ import {
   UnimplementedService,
 } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
-import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import {
+  SimpleRequest,
+  StreamingOutputCallRequest,
+} from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
 describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
@@ -54,7 +57,7 @@ describe("connect_web_promise_client", function () {
     expect(response.payload).toBeDefined();
     expect(response.payload?.body.length).toEqual(size);
   });
-  it("server_stream", async function () {
+  it("server_streaming", async function () {
     const sizes = [31415, 9, 2653, 58979];
     const responseParams = sizes.map((size, index) => {
       return {
@@ -186,6 +189,30 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect(e.code).toEqual(StatusCode.Unknown);
       expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+    }
+  });
+  // TODO: enable this test when we have a fix on connect-go
+  xit("timeout_on_sleeping_server", async function () {
+    const request = new StreamingOutputCallRequest({
+      payload: {
+        body: new Uint8Array(271828).fill(0),
+      },
+    });
+    try {
+      for await (const response of await client.streamingOutputCall(request, {
+        timeout: 1,
+      })) {
+        fail(`expecting no response from sleeping server, got: ${response}`);
+      }
+      fail("expected to catch an error");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      // We expect this to be DEADLINE_EXCEEDED, however envoy is monitoring the stream timeout
+      // and will return an HTTP status code 408 when stream max duration time reached, which
+      // cannot be translated to a connect error code, so connect-web client throws an Unknown.
+      expect(
+        [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(e.code)
+      ).toBeTrue();
     }
   });
   it("unimplemented_method", async function () {

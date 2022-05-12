@@ -24,7 +24,10 @@ import {
   UnimplementedService,
 } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
-import { SimpleRequest } from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import {
+  SimpleRequest,
+  StreamingOutputCallRequest,
+} from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
 function multiDone(done: DoneFn, count: number) {
   return function () {
@@ -76,7 +79,7 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
-  it("server_stream", function (done) {
+  it("server_streaming", function (done) {
     const sizes = [31415, 9, 2653, 58979];
     const doneFn = multiDone(done, sizes.length);
     const responseParams = sizes.map((size, index) => {
@@ -225,6 +228,34 @@ describe("connect_web_callback_client", function () {
       expect(err.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
+  });
+  // TODO: enable this test when we have a fix on connect-go
+  xit("timeout_on_sleeping_server", function (done) {
+    const request = new StreamingOutputCallRequest({
+      payload: {
+        body: new Uint8Array(271828).fill(0),
+      },
+    });
+    client.streamingOutputCall(
+      request,
+      (response) => {
+        fail(`expecting no response from sleeping server, got: ${response}`);
+      },
+      (err) => {
+        expect(err).toBeDefined();
+        expect(err).toBeInstanceOf(ConnectError);
+        // We expect this to be DEADLINE_EXCEEDED, however envoy is monitoring the stream timeout
+        // and will return an HTTP status code 408 when stream max duration time reached, which
+        // cannot be translated to a connect error code, so connect-web client throws an Unknown.
+        expect(
+          [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(err.code)
+        ).toBeTrue();
+        done();
+      },
+      {
+        timeout: 1, // 1ms
+      }
+    );
   });
   it("unimplemented_method", function (done) {
     client.unimplementedCall({}, (err) => {
