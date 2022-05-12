@@ -5,7 +5,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --h3port "8082" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
     ports:
       - "8080:8080"
@@ -16,7 +16,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/servergrpc --port "8083" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8083:8083"
@@ -33,7 +33,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -42,7 +42,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -51,7 +51,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
@@ -60,7 +60,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -69,7 +69,7 @@ services:
       context: .
       dockerfile: Dockerfile.crosstest
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
@@ -78,7 +78,8 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
@@ -89,7 +90,8 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
@@ -101,7 +103,8 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
@@ -113,7 +116,8 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
@@ -124,7 +128,8 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-web"
@@ -136,7 +141,8 @@ services:
       context: .
       dockerfile: Dockerfile.crosstestweb
       args:
-        TEST_LATEST_COMMIT: "${TEST_LATEST_COMMIT}"
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH}"
         # TODO: Remove when connect-web is public.
         NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-web"

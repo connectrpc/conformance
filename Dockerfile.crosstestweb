@@ -2,7 +2,8 @@ FROM node:16-alpine
 
 WORKDIR /workspace
 
-ARG TEST_LATEST_COMMIT
+ARG TEST_PROTOBUF_ES_BRANCH
+ARG TEST_CONNECT_WEB_BRANCH
 
 COPY web/package.json web/package-lock.json /workspace/
 
@@ -37,11 +38,20 @@ RUN mkdir -p -m 0700 ~/.ssh && \
 
 # TODO: The mounting can be removed after the connect-web become public on github
 RUN --mount=type=ssh \
-    if $TEST_LATEST_COMMIT; \
+    local_npm_packages="" && \
+    if [ ! -z "$TEST_PROTOBUF_ES_BRANCH" ]; \
     then \
-        git clone --depth 1 git@github.com:bufbuild/protobuf-es.git && \
-        git clone --depth 1 git@github.com:bufbuild/connect-web.git && \
+        git clone --branch "$TEST_PROTOBUF_ES_BRANCH" --depth 1 git@github.com:bufbuild/protobuf-es.git && \
         npm --prefix ./protobuf-es/packages/protobuf/ run build && \
+        local_npm_packages="${local_npm_packages} ./protobuf-es/packages/protobuf/"; \
+    fi && \
+    if [ ! -z "$TEST_CONNECT_WEB_BRANCH" ]; \
+    then \
+        git clone --branch "$TEST_CONNECT_WEB_BRANCH" --depth 1 git@github.com:bufbuild/connect-web.git && \
         npm --prefix ./connect-web/packages/connect-web/ run build && \
-        npm link ./protobuf-es/packages/protobuf ./connect-web/packages/connect-web; \
+        local_npm_packages="${local_npm_packages} ./connect-web/packages/connect-web/"; \
+    fi && \
+    if [ ! -z "$local_npm_packages" ]; \
+    then \
+        npm link ${local_npm_packages}; \
     fi
