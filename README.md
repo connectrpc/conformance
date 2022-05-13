@@ -36,7 +36,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 | `fail_unary` | :ballot_box_with_check: | :ballot_box_with_check: |
 | `cancel_after_begin` | :ballot_box_with_check: | |
 | `cancel_after_first_response` | :ballot_box_with_check: | |
-| `timeout_on_sleeping_server` | :ballot_box_with_check: | |
+| `timeout_on_sleeping_server` | :ballot_box_with_check: | :ballot_box_with_check: |
 | `custom_metadata` | :ballot_box_with_check: | :ballot_box_with_check: |
 | `duplicated_custom_metadata` | :ballot_box_with_check: | |
 | `status_code_and_message` | :ballot_box_with_check: | :ballot_box_with_check: |
@@ -117,8 +117,8 @@ the stream, and expects an error with the code `CANCELED`.
 
 RPC: `FullDuplexCall`/`StreamingOutputCall`
 
-Client calls `FullDuplexCall` (web client calls `StreamingOutputCall`) with a context that
-cancels the deadline, closes the stream and expects to receive an error with status `DEADLINE_EXCEEDED`.
+Client calls `FullDuplexCall` (web client calls `StreamingOutputCall`) with a timeout, closes
+the stream and expects to receive an error with status `DEADLINE_EXCEEDED`.
 
 **custom_metadata**:
 
