@@ -95,7 +95,7 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, args *connect.Requ
 		}
 		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
 		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
-		// but in order to pretend a network issue, we put the context checking here.
+		// but in order to simulate a network latency issue, we put the context checking here.
 		if err := ctx.Err(); err != nil {
 			return err
 		}
