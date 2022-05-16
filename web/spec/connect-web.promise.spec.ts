@@ -192,11 +192,17 @@ describe("connect_web_promise_client", function () {
     }
   });
   // TODO: enable this test when we have a fix on connect-go
-  xit("timeout_on_sleeping_server", async function () {
+  it("timeout_on_sleeping_server", async function () {
     const request = new StreamingOutputCallRequest({
       payload: {
         body: new Uint8Array(271828).fill(0),
       },
+      responseParameters: [
+        {
+          size: 31415,
+          intervalUs: 5000,
+        }
+      ],
     });
     try {
       for await (const response of await client.streamingOutputCall(request, {

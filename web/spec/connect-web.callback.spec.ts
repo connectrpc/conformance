@@ -230,11 +230,17 @@ describe("connect_web_callback_client", function () {
     });
   });
   // TODO: enable this test when we have a fix on connect-go
-  xit("timeout_on_sleeping_server", function (done) {
+  it("timeout_on_sleeping_server", function (done) {
     const request = new StreamingOutputCallRequest({
       payload: {
         body: new Uint8Array(271828).fill(0),
       },
+      responseParameters: [
+        {
+          size: 31415,
+          intervalUs: 5000,
+        }
+      ],
     });
     client.streamingOutputCall(
       request,

@@ -203,11 +203,17 @@ describe("grpc_web", function () {
     });
   });
   // TODO: enable this test when we have a fix on connect-go
-  xit("timeout_on_sleeping_server", function (done) {
+  it("timeout_on_sleeping_server", function (done) {
+    const responseParam = new ResponseParameters();
+    responseParam.setSize(31415);
+    responseParam.setIntervalUs(5000);
+
     const payload = new Payload();
     payload.setBody("0".repeat(271828));
+
     const req = new StreamingOutputCallRequest();
     req.setPayload(payload);
+    req.setResponseParametersList([responseParam]);
     const stream = client.streamingOutputCall(req, {
       // We add 3 milliseconds for the deadline instead of 1 ms as mentioned in the interop test
       // documentation, as grpc-web will recalculate the timeout again based on the deadline set
@@ -215,6 +221,9 @@ describe("grpc_web", function () {
       // not be <=0, which will skip the timeout.
       deadline: `${Date.now() + 3}`,
     });
+    stream.on("data", ()=> {
+      fail(`expecting no response from sleeping server`);
+    })
     stream.on("end", () => {
       fail("unexpected end of stream without error");
     });

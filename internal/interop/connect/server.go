@@ -89,12 +89,17 @@ func (s *testServer) FailUnaryCall(ctx context.Context, in *connect.Request[test
 }
 
 func (s *testServer) StreamingOutputCall(ctx context.Context, args *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
-	cs := args.Msg.GetResponseParameters()
-	for _, c := range cs {
-		if us := c.GetIntervalUs(); us > 0 {
+	for _, param := range args.Msg.GetResponseParameters() {
+		if us := param.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
 		}
-		pl, err := serverNewPayload(args.Msg.GetResponseType(), c.GetSize())
+		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
+		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
+		// but in order to pretend a network issue, we put the context checking here.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		pl, err := serverNewPayload(args.Msg.GetResponseType(), param.GetSize())
 		if err != nil {
 			return err
 		}
