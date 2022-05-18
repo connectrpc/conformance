@@ -104,6 +104,7 @@ describe("connect_web_callback_client", function () {
       }
     );
   });
+  it("empty_stream", function (done) {
     client.streamingOutputCall(
       {
         responseParameters: [],

@@ -75,6 +75,7 @@ describe("connect_web_promise_client", function () {
     }
     expect(responseCount).toEqual(sizes.length);
   });
+  it("empty_stream", async function () {
     try {
       for await (const response of await client.streamingOutputCall({
         responseParameters: [],
