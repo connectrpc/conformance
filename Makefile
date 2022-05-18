@@ -107,11 +107,11 @@ $(BIN)/protoc-gen-go: Makefile
 
 $(BIN)/protoc-gen-es: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.0-20220404100843-2bf5c0f2d1c3
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.4
 
 $(BIN)/protoc-gen-connect-web: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220407075159-6fda16455846
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220518200055-152f8020ecfa
 
 docker-compose-clean:
 	-docker-compose down --rmi local --remove-orphans
