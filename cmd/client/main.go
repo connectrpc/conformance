@@ -92,6 +92,15 @@ func run(flagset flags) {
 			serverURL.String(),
 			connect.WithGRPC(),
 		)
+		unresolvableClient := connectpb.NewTestServiceClient(
+			&http.Client{
+				Transport: &http2.Transport{
+					TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+				},
+			},
+			"https://unresolvable-host.some.domain",
+			connect.WithGRPC(),
+		)
 		interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 		interopconnect.DoLargeUnaryCall(console.NewTB(), client)
 		interopconnect.DoClientStreaming(console.NewTB(), client)
@@ -106,6 +115,7 @@ func run(flagset flags) {
 		interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 		interopconnect.DoUnimplementedService(console.NewTB(), client)
 		interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 	case connectH3:
 		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
@@ -137,6 +147,15 @@ func run(flagset flags) {
 		}
 		defer gconn.Close()
 		client := testgrpc.NewTestServiceClient(gconn)
+		unresolvableGconn, err := grpc.Dial(
+			"unresolvable-host.some.domain",
+			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
+		)
+		if err != nil {
+			log.Fatalf("failed grpc dial: %v", err)
+		}
+		defer unresolvableGconn.Close()
+		unresolvableClient := testgrpc.NewTestServiceClient(unresolvableGconn)
 		interopgrpc.DoEmptyUnaryCall(console.NewTB(), client)
 		interopgrpc.DoLargeUnaryCall(console.NewTB(), client)
 		interopgrpc.DoClientStreaming(console.NewTB(), client)
@@ -152,6 +171,7 @@ func run(flagset flags) {
 		interopgrpc.DoUnimplementedMethod(console.NewTB(), gconn)
 		interopgrpc.DoUnimplementedService(console.NewTB(), client)
 		interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client)
+		interopgrpc.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 	default:
 		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)
 	}

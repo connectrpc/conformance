@@ -41,8 +41,9 @@ a range of expected behaviours and functionality for gRPC and Connect.
 | `duplicated_custom_metadata` | :ballot_box_with_check: | |
 | `status_code_and_message` | :ballot_box_with_check: | :ballot_box_with_check: |
 | `special_status_message` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `unimplemented_method` | :ballot_box_with_check: |
+| `unimplemented_method` | :ballot_box_with_check: | :ballot_box_with_check: |
 | `unimplemented_service` | :ballot_box_with_check: | :ballot_box_with_check: |
+| `unresolvable_host` | :ballot_box_with_check: | |
 
 ### Test Descriptions
 
@@ -166,6 +167,11 @@ RPC: N/A
 
 Client calls an unimplemented service and expects an error with the status `UNIMPLEMENTED`.
 
+**unresolvable_host**:
+
+RPC: N/A
+
+Client calls an unresolvable host and expects an error with the status `UNAVAILABLE`.
 
 ## Requirements and Running the Tests
 

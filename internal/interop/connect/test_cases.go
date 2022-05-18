@@ -462,6 +462,18 @@ func DoFailWithNonASCIIError(t testing.TB, client connectpb.TestServiceClient, a
 	t.Successf("successful fail call with non-ASCII error")
 }
 
+// DoUnresolvableHost attempts to call a method to an unresolvable host.
+func DoUnresolvableHost(t testing.TB, client connectpb.TestServiceClient, args ...grpc.CallOption) {
+	reply, err := client.EmptyCall(
+		context.Background(),
+		connect.NewRequest(&testpb.Empty{}),
+	)
+	assert.Nil(t, reply)
+	assert.Error(t, err)
+	assert.Equal(t, connect.CodeOf(err), connect.CodeUnavailable)
+	t.Successf("successful fail call with unresolvable call")
+}
+
 func doOneSoakIteration(ctx context.Context, t testing.TB, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
 	start := time.Now()
 	client := tc
