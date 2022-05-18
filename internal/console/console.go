@@ -42,9 +42,10 @@ func (t *TB) Fatalf(format string, args ...any) {
 }
 
 func (t *TB) Successf(format string, args ...any) {
-	if !t.failed {
-		log.Printf("SUCCESS: "+format, args...)
+	if t.failed {
+		t.FailNow()
 	}
+	log.Printf("SUCCESS: "+format, args...)
 }
 
 func (t *TB) FailNow() {
