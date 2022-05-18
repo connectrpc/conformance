@@ -18,7 +18,6 @@ import {
   makePromiseClient,
   StatusCode,
 } from "@bufbuild/connect-web";
-import { ClientInterceptor } from "@bufbuild/connect-web/dist/types/client-interceptor";
 import {
   TestService,
   UnimplementedService,
@@ -100,59 +99,24 @@ describe("connect_web_promise_client", function () {
         body: new Uint8Array(271828).fill(0),
       },
     });
-    const metadata = {
+    const response = await client.unaryCall(req, {
       headers: {
         [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
         [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
       },
-    };
-
-    const interceptor: ClientInterceptor = (
-      service,
-      method,
-      options,
-      request,
-      response
-    ) => {
-      return [
-        request,
-        {
-          receive(handler) {
-            response.receive({
-              onHeader(header) {
-                expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
-                expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-                  ECHO_INITIAL_VALUE
-                );
-                handler.onHeader?.(header);
-              },
-              onMessage(message) {
-                handler.onMessage(message);
-              },
-              onTrailer(trailer) {
-                expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-                expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
-                  ECHO_TRAILING_VALUE.toString()
-                );
-                handler.onTrailer?.(trailer);
-              },
-              onClose(error) {
-                handler.onClose(error);
-              },
-            });
-          },
-        },
-      ];
-    };
-    const transportWithInterceptor = createConnectTransport({
-      baseUrl: `https://${host}:${port}`,
-      interceptors: [interceptor],
+      onHeader(header) {
+        expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
+        expect(header.get(ECHO_INITIAL_KEY)).toEqual(
+            ECHO_INITIAL_VALUE
+        );
+      },
+      onTrailer(trailer) {
+        expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+        expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
+            ECHO_TRAILING_VALUE.toString()
+        );
+      },
     });
-    const clientWithInterceptor = makePromiseClient(
-      TestService,
-      transportWithInterceptor
-    );
-    const response = await clientWithInterceptor.unaryCall(req, metadata);
     expect(response.payload).toBeDefined();
     expect(response.payload?.body.length).toEqual(size);
   });
