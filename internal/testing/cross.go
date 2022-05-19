@@ -42,9 +42,10 @@ func (t *tb) Fatalf(format string, args ...any) {
 func (t *tb) Successf(format string, args ...any) {
 	// Only log a success message if no instances of `t.Errorf` was
 	// ever called.
-	if !t.internal.Failed() {
-		t.internal.Logf(format, args...)
+	if t.internal.Failed() {
+		t.FailNow()
 	}
+	t.internal.Logf(format, args...)
 }
 
 func (t *tb) FailNow() {
