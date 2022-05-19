@@ -64,30 +64,30 @@ type TestServiceClient interface {
 	CacheableUnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error)
+	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ClientServerStream[testing.StreamingOutputCallResponse], error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
-	StreamingInputCall(context.Context) *connect_go.ClientStreamForClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
+	StreamingInputCall(context.Context) *connect_go.ClientClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
 	// A sequence of requests with each request served by the server immediately.
 	// As one request could lead to multiple responses, this interface
 	// demonstrates the idea of full duplexing.
-	FullDuplexCall(context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	FullDuplexCall(context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
 	// A sequence of requests followed by a sequence of responses.
 	// The server buffers all the client requests and then serves them in order. A
 	// stream of responses are returned to the client when the server starts with
 	// first request.
-	HalfDuplexCall(context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	HalfDuplexCall(context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
 	UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
 }
 
 // NewTestServiceClient constructs a client for the grpc.testing.TestService service. By default, it
-// uses the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. It
-// doesn't have a default protocol; you must supply either the connect.WithGRPC() or
+// uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
 // connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) TestServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -174,22 +174,22 @@ func (c *testServiceClient) CacheableUnaryCall(ctx context.Context, req *connect
 }
 
 // StreamingOutputCall calls grpc.testing.TestService.StreamingOutputCall.
-func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error) {
+func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ClientServerStream[testing.StreamingOutputCallResponse], error) {
 	return c.streamingOutputCall.CallServerStream(ctx, req)
 }
 
 // StreamingInputCall calls grpc.testing.TestService.StreamingInputCall.
-func (c *testServiceClient) StreamingInputCall(ctx context.Context) *connect_go.ClientStreamForClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse] {
+func (c *testServiceClient) StreamingInputCall(ctx context.Context) *connect_go.ClientClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse] {
 	return c.streamingInputCall.CallClientStream(ctx)
 }
 
 // FullDuplexCall calls grpc.testing.TestService.FullDuplexCall.
-func (c *testServiceClient) FullDuplexCall(ctx context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
+func (c *testServiceClient) FullDuplexCall(ctx context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
 	return c.fullDuplexCall.CallBidiStream(ctx)
 }
 
 // HalfDuplexCall calls grpc.testing.TestService.HalfDuplexCall.
-func (c *testServiceClient) HalfDuplexCall(ctx context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
+func (c *testServiceClient) HalfDuplexCall(ctx context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
 	return c.halfDuplexCall.CallBidiStream(ctx)
 }
 
@@ -233,8 +233,8 @@ type TestServiceHandler interface {
 // NewTestServiceHandler builds an HTTP handler from the service implementation. It returns the path
 // on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/grpc.testing.TestService/EmptyCall", connect_go.NewUnaryHandler(
@@ -331,11 +331,11 @@ type UnimplementedServiceClient interface {
 }
 
 // NewUnimplementedServiceClient constructs a client for the grpc.testing.UnimplementedService
-// service. By default, it uses the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. It doesn't have a default protocol; you must supply either the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
+// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
+// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
+// the connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) UnimplementedServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -368,8 +368,8 @@ type UnimplementedServiceHandler interface {
 // NewUnimplementedServiceHandler builds an HTTP handler from the service implementation. It returns
 // the path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/grpc.testing.UnimplementedService/UnimplementedCall", connect_go.NewUnaryHandler(
@@ -394,11 +394,11 @@ type ReconnectServiceClient interface {
 }
 
 // NewReconnectServiceClient constructs a client for the grpc.testing.ReconnectService service. By
-// default, it uses the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed
-// requests. It doesn't have a default protocol; you must supply either the connect.WithGRPC() or
-// connect.WithGRPCWeb() options.
+// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
+// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
+// connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewReconnectServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ReconnectServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -441,8 +441,8 @@ type ReconnectServiceHandler interface {
 // NewReconnectServiceHandler builds an HTTP handler from the service implementation. It returns the
 // path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/grpc.testing.ReconnectService/Start", connect_go.NewUnaryHandler(
@@ -478,11 +478,11 @@ type LoadBalancerStatsServiceClient interface {
 }
 
 // NewLoadBalancerStatsServiceClient constructs a client for the
-// grpc.testing.LoadBalancerStatsService service. By default, it uses the binary Protobuf Codec,
-// asks for gzipped responses, and sends uncompressed requests. It doesn't have a default protocol;
-// you must supply either the connect.WithGRPC() or connect.WithGRPCWeb() options.
+// grpc.testing.LoadBalancerStatsService service. By default, it uses the Connect protocol with the
+// binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To use the
+// gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewLoadBalancerStatsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) LoadBalancerStatsServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -528,8 +528,8 @@ type LoadBalancerStatsServiceHandler interface {
 // NewLoadBalancerStatsServiceHandler builds an HTTP handler from the service implementation. It
 // returns the path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/grpc.testing.LoadBalancerStatsService/GetClientStats", connect_go.NewUnaryHandler(
@@ -563,11 +563,11 @@ type XdsUpdateHealthServiceClient interface {
 }
 
 // NewXdsUpdateHealthServiceClient constructs a client for the grpc.testing.XdsUpdateHealthService
-// service. By default, it uses the binary Protobuf Codec, asks for gzipped responses, and sends
-// uncompressed requests. It doesn't have a default protocol; you must supply either the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
+// service. By default, it uses the Connect protocol with the binary Protobuf Codec, asks for
+// gzipped responses, and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply
+// the connect.WithGRPC() or connect.WithGRPCWeb() options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewXdsUpdateHealthServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) XdsUpdateHealthServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -611,8 +611,8 @@ type XdsUpdateHealthServiceHandler interface {
 // NewXdsUpdateHealthServiceHandler builds an HTTP handler from the service implementation. It
 // returns the path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/grpc.testing.XdsUpdateHealthService/SetServing", connect_go.NewUnaryHandler(
@@ -647,11 +647,12 @@ type XdsUpdateClientConfigureServiceClient interface {
 }
 
 // NewXdsUpdateClientConfigureServiceClient constructs a client for the
-// grpc.testing.XdsUpdateClientConfigureService service. By default, it uses the binary Protobuf
-// Codec, asks for gzipped responses, and sends uncompressed requests. It doesn't have a default
-// protocol; you must supply either the connect.WithGRPC() or connect.WithGRPCWeb() options.
+// grpc.testing.XdsUpdateClientConfigureService service. By default, it uses the Connect protocol
+// with the binary Protobuf Codec, asks for gzipped responses, and sends uncompressed requests. To
+// use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or connect.WithGRPCWeb()
+// options.
 //
-// The URL supplied here should be the base URL for the gRPC server (for example,
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
 func NewXdsUpdateClientConfigureServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) XdsUpdateClientConfigureServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -684,8 +685,8 @@ type XdsUpdateClientConfigureServiceHandler interface {
 // NewXdsUpdateClientConfigureServiceHandler builds an HTTP handler from the service implementation.
 // It returns the path on which to mount the handler and the handler itself.
 //
-// By default, handlers support the gRPC and gRPC-Web protocols with the binary Protobuf and JSON
-// codecs.
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
 func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
 	mux.Handle("/grpc.testing.XdsUpdateClientConfigureService/Configure", connect_go.NewUnaryHandler(
