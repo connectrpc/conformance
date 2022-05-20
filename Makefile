@@ -125,7 +125,9 @@ endif
 	@# TODO: docker build is a work around for the --ssh, can be removed when connect-web become public
 	docker build --ssh default -f Dockerfile.crosstestweb --build-arg TEST_PROTOBUF_ES_BRANCH=$(TEST_PROTOBUF_ES_BRANCH) --build-arg TEST_CONNECT_WEB_BRANCH=$(TEST_CONNECT_WEB_BRANCH) --build-arg NPM_TOKEN=$(NPM_TOKEN) .
 	docker-compose run client-connect-to-server-connect-h2
+	docker-compose run client-connect-grpc-to-server-connect-h2
 	docker-compose run client-connect-to-server-connect-h3
+	docker-compose run client-connect-grpc-to-server-connect-h3
 	docker-compose run client-connect-to-server-grpc
 	docker-compose run client-grpc-to-server-connect
 	docker-compose run client-grpc-to-server-grpc
