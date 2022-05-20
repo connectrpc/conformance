@@ -407,16 +407,16 @@ func DoSpecialStatusMessage(t testing.TB, client testpb.TestServiceClient, args 
 }
 
 // DoUnimplementedService attempts to call a method from an unimplemented service.
-func DoUnimplementedService(t testing.TB, client testpb.UnimplementedServiceClient) {
-	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{})
+func DoUnimplementedService(t testing.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
+	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{}, args...)
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
 	t.Successf("successful unimplemented service")
 }
 
 // DoUnimplementedMethod attempts to call an unimplemented method.
-func DoUnimplementedMethod(t testing.TB, cc *grpc.ClientConn) {
+func DoUnimplementedMethod(t testing.TB, cc *grpc.ClientConn, args ...grpc.CallOption) {
 	var req, reply proto.Message
-	err := cc.Invoke(context.Background(), "/grpc.testing.TestService/UnimplementedCall", req, reply)
+	err := cc.Invoke(context.Background(), "/grpc.testing.TestService/UnimplementedCall", req, reply, args...)
 	assert.Error(t, err)
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
 	t.Successf("successful unimplemented method")
@@ -428,6 +428,7 @@ func DoFailWithNonASCIIError(t testing.TB, client testpb.TestServiceClient, args
 		&testpb.SimpleRequest{
 			ResponseType: testpb.PayloadType_COMPRESSABLE,
 		},
+		args...,
 	)
 	assert.Nil(t, reply)
 	assert.Error(t, err)

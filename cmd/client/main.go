@@ -34,6 +34,7 @@ import (
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/encoding/gzip"
 )
 
 const (
@@ -116,6 +117,30 @@ func run(flagset flags) {
 		interopconnect.DoUnimplementedService(console.NewTB(), client)
 		interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
+		compressedClient := connectpb.NewTestServiceClient(
+			&http.Client{
+				Transport: &http2.Transport{
+					TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+				},
+			},
+			serverURL.String(),
+			connect.WithGRPC(),
+			connect.WithSendGzip(),
+		)
+		interopconnect.DoEmptyUnaryCall(console.NewTB(), compressedClient)
+		interopconnect.DoLargeUnaryCall(console.NewTB(), compressedClient)
+		interopconnect.DoClientStreaming(console.NewTB(), compressedClient)
+		interopconnect.DoServerStreaming(console.NewTB(), compressedClient)
+		interopconnect.DoPingPong(console.NewTB(), compressedClient)
+		interopconnect.DoEmptyStream(console.NewTB(), compressedClient)
+		interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), compressedClient)
+		interopconnect.DoCancelAfterBegin(console.NewTB(), compressedClient)
+		interopconnect.DoCancelAfterFirstResponse(console.NewTB(), compressedClient)
+		interopconnect.DoCustomMetadata(console.NewTB(), compressedClient)
+		interopconnect.DoStatusCodeAndMessage(console.NewTB(), compressedClient)
+		interopconnect.DoSpecialStatusMessage(console.NewTB(), compressedClient)
+		interopconnect.DoUnimplementedService(console.NewTB(), compressedClient)
+		interopconnect.DoFailWithNonASCIIError(console.NewTB(), compressedClient)
 	case connectH3:
 		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
 		if err != nil {
@@ -137,6 +162,21 @@ func run(flagset flags) {
 		interopconnect.DoClientStreaming(console.NewTB(), client)
 		interopconnect.DoServerStreaming(console.NewTB(), client)
 		interopconnect.DoPingPong(console.NewTB(), client)
+		compressedClient := connectpb.NewTestServiceClient(
+			&http.Client{
+				Transport: &http3.RoundTripper{
+					TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+				},
+			},
+			serverURL.String(),
+			connect.WithGRPC(),
+			connect.WithSendGzip(),
+		)
+		interopconnect.DoEmptyUnaryCall(console.NewTB(), compressedClient)
+		interopconnect.DoLargeUnaryCall(console.NewTB(), compressedClient)
+		interopconnect.DoClientStreaming(console.NewTB(), compressedClient)
+		interopconnect.DoServerStreaming(console.NewTB(), compressedClient)
+		interopconnect.DoPingPong(console.NewTB(), compressedClient)
 	case grpcGo:
 		gconn, err := grpc.Dial(
 			net.JoinHostPort(flagset.host, flagset.port),
@@ -172,6 +212,21 @@ func run(flagset flags) {
 		interopgrpc.DoUnimplementedService(console.NewTB(), client)
 		interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client)
 		interopgrpc.DoUnresolvableHost(console.NewTB(), unresolvableClient)
+		interopgrpc.DoEmptyUnaryCall(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoLargeUnaryCall(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoClientStreaming(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoServerStreaming(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoPingPong(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoEmptyStream(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoTimeoutOnSleepingServer(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoCancelAfterBegin(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoCancelAfterFirstResponse(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoCustomMetadata(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoStatusCodeAndMessage(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoSpecialStatusMessage(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoUnimplementedMethod(console.NewTB(), gconn, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoUnimplementedService(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
+		interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, grpc.UseCompressor(gzip.Name))
 	default:
 		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)
 	}
