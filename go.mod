@@ -3,7 +3,7 @@ module github.com/bufbuild/connect-crosstest
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v0.0.0-20220519164640-df55eca48735
+	github.com/bufbuild/connect-go v0.0.0-20220520175512-2b3d3442ffb8
 	github.com/golang/protobuf v1.5.2
 	github.com/lucas-clemente/quic-go v0.27.0
 	github.com/rs/cors v1.8.2
