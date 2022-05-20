@@ -64,19 +64,19 @@ type TestServiceClient interface {
 	CacheableUnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ClientServerStream[testing.StreamingOutputCallResponse], error)
+	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
-	StreamingInputCall(context.Context) *connect_go.ClientClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
+	StreamingInputCall(context.Context) *connect_go.ClientStreamForClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
 	// A sequence of requests with each request served by the server immediately.
 	// As one request could lead to multiple responses, this interface
 	// demonstrates the idea of full duplexing.
-	FullDuplexCall(context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	FullDuplexCall(context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
 	// A sequence of requests followed by a sequence of responses.
 	// The server buffers all the client requests and then serves them in order. A
 	// stream of responses are returned to the client when the server starts with
 	// first request.
-	HalfDuplexCall(context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	HalfDuplexCall(context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
 	UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
@@ -174,22 +174,22 @@ func (c *testServiceClient) CacheableUnaryCall(ctx context.Context, req *connect
 }
 
 // StreamingOutputCall calls grpc.testing.TestService.StreamingOutputCall.
-func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ClientServerStream[testing.StreamingOutputCallResponse], error) {
+func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error) {
 	return c.streamingOutputCall.CallServerStream(ctx, req)
 }
 
 // StreamingInputCall calls grpc.testing.TestService.StreamingInputCall.
-func (c *testServiceClient) StreamingInputCall(ctx context.Context) *connect_go.ClientClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse] {
+func (c *testServiceClient) StreamingInputCall(ctx context.Context) *connect_go.ClientStreamForClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse] {
 	return c.streamingInputCall.CallClientStream(ctx)
 }
 
 // FullDuplexCall calls grpc.testing.TestService.FullDuplexCall.
-func (c *testServiceClient) FullDuplexCall(ctx context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
+func (c *testServiceClient) FullDuplexCall(ctx context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
 	return c.fullDuplexCall.CallBidiStream(ctx)
 }
 
 // HalfDuplexCall calls grpc.testing.TestService.HalfDuplexCall.
-func (c *testServiceClient) HalfDuplexCall(ctx context.Context) *connect_go.ClientBidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
+func (c *testServiceClient) HalfDuplexCall(ctx context.Context) *connect_go.BidiStreamForClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse] {
 	return c.halfDuplexCall.CallBidiStream(ctx)
 }
 
