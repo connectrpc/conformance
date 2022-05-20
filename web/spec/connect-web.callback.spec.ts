@@ -18,7 +18,6 @@ import {
   makeCallbackClient,
   StatusCode,
 } from "@bufbuild/connect-web";
-import { ClientInterceptor } from "@bufbuild/connect-web/dist/types/client-interceptor";
 import {
   TestService,
   UnimplementedService,
@@ -104,8 +103,7 @@ describe("connect_web_callback_client", function () {
       }
     );
   });
-  // TODO: enable this test when we have a fix on connect-web
-  xit("empty_stream", function (done) {
+  it("empty_stream", function (done) {
     client.streamingOutputCall(
       {
         responseParameters: [],
@@ -134,61 +132,7 @@ describe("connect_web_callback_client", function () {
         body: new Uint8Array(271828).fill(0),
       },
     });
-    const metadata = {
-      headers: {
-        [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
-        [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
-      },
-    };
-
-    const interceptor: ClientInterceptor = (
-      service,
-      method,
-      options,
-      request,
-      response
-    ) => {
-      return [
-        request,
-        {
-          receive(handler) {
-            response.receive({
-              onHeader(header) {
-                expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
-                expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-                  ECHO_INITIAL_VALUE
-                );
-                handler.onHeader?.(header);
-                doneFn();
-              },
-              onMessage(message) {
-                handler.onMessage(message);
-              },
-              onTrailer(trailer) {
-                expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-                expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
-                  ECHO_TRAILING_VALUE.toString()
-                );
-                handler.onTrailer?.(trailer);
-                doneFn();
-              },
-              onClose(error) {
-                handler.onClose(error);
-              },
-            });
-          },
-        },
-      ];
-    };
-    const transportWithInterceptor = createConnectTransport({
-      baseUrl: `https://${host}:${port}`,
-      interceptors: [interceptor],
-    });
-    const clientWithInterceptor = makeCallbackClient(
-      TestService,
-      transportWithInterceptor
-    );
-    clientWithInterceptor.unaryCall(
+    client.unaryCall(
       req,
       (err, response) => {
         expect(err).toBeUndefined();
@@ -196,7 +140,26 @@ describe("connect_web_callback_client", function () {
         expect(response.payload?.body.length).toEqual(size);
         doneFn();
       },
-      metadata
+      {
+        headers: {
+          [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
+          [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
+        },
+        onHeader(header) {
+          expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
+          expect(header.get(ECHO_INITIAL_KEY)).toEqual(
+              ECHO_INITIAL_VALUE
+          );
+          doneFn();
+        },
+        onTrailer(trailer) {
+          expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+          expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
+              ECHO_TRAILING_VALUE.toString()
+          );
+          doneFn();
+        }
+      }
     );
   });
   it("status_code_and_message", function (done) {
