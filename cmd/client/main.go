@@ -98,7 +98,7 @@ func run(flagset flags) {
 		if flagset.implementation == connectGRPCH2 {
 			clientOptions = append(clientOptions, connect.WithGRPC())
 		}
-		client = connectpb.NewTestServiceClient(
+		client := connectpb.NewTestServiceClient(
 			&http.Client{
 				Transport: &http2.Transport{
 					TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
