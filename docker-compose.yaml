@@ -70,7 +70,7 @@ services:
       dockerfile: Dockerfile.crosstest
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
+    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
   client-grpc-to-server-connect:
