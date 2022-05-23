@@ -174,18 +174,18 @@ func run(flagset flags) {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		if err := h1Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := h1Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	go func() {
-		if err := h2Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
+		if err := h2Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	if flagset.h3Port != "" {
 		go func() {
-			if err := h3Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && errors.Is(err, http.ErrServerClosed) {
+			if err := h3Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(err)
 			}
 		}()
