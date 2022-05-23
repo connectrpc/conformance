@@ -15,7 +15,7 @@
   "devDependencies": {
     "@types/caseless": "^0.12.2",
     "@types/jasmine": "^4.0.3",
-    "@typescript-eslint/eslint-plugin": "^5.23.0",
+    "@typescript-eslint/eslint-plugin": "^5.25.0",
     "@typescript-eslint/parser": "^5.23.0",
     "caseless": "^0.12.0",
     "eslint": "^8.15.0",
