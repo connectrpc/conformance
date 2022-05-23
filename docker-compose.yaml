@@ -64,15 +64,6 @@ services:
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-to-server-grpc:
-    build:
-      context: .
-      dockerfile: Dockerfile.crosstest
-      args:
-        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH}"
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
-    depends_on:
-      - server-grpc
   client-connect-grpc-to-server-grpc:
     build:
       context: .

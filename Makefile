@@ -128,7 +128,6 @@ endif
 	docker-compose run client-connect-grpc-to-server-connect-h2
 	docker-compose run client-connect-to-server-connect-h3
 	docker-compose run client-connect-grpc-to-server-connect-h3
-	docker-compose run client-connect-to-server-grpc
 	docker-compose run client-connect-grpc-to-server-grpc
 	docker-compose run client-grpc-to-server-connect
 	docker-compose run client-grpc-to-server-grpc
