@@ -17,6 +17,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
@@ -38,9 +39,11 @@ import (
 )
 
 const (
-	connectH2 = "connect-h2"
-	connectH3 = "connect-h3"
-	grpcGo    = "grpc-go"
+	connectGRPCH2 = "connect-grpc-h2"
+	connectGRPCH3 = "connect-grpc-h3"
+	connectH2     = "connect-h2"
+	connectH3     = "connect-h3"
+	grpcGo        = "grpc-go"
 )
 
 type flags struct {
@@ -67,7 +70,14 @@ func main() {
 		"implementation",
 		"i",
 		"connect",
-		`the client implementation tested, accepted values are "connect-h2", "connect-h3" or "grpc-go"`,
+		fmt.Sprintf(
+			"the client implementation tested, accepted values are %q, %q, %q, %q, or %q",
+			connectGRPCH2,
+			connectGRPCH3,
+			connectH2,
+			connectH3,
+			grpcGo,
+		),
 	)
 	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
 	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
@@ -78,11 +88,15 @@ func main() {
 }
 
 func run(flagset flags) {
+	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
+	if err != nil {
+		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
+	}
 	switch flagset.implementation {
-	case connectH2:
-		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
-		if err != nil {
-			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
+	case connectGRPCH2, connectH2:
+		var clientOptions []connect.ClientOption
+		if flagset.implementation == connectGRPCH2 {
+			clientOptions = append(clientOptions, connect.WithGRPC())
 		}
 		transport := &http2.Transport{
 			TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
@@ -90,13 +104,13 @@ func run(flagset flags) {
 		uncompressedClient := connectpb.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
-			connect.WithGRPC(),
+			clientOptions...,
 		)
+		clientOptions = append(clientOptions, connect.WithSendGzip())
 		compressedClient := connectpb.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
-			connect.WithGRPC(),
-			connect.WithSendGzip(),
+			clientOptions...,
 		)
 		for _, client := range []connectpb.TestServiceClient{uncompressedClient, compressedClient} {
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
@@ -121,10 +135,12 @@ func run(flagset flags) {
 				connect.WithGRPC(),
 			),
 		)
-	case connectH3:
-		serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
-		if err != nil {
-			log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
+	// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
+	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
+	case connectGRPCH3, connectH3:
+		var clientOptions []connect.ClientOption
+		if flagset.implementation == connectGRPCH3 {
+			clientOptions = append(clientOptions, connect.WithGRPC())
 		}
 		transport := &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
@@ -132,13 +148,13 @@ func run(flagset flags) {
 		uncompressedClient := connectpb.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
-			connect.WithGRPC(),
+			clientOptions...,
 		)
+		clientOptions = append(clientOptions, connect.WithSendGzip())
 		compressedClient := connectpb.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
-			connect.WithGRPC(),
-			connect.WithSendGzip(),
+			clientOptions...,
 		)
 		for _, client := range []connectpb.TestServiceClient{uncompressedClient, compressedClient} {
 			// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
