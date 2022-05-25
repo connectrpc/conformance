@@ -3,13 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "scripts": {
+    "eslint": "eslint --max-warnings 0 .",
     "format": "prettier --write '**/*.{json,js,jsx,ts,tsx,css}' --loglevel error",
-    "lint": "eslint --max-warnings 0 .",
-    "test": "./node_modules/.bin/karma start karma.conf.js"
+    "lint": "npm run eslint && npm run types-check",
+    "test": "./node_modules/.bin/karma start karma.conf.js",
+    "types-check": "tsc --noemit"
   },
   "dependencies": {
     "@bufbuild/connect-web": "0.0.6",
     "@bufbuild/protobuf": "0.0.4",
+    "@types/karma": "^6.3.3",
     "prettier": "^2.6.2"
   },
   "devDependencies": {

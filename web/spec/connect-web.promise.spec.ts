@@ -28,6 +28,10 @@ import {
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
+// Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
+// eslint-disable-next-line no-underscore-dangle
+declare const __karma__: any;
+
 describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
@@ -133,8 +137,8 @@ describe("connect_web_promise_client", function () {
       fail("expected to catch an error");
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unknown);
-      expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+      expect((e as ConnectError).code).toEqual(StatusCode.Unknown);
+      expect((e as ConnectError).rawMessage).toEqual(TEST_STATUS_MESSAGE);
     }
   });
   it("special_status", async function () {
@@ -150,11 +154,10 @@ describe("connect_web_promise_client", function () {
       fail("expected to catch an error");
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unknown);
-      expect(e.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+      expect((e as ConnectError).code).toEqual(StatusCode.Unknown);
+      expect((e as ConnectError).rawMessage).toEqual(TEST_STATUS_MESSAGE);
     }
   });
-  // TODO: enable this test when we have a fix on connect-go
   it("timeout_on_sleeping_server", async function () {
     const request = new StreamingOutputCallRequest({
       payload: {
@@ -180,7 +183,7 @@ describe("connect_web_promise_client", function () {
       // and will return an HTTP status code 408 when stream max duration time reached, which
       // cannot be translated to a connect error code, so connect-web client throws an Unknown.
       expect(
-        [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(e.code)
+        [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes((e as ConnectError).code)
       ).toBeTrue();
     }
   });
@@ -190,7 +193,7 @@ describe("connect_web_promise_client", function () {
       fail("expected to catch an error");
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.Unimplemented);
+      expect((e as ConnectError).code).toEqual(StatusCode.Unimplemented);
     }
   });
   it("unimplemented_service", async function () {
@@ -205,7 +208,7 @@ describe("connect_web_promise_client", function () {
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
       expect(
-        [StatusCode.Unimplemented, StatusCode.NotFound].includes(e.code)
+        [StatusCode.Unimplemented, StatusCode.NotFound].includes((e as ConnectError).code)
       ).toBeTrue();
     }
   });
@@ -214,8 +217,8 @@ describe("connect_web_promise_client", function () {
       await client.failUnaryCall({});
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect(e.code).toEqual(StatusCode.ResourceExhausted);
-      expect(e.rawMessage).toEqual("soirée 🎉");
+      expect((e as ConnectError).code).toEqual(StatusCode.ResourceExhausted);
+      expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
     }
   });
 });
