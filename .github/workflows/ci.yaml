@@ -58,3 +58,39 @@ jobs:
         env:
           # TODO: Remove when connect-web is public.
           NPM_TOKEN: ${{ secrets.NPM_RO_TOKEN }}
+  docker:
+    runs-on: ubuntu-latest
+    needs:
+      - ci
+    # This job only runs when
+    # 1. The previous ci job has completed successfully
+    # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/connect-crosstest
+    # 3. The workflow run is triggered by push to main branch
+    if:  ${{ success() && github.repository == 'bufbuild/connect-crosstest' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    steps:
+      # qemu is used when executing things like `apk` in the final build
+      # stage which must execute on the target platform. We currently do
+      # not have any CGO and care should be taken in the Dockerfile to ensure
+      # that go cross compilation happens on the build platform.
+      - name: setup-qemu
+        uses: docker/setup-qemu-action@v2
+        id: qemu
+        with:
+          # alpine image doesn't support linux/riscv64
+          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
+      - name: setup-docker-buildx
+        uses: docker/setup-buildx-action@v2
+      - name: login-docker
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: docker-build-push
+        uses: docker/build-push-action@v3
+        with:
+          file: Dockerfile.crosstest
+          platforms: ${{ steps.qemu.outputs.platforms }}
+          push: true
+          tags: |
+            bufbuild/connect-crosstest:latest
+            bufbuild/connect-crosstest:${GITHUB_SHA}
