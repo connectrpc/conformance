@@ -34,7 +34,7 @@ import {
 import caseless = require("caseless");
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
-// eslint-disable-next-line no-underscore-dangle
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
 declare const __karma__: any;
 
 function multiDone(done: DoneFn, count: number) {
@@ -225,9 +225,9 @@ describe("grpc_web", function () {
       // not be <=0, which will skip the timeout.
       deadline: `${Date.now() + 3}`,
     });
-    stream.on("data", ()=> {
+    stream.on("data", () => {
       fail(`expecting no response from sleeping server`);
-    })
+    });
     stream.on("end", () => {
       fail("unexpected end of stream without error");
     });

@@ -29,7 +29,7 @@ import {
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
-// eslint-disable-next-line no-underscore-dangle
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
 declare const __karma__: any;
 
 describe("connect_web_promise_client", function () {
@@ -110,14 +110,12 @@ describe("connect_web_promise_client", function () {
       },
       onHeader(header) {
         expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
-        expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-            ECHO_INITIAL_VALUE
-        );
+        expect(header.get(ECHO_INITIAL_KEY)).toEqual(ECHO_INITIAL_VALUE);
       },
       onTrailer(trailer) {
         expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
         expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
-            ECHO_TRAILING_VALUE.toString()
+          ECHO_TRAILING_VALUE.toString()
         );
       },
     });
@@ -167,7 +165,7 @@ describe("connect_web_promise_client", function () {
         {
           size: 31415,
           intervalUs: 5000,
-        }
+        },
       ],
     });
     try {
@@ -183,7 +181,9 @@ describe("connect_web_promise_client", function () {
       // and will return an HTTP status code 408 when stream max duration time reached, which
       // cannot be translated to a connect error code, so connect-web client throws an Unknown.
       expect(
-        [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes((e as ConnectError).code)
+        [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(
+          (e as ConnectError).code
+        )
       ).toBeTrue();
     }
   });
@@ -208,7 +208,9 @@ describe("connect_web_promise_client", function () {
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
       expect(
-        [StatusCode.Unimplemented, StatusCode.NotFound].includes((e as ConnectError).code)
+        [StatusCode.Unimplemented, StatusCode.NotFound].includes(
+          (e as ConnectError).code
+        )
       ).toBeTrue();
     }
   });

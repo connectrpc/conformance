@@ -29,7 +29,7 @@ import {
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
-// eslint-disable-next-line no-underscore-dangle
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
 declare const __karma__: any;
 
 function multiDone(done: DoneFn, count: number) {
@@ -151,18 +151,16 @@ describe("connect_web_callback_client", function () {
         },
         onHeader(header) {
           expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
-          expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-              ECHO_INITIAL_VALUE
-          );
+          expect(header.get(ECHO_INITIAL_KEY)).toEqual(ECHO_INITIAL_VALUE);
           doneFn();
         },
         onTrailer(trailer) {
           expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
           expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
-              ECHO_TRAILING_VALUE.toString()
+            ECHO_TRAILING_VALUE.toString()
           );
           doneFn();
-        }
+        },
       }
     );
   });
@@ -205,7 +203,7 @@ describe("connect_web_callback_client", function () {
         {
           size: 31415,
           intervalUs: 5000,
-        }
+        },
       ],
     });
     client.streamingOutputCall(
@@ -221,6 +219,7 @@ describe("connect_web_callback_client", function () {
         // cannot be translated to a connect error code, so connect-web client throws an Unknown.
         expect(
           // Already asserted the error type above, ignore types-check error here for err.code.
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
           [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(err?.code)
         ).toBeTrue();
@@ -248,6 +247,7 @@ describe("connect_web_callback_client", function () {
       // case and the client should not retry on either status.
       expect(
         // Already asserted the error type above, ignore types-check error here for err.code.
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         [StatusCode.Unimplemented, StatusCode.NotFound].includes(err.code)
       ).toBeTrue();
