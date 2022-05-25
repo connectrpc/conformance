@@ -45,7 +45,7 @@ const (
 )
 
 var (
-	reqSizes  = []int{27182, 8, 1828, 45904}
+	reqSizes  = []int{271828, 8, 1828, 45904}
 	respSizes = []int{31415, 9, 2653, 58979}
 )
 
