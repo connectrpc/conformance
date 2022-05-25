@@ -188,6 +188,9 @@ test against a development branch of any of these packages.
 ### Locally
 
 To run these locally tests, you'll need Docker. The test suite uses Docker Compose.
+Please note, that if you are running the tests on MacOS, you'll need to [enable Docker
+Compose V2][docker-compose-v2].
+
 You can run the tests using `make test-docker-compose`.
 
 To run the tests against the latest commits of `connect-go` and `connect-web` (instead of the
@@ -231,3 +234,4 @@ Offered under the [Apache 2 license][license].
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE.txt
 [test.proto]: https://github.com/bufbuild/connect-crosstest/blob/main/internal/proto/grpc/testing/test.proto
 [github-action]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml
+[docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
