@@ -57,15 +57,15 @@ Client calls `EmptyCall` with an `Empty` request and expects no errors and an em
 
 RPC: `UnaryCall`
 
-Client calls `UnaryCall` with a payload size of 271828 bytes and expects a response with a
-payload size of 314159 bytes and no errors.
+Client calls `UnaryCall` with a payload size of 250 KiB bytes and expects a response with a
+payload size of 500 KiB and no errors.
 
 **client_streaming**:
 
 RPC: `StreamingInputCall`
 
-Client calls `StreamingInputCall` then sends 4 requests with a payload size of 271828 bytes,
-8 bytes, 1828 bytes, and 45904 bytes and expects the aggregated payload size to be 74922 when
+Client calls `StreamingInputCall` then sends 4 requests with a payload size of 250 KiB,
+8 bytes, 1 KiB, and 32 KiB and expects the aggregated payload size to be 289800 bytes when
 the client closes the stream and no errors.
 
 **server_streaming**:
@@ -73,17 +73,17 @@ the client closes the stream and no errors.
 RPC: `StreamingOutputCall`
 
 Client calls `StreamingOutputCall` and receives exactly 4 times, expecting responses with
-a payload size of 271828 bytes, 8 bytes, 1828 bytes, and 45904 bytes, and no errors.
+a payload size of 250 KiB, 8 bytes, 1 KiB, and 32 KiB, and no errors.
 
 **ping_pong**:
 
 RPC: `FullDuplexCall`
 
-Client calls `FullDuplexCall` exactly 4 times with a request with a payload of 31415 bytes
-and receives a response with a payload of 27182 bytes, a request with a payload of 9 bytes
-and receives a response with a payload of 8 bytes, a request with a payload of 2653 bytes
-and receives a response with a payload of 1828 bytes, and a request with a payload of 58979
-bytes and receives a response with a payload of 45904 bytes. Client asserts that payload sizes
+Client calls `FullDuplexCall` exactly 4 times with a request with a payload of 250 KiB
+and receives a response with a payload of 500 KiB, a request with a payload of 8 bytes
+and receives a response with a payload of 16 bytes, a request with a payload of 1 KiB
+and receives a response with a payload of 2 KiB, and a request with a payload of 32 KiB
+and receives a response with a payload of 64 kiB. Client asserts that payload sizes
 are in order and then closes the stream. No errors are expected.
 
 **empty_stream**:
