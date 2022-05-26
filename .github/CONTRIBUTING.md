@@ -16,13 +16,16 @@ you to accept the CLA when you open your pull request.
 
 ## Setup
 
+Install Docker on your machine and ensure that [Docker Compose V2 is
+enabled][docker-compose-v2].
+
 [Fork][fork], then clone the repository:
 
 ```
 mkdir -p $GOPATH/src/github.com/bufbuild
 cd $GOPATH/src/github.com/bufbuild
 git clone git@github.com:your_github_username/connect-crosstest.git
-cd connect
+cd connect-crosstest
 git remote add upstream https://github.com/bufbuild/connect-crosstest.git
 git fetch upstream
 ```
@@ -72,3 +75,4 @@ We're much more likely to approve your changes if you:
 [open-issue]: https://github.com/bufbuild/connect-crosstest/issues/new
 [cla]: TODO
 [commit-message]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+[docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1

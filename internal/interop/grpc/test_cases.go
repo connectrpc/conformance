@@ -196,8 +196,9 @@ func DoTimeoutOnSleepingServer(t testing.TB, client testpb.TestServiceClient, ar
 	defer cancel()
 	stream, err := client.FullDuplexCall(ctx, args...)
 	if err != nil {
+		// This checks if the stream has already timed out before the `Send`, so we would
+		// receive a DeadlineExceeded error from the initial call to the bidi streaming RPC.
 		if status.Code(err) == codes.DeadlineExceeded {
-			// This emulates the original test case.
 			return
 		}
 	}

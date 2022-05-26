@@ -1,7 +1,9 @@
-FROM golang:1.18.2-alpine3.15 as builder
+FROM --platform=${BUILDPLATFORM} golang:1.18.2-alpine3.15 as builder
 
 WORKDIR /workspace
 
+ARG TARGETOS
+ARG TARGETARCH
 ARG TEST_CONNECT_GO_BRANCH
 
 COPY go.mod go.sum /workspace/
@@ -12,15 +14,15 @@ COPY cert /workspace/cert
 RUN if [ ! -z "$TEST_CONNECT_GO_BRANCH" ] ; then go get github.com/bufbuild/connect-go@$TEST_CONNECT_GO_BRANCH; fi
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-s -w" -trimpath -o /go/bin/client ./cmd/client
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-s -w" -trimpath -o /go/bin/serverconnect ./cmd/server/serverconnect
 
 RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -ldflags "-s -w" -trimpath -o /go/bin/servergrpc ./cmd/server/servergrpc
 
 FROM alpine:3.15.4

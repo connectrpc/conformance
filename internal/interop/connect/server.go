@@ -115,6 +115,9 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, args *connect.Requ
 func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[testpb.StreamingInputCallRequest, testpb.StreamingInputCallResponse]) error {
 	var sum int
 	for stream.Receive() {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		p := stream.Msg().GetPayload().GetBody()
 		sum += len(p)
 	}
@@ -179,6 +182,9 @@ func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStr
 func (s *testServer) HalfDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
 	var msgBuf []*testpb.StreamingOutputCallRequest
 	for {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
 		req, err := stream.Receive()
 		if errors.Is(err, io.EOF) {
 			// read done.

@@ -192,10 +192,10 @@ func DoTimeoutOnSleepingServer(t testing.TB, client connectpb.TestServiceClient)
 	}
 	err = stream.Send(req)
 	if err != nil {
-		// This emulates the original test case, where due to network issues,
+		// This emulates the gRPC test case, where due to network issues,
 		// the stream has already timed out before the `Send` and so this would
 		// return a EOF.
-		assert.True(t, errors.Is(err, io.EOF))
+		assert.True(t, errors.Is(err, io.EOF) || connect.CodeOf(err) == connect.CodeDeadlineExceeded)
 		t.Successf("successful timeout on sleep")
 		return
 	}

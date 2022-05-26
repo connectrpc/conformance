@@ -28,6 +28,10 @@ import {
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
+// Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
+// eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
+declare const __karma__: any;
+
 function multiDone(done: DoneFn, count: number) {
   return function () {
     count -= 1;
@@ -147,18 +151,16 @@ describe("connect_web_callback_client", function () {
         },
         onHeader(header) {
           expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
-          expect(header.get(ECHO_INITIAL_KEY)).toEqual(
-              ECHO_INITIAL_VALUE
-          );
+          expect(header.get(ECHO_INITIAL_KEY)).toEqual(ECHO_INITIAL_VALUE);
           doneFn();
         },
         onTrailer(trailer) {
           expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
           expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
-              ECHO_TRAILING_VALUE.toString()
+            ECHO_TRAILING_VALUE.toString()
           );
           doneFn();
-        }
+        },
       }
     );
   });
@@ -170,10 +172,10 @@ describe("connect_web_callback_client", function () {
         message: TEST_STATUS_MESSAGE,
       },
     });
-    client.unaryCall(req, (err) => {
+    client.unaryCall(req, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err.code).toEqual(StatusCode.Unknown);
-      expect(err.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+      expect(err?.code).toEqual(StatusCode.Unknown);
+      expect(err?.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
   });
@@ -185,14 +187,13 @@ describe("connect_web_callback_client", function () {
         message: TEST_STATUS_MESSAGE,
       },
     });
-    client.unaryCall(req, (err) => {
+    client.unaryCall(req, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err.code).toEqual(StatusCode.Unknown);
-      expect(err.rawMessage).toEqual(TEST_STATUS_MESSAGE);
+      expect(err?.code).toEqual(StatusCode.Unknown);
+      expect(err?.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
   });
-  // TODO: enable this test when we have a fix on connect-go
   it("timeout_on_sleeping_server", function (done) {
     const request = new StreamingOutputCallRequest({
       payload: {
@@ -202,7 +203,7 @@ describe("connect_web_callback_client", function () {
         {
           size: 31415,
           intervalUs: 5000,
-        }
+        },
       ],
     });
     client.streamingOutputCall(
@@ -210,14 +211,17 @@ describe("connect_web_callback_client", function () {
       (response) => {
         fail(`expecting no response from sleeping server, got: ${response}`);
       },
-      (err) => {
+      (err: ConnectError | undefined) => {
         expect(err).toBeDefined();
         expect(err).toBeInstanceOf(ConnectError);
         // We expect this to be DEADLINE_EXCEEDED, however envoy is monitoring the stream timeout
         // and will return an HTTP status code 408 when stream max duration time reached, which
         // cannot be translated to a connect error code, so connect-web client throws an Unknown.
         expect(
-          [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(err.code)
+          // Already asserted the error type above, ignore types-check error here for err.code.
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(err?.code)
         ).toBeTrue();
         done();
       },
@@ -227,31 +231,34 @@ describe("connect_web_callback_client", function () {
     );
   });
   it("unimplemented_method", function (done) {
-    client.unimplementedCall({}, (err) => {
+    client.unimplementedCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err.code).toEqual(StatusCode.Unimplemented);
+      expect(err?.code).toEqual(StatusCode.Unimplemented);
       done();
     });
   });
   it("unimplemented_service", function (done) {
     const badClient = makeCallbackClient(UnimplementedService, transport);
-    badClient.unimplementedCall({}, (err) => {
+    badClient.unimplementedCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
       // We expect this to be either Unimplemented or NotFound, depending on the implementation.
       // In order to support a consistent behaviour for this case, the backend would need to
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
       expect(
+        // Already asserted the error type above, ignore types-check error here for err.code.
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
         [StatusCode.Unimplemented, StatusCode.NotFound].includes(err.code)
       ).toBeTrue();
       done();
     });
   });
   it("fail_unary", function (done) {
-    client.failUnaryCall({}, (err) => {
+    client.failUnaryCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err.code).toEqual(StatusCode.ResourceExhausted);
-      expect(err.rawMessage).toEqual("soirée 🎉");
+      expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+      expect(err?.rawMessage).toEqual("soirée 🎉");
       done();
     });
   });
