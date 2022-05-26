@@ -91,4 +91,6 @@ jobs:
           file: Dockerfile.crosstest
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
-          tags: bufbuild/connect-crosstest:latest
+          tags: |
+            bufbuild/connect-crosstest:latest
+            bufbuild/connect-crosstest:${{ github.sha }}
