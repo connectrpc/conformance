@@ -1,7 +1,7 @@
 # connect-crosstest
 
 [![License](https://img.shields.io/github/license/bufbuild/connect-crosstest?color=blue)][license]
-[![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci/badge.svg?branch=main)][ci]
+[![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
 
 `connect-crosstest` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
