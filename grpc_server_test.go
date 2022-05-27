@@ -21,11 +21,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
 	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
-	crosstesting "github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,22 +48,22 @@ func TestGRPCServer(t *testing.T) {
 		assert.NoError(t, err)
 		defer gconn.Close()
 		client := testgrpc.NewTestServiceClient(gconn)
-		interopgrpc.DoEmptyUnaryCall(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoLargeUnaryCall(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoClientStreaming(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoServerStreaming(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoPingPong(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoEmptyStream(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoTimeoutOnSleepingServer(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoCancelAfterBegin(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoCancelAfterFirstResponse(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoCustomMetadata(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoDuplicatedCustomMetadata(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoStatusCodeAndMessage(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoSpecialStatusMessage(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoUnimplementedMethod(crosstesting.NewCrossTestT(t), gconn)
-		interopgrpc.DoUnimplementedService(crosstesting.NewCrossTestT(t), client)
-		interopgrpc.DoFailWithNonASCIIError(crosstesting.NewCrossTestT(t), client)
+		interopgrpc.DoEmptyUnaryCall(crosstesting.NewTB(t), client)
+		interopgrpc.DoLargeUnaryCall(crosstesting.NewTB(t), client)
+		interopgrpc.DoClientStreaming(crosstesting.NewTB(t), client)
+		interopgrpc.DoServerStreaming(crosstesting.NewTB(t), client)
+		interopgrpc.DoPingPong(crosstesting.NewTB(t), client)
+		interopgrpc.DoEmptyStream(crosstesting.NewTB(t), client)
+		interopgrpc.DoTimeoutOnSleepingServer(crosstesting.NewTB(t), client)
+		interopgrpc.DoCancelAfterBegin(crosstesting.NewTB(t), client)
+		interopgrpc.DoCancelAfterFirstResponse(crosstesting.NewTB(t), client)
+		interopgrpc.DoCustomMetadata(crosstesting.NewTB(t), client)
+		interopgrpc.DoDuplicatedCustomMetadata(crosstesting.NewTB(t), client)
+		interopgrpc.DoStatusCodeAndMessage(crosstesting.NewTB(t), client)
+		interopgrpc.DoSpecialStatusMessage(crosstesting.NewTB(t), client)
+		interopgrpc.DoUnimplementedMethod(crosstesting.NewTB(t), gconn)
+		interopgrpc.DoUnimplementedService(crosstesting.NewTB(t), client)
+		interopgrpc.DoFailWithNonASCIIError(crosstesting.NewTB(t), client)
 	})
 	t.Run("grpc_client soak test", func(t *testing.T) {
 		t.Parallel()
@@ -80,7 +80,7 @@ func TestGRPCServer(t *testing.T) {
 		defer gconn.Close()
 		client := testgrpc.NewTestServiceClient(gconn)
 		interopgrpc.DoSoakTest(
-			crosstesting.NewCrossTestT(t),
+			crosstesting.NewTB(t),
 			client,
 			address,
 			nil,
@@ -96,21 +96,21 @@ func TestGRPCServer(t *testing.T) {
 		server, address := newTestServiceServer(t)
 		defer server.GracefulStop()
 		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+address, connect.WithGRPC())
-		interopconnect.DoEmptyUnaryCall(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoLargeUnaryCall(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoClientStreaming(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoServerStreaming(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoPingPong(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoEmptyStream(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoTimeoutOnSleepingServer(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoCancelAfterBegin(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoCancelAfterFirstResponse(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoCustomMetadata(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoDuplicatedCustomMetadata(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoStatusCodeAndMessage(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoSpecialStatusMessage(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoUnimplementedService(crosstesting.NewCrossTestT(t), client)
-		interopconnect.DoFailWithNonASCIIError(crosstesting.NewCrossTestT(t), client)
+		interopconnect.DoEmptyUnaryCall(crosstesting.NewTB(t), client)
+		interopconnect.DoLargeUnaryCall(crosstesting.NewTB(t), client)
+		interopconnect.DoClientStreaming(crosstesting.NewTB(t), client)
+		interopconnect.DoServerStreaming(crosstesting.NewTB(t), client)
+		interopconnect.DoPingPong(crosstesting.NewTB(t), client)
+		interopconnect.DoEmptyStream(crosstesting.NewTB(t), client)
+		interopconnect.DoTimeoutOnSleepingServer(crosstesting.NewTB(t), client)
+		interopconnect.DoCancelAfterBegin(crosstesting.NewTB(t), client)
+		interopconnect.DoCancelAfterFirstResponse(crosstesting.NewTB(t), client)
+		interopconnect.DoCustomMetadata(crosstesting.NewTB(t), client)
+		interopconnect.DoDuplicatedCustomMetadata(crosstesting.NewTB(t), client)
+		interopconnect.DoStatusCodeAndMessage(crosstesting.NewTB(t), client)
+		interopconnect.DoSpecialStatusMessage(crosstesting.NewTB(t), client)
+		interopconnect.DoUnimplementedService(crosstesting.NewTB(t), client)
+		interopconnect.DoFailWithNonASCIIError(crosstesting.NewTB(t), client)
 	})
 	t.Run("connect_client soak test", func(t *testing.T) {
 		t.Parallel()
@@ -121,7 +121,7 @@ func TestGRPCServer(t *testing.T) {
 		defer server.GracefulStop()
 		client := connectpb.NewTestServiceClient(newClientH2C(), "http://"+address, connect.WithGRPC())
 		interopconnect.DoSoakTest(
-			crosstesting.NewCrossTestT(t),
+			crosstesting.NewTB(t),
 			client,
 			"http://"+address,
 			false, /* resetChannel */

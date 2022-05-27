@@ -16,38 +16,21 @@ package testing
 
 import "testing"
 
-type tb struct {
-	internal *testing.T
+// TB is a trimmed down version of the standard library testing.TB interface.
+// connect-crosstest depends on this interface. All standard library *testing.T,
+// B, and F types implement this and can be used by connect-crosstest.
+type TB interface {
+	Helper()
+	Errorf(string, ...any)
+	Fatalf(string, ...any)
+	Successf(string, ...any)
+	FailNow()
 }
 
-func NewCrossTestT(t *testing.T) TB {
+// NewTB returns a new TB
+func NewTB(t *testing.T) TB {
 	t.Helper()
 	return &tb{
-		internal: t,
+		t: t,
 	}
-}
-
-func (t *tb) Helper() {
-	t.internal.Helper()
-}
-
-func (t *tb) Errorf(format string, args ...any) {
-	t.internal.Errorf(format, args...)
-}
-
-func (t *tb) Fatalf(format string, args ...any) {
-	t.internal.Fatalf(format, args...)
-}
-
-func (t *tb) Successf(format string, args ...any) {
-	// Only log a success message if no instances of `t.Errorf` was
-	// ever called.
-	if t.internal.Failed() {
-		t.FailNow()
-	}
-	t.internal.Logf(format, args...)
-}
-
-func (t *tb) FailNow() {
-	t.internal.FailNow()
 }

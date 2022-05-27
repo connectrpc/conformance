@@ -14,13 +14,32 @@
 
 package testing
 
-// TB is a trimmed down version of the standard library testing.TB interface.
-// connect-crosstest depends on this interface. All standard library *testing.T,
-// B, and F types implement this and can be used by connect-crosstest.
-type TB interface {
-	Helper()
-	Errorf(string, ...any)
-	Fatalf(string, ...any)
-	Successf(string, ...any)
-	FailNow()
+import "testing"
+
+type tb struct {
+	t *testing.T
+}
+
+func (t *tb) Helper() {
+	t.t.Helper()
+}
+
+func (t *tb) Errorf(format string, args ...any) {
+	t.t.Errorf(format, args...)
+}
+
+func (t *tb) Fatalf(format string, args ...any) {
+	t.t.Fatalf(format, args...)
+}
+
+func (t *tb) Successf(format string, args ...any) {
+	// Only log a success message if no instances of `t.Errorf` was ever called.
+	if t.t.Failed() {
+		t.FailNow()
+	}
+	t.t.Logf(format, args...)
+}
+
+func (t *tb) FailNow() {
+	t.t.FailNow()
 }
