@@ -215,7 +215,7 @@ type TestServiceHandler interface {
 	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
-	StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]) error
+	StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest]) (*connect_go.Response[testing.StreamingInputCallResponse], error)
 	// A sequence of requests with each request served by the server immediately.
 	// As one request could lead to multiple responses, this interface
 	// demonstrates the idea of full duplexing.
@@ -308,8 +308,8 @@ func (UnimplementedTestServiceHandler) StreamingOutputCall(context.Context, *con
 	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingOutputCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingInputCall is not implemented"))
+func (UnimplementedTestServiceHandler) StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest]) (*connect_go.Response[testing.StreamingInputCallResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingInputCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) FullDuplexCall(context.Context, *connect_go.BidiStream[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]) error {
