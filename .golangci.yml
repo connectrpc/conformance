@@ -47,23 +47,23 @@ issues:
   exclude-rules:
     # We need to init some globals to use in tests.
     - linters: [gochecknoglobals]
-      path: internal/interop/grpc/test_cases.go
+      path: internal/interopgrpc/test_cases.go
     # We need to init some globals to use in tests.
     - linters: [gochecknoglobals]
-      path: internal/interop/connect/test_cases.go
+      path: internal/interopconnect/test_cases.go
     # This is a false positive as the fatal will not occur together with an `gconn`.
     - linters: [gocritic]
       path: cmd/client/main.go
       text: "exitAfterDefer: log.Fatalf will exit"
     # We force the test server to exit if there is an error when shutting down the server.
     - linters: [gocritic]
-      path: cmd/server/serverconnect/main.go
+      path: cmd/serverconnect/main.go
       text: "exitAfterDefer: log.Fatalln will exit"
     # This is a false positive as an issue of gci https://github.com/daixiang0/gci/issues/60.
     - linters: [gci]
-      path: internal/interop/grpc/test_cases.go
+      path: internal/interopgrpc/test_cases.go
       text: "Expected 't', Found '\"'"
     # This is a false positive as an issue of gci https://github.com/daixiang0/gci/issues/60.
     - linters: [gci]
-      path: internal/interop/connect/test_cases.go
+      path: internal/interopconnect/test_cases.go
       text: "Expected 'c', Found '\"'"

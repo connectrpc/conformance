@@ -24,17 +24,16 @@ import (
 	"os"
 	"time"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/benchmark/stats"
-	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/proto"
-
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/benchmark/stats"
+	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
