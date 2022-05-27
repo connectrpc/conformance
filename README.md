@@ -49,7 +49,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 
 ### Test Descriptions
 
-**empty_unary**:
+#### empty_unary
 
 RPC: `EmptyCall`
 
