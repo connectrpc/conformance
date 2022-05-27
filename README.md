@@ -1,25 +1,27 @@
-connect-crosstest
-=================
+# connect-crosstest
 
-[![Build](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml)
+[![License](https://img.shields.io/github/license/bufbuild/connect-crosstest?color=blue)][license]
+[![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci/badge.svg?branch=main)][ci]
 
 `connect-crosstest` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
 
-**Servers:**
+### Servers
+
 - Connect, using [Connect's Go implementation][connect-go]
 - gRPC, using [grpc-go][grpc-go]
 
-**Clients:**
+### Clients
+
 - Connect, using [Connect's Go implementation][connect-go]
 - gRPC, using [grpc-go][grpc-go]
 - [grpc-web][grpc-web]
-- [connect-web][connect-web]
+- connect-web (still in private alpha)
 
 The test suite is run nightly against the latest commits of [connect-go][connect-go] and
-[connect-web][connect-web] to ensure that we are continuously testing for compatibility.
+connect-web to ensure that we are continuously testing for compatibility.
 
-## Test Suite 
+## Test Suite
 
 The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
@@ -212,7 +214,7 @@ running the tests from.
 `connect-crosstest` works with:
 
 * The most recent release of Go.
-* [APIv2] of protocol buffers in Go (`google.golang.org/protobuf`).
+* [APIv2][apiv2] of protocol buffers in Go (`google.golang.org/protobuf`).
 
 Unlike Connect's Go implementation, `connect-crosstest` has no exported APIs
 and makes no backward compatibility guarantees. We'd like to release it as an
@@ -223,15 +225,15 @@ in mind.
 
 Offered under the [Apache 2 license][license].
 
-[APIv2]: https://blog.golang.org/protobuf-apiv2
+[apiv2]: https://blog.golang.org/protobuf-apiv2
+[ci]: https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml
 [connect-go]: https://github.com/bufbuild/connect-go
+[docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
+[github-action]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml
 [grpc-go]: https://github.com/grpc/grpc-go
-[grpc-web]: https://github.com/grpc/grpc-web
-[connect-web]: https://github.com/bufbuild/connect-web
 [grpc-interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
+[grpc-web]: https://github.com/grpc/grpc-web
 [grpc-web-interop]: https://github.com/grpc/grpc-web/blob/master/doc/interop-test-descriptions.md
 [go-support-policy]: https://golang.org/doc/devel/release#policy
-[license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE.txt
+[license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE
 [test.proto]: https://github.com/bufbuild/connect-crosstest/blob/main/internal/proto/grpc/testing/test.proto
-[github-action]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml
-[docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
