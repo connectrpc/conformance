@@ -112,23 +112,23 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, args *connect.Requ
 	return nil
 }
 
-func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[testpb.StreamingInputCallRequest, testpb.StreamingInputCallResponse]) error {
+func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[testpb.StreamingInputCallRequest]) (*connect.Response[testpb.StreamingInputCallResponse], error) {
 	var sum int
 	for stream.Receive() {
 		if err := ctx.Err(); err != nil {
-			return err
+			return nil, err
 		}
 		p := stream.Msg().GetPayload().GetBody()
 		sum += len(p)
 	}
 	if err := stream.Err(); err != nil {
-		return err
+		return nil, err
 	}
-	return stream.SendAndClose(connect.NewResponse(
+	return connect.NewResponse(
 		&testpb.StreamingInputCallResponse{
 			AggregatedPayloadSize: int32(sum),
 		},
-	))
+	), nil
 }
 
 func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
