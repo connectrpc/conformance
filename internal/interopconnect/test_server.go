@@ -44,7 +44,7 @@ func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[tes
 
 func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
 	if status := request.Msg.GetResponseStatus(); status != nil && status.Code != 0 {
-		return nil, connect.NewError(connect.Code(st.Code), errors.New(status.Message))
+		return nil, connect.NewError(connect.Code(status.Code), errors.New(status.Message))
 	}
 	payload, err := newServerPayload(request.Msg.GetResponseType(), request.Msg.GetResponseSize())
 	if err != nil {
@@ -77,7 +77,7 @@ func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request
 }
 
 func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
-	for _, param := range args.Msg.GetResponseParameters() {
+	for _, param := range request.Msg.GetResponseParameters() {
 		if us := param.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
 		}
@@ -87,7 +87,7 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 		if err := ctx.Err(); err != nil {
 			return err
 		}
-		payload, err := newServerPayload(args.Msg.GetResponseType(), param.GetSize())
+		payload, err := newServerPayload(request.Msg.GetResponseType(), param.GetSize())
 		if err != nil {
 			return err
 		}

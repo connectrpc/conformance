@@ -30,7 +30,7 @@ import (
 
 	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -69,7 +69,7 @@ func main() {
 func run(flags *flags) {
 	mux := http.NewServeMux()
 	mux.Handle(testingconnect.NewTestServiceHandler(
-		interopconnect.NewTestConnectServer(),
+		interopconnect.NewTestServiceHandler(),
 	))
 	corsHandler := cors.New(cors.Options{
 		AllowedMethods: []string{

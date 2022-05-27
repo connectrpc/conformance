@@ -25,10 +25,10 @@ import (
 	"net/url"
 
 	"github.com/bufbuild/connect-crosstest/internal/console"
-	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
-	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
+	"github.com/bufbuild/connect-crosstest/internal/interopgrpc"
 	"github.com/bufbuild/connect-go"
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/spf13/cobra"
@@ -101,18 +101,18 @@ func run(flags *flags) {
 		transport := &http2.Transport{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
-		uncompressedClient := connectpb.NewTestServiceClient(
+		uncompressedClient := testingconnect.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
 			clientOptions...,
 		)
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-		compressedClient := connectpb.NewTestServiceClient(
+		compressedClient := testingconnect.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
 			clientOptions...,
 		)
-		for _, client := range []connectpb.TestServiceClient{uncompressedClient, compressedClient} {
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
 			interopconnect.DoClientStreaming(console.NewTB(), client)
@@ -129,7 +129,7 @@ func run(flags *flags) {
 			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 		}
 		interopconnect.DoUnresolvableHost(
-			console.NewTB(), connectpb.NewTestServiceClient(
+			console.NewTB(), testingconnect.NewTestServiceClient(
 				&http.Client{Transport: transport},
 				"https://unresolvable-host.some.domain",
 				connect.WithGRPC(),
@@ -145,18 +145,18 @@ func run(flags *flags) {
 		transport := &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
-		uncompressedClient := connectpb.NewTestServiceClient(
+		uncompressedClient := testingconnect.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
 			clientOptions...,
 		)
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-		compressedClient := connectpb.NewTestServiceClient(
+		compressedClient := testingconnect.NewTestServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
 			clientOptions...,
 		)
-		for _, client := range []connectpb.TestServiceClient{uncompressedClient, compressedClient} {
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
 			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)

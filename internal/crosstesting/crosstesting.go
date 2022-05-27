@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testing
+package crosstesting
 
 import "testing"
 
@@ -27,7 +27,7 @@ type TB interface {
 	FailNow()
 }
 
-// NewTB returns a new TB
+// NewTB returns a new TB.
 func NewTB(t *testing.T) TB {
 	t.Helper()
 	return &tb{
