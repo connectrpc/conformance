@@ -191,7 +191,8 @@ test against a development branch of any of these packages.
 
 To run these locally tests, you'll need Docker. The test suite uses Docker Compose.
 Please note, that if you are running the tests on MacOS, you'll need to [enable Docker
-Compose V2][docker-compose-v2].
+Compose V2][docker-compose-v2]. In short, Docker Desktop -> Preferences -> General -> Use Docker
+Compose V2, then click Apply & Restart.
 
 You can run the tests using `make docker-compose-test`.
 
