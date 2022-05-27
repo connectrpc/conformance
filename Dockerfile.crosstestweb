@@ -4,54 +4,40 @@ WORKDIR /workspace
 
 ARG TEST_PROTOBUF_ES_BRANCH
 ARG TEST_CONNECT_WEB_BRANCH
-
-COPY web/package.json web/package-lock.json /workspace/
-
 # TODO: These can be removed after the connect-web and protobuf-es become public on npm registry
 ARG NPM_TOKEN
 ENV NPM_TOKEN=$NPM_TOKEN
-COPY web/.npmrc /workspace/
-
-COPY web/tsconfig.json web/karma.conf.js /workspace/
-
-COPY web/gen /workspace/gen
-
-COPY web/spec /workspace/spec
-
-RUN apk add chromium
-
 ENV CHROME_BIN /usr/bin/chromium-browser
-
-RUN npm install
-
+RUN apk add chromium
 # TODO: These can be removed after the connect-web become public on github
 RUN apk add --update --no-cache \
     ca-certificates \
     git \
     openssh-client && \
     rm -rf /var/cache/apk/*
-
+COPY web/package.json web/package-lock.json /workspace/
+COPY web/.npmrc /workspace/
+COPY web/tsconfig.json web/karma.conf.js /workspace/
+COPY web/gen /workspace/gen
+COPY web/spec /workspace/spec
+RUN npm install
 # Download public key for github.com and use ssh key for auth for local development.
 RUN mkdir -p -m 0700 ~/.ssh && \
     ssh-keyscan github.com >> ~/.ssh/known_hosts && \
     git config --global --add url."git@github.com:".insteadOf "https://github.com/"
-
 # TODO: The mounting can be removed after the connect-web become public on github
 RUN --mount=type=ssh \
     local_npm_packages="" && \
-    if [ ! -z "$TEST_PROTOBUF_ES_BRANCH" ]; \
-    then \
-        git clone --branch "$TEST_PROTOBUF_ES_BRANCH" --depth 1 git@github.com:bufbuild/protobuf-es.git && \
+    if [ ! -z "${TEST_PROTOBUF_ES_BRANCH}" ]; then \
+        git clone --branch "${TEST_PROTOBUF_ES_BRANCH}" --depth 1 git@github.com:bufbuild/protobuf-es.git && \
         npm --prefix ./protobuf-es/packages/protobuf/ run build && \
         local_npm_packages="${local_npm_packages} ./protobuf-es/packages/protobuf/"; \
     fi && \
-    if [ ! -z "$TEST_CONNECT_WEB_BRANCH" ]; \
-    then \
-        git clone --branch "$TEST_CONNECT_WEB_BRANCH" --depth 1 git@github.com:bufbuild/connect-web.git && \
+    if [ ! -z "${TEST_CONNECT_WEB_BRANCH}" ]; then \
+        git clone --branch "${TEST_CONNECT_WEB_BRANCH}" --depth 1 git@github.com:bufbuild/connect-web.git && \
         npm --prefix ./connect-web/packages/connect-web/ run build && \
         local_npm_packages="${local_npm_packages} ./connect-web/packages/connect-web/"; \
     fi && \
-    if [ ! -z "$local_npm_packages" ]; \
-    then \
+    if [ ! -z "${local_npm_packages}" ]; then \
         npm link ${local_npm_packages}; \
     fi

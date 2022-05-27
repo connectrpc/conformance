@@ -29,20 +29,20 @@ import (
 	"time"
 
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
-type testServer struct {
-	testpb.UnimplementedTestServiceServer
-}
-
 // NewTestServer creates a test server for test service.
 func NewTestServer() testpb.TestServiceServer {
 	return &testServer{}
+}
+
+type testServer struct {
+	testpb.UnimplementedTestServiceServer
 }
 
 func (s *testServer) EmptyCall(ctx context.Context, in *testpb.Empty) (*testpb.Empty, error) {

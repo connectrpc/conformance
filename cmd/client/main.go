@@ -55,18 +55,18 @@ type flags struct {
 }
 
 func main() {
-	flagset := flags{}
+	flags := &flags{}
 	rootCmd := &cobra.Command{
 		Use:   "client",
 		Short: "Starts a grpc or connect client, based on implementation",
 		Run: func(cmd *cobra.Command, args []string) {
-			run(flagset)
+			run(flags)
 		},
 	}
-	rootCmd.Flags().StringVar(&flagset.host, "host", "127.0.0.1", "the host name of the test server")
-	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port of the test server")
+	rootCmd.Flags().StringVar(&flags.host, "host", "127.0.0.1", "the host name of the test server")
+	rootCmd.Flags().StringVar(&flags.port, "port", "", "the port of the test server")
 	rootCmd.Flags().StringVarP(
-		&flagset.implementation,
+		&flags.implementation,
 		"implementation",
 		"i",
 		"connect",
@@ -79,27 +79,27 @@ func main() {
 			grpcGo,
 		),
 	)
-	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
-	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
+	rootCmd.Flags().StringVar(&flags.certFile, "cert", "", "path to the TLS cert file")
+	rootCmd.Flags().StringVar(&flags.keyFile, "key", "", "path to the TLS key file")
 	_ = rootCmd.MarkFlagRequired("port")
 	_ = rootCmd.MarkFlagRequired("cert")
 	_ = rootCmd.MarkFlagRequired("key")
 	_ = rootCmd.Execute()
 }
 
-func run(flagset flags) {
-	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flagset.host, flagset.port))
+func run(flags *flags) {
+	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flags.host, flags.port))
 	if err != nil {
-		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flagset.host, flagset.port))
+		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flags.host, flags.port))
 	}
-	switch flagset.implementation {
+	switch flags.implementation {
 	case connectGRPCH2, connectH2:
 		var clientOptions []connect.ClientOption
-		if flagset.implementation == connectGRPCH2 {
+		if flags.implementation == connectGRPCH2 {
 			clientOptions = append(clientOptions, connect.WithGRPC())
 		}
 		transport := &http2.Transport{
-			TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
 		uncompressedClient := connectpb.NewTestServiceClient(
 			&http.Client{Transport: transport},
@@ -139,11 +139,11 @@ func run(flagset flags) {
 	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
 	case connectGRPCH3, connectH3:
 		var clientOptions []connect.ClientOption
-		if flagset.implementation == connectGRPCH3 {
+		if flags.implementation == connectGRPCH3 {
 			clientOptions = append(clientOptions, connect.WithGRPC())
 		}
 		transport := &http3.RoundTripper{
-			TLSClientConfig: newTLSConfig(flagset.certFile, flagset.keyFile),
+			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
 		uncompressedClient := connectpb.NewTestServiceClient(
 			&http.Client{Transport: transport},
@@ -166,15 +166,15 @@ func run(flagset flags) {
 			interopconnect.DoPingPong(console.NewTB(), client)
 		}
 	case grpcGo:
-		gconn, err := grpc.Dial(
-			net.JoinHostPort(flagset.host, flagset.port),
-			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
+		clientConn, err := grpc.Dial(
+			net.JoinHostPort(flags.host, flags.port),
+			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
 		}
-		defer gconn.Close()
-		client := testgrpc.NewTestServiceClient(gconn)
+		defer clientConn.Close()
+		client := testgrpc.NewTestServiceClient(clientConn)
 		for _, args := range [][]grpc.CallOption{
 			nil,
 			{grpc.UseCompressor(gzip.Name)},
@@ -191,21 +191,21 @@ func run(flagset flags) {
 			interopgrpc.DoCustomMetadata(console.NewTB(), client, args...)
 			interopgrpc.DoStatusCodeAndMessage(console.NewTB(), client, args...)
 			interopgrpc.DoSpecialStatusMessage(console.NewTB(), client, args...)
-			interopgrpc.DoUnimplementedMethod(console.NewTB(), gconn, args...)
+			interopgrpc.DoUnimplementedMethod(console.NewTB(), clientConn, args...)
 			interopgrpc.DoUnimplementedService(console.NewTB(), client, args...)
 			interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, args...)
 		}
-		unresolvableGconn, err := grpc.Dial(
+		unresolvableClientConn, err := grpc.Dial(
 			"unresolvable-host.some.domain",
-			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flagset.certFile, flagset.keyFile))),
+			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
 		}
-		defer unresolvableGconn.Close()
+		defer unresolvableClientConn.Close()
 		interopgrpc.DoUnresolvableHost(
 			console.NewTB(),
-			testgrpc.NewTestServiceClient(unresolvableGconn),
+			testgrpc.NewTestServiceClient(unresolvableClientConn),
 		)
 	default:
 		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)

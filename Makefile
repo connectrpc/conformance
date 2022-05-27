@@ -79,8 +79,8 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
-.PHONY: docker-compose-test
-docker-compose-test: docker-compose-clean
+.PHONY: dockercomposetest
+dockercomposetest: dockercomposeclean
 	@# The NPM_TOKEN checking can be remove when connect-web and protobuf-es become public
 ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
@@ -106,10 +106,10 @@ endif
 	docker-compose run client-grpc-web-to-server-connect-h1
 	docker-compose run client-grpc-web-to-envoy-server-connect
 	docker-compose run client-grpc-web-to-envoy-server-grpc
-	$(MAKE) docker-compose-clean
+	$(MAKE) dockercomposeclean
 
-.PHONY: docker-compose-clean
-docker-compose-clean:
+.PHONY: dockercomposeclean
+dockercomposeclean:
 	-docker-compose down --rmi local --remove-orphans
 
 $(BIN)/buf: Makefile

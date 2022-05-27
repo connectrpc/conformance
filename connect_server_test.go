@@ -23,8 +23,8 @@ import (
 
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
-	interopgrpc "github.com/bufbuild/connect-crosstest/internal/interop/grpc"
+	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
+	"github.com/bufbuild/connect-crosstest/internal/interopgrpc"
 	crosstesting "github.com/bufbuild/connect-crosstest/internal/testing"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"

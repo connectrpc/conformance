@@ -20,16 +20,20 @@ import (
 	"os"
 )
 
+// TB is a tb.
 type TB struct {
 	failed bool
 }
 
+// NewTB returns a new TB.
 func NewTB() *TB {
 	return &TB{}
 }
 
+// Helper implements TB.Helper.
 func (t *TB) Helper() {}
 
+// Errorf implements TB.Errorf.
 func (t *TB) Errorf(format string, args ...any) {
 	// t.Errorf was called at least once, so a failed test case
 	// was found.
@@ -37,10 +41,12 @@ func (t *TB) Errorf(format string, args ...any) {
 	log.Printf("ERROR: "+format, args...)
 }
 
+// Fatalf implements TB.Fatalf.
 func (t *TB) Fatalf(format string, args ...any) {
 	log.Printf("FAIL: "+format, args...)
 }
 
+// Successf implements TB.Successf.
 func (t *TB) Successf(format string, args ...any) {
 	if t.failed {
 		t.FailNow()
@@ -48,6 +54,7 @@ func (t *TB) Successf(format string, args ...any) {
 	log.Printf("SUCCESS: "+format, args...)
 }
 
+// FailNow implements TB.FailNow.
 func (t *TB) FailNow() {
 	os.Exit(1)
 }

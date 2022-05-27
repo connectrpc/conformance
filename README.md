@@ -194,7 +194,7 @@ Please note, that if you are running the tests on MacOS, you'll need to [enable 
 Compose V2][docker-compose-v2]. In short, Docker Desktop -> Preferences -> General -> Use Docker
 Compose V2, then click Apply & Restart.
 
-You can run the tests using `make docker-compose-test`.
+You can run the tests using `make dockercomposetest`.
 
 > The following will no longer be needed once `connect-web` is public.
 

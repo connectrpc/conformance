@@ -5,25 +5,20 @@ WORKDIR /workspace
 ARG TARGETOS
 ARG TARGETARCH
 ARG TEST_CONNECT_GO_BRANCH
-
 COPY go.mod go.sum /workspace/
 COPY cmd /workspace/cmd
 COPY internal /workspace/internal
 COPY cert /workspace/cert
-
-RUN if [ ! -z "$TEST_CONNECT_GO_BRANCH" ] ; then go get github.com/bufbuild/connect-go@$TEST_CONNECT_GO_BRANCH; fi
-
+RUN if [ ! -z "$TEST_CONNECT_GO_BRANCH" ]; then go get github.com/bufbuild/connect-go@$TEST_CONNECT_GO_BRANCH; fi
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-s -w" -trimpath -o /go/bin/client ./cmd/client
-
+    go build /go/bin/client ./cmd/client
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-s -w" -trimpath -o /go/bin/serverconnect ./cmd/server/serverconnect
-
+    go build /go/bin/serverconnect ./cmd/serverconnect
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go build -ldflags "-s -w" -trimpath -o /go/bin/servergrpc ./cmd/server/servergrpc
+    go build /go/bin/servergrpc ./cmd/servergrpc
 
 FROM alpine:3.15.4
 

@@ -53,20 +53,13 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-connect-crosstest-ci-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-connect-crosstest-ci-
-          # upgrades all dependencies to latest version
-      - name: Setup environment variables for test
-        env:
-          DEFAULT_TEST_CONNECT_GO_BRANCH: main
-          DEFAULT_TEST_PROTOBUF_ES_BRANCH: main
-          DEFAULT_TEST_CONNECT_WEB_BRANCH: main
-          DEFAULT_DISABLE_OPEN_ISSUE_ON_FAIL: false
         run: |
-          echo "TEST_CONNECT_GO_BRANCH=${{ github.event.inputs.test_connect_go_branch || env.DEFAULT_TEST_CONNECT_GO_BRANCH }}" >> $GITHUB_ENV
-          echo "TEST_PROTOBUF_ES_BRANCH=${{ github.event.inputs.test_protobuf_es_branch || env.DEFAULT_TEST_PROTOBUF_ES_BRANCH }}" >> $GITHUB_ENV
-          echo "TEST_CONNECT_WEB_BRANCH=${{ github.event.inputs.test_connect_web_branch || env.DEFAULT_TEST_CONNECT_WEB_BRANCH }}" >> $GITHUB_ENV
-          echo "DISABLE_OPEN_ISSUE=${{ github.event.inputs.disable_open_issue || env.DEFAULT_DISABLE_OPEN_ISSUE }}" >> $GITHUB_ENV
+          echo "TEST_CONNECT_GO_BRANCH=${{ github.event.inputs.test_connect_go_branch || main }}" >> $GITHUB_ENV
+          echo "TEST_PROTOBUF_ES_BRANCH=${{ github.event.inputs.test_protobuf_es_branch || main }}" >> $GITHUB_ENV
+          echo "TEST_CONNECT_WEB_BRANCH=${{ github.event.inputs.test_connect_web_branch || main }}" >> $GITHUB_ENV
+          echo "DISABLE_OPEN_ISSUE=${{ github.event.inputs.disable_open_issue || false }}" >> $GITHUB_ENV
       - name: Test With Latest Commit
-        run: make test-docker-compose # Make target includes clean-up
+        run: make dockercomposetest # Make target includes clean-up
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1

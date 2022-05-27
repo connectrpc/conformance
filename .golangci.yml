@@ -44,7 +44,6 @@ issues:
     # Don't ban use of fmt.Errorf to create new errors, but the remaining
     # checks from err113 are useful.
     - "err113: do not define dynamic errors.*"
-
   exclude-rules:
     # We need to init some globals to use in tests.
     - linters: [gochecknoglobals]
