@@ -38,15 +38,23 @@ import (
 )
 
 const (
-	largeReqSize        = 271828
-	largeRespSize       = 314159
+	eightBytes          = 8
+	sixteenBytes        = 16
+	oneKiB              = 1024
+	twoKiB              = 2028
+	thirtyTwoKiB        = 32768
+	sixtyFourKiB        = 65536
+	twoFiftyKiB         = 256000
+	fiveHundredKiB      = 512000
+	largeReqSize        = twoFiftyKiB
+	largeRespSize       = fiveHundredKiB
 	initialMetadataKey  = "x-grpc-test-echo-initial"
 	trailingMetadataKey = "x-grpc-test-echo-trailing-bin"
 )
 
 var (
-	reqSizes  = []int{27182, 8, 1828, 45904}
-	respSizes = []int{31415, 9, 2653, 58979}
+	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}
+	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB}
 )
 
 // ClientNewPayload returns a payload of the given type and size.
