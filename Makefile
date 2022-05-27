@@ -79,51 +79,20 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
-$(BIN)/buf: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.2.1
-
-$(BIN)/license-header: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install \
-		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.2.1
-
-$(BIN)/golangci-lint: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.45.2
-
-$(BIN)/protoc-gen-connect-go: Makefile
-	@mkdir -p $(@D)
-	@# Pinned by go.mod.
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go
-
-$(BIN)/protoc-gen-go-grpc: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
-
-$(BIN)/protoc-gen-go: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.27.1
-
-$(BIN)/protoc-gen-es: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.4
-
-$(BIN)/protoc-gen-connect-web: Makefile
-	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220518200055-152f8020ecfa
-
-docker-compose-clean:
-	-docker-compose down --rmi local --remove-orphans
-	# clean up errors are ignored
-
-test-docker-compose: docker-compose-clean
+.PHONY: docker-compose-test
+docker-compose-test: docker-compose-clean
 	@# The NPM_TOKEN checking can be remove when connect-web and protobuf-es become public
 ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
 endif
 	@# TODO: docker build is a work around for the --ssh, can be removed when connect-web become public
-	docker build --ssh default -f Dockerfile.crosstestweb --build-arg TEST_PROTOBUF_ES_BRANCH=$(TEST_PROTOBUF_ES_BRANCH) --build-arg TEST_CONNECT_WEB_BRANCH=$(TEST_CONNECT_WEB_BRANCH) --build-arg NPM_TOKEN=$(NPM_TOKEN) .
+	docker build \
+		-f Dockerfile.crosstestweb \
+		--build-arg "TEST_PROTOBUF_ES_BRANCH=$(TEST_PROTOBUF_ES_BRANCH)" \
+		--build-arg "TEST_CONNECT_WEB_BRANCH=$(TEST_CONNECT_WEB_BRANCH)" \
+		--build-arg "NPM_TOKEN=$(NPM_TOKEN)" \
+		--ssh default \
+		.
 	docker-compose run client-connect-to-server-connect-h2
 	docker-compose run client-connect-to-server-connect-h3
 	docker-compose run client-connect-grpc-to-server-connect-h2
@@ -138,3 +107,41 @@ endif
 	docker-compose run client-grpc-web-to-envoy-server-connect
 	docker-compose run client-grpc-web-to-envoy-server-grpc
 	$(MAKE) docker-compose-clean
+
+.PHONY: docker-compose-clean
+docker-compose-clean:
+	-docker-compose down --rmi local --remove-orphans
+
+$(BIN)/buf: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.4.0
+
+$(BIN)/license-header: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install \
+		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.4.0
+
+$(BIN)/golangci-lint: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.46.2
+
+$(BIN)/protoc-gen-connect-go: Makefile
+	@mkdir -p $(@D)
+	@# Pinned by go.mod.
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go
+
+$(BIN)/protoc-gen-go-grpc: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+
+$(BIN)/protoc-gen-go: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
+
+$(BIN)/protoc-gen-es: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.4
+
+$(BIN)/protoc-gen-connect-web: Makefile
+	@mkdir -p $(@D)
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220518200055-152f8020ecfa
