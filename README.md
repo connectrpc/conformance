@@ -21,6 +21,10 @@ following clients and servers:
 The test suite is run nightly against the latest commits of [connect-go][connect-go] and
 connect-web to ensure that we are continuously testing for compatibility.
 
+For more on Connect, see the [announcement blog post][blog], the documentation
+on [connect.build][docs] (especially the [Getting Started] guide for Go), or
+the [demo service][demo].
+
 ## Test Suite
 
 The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop
@@ -213,14 +217,18 @@ and makes no backward compatibility guarantees. We'd like to release it as an
 interoperability testing toolkit eventually, but don't have a concrete timeline
 in mind.
 
+[Getting Started]: https://connect.build/go/getting-started
+[blog]: https://buf.build/blog/announcing-connect-a-better-grpc
 [ci]: https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml
 [connect-go]: https://github.com/bufbuild/connect-go
+[demo]: https://github.com/bufbuild/connect-demo
 [docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
+[docs]: https://connect.build
 [github-action]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml
+[go-support-policy]: https://golang.org/doc/devel/release#policy
 [grpc-go]: https://github.com/grpc/grpc-go
 [grpc-interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
-[grpc-web]: https://github.com/grpc/grpc-web
 [grpc-web-interop]: https://github.com/grpc/grpc-web/blob/master/doc/interop-test-descriptions.md
-[go-support-policy]: https://golang.org/doc/devel/release#policy
+[grpc-web]: https://github.com/grpc/grpc-web
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE
 [test.proto]: https://github.com/bufbuild/connect-crosstest/blob/main/internal/proto/grpc/testing/test.proto
