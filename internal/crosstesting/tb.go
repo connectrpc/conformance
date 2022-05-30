@@ -12,42 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testing
+package crosstesting
 
 import "testing"
 
 type tb struct {
-	internal *testing.T
-}
-
-func NewCrossTestT(t *testing.T) TB {
-	t.Helper()
-	return &tb{
-		internal: t,
-	}
+	t *testing.T
 }
 
 func (t *tb) Helper() {
-	t.internal.Helper()
+	t.t.Helper()
 }
 
 func (t *tb) Errorf(format string, args ...any) {
-	t.internal.Errorf(format, args...)
+	t.t.Errorf(format, args...)
 }
 
 func (t *tb) Fatalf(format string, args ...any) {
-	t.internal.Fatalf(format, args...)
+	t.t.Fatalf(format, args...)
 }
 
 func (t *tb) Successf(format string, args ...any) {
-	// Only log a success message if no instances of `t.Errorf` was
-	// ever called.
-	if t.internal.Failed() {
+	// Only log a success message if no instances of `t.Errorf` was ever called.
+	if t.t.Failed() {
 		t.FailNow()
 	}
-	t.internal.Logf(format, args...)
+	t.t.Logf(format, args...)
 }
 
 func (t *tb) FailNow() {
-	t.internal.FailNow()
+	t.t.FailNow()
 }

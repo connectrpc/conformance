@@ -28,9 +28,9 @@ import (
 	"syscall"
 	"time"
 
-	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	interopconnect "github.com/bufbuild/connect-crosstest/internal/interop/connect"
+	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -46,19 +46,19 @@ type flags struct {
 }
 
 func main() {
-	flagset := flags{}
+	flags := &flags{}
 	rootCmd := &cobra.Command{
 		Use:   "serverconnect",
 		Short: "Starts a connect test server",
 		Run: func(cmd *cobra.Command, args []string) {
-			run(flagset)
+			run(flags)
 		},
 	}
-	rootCmd.Flags().StringVar(&flagset.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
-	rootCmd.Flags().StringVar(&flagset.h2Port, "h2port", "", "port for HTTP/2 traffic")
-	rootCmd.Flags().StringVar(&flagset.h3Port, "h3port", "", "port for HTTP/3 traffic")
-	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
-	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
+	rootCmd.Flags().StringVar(&flags.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
+	rootCmd.Flags().StringVar(&flags.h2Port, "h2port", "", "port for HTTP/2 traffic")
+	rootCmd.Flags().StringVar(&flags.h3Port, "h3port", "", "port for HTTP/3 traffic")
+	rootCmd.Flags().StringVar(&flags.certFile, "cert", "", "path to the TLS cert file")
+	rootCmd.Flags().StringVar(&flags.keyFile, "key", "", "path to the TLS key file")
 	_ = rootCmd.MarkFlagRequired("h1port")
 	_ = rootCmd.MarkFlagRequired("h2port")
 	_ = rootCmd.MarkFlagRequired("cert")
@@ -66,10 +66,10 @@ func main() {
 	_ = rootCmd.Execute()
 }
 
-func run(flagset flags) {
+func run(flags *flags) {
 	mux := http.NewServeMux()
-	mux.Handle(testrpc.NewTestServiceHandler(
-		interopconnect.NewTestConnectServer(),
+	mux.Handle(testingconnect.NewTestServiceHandler(
+		interopconnect.NewTestServiceHandler(),
 	))
 	corsHandler := cors.New(cors.Options{
 		AllowedMethods: []string{
@@ -97,24 +97,24 @@ func run(flagset flags) {
 		// We explicitly set the exposed header names instead of using the wildcard *,
 		// because in requests with credentials, it is treated as the literal header
 		// name "*" without special semantics.
-		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Timeout", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial"},
+		ExposedHeaders: []string{"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial"},
 	}).Handler(mux)
-	tlsConfig := newTLSConfig(flagset.certFile, flagset.keyFile)
+	tlsConfig := newTLSConfig(flags.certFile, flags.keyFile)
 	h1Server := http.Server{
-		Addr:      ":" + flagset.h1Port,
+		Addr:      ":" + flags.h1Port,
 		Handler:   corsHandler,
 		TLSConfig: tlsConfig,
 	}
 	h2Server := http.Server{
-		Addr:      ":" + flagset.h2Port,
+		Addr:      ":" + flags.h2Port,
 		Handler:   mux,
 		TLSConfig: tlsConfig,
 	}
 	var h3Server http3.Server
-	if flagset.h3Port != "" {
+	if flags.h3Port != "" {
 		h3Server = http3.Server{
 			Server: &http.Server{
-				Addr:      ":" + flagset.h3Port,
+				Addr:      ":" + flags.h3Port,
 				Handler:   mux,
 				TLSConfig: tlsConfig,
 			},
@@ -129,7 +129,7 @@ func run(flagset flags) {
 					Minor: int32(1),
 				},
 			},
-			Port: flagset.h1Port,
+			Port: flags.h1Port,
 		},
 		{
 			Protocol: serverpb.Protocol_PROTOCOL_GRPC_WEB,
@@ -138,7 +138,7 @@ func run(flagset flags) {
 					Major: int32(2),
 				},
 			},
-			Port: flagset.h2Port,
+			Port: flags.h2Port,
 		},
 		{
 			Protocol: serverpb.Protocol_PROTOCOL_GRPC,
@@ -147,10 +147,10 @@ func run(flagset flags) {
 					Major: int32(2),
 				},
 			},
-			Port: flagset.h2Port,
+			Port: flags.h2Port,
 		},
 	}
-	if flagset.h3Port != "" {
+	if flags.h3Port != "" {
 		protocols = append(protocols, &serverpb.ProtocolSupport{
 			Protocol: serverpb.Protocol_PROTOCOL_GRPC,
 			HttpVersions: []*serverpb.HTTPVersion{
@@ -158,7 +158,7 @@ func run(flagset flags) {
 					Major: int32(3),
 				},
 			},
-			Port: flagset.h3Port,
+			Port: flags.h3Port,
 		})
 	}
 	bytes, err := protojson.Marshal(
@@ -174,18 +174,18 @@ func run(flagset flags) {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		if err := h1Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := h1Server.ListenAndServeTLS(flags.certFile, flags.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	go func() {
-		if err := h2Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := h2Server.ListenAndServeTLS(flags.certFile, flags.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
-	if flagset.h3Port != "" {
+	if flags.h3Port != "" {
 		go func() {
-			if err := h3Server.ListenAndServeTLS(flagset.certFile, flagset.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			if err := h3Server.ListenAndServeTLS(flags.certFile, flags.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Fatalln(err)
 			}
 		}()
@@ -199,7 +199,7 @@ func run(flagset flags) {
 	if err := h2Server.Shutdown(ctx); err != nil {
 		log.Fatalln(err)
 	}
-	if flagset.h3Port != "" {
+	if flags.h3Port != "" {
 		if err := h3Server.Shutdown(ctx); err != nil {
 			log.Fatalln(err)
 		}
