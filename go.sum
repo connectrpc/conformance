@@ -12,8 +12,6 @@ github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYU
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
-github.com/bufbuild/connect-go v0.0.0-20220520175512-2b3d3442ffb8 h1:ZaD9cVYESl0sBAvcpmSO4wRbOSwS32F5wNPrnDw1XdE=
-github.com/bufbuild/connect-go v0.0.0-20220520175512-2b3d3442ffb8/go.mod h1:BajZGyRXK+Oq6Ddkm7atQ1Tu4W92OMpam7vyhFIf0ww=
 github.com/bufbuild/connect-go v0.0.0-20220527041454-159c8011dfbb h1:zC8B/lIdSoTEyMrkRFXB5iIeTgYp+dYQkOBkPNxXMxw=
 github.com/bufbuild/connect-go v0.0.0-20220527041454-159c8011dfbb/go.mod h1:BajZGyRXK+Oq6Ddkm7atQ1Tu4W92OMpam7vyhFIf0ww=
 github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
@@ -326,8 +324,8 @@ google.golang.org/grpc v1.27.0/go.mod h1:qbnxyOmOxrQa7FizSgH+ReBfzJrCY1pSN7KXBS8
 google.golang.org/grpc v1.33.1/go.mod h1:fr5YgcSWrqhRRxogOsw7RzIpsmvOZ6IcH4kBYTpR3n0=
 google.golang.org/grpc v1.36.0/go.mod h1:qjiiYl8FncCW8feJPdyg3v6XW24KsRHe+dy9BAGRRjU=
 google.golang.org/grpc v1.46.0/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
-google.golang.org/grpc v1.47.0-dev h1:NP1YUzt1yuZiNRlGA7gr6/FHvqAqcctebAi5D/AYeQ8=
-google.golang.org/grpc v1.47.0-dev/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
+google.golang.org/grpc v1.48.0-dev h1:6YNGQnHU6ks69OUCkSjqYVNl8b+vOqlGEYbvvvtYJFA=
+google.golang.org/grpc v1.48.0-dev/go.mod h1:vN9eftEi1UMyUsIF80+uQXhHjbXYbm0uXoFCACuMGWk=
 google.golang.org/protobuf v0.0.0-20200109180630-ec00e32a8dfd/go.mod h1:DFci5gLYBciE7Vtevhsrf46CRTquxDuWsQurQQe4oz8=
 google.golang.org/protobuf v0.0.0-20200221191635-4d8936d0db64/go.mod h1:kwYJMbMJ01Woi6D6+Kah6886xMZcty6N08ah7+eCXa0=
 google.golang.org/protobuf v0.0.0-20200228230310-ab0ca4ff8a60/go.mod h1:cfTl7dwQJ+fmap5saPgwCLgHXTUD7jkjRqWcaiX5VyM=
