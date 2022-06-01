@@ -15,6 +15,8 @@
 import {
   ConnectError,
   createConnectTransport,
+  decodeBinaryHeader,
+  encodeBinaryHeader,
   makeCallbackClient,
   StatusCode,
 } from "@bufbuild/connect-web";
@@ -128,7 +130,7 @@ describe("connect_web_callback_client", function () {
     const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
     const ECHO_INITIAL_VALUE = "test_initial_metadata_value";
     const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
-    const ECHO_TRAILING_VALUE = 0xababab;
+    const ECHO_TRAILING_VALUE = new Uint8Array([0xababab]);
 
     const req = new SimpleRequest({
       responseSize: size,
@@ -147,7 +149,7 @@ describe("connect_web_callback_client", function () {
       {
         headers: {
           [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
-          [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
+          [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
         },
         onHeader(header) {
           expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
@@ -156,9 +158,7 @@ describe("connect_web_callback_client", function () {
         },
         onTrailer(trailer) {
           expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-          expect(trailer.get(ECHO_TRAILING_KEY)).toEqual(
-            ECHO_TRAILING_VALUE.toString()
-          );
+          expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
           doneFn();
         },
       }
