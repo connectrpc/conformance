@@ -60,7 +60,7 @@ var (
 func ClientNewPayload(t crosstesting.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
 	t.Helper()
 	if size < 0 {
-		return nil, fmt.Errorf("Requested a response with invalid length %d", size)
+		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
 	assert.Equal(t, payloadType, testpb.PayloadType_COMPRESSABLE)
@@ -431,7 +431,7 @@ func DoStatusCodeAndMessage(t crosstesting.TB, client connectpb.TestServiceClien
 func DoSpecialStatusMessage(t crosstesting.TB, client connectpb.TestServiceClient) {
 	code := int32(connect.CodeUnknown)
 	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
-	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg))
+	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg)) // nolint:stylecheck // we do want to test the behaviour for error string that end with a newline
 	req := &testpb.SimpleRequest{
 		ResponseStatus: &testpb.EchoStatus{
 			Code:    code,
@@ -482,7 +482,7 @@ func DoUnresolvableHost(t crosstesting.TB, client connectpb.TestServiceClient, a
 	t.Successf("successful fail call with unresolvable call")
 }
 
-func doOneSoakIteration(ctx context.Context, t crosstesting.TB, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) {
+func doOneSoakIteration(ctx context.Context, t crosstesting.TB, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) { // nolint:nonamedreturns
 	start := time.Now()
 	client := tc
 	if resetChannel {

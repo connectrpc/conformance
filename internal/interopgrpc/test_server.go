@@ -94,6 +94,7 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	}
 	if trailer != nil {
 		if err := grpc.SetTrailer(ctx, trailer); err != nil {
+			return nil, err
 		}
 	}
 	if responseStatus != nil && responseStatus.Code != 0 {

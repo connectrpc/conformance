@@ -23,7 +23,8 @@ linters:
   enable-all: true
   disable:
     - cyclop           # covered by gocyclo
-    - exhaustivestruct # zero values in tests are okay
+    - exhaustruct      # zero values in tests are okay
+    - exhaustivestruct # replaced by exhaustruct
     - funlen           # rely on code review to limit function length
     - gocognit         # dubious "cognitive overhead" quantification
     - gofumpt          # prefer standard gofmt

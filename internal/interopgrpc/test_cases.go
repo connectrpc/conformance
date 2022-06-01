@@ -34,7 +34,6 @@ import (
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
-	"github.com/golang/protobuf/proto"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -42,6 +41,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -68,7 +68,7 @@ var (
 func ClientNewPayload(t crosstesting.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
 	t.Helper()
 	if size < 0 {
-		return nil, fmt.Errorf("Requested a response with invalid length %d", size)
+		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
 	assert.Equal(t, payloadType, testpb.PayloadType_COMPRESSABLE)
@@ -83,7 +83,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args .
 	reply, err := client.EmptyCall(context.Background(), &testpb.Empty{}, args...)
 	require.NoError(t, err)
 	assert.True(t, proto.Equal(&testpb.Empty{}, reply))
-	t.Successf("succcessful unary call")
+	t.Successf("successful unary call")
 }
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
@@ -456,7 +456,7 @@ func DoUnresolvableHost(t crosstesting.TB, client testpb.TestServiceClient, args
 	t.Successf("successful fail call with unresolvable call")
 }
 
-func doOneSoakIteration(ctx context.Context, t crosstesting.TB, tc testpb.TestServiceClient, resetChannel bool, serverAddr string, dopts []grpc.DialOption) (latency time.Duration, err error) {
+func doOneSoakIteration(ctx context.Context, t crosstesting.TB, tc testpb.TestServiceClient, resetChannel bool, serverAddr string, dopts []grpc.DialOption) (latency time.Duration, err error) { // nolint:nonamedreturns
 	start := time.Now()
 	client := tc
 	if resetChannel {
