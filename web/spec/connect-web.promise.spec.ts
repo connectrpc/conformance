@@ -97,7 +97,7 @@ describe("connect_web_promise_client", function () {
     const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
     const ECHO_INITIAL_VALUE = "test_initial_metadata_value";
     const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
-    const ECHO_TRAILING_VALUE = new Uint8Array([0xababab]);
+    const ECHO_TRAILING_VALUE = new Uint8Array([0xab, 0xab, 0xab]);
 
     const req = new SimpleRequest({
       responseSize: size,
