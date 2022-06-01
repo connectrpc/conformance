@@ -164,6 +164,18 @@ func run(flags *flags) {
 			interopconnect.DoClientStreaming(console.NewTB(), client)
 			interopconnect.DoServerStreaming(console.NewTB(), client)
 			interopconnect.DoPingPong(console.NewTB(), client)
+			if flags.implementation == connectH3 {
+				interopconnect.DoEmptyStream(console.NewTB(), client)
+				// skipped the DoTimeoutOnSleepingServer test as quic-go wrapped the context error,
+				// see https://github.com/lucas-clemente/quic-go/blob/b5ef99a32c250fc63f89cc686c13a008c5419d01/http3/client.go#L275-L282
+				interopconnect.DoCancelAfterBegin(console.NewTB(), client)
+				interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
+				interopconnect.DoCustomMetadata(console.NewTB(), client)
+				interopconnect.DoStatusCodeAndMessage(console.NewTB(), client)
+				interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
+				interopconnect.DoUnimplementedService(console.NewTB(), client)
+				interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+			}
 		}
 	case grpcGo:
 		clientConn, err := grpc.Dial(
