@@ -218,7 +218,7 @@ interoperability testing toolkit eventually, but don't have a concrete timeline
 in mind.
 
 [Getting Started]: https://connect.build/go/getting-started
-[blog]: https://buf.build/blog/announcing-connect-a-better-grpc
+[blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml
 [connect-go]: https://github.com/bufbuild/connect-go
 [demo]: https://github.com/bufbuild/connect-demo
