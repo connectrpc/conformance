@@ -125,7 +125,7 @@ $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
 	GOBIN=$(abspath $(@D)) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.45.2
 
-$(BIN)/protoc-gen-connect-go: Makefile
+$(BIN)/protoc-gen-connect-go: Makefile go.mod
 	@mkdir -p $(@D)
 	@# Pinned by go.mod.
 	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-go/cmd/protoc-gen-connect-go
