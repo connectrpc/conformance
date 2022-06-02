@@ -38,12 +38,12 @@ func (t *TB) Errorf(format string, args ...any) {
 	// t.Errorf was called at least once, so a failed test case
 	// was found.
 	t.failed = true
-	log.Printf("ERROR: "+format, args...)
+	log.Printf("ERROR:   "+format, args...)
 }
 
 // Fatalf implements TB.Fatalf.
 func (t *TB) Fatalf(format string, args ...any) {
-	log.Printf("FAIL: "+format, args...)
+	log.Printf("FAIL:    "+format, args...)
 }
 
 // Successf implements TB.Successf.
