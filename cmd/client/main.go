@@ -23,6 +23,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 
 	"github.com/bufbuild/connect-crosstest/internal/console"
 	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
@@ -36,6 +37,14 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/encoding/gzip"
+)
+
+const (
+	hostFlagName           = "host"
+	portFlagName           = "port"
+	implementationFlagName = "implementation"
+	certFlagName           = "cert"
+	keyFlagName            = "key"
 )
 
 const (
@@ -60,21 +69,28 @@ type flags struct {
 }
 
 func main() {
-	flags := &flags{}
+	flagset := &flags{}
 	rootCmd := &cobra.Command{
 		Use:   "client",
 		Short: "Starts a grpc or connect client, based on implementation",
 		Run: func(cmd *cobra.Command, args []string) {
-			run(flags)
+			run(flagset)
 		},
 	}
-	rootCmd.Flags().StringVar(&flags.host, "host", "127.0.0.1", "the host name of the test server")
-	rootCmd.Flags().StringVar(&flags.port, "port", "", "the port of the test server")
-	rootCmd.Flags().StringVarP(
+	if err := bind(rootCmd, flagset); err != nil {
+		os.Exit(1)
+	}
+	_ = rootCmd.Execute()
+}
+
+func bind(cmd *cobra.Command, flags *flags) error {
+	cmd.Flags().StringVar(&flags.host, hostFlagName, "127.0.0.1", "the host name of the test server")
+	cmd.Flags().StringVar(&flags.port, portFlagName, "", "the port of the test server")
+	cmd.Flags().StringVarP(
 		&flags.implementation,
-		"implementation",
+		implementationFlagName,
 		"i",
-		"connect",
+		"",
 		fmt.Sprintf(
 			"the client implementation tested, accepted values are %q, %q, %q, %q, %q, %q, %q, %q, %q, or %q",
 			connectH1,
@@ -89,12 +105,14 @@ func main() {
 			grpcGo,
 		),
 	)
-	rootCmd.Flags().StringVar(&flags.certFile, "cert", "", "path to the TLS cert file")
-	rootCmd.Flags().StringVar(&flags.keyFile, "key", "", "path to the TLS key file")
-	_ = rootCmd.MarkFlagRequired("port")
-	_ = rootCmd.MarkFlagRequired("cert")
-	_ = rootCmd.MarkFlagRequired("key")
-	_ = rootCmd.Execute()
+	cmd.Flags().StringVar(&flags.certFile, certFlagName, "", "path to the TLS cert file")
+	cmd.Flags().StringVar(&flags.keyFile, keyFlagName, "", "path to the TLS key file")
+	for _, requiredFlag := range []string{portFlagName, implementationFlagName, certFlagName, keyFlagName} {
+		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func run(flags *flags) {
