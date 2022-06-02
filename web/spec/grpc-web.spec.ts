@@ -127,8 +127,8 @@ describe("grpc_web", function () {
   it("custom_metadata", function (done) {
     const doneFn = multiDone(done, 3);
     const size = 314159;
-    const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
-    const ECHO_INITIAL_VALUE = "test_initial_metadata_value";
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
     const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
     const ECHO_TRAILING_VALUE = 0xababab;
 
@@ -142,7 +142,7 @@ describe("grpc_web", function () {
     const call = client.unaryCall(
       req,
       {
-        [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
+        [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
         [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
       },
       (err, response) => {
@@ -155,8 +155,8 @@ describe("grpc_web", function () {
     call.on("metadata", (metadata) => {
       expect(metadata).toBeDefined();
       const m = caseless(metadata); // http header is case-insensitive
-      expect(m.has(ECHO_INITIAL_KEY) != false).toBeTrue();
-      expect(m.get(ECHO_INITIAL_KEY)).toEqual(ECHO_INITIAL_VALUE.toString());
+      expect(m.has(ECHO_LEADING_KEY) != false).toBeTrue();
+      expect(m.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
       doneFn();
     });
 

@@ -80,8 +80,8 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	responseStatus := req.GetResponseStatus()
 	var header, trailer metadata.MD
 	if data, ok := metadata.FromIncomingContext(ctx); ok {
-		if initialMetadata, ok := data[initialMetadataKey]; ok {
-			metadataPairs := createMetadataPairs(initialMetadataKey, initialMetadata)
+		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
+			metadataPairs := createMetadataPairs(leadingMetadataKey, leadingMetadata)
 			header = metadata.Pairs(metadataPairs...)
 		}
 		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
@@ -154,10 +154,10 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 
 func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServer) error {
 	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
-		if initialMetadata, ok := data[initialMetadataKey]; ok {
+		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
 			var metadataPairs []string
-			for _, metadataValue := range initialMetadata {
-				metadataPairs = append(metadataPairs, initialMetadataKey)
+			for _, metadataValue := range leadingMetadata {
+				metadataPairs = append(metadataPairs, leadingMetadataKey)
 				metadataPairs = append(metadataPairs, metadataValue)
 			}
 			header := metadata.Pairs(metadataPairs...)

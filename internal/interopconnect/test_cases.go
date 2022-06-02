@@ -47,7 +47,7 @@ const (
 	fiveHundredKiB      = 512000
 	largeReqSize        = twoFiftyKiB
 	largeRespSize       = fiveHundredKiB
-	initialMetadataKey  = "x-grpc-test-echo-initial"
+	leadingMetadataKey  = "x-grpc-test-echo-initial"
 	trailingMetadataKey = "x-grpc-test-echo-trailing-bin"
 )
 
@@ -258,7 +258,7 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client connectpb.TestServiceC
 }
 
 const (
-	initialMetadataValue  = "test_initial_metadata_value"
+	leadingMetadataValue  = "test_initial_metadata_value"
 	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
 )
 
@@ -301,7 +301,7 @@ func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient
 		t,
 		client,
 		map[string][]string{
-			initialMetadataKey: {initialMetadataValue},
+			leadingMetadataKey: {leadingMetadataValue},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue)},
@@ -348,7 +348,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.Te
 		t,
 		client,
 		map[string][]string{
-			initialMetadataKey: {initialMetadataValue, initialMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},

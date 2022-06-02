@@ -54,7 +54,7 @@ const (
 	fiveHundredKiB      = 512000
 	largeReqSize        = twoFiftyKiB
 	largeRespSize       = fiveHundredKiB
-	initialMetadataKey  = "x-grpc-test-echo-initial"
+	leadingMetadataKey  = "x-grpc-test-echo-initial"
 	trailingMetadataKey = "x-grpc-test-echo-trailing-bin"
 )
 
@@ -266,23 +266,23 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client testpb.TestServiceClie
 }
 
 var (
-	initialMetadataValue  = "test_initial_metadata_value"
+	leadingMetadataValue  = "test_initial_metadata_value"
 	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
 	customMetadata        = metadata.Pairs(
-		initialMetadataKey, initialMetadataValue,
+		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 	)
 	duplicatedCustomMetadata = metadata.Pairs(
-		initialMetadataKey, initialMetadataValue,
+		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
-		initialMetadataKey, initialMetadataValue+",more_stuff",
+		leadingMetadataKey, leadingMetadataValue+",more_stuff",
 		trailingMetadataKey, trailingMetadataValue+"\x0a",
 	)
 )
 
 func validateMetadata(t crosstesting.TB, header, trailer, sent metadata.MD) {
-	expectedHeaderValues := sent.Get(initialMetadataKey)
-	headerValues := header.Get(initialMetadataKey)
+	expectedHeaderValues := sent.Get(leadingMetadataKey)
+	headerValues := header.Get(leadingMetadataKey)
 	assert.Equal(t, len(expectedHeaderValues), len(headerValues))
 	expectedValuesMap := map[string]struct{}{}
 	for _, expected := range expectedHeaderValues {
