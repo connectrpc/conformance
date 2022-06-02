@@ -1,3 +1,17 @@
+// Copyright 2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // This contains the test cases from grpc-go interop test_utils.go file,
 // https://github.com/grpc/grpc-go/blob/master/interop/test_utils.go
 // The test cases have been refactored to be compatible with the standard
@@ -24,20 +38,17 @@
 package interopgrpc
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
+	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/benchmark/stats"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -55,17 +66,17 @@ const (
 	fiveHundredKiB      = 512000
 	largeReqSize        = twoFiftyKiB
 	largeRespSize       = fiveHundredKiB
-	initialMetadataKey  = "x-grpc-test-echo-initial"
+	leadingMetadataKey  = "x-grpc-test-echo-initial"
 	trailingMetadataKey = "x-grpc-test-echo-trailing-bin"
 )
 
 var (
-	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}
-	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB}
+	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 )
 
-// ClientNewPayload returns a payload of the given type and size.
-func ClientNewPayload(t crosstesting.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
+// clientNewPayload returns a payload of the given type and size.
+func clientNewPayload(t crosstesting.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
 	t.Helper()
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
@@ -88,7 +99,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args .
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
 func DoLargeUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -108,7 +119,7 @@ func DoClientStreaming(t crosstesting.TB, client testpb.TestServiceClient, args 
 	require.NoError(t, err)
 	var sum int
 	for _, size := range reqSizes {
-		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
+		pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
 		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
@@ -166,7 +177,7 @@ func DoPingPong(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc
 				Size: int32(respSizes[index]),
 			},
 		}
-		pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
+		pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
 		require.NoError(t, err)
 		req := &testpb.StreamingOutputCallRequest{
 			ResponseType:       testpb.PayloadType_COMPRESSABLE,
@@ -210,7 +221,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClien
 		}
 	}
 	require.NoError(t, err)
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
 	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -224,7 +235,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClien
 	t.Successf("successful timeout on sleep")
 }
 
-var testMetadata = metadata.MD{
+var testMetadata = metadata.MD{ // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 	"key1": []string{"value1"},
 	"key2": []string{"value2"},
 }
@@ -250,7 +261,7 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client testpb.TestServiceClie
 			Size: 31415,
 		},
 	}
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
 	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
@@ -266,24 +277,27 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client testpb.TestServiceClie
 	t.Successf("successful cancel after first response")
 }
 
-var (
-	initialMetadataValue  = "test_initial_metadata_value"
+const (
+	leadingMetadataValue  = "test_initial_metadata_value"
 	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
-	customMetadata        = metadata.Pairs(
-		initialMetadataKey, initialMetadataValue,
+)
+
+var (
+	customMetadata = metadata.Pairs( // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 	)
-	duplicatedCustomMetadata = metadata.Pairs(
-		initialMetadataKey, initialMetadataValue,
+	duplicatedCustomMetadata = metadata.Pairs( // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
-		initialMetadataKey, initialMetadataValue+",more_stuff",
+		leadingMetadataKey, leadingMetadataValue+",more_stuff",
 		trailingMetadataKey, trailingMetadataValue+"\x0a",
 	)
 )
 
 func validateMetadata(t crosstesting.TB, header, trailer, sent metadata.MD) {
-	expectedHeaderValues := sent.Get(initialMetadataKey)
-	headerValues := header.Get(initialMetadataKey)
+	expectedHeaderValues := sent.Get(leadingMetadataKey)
+	headerValues := header.Get(leadingMetadataKey)
 	assert.Equal(t, len(expectedHeaderValues), len(headerValues))
 	expectedValuesMap := map[string]struct{}{}
 	for _, expected := range expectedHeaderValues {
@@ -321,7 +335,7 @@ func DoDuplicatedCustomMetadata(t crosstesting.TB, client testpb.TestServiceClie
 
 func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	// Testing with UnaryCall.
-	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -444,7 +458,7 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
-	assert.Equal(t, s.Message(), interopconnect.NonASCIIErrMsg)
+	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
 }
 
@@ -455,78 +469,4 @@ func DoUnresolvableHost(t crosstesting.TB, client testpb.TestServiceClient, args
 	assert.Error(t, err)
 	assert.Equal(t, status.Code(err), codes.Unavailable)
 	t.Successf("successful fail call with unresolvable call")
-}
-
-func doOneSoakIteration(ctx context.Context, t crosstesting.TB, tc testpb.TestServiceClient, resetChannel bool, serverAddr string, dopts []grpc.DialOption) (latency time.Duration, err error) { // nolint:nonamedreturns
-	start := time.Now()
-	client := tc
-	if resetChannel {
-		var conn *grpc.ClientConn
-		conn, err = grpc.Dial(serverAddr, dopts...)
-		if err != nil {
-			return time.Nanosecond, err
-		}
-		defer conn.Close()
-		client = testpb.NewTestServiceClient(conn)
-	}
-	// per test spec, don't include channel shutdown in latency measurement
-	defer func() { latency = time.Since(start) }()
-	// do a large-unary RPC
-	pl, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
-	require.NoError(t, err)
-	req := &testpb.SimpleRequest{
-		ResponseType: testpb.PayloadType_COMPRESSABLE,
-		ResponseSize: int32(largeRespSize),
-		Payload:      pl,
-	}
-	var reply *testpb.SimpleResponse
-	reply, err = client.UnaryCall(ctx, req)
-	require.NoError(t, err)
-	assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
-	assert.Equal(t, len(reply.GetPayload().GetBody()), largeRespSize)
-	return
-}
-
-// DoSoakTest runs large unary RPCs in a loop for a configurable number of times, with configurable failure thresholds.
-// If resetChannel is false, then each RPC will be performed on tc. Otherwise, each RPC will be performed on a new
-// stub that is created with the provided server address and dial options.
-func DoSoakTest(t crosstesting.TB, client testpb.TestServiceClient, serverAddr string, dopts []grpc.DialOption, resetChannel bool, soakIterations int, maxFailures int, perIterationMaxAcceptableLatency time.Duration, overallDeadline time.Time) {
-	ctx, cancel := context.WithDeadline(context.Background(), overallDeadline)
-	defer cancel()
-	iterationsDone := 0
-	totalFailures := 0
-	hopts := stats.HistogramOptions{
-		NumBuckets:     20,
-		GrowthFactor:   1,
-		BaseBucketSize: 1,
-		MinValue:       0,
-	}
-	histogram := stats.NewHistogram(hopts)
-	for i := 0; i < soakIterations; i++ {
-		if time.Now().After(overallDeadline) {
-			break
-		}
-		iterationsDone++
-		latency, err := doOneSoakIteration(ctx, t, client, resetChannel, serverAddr, dopts)
-		latencyMs := int64(latency / time.Millisecond)
-		_ = histogram.Add(latencyMs)
-		if err != nil {
-			totalFailures++
-			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
-			continue
-		}
-		if latency > perIterationMaxAcceptableLatency {
-			totalFailures++
-			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
-			continue
-		}
-		_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
-	}
-	var b bytes.Buffer
-	histogram.Print(&b)
-	_, _ = fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
-	_, _ = fmt.Fprintln(os.Stderr, b.String())
-	_, _ = fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
-	assert.True(t, iterationsDone >= soakIterations)
-	assert.True(t, totalFailures <= maxFailures)
 }

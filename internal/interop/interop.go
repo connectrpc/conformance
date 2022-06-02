@@ -12,24 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crosstesting
+package interop
 
-import "testing"
-
-// TB is a testing interface that connect-crosstest depends on. It is trimmed down
-// from the standard library testing.TB interface and adds a Successf method.
-type TB interface {
-	Helper()
-	Errorf(string, ...any)
-	Fatalf(string, ...any)
-	Successf(string, ...any)
-	FailNow()
-}
-
-// NewTB returns a new TB.
-func NewTB(t *testing.T) TB {
-	t.Helper()
-	return &tb{
-		t: t,
-	}
-}
+// NonASCIIErrMsg is a non-ASCII error message.
+const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII

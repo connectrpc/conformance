@@ -25,12 +25,18 @@ import (
 
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interopgrpc"
+	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip" // this register the gzip compressor to the grpc server
 	"google.golang.org/protobuf/encoding/protojson"
+)
+
+const (
+	portFlagName = "port"
+	certFlagName = "cert"
+	keyFlagName  = "key"
 )
 
 type flags struct {
@@ -40,7 +46,7 @@ type flags struct {
 }
 
 func main() {
-	flagset := flags{}
+	flagset := &flags{}
 	rootCmd := &cobra.Command{
 		Use:   "servergrpc",
 		Short: "Starts a grpc test server",
@@ -48,16 +54,25 @@ func main() {
 			run(flagset)
 		},
 	}
-	rootCmd.Flags().StringVar(&flagset.port, "port", "", "the port the server will listen on")
-	rootCmd.Flags().StringVar(&flagset.certFile, "cert", "", "path to the TLS cert file")
-	rootCmd.Flags().StringVar(&flagset.keyFile, "key", "", "path to the TLS key file")
-	_ = rootCmd.MarkFlagRequired("port")
-	_ = rootCmd.MarkFlagRequired("cert")
-	_ = rootCmd.MarkFlagRequired("key")
+	if err := bind(rootCmd, flagset); err != nil {
+		os.Exit(1)
+	}
 	_ = rootCmd.Execute()
 }
 
-func run(flagset flags) {
+func bind(cmd *cobra.Command, flagset *flags) error {
+	cmd.Flags().StringVar(&flagset.port, portFlagName, "", "the port the server will listen on")
+	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
+	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
+	for _, requiredFlag := range []string{portFlagName, certFlagName, keyFlagName} {
+		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func run(flagset *flags) {
 	lis, err := net.Listen("tcp", ":"+flagset.port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

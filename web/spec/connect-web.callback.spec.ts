@@ -127,8 +127,8 @@ describe("connect_web_callback_client", function () {
     const doneFn = multiDone(done, 3);
     // TODO: adjust this test once we land on the API for reading response headers and trailers
     const size = 314159;
-    const ECHO_INITIAL_KEY = "x-grpc-test-echo-initial";
-    const ECHO_INITIAL_VALUE = "test_initial_metadata_value";
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
     const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
     const ECHO_TRAILING_VALUE = new Uint8Array([0xab, 0xab, 0xab]);
 
@@ -148,12 +148,12 @@ describe("connect_web_callback_client", function () {
       },
       {
         headers: {
-          [ECHO_INITIAL_KEY]: ECHO_INITIAL_VALUE,
+          [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
           [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
         },
         onHeader(header) {
-          expect(header.has(ECHO_INITIAL_KEY)).toBeTrue();
-          expect(header.get(ECHO_INITIAL_KEY)).toEqual(ECHO_INITIAL_VALUE);
+          expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
+          expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
           doneFn();
         },
         onTrailer(trailer) {

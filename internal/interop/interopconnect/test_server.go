@@ -23,11 +23,9 @@ import (
 
 	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
 )
-
-// NonASCIIErrMsg is a non-ASCII error message.
-const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
 
 // NewTestServiceHandler returns a new TestServiceHandler.
 func NewTestServiceHandler() testingconnect.TestServiceHandler {
@@ -55,9 +53,9 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 			Payload: payload,
 		},
 	)
-	if initialMetadata := request.Header().Values(initialMetadataKey); len(initialMetadata) != 0 {
-		for _, value := range initialMetadata {
-			response.Header().Add(initialMetadataKey, value)
+	if leadingMetadata := request.Header().Values(leadingMetadataKey); len(leadingMetadata) != 0 {
+		for _, value := range leadingMetadata {
+			response.Header().Add(leadingMetadataKey, value)
 		}
 	}
 	if trailingMetadata := request.Header().Values(trailingMetadataKey); len(trailingMetadata) != 0 {
@@ -73,7 +71,7 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 }
 
 func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
-	return nil, connect.NewError(connect.CodeResourceExhausted, errors.New(NonASCIIErrMsg))
+	return nil, connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
 }
 
 func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
@@ -120,9 +118,9 @@ func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.Cli
 }
 
 func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
-	if initialMetadata := stream.RequestHeader().Values(initialMetadataKey); len(initialMetadata) != 0 {
-		for _, value := range initialMetadata {
-			stream.ResponseHeader().Add(initialMetadataKey, value)
+	if leadingMetadata := stream.RequestHeader().Values(leadingMetadataKey); len(leadingMetadata) != 0 {
+		for _, value := range leadingMetadata {
+			stream.ResponseHeader().Add(leadingMetadataKey, value)
 		}
 	}
 	if trailingMetadata := stream.RequestHeader().Values(trailingMetadataKey); len(trailingMetadata) != 0 {

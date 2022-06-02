@@ -30,11 +30,19 @@ import (
 
 	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
+	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
 	"google.golang.org/protobuf/encoding/protojson"
+)
+
+const (
+	h1PortFlagName = "h1port"
+	h2PortFlagName = "h2port"
+	h3PortFlagName = "h3port"
+	certFlagName   = "cert"
+	keyFlagName    = "key"
 )
 
 type flags struct {
@@ -46,24 +54,32 @@ type flags struct {
 }
 
 func main() {
-	flags := &flags{}
+	flagset := &flags{}
 	rootCmd := &cobra.Command{
 		Use:   "serverconnect",
 		Short: "Starts a connect test server",
 		Run: func(cmd *cobra.Command, args []string) {
-			run(flags)
+			run(flagset)
 		},
 	}
-	rootCmd.Flags().StringVar(&flags.h1Port, "h1port", "", "port for HTTP/1.1 traffic")
-	rootCmd.Flags().StringVar(&flags.h2Port, "h2port", "", "port for HTTP/2 traffic")
-	rootCmd.Flags().StringVar(&flags.h3Port, "h3port", "", "port for HTTP/3 traffic")
-	rootCmd.Flags().StringVar(&flags.certFile, "cert", "", "path to the TLS cert file")
-	rootCmd.Flags().StringVar(&flags.keyFile, "key", "", "path to the TLS key file")
-	_ = rootCmd.MarkFlagRequired("h1port")
-	_ = rootCmd.MarkFlagRequired("h2port")
-	_ = rootCmd.MarkFlagRequired("cert")
-	_ = rootCmd.MarkFlagRequired("key")
+	if err := bind(rootCmd, flagset); err != nil {
+		os.Exit(1)
+	}
 	_ = rootCmd.Execute()
+}
+
+func bind(cmd *cobra.Command, flagset *flags) error {
+	cmd.Flags().StringVar(&flagset.h1Port, h1PortFlagName, "", "port for HTTP/1.1 traffic")
+	cmd.Flags().StringVar(&flagset.h2Port, h2PortFlagName, "", "port for HTTP/2 traffic")
+	cmd.Flags().StringVar(&flagset.h3Port, h3PortFlagName, "", "port for HTTP/3 traffic")
+	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
+	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
+	for _, requiredFlag := range []string{h1PortFlagName, h2PortFlagName, certFlagName, keyFlagName} {
+		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func run(flags *flags) {
