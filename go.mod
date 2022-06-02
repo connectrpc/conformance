@@ -4,7 +4,6 @@ go 1.18
 
 require (
 	github.com/bufbuild/connect-go v0.1.0
-	github.com/golang/protobuf v1.5.2
 	github.com/lucas-clemente/quic-go v0.27.1
 	github.com/rs/cors v1.8.2
 	github.com/spf13/cobra v1.4.0
@@ -19,6 +18,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20210107165309-348f09dbbbc0 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/marten-seemann/qpack v0.2.1 // indirect
 	github.com/marten-seemann/qtls-go1-16 v0.1.5 // indirect

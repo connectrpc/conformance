@@ -25,7 +25,7 @@ import (
 
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interopgrpc"
+	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

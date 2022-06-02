@@ -1,3 +1,17 @@
+// Copyright 2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // This contains the test cases from grpc-go interop test_utils.go file,
 // https://github.com/grpc/grpc-go/blob/master/interop/test_utils.go
 // The test cases have been refactored to be compatible with the standard
@@ -31,6 +45,7 @@ import (
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -56,8 +71,8 @@ const (
 )
 
 var (
-	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}
-	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB}
+	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 )
 
 // clientNewPayload returns a payload of the given type and size.
@@ -220,7 +235,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClien
 	t.Successf("successful timeout on sleep")
 }
 
-var testMetadata = metadata.MD{
+var testMetadata = metadata.MD{ // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 	"key1": []string{"value1"},
 	"key2": []string{"value2"},
 }
@@ -262,14 +277,17 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client testpb.TestServiceClie
 	t.Successf("successful cancel after first response")
 }
 
-var (
+const (
 	leadingMetadataValue  = "test_initial_metadata_value"
 	trailingMetadataValue = "\x0a\x0b\x0a\x0b\x0a\x0b"
-	customMetadata        = metadata.Pairs(
+)
+
+var (
+	customMetadata = metadata.Pairs( // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 	)
-	duplicatedCustomMetadata = metadata.Pairs(
+	duplicatedCustomMetadata = metadata.Pairs( // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 		leadingMetadataKey, leadingMetadataValue+",more_stuff",
@@ -440,7 +458,7 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
-	assert.Equal(t, s.Message(), nonASCIIErrMsg)
+	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
 }
 

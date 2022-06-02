@@ -1,3 +1,17 @@
+// Copyright 2022 Buf Technologies, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 // This is the test server implementation from the grpc-go interop test_utils.go file,
 // https://github.com/grpc/grpc-go/blob/master/interop/test_utils.go
 
@@ -29,14 +43,12 @@ import (
 	"time"
 
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
-
-// nonASCIIErrMsg is a non-ASCII error message.
-const nonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
 
 // NewTestServer creates a test server for test service.
 func NewTestServer() testpb.TestServiceServer {
@@ -113,7 +125,7 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 
 // FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
-	return nil, status.Error(codes.ResourceExhausted, nonASCIIErrMsg)
+	return nil, status.Error(codes.ResourceExhausted, interop.NonASCIIErrMsg)
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {

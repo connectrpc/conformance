@@ -30,7 +30,7 @@ import (
 
 	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
+	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"

@@ -25,6 +25,7 @@ import (
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	connectpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -49,8 +50,8 @@ const (
 )
 
 var (
-	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}
-	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB}
+	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 )
 
 // clientNewPayload returns a payload of the given type and size.
@@ -211,7 +212,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceCl
 	t.Successf("successful timeout on sleep")
 }
 
-var testMetadata = metadata.MD{
+var testMetadata = metadata.MD{ // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 	"key1": []string{"value1"},
 	"key2": []string{"value2"},
 }
@@ -313,7 +314,7 @@ func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceC
 		t,
 		client,
 		map[string][]string{
-			initialMetadataKey: {initialMetadataValue},
+			leadingMetadataKey: {leadingMetadataValue},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue)},
@@ -329,7 +330,7 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestSer
 		t,
 		client,
 		map[string][]string{
-			initialMetadataKey: {initialMetadataValue, initialMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -396,7 +397,7 @@ func customMetadataFullDuplexTest(
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
 ) {
-	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	ctx := context.Background()
 	stream := client.FullDuplexCall(ctx)
@@ -519,7 +520,7 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClie
 	assert.Nil(t, reply)
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
-	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+nonASCIIErrMsg)
+	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+interop.NonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
 }
 
