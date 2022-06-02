@@ -187,7 +187,7 @@ func DoEmptyStream(t crosstesting.TB, client connectpb.TestServiceClient) {
 
 // DoTimeoutOnSleepingServer performs an RPC on a sleep server which causes RPC timeout.
 func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceClient) {
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
@@ -207,6 +207,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceCl
 		return
 	}
 	require.NoError(t, err)
+	time.Sleep(1 * time.Second)
 	_, err = stream.Receive()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeDeadlineExceeded)
