@@ -39,11 +39,16 @@ import (
 )
 
 const (
-	connectGRPCH2 = "connect-grpc-h2"
-	connectGRPCH3 = "connect-grpc-h3"
-	connectH2     = "connect-h2"
-	connectH3     = "connect-h3"
-	grpcGo        = "grpc-go"
+	connectH1        = "connect-h1"
+	connectH2        = "connect-h2"
+	connectH3        = "connect-h3"
+	connectGRPCH1    = "connect-grpc-h1"
+	connectGRPCH2    = "connect-grpc-h2"
+	connectGRPCH3    = "connect-grpc-h3"
+	connectGRPCWebH1 = "connect-grpc-web-h1"
+	connectGRPCWebH2 = "connect-grpc-web-h2"
+	connectGRPCWebH3 = "connect-grpc-web-h3"
+	grpcGo           = "grpc-go"
 )
 
 type flags struct {
@@ -71,11 +76,16 @@ func main() {
 		"i",
 		"connect",
 		fmt.Sprintf(
-			"the client implementation tested, accepted values are %q, %q, %q, %q, or %q",
-			connectGRPCH2,
-			connectGRPCH3,
+			"the client implementation tested, accepted values are %q, %q, %q, %q, %q, %q, %q, %q, %q, or %q",
+			connectH1,
 			connectH2,
 			connectH3,
+			connectGRPCH1,
+			connectGRPCH2,
+			connectGRPCH3,
+			connectGRPCWebH1,
+			connectGRPCWebH2,
+			connectGRPCWebH3,
 			grpcGo,
 		),
 	)
@@ -93,10 +103,55 @@ func run(flags *flags) {
 		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flags.host, flags.port))
 	}
 	switch flags.implementation {
-	case connectGRPCH2, connectH2:
+	// We skipped those streaming tests for http 1 test
+	case connectH1, connectGRPCH1, connectGRPCWebH1:
+		// add client option if the implementation is grpc or grpc-web
 		var clientOptions []connect.ClientOption
-		if flags.implementation == connectGRPCH2 {
+		switch flags.implementation {
+		case connectGRPCH1:
 			clientOptions = append(clientOptions, connect.WithGRPC())
+		case connectGRPCWebH1:
+			clientOptions = append(clientOptions, connect.WithGRPCWeb())
+		}
+		transport := &http.Transport{
+			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
+		}
+		uncompressedClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			serverURL.String(),
+			clientOptions...,
+		)
+		clientOptions = append(clientOptions, connect.WithSendGzip())
+		compressedClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			serverURL.String(),
+			clientOptions...,
+		)
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
+			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
+			interopconnect.DoServerStreaming(console.NewTB(), client)
+			interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
+			interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
+			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
+			interopconnect.DoUnimplementedService(console.NewTB(), client)
+			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+		}
+		interopconnect.DoUnresolvableHost(
+			console.NewTB(), testingconnect.NewTestServiceClient(
+				&http.Client{Transport: transport},
+				"https://unresolvable-host.some.domain",
+				connect.WithGRPC(),
+			),
+		)
+	case connectGRPCH2, connectH2, connectGRPCWebH2:
+		// add client option if the implementation is grpc or grpc-web
+		var clientOptions []connect.ClientOption
+		switch flags.implementation {
+		case connectGRPCH2:
+			clientOptions = append(clientOptions, connect.WithGRPC())
+		case connectGRPCWebH2:
+			clientOptions = append(clientOptions, connect.WithGRPCWeb())
 		}
 		transport := &http2.Transport{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
@@ -122,8 +177,10 @@ func run(flags *flags) {
 			interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
 			interopconnect.DoCancelAfterBegin(console.NewTB(), client)
 			interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
-			interopconnect.DoCustomMetadata(console.NewTB(), client)
-			interopconnect.DoStatusCodeAndMessage(console.NewTB(), client)
+			interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
+			interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
+			interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
+			interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
 			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 			interopconnect.DoUnimplementedService(console.NewTB(), client)
 			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
@@ -135,12 +192,16 @@ func run(flags *flags) {
 				connect.WithGRPC(),
 			),
 		)
-	// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
+	// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
-	case connectGRPCH3, connectH3:
+	case connectH3, connectGRPCH3, connectGRPCWebH3:
+		// add client option if the implementation is grpc or grpc-web
 		var clientOptions []connect.ClientOption
-		if flags.implementation == connectGRPCH3 {
+		switch flags.implementation {
+		case connectGRPCH3:
 			clientOptions = append(clientOptions, connect.WithGRPC())
+		case connectGRPCWebH3:
+			clientOptions = append(clientOptions, connect.WithGRPCWeb())
 		}
 		transport := &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
@@ -170,8 +231,10 @@ func run(flags *flags) {
 				// see https://github.com/lucas-clemente/quic-go/blob/b5ef99a32c250fc63f89cc686c13a008c5419d01/http3/client.go#L275-L282
 				interopconnect.DoCancelAfterBegin(console.NewTB(), client)
 				interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
-				interopconnect.DoCustomMetadata(console.NewTB(), client)
-				interopconnect.DoStatusCodeAndMessage(console.NewTB(), client)
+				interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
+				interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
+				interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
+				interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
 				interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 				interopconnect.DoUnimplementedService(console.NewTB(), client)
 				interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)

@@ -295,9 +295,9 @@ func validateMetadata(
 	}
 }
 
-// DoCustomMetadata checks that metadata is echoed back to the client.
-func DoCustomMetadata(t crosstesting.TB, client connectpb.TestServiceClient) {
-	customMetadataTest(
+// DoCustomMetadataUnary checks that metadata is echoed back to the client with unary call.
+func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
+	customMetadataUnaryTest(
 		t,
 		client,
 		map[string][]string{
@@ -307,13 +307,28 @@ func DoCustomMetadata(t crosstesting.TB, client connectpb.TestServiceClient) {
 			trailingMetadataKey: {[]byte(trailingMetadataValue)},
 		},
 	)
-	t.Successf("successful custom metadata")
+	t.Successf("successful custom metadata unary")
 }
 
-// DoDuplicateCustomMetadata adds duplicated metadata keys and checks that the metadata is echoed back
-// to the client.
-func DoDuplicatedCustomMetadata(t crosstesting.TB, client connectpb.TestServiceClient) {
-	customMetadataTest(
+// DoCustomMetadataFullDuplex checks that metadata is echoed back to the client with full duplex call.
+func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceClient) {
+	customMetadataFullDuplexTest(
+		t,
+		client,
+		map[string][]string{
+			initialMetadataKey: {initialMetadataValue},
+		},
+		map[string][][]byte{
+			trailingMetadataKey: {[]byte(trailingMetadataValue)},
+		},
+	)
+	t.Successf("successful custom metadata full duplex")
+}
+
+// DoDuplicatedCustomMetadataUnary adds duplicated metadata keys and checks that the metadata is echoed back
+// to the client with unary call.
+func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
+	customMetadataUnaryTest(
 		t,
 		client,
 		map[string][]string{
@@ -326,7 +341,23 @@ func DoDuplicatedCustomMetadata(t crosstesting.TB, client connectpb.TestServiceC
 	t.Successf("successful duplicated custom metadata")
 }
 
-func customMetadataTest(
+// DoDuplicatedCustomMetadataFullDuplex adds duplicated metadata keys and checks that the metadata is echoed back
+// to the client with full duplex call.
+func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceClient) {
+	customMetadataFullDuplexTest(
+		t,
+		client,
+		map[string][]string{
+			initialMetadataKey: {initialMetadataValue, initialMetadataValue + ",more_stuff"},
+		},
+		map[string][][]byte{
+			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
+		},
+	)
+	t.Successf("successful duplicated custom metadata")
+}
+
+func customMetadataUnaryTest(
 	t crosstesting.TB,
 	client connectpb.TestServiceClient,
 	customMetadataString map[string][]string,
@@ -360,8 +391,17 @@ func customMetadataTest(
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), 1)
 	validateMetadata(t, reply.Header(), reply.Trailer(), customMetadataString, customMetadataBinary)
+}
 
-	// Testing with FullDuplex.
+func customMetadataFullDuplexTest(
+	t crosstesting.TB,
+	client connectpb.TestServiceClient,
+	customMetadataString map[string][]string,
+	customMetadataBinary map[string][][]byte,
+) {
+	payload, err := ClientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	require.NoError(t, err)
+	ctx := context.Background()
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
 	respParam := []*testpb.ResponseParameters{
@@ -393,8 +433,8 @@ func customMetadataTest(
 	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
 }
 
-// DoStatusCodeAndMessage checks that the status code is propagated back to the client.
-func DoStatusCodeAndMessage(t crosstesting.TB, client connectpb.TestServiceClient) {
+// DoStatusCodeAndMessageUnary checks that the status code is propagated back to the client with unary call.
+func DoStatusCodeAndMessageUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
 	code := int32(connect.CodeUnknown)
 	msg := "test status message"
 	expectedErr := connect.NewError(
@@ -413,6 +453,21 @@ func DoStatusCodeAndMessage(t crosstesting.TB, client connectpb.TestServiceClien
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
 	assert.Equal(t, err.Error(), expectedErr.Error())
+	t.Successf("successful code and message unary")
+}
+
+// DoStatusCodeAndMessageFullDuplex checks that the status code is propagated back to the client with full duplex call.
+func DoStatusCodeAndMessageFullDuplex(t crosstesting.TB, client connectpb.TestServiceClient) {
+	code := int32(connect.CodeUnknown)
+	msg := "test status message"
+	expectedErr := connect.NewError(
+		connect.CodeUnknown,
+		errors.New(msg),
+	)
+	respStatus := &testpb.EchoStatus{
+		Code:    code,
+		Message: msg,
+	}
 	// Test FullDuplexCall.
 	stream := client.FullDuplexCall(context.Background())
 	assert.NotNil(t, stream)
@@ -421,10 +476,10 @@ func DoStatusCodeAndMessage(t crosstesting.TB, client connectpb.TestServiceClien
 	}
 	require.NoError(t, stream.Send(streamReq))
 	require.NoError(t, stream.CloseSend())
-	_, err = stream.Receive()
+	_, err := stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
 	assert.Equal(t, err.Error(), expectedErr.Error())
-	t.Successf("successful code and message")
+	t.Successf("successful code and message full duplex")
 }
 
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
