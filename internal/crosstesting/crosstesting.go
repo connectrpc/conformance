@@ -16,9 +16,8 @@ package crosstesting
 
 import "testing"
 
-// TB is a trimmed down version of the standard library testing.TB interface.
-// connect-crosstest depends on this interface. All standard library *testing.T,
-// B, and F types implement this and can be used by connect-crosstest.
+// TB is a testing interface that connect-crosstest depends on. It is trimmed down
+// from the standard library testing.TB interface and added a successf method.
 type TB interface {
 	Helper()
 	Errorf(string, ...any)
