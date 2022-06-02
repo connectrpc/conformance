@@ -522,7 +522,7 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClie
 	assert.Nil(t, reply)
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
-	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+NonASCIIErrMsg)
+	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+nonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
 }
 

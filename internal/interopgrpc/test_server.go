@@ -29,12 +29,14 @@ import (
 	"time"
 
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
+
+// nonASCIIErrMsg is a non-ASCII error message.
+const nonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
 
 // NewTestServer creates a test server for test service.
 func NewTestServer() testpb.TestServiceServer {
@@ -111,7 +113,7 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 
 // FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
-	return nil, status.Error(codes.ResourceExhausted, interopconnect.NonASCIIErrMsg)
+	return nil, status.Error(codes.ResourceExhausted, nonASCIIErrMsg)
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {

@@ -33,7 +33,6 @@ import (
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
-	"github.com/bufbuild/connect-crosstest/internal/interopconnect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -444,7 +443,7 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	s, ok := status.FromError(err)
 	assert.True(t, ok)
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
-	assert.Equal(t, s.Message(), interopconnect.NonASCIIErrMsg)
+	assert.Equal(t, s.Message(), nonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
 }
 
