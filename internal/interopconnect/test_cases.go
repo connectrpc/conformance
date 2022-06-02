@@ -15,13 +15,11 @@
 package interopconnect
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
@@ -31,7 +29,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/benchmark/stats"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -536,72 +533,4 @@ func DoUnresolvableHost(t crosstesting.TB, client connectpb.TestServiceClient, a
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnavailable)
 	t.Successf("successful fail call with unresolvable call")
-}
-
-func doOneSoakIteration(ctx context.Context, t crosstesting.TB, tc connectpb.TestServiceClient, resetChannel bool, serverAddr string) (latency time.Duration, err error) { // nolint:nonamedreturns
-	start := time.Now()
-	client := tc
-	if resetChannel {
-		newClient := connectpb.NewTestServiceClient(&http.Client{}, serverAddr)
-		client = newClient
-	}
-	// per test spec, don't include channel shutdown in latency measurement
-	defer func() { latency = time.Since(start) }()
-	// do a large-unary RPC
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
-	require.NoError(t, err)
-	req := &testpb.SimpleRequest{
-		ResponseType: testpb.PayloadType_COMPRESSABLE,
-		ResponseSize: int32(largeRespSize),
-		Payload:      pl,
-	}
-	reply, err := client.UnaryCall(ctx, connect.NewRequest(req))
-	require.NoError(t, err)
-	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
-	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), largeRespSize)
-	return
-}
-
-// DoSoakTest runs large unary RPCs in a loop for a configurable number of times, with configurable failure thresholds.
-// If resetChannel is false, then each RPC will be performed on client. Otherwise, each RPC will be performed on a new
-// stub that is created with the provided server address and dial options.
-func DoSoakTest(t crosstesting.TB, client connectpb.TestServiceClient, serverAddr string, resetChannel bool, soakIterations int, maxFailures int, perIterationMaxAcceptableLatency time.Duration, overallDeadline time.Time) {
-	ctx, cancel := context.WithDeadline(context.Background(), overallDeadline)
-	defer cancel()
-	iterationsDone := 0
-	totalFailures := 0
-	hopts := stats.HistogramOptions{
-		NumBuckets:     20,
-		GrowthFactor:   1,
-		BaseBucketSize: 1,
-		MinValue:       0,
-	}
-	histogram := stats.NewHistogram(hopts)
-	for i := 0; i < soakIterations; i++ {
-		if time.Now().After(overallDeadline) {
-			break
-		}
-		iterationsDone++
-		latency, err := doOneSoakIteration(ctx, t, client, resetChannel, serverAddr)
-		latencyMs := int64(latency / time.Millisecond)
-		_ = histogram.Add(latencyMs)
-		if err != nil {
-			totalFailures++
-			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d failed: %s\n", i, latencyMs, err)
-			continue
-		}
-		if latency > perIterationMaxAcceptableLatency {
-			totalFailures++
-			_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d exceeds max acceptable latency: %d\n", i, latencyMs, perIterationMaxAcceptableLatency.Milliseconds())
-			continue
-		}
-		_, _ = fmt.Fprintf(os.Stderr, "soak iteration: %d elapsed_ms: %d succeeded\n", i, latencyMs)
-	}
-	var b bytes.Buffer
-	histogram.Print(&b)
-	_, _ = fmt.Fprintln(os.Stderr, "Histogram of per-iteration latencies in milliseconds:")
-	_, _ = fmt.Fprintln(os.Stderr, b.String())
-	_, _ = fmt.Fprintf(os.Stderr, "soak test ran: %d / %d iterations. total failures: %d. max failures threshold: %d. See breakdown above for which iterations succeeded, failed, and why for more info.\n", iterationsDone, soakIterations, totalFailures, maxFailures)
-	assert.True(t, iterationsDone >= soakIterations)
-	assert.True(t, totalFailures <= maxFailures)
 }
