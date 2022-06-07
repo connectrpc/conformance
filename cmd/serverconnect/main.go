@@ -119,9 +119,8 @@ func run(flags *flags) {
 	}).Handler(mux)
 	tlsConfig := newTLSConfig(flags.certFile, flags.keyFile)
 	h1Server := http.Server{
-		Addr:      ":" + flags.h1Port,
-		Handler:   corsHandler,
-		TLSConfig: tlsConfig,
+		Addr:    ":" + flags.h1Port,
+		Handler: corsHandler,
 	}
 	h2Server := http.Server{
 		Addr:      ":" + flags.h2Port,
@@ -153,6 +152,10 @@ func run(flags *flags) {
 			Protocol: serverpb.Protocol_PROTOCOL_GRPC_WEB,
 			HttpVersions: []*serverpb.HTTPVersion{
 				{
+					Major: int32(1),
+					Minor: int32(1),
+				},
+				{
 					Major: int32(2),
 				},
 			},
@@ -161,6 +164,10 @@ func run(flags *flags) {
 		{
 			Protocol: serverpb.Protocol_PROTOCOL_GRPC,
 			HttpVersions: []*serverpb.HTTPVersion{
+				{
+					Major: int32(1),
+					Minor: int32(1),
+				},
 				{
 					Major: int32(2),
 				},
