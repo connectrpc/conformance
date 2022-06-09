@@ -214,11 +214,11 @@ func run(flags *flags) {
 	// requiring `grpc-status` headers to be set on response, which requires trailer support.
 	// Once trailer support is available, they will be renabled.
 	case connectH3, connectGRPCWebH3:
+		// add client option if the implementation is grpc or grpc-web
+		var clientOptions []connect.ClientOption
 		if flags.implementation == connectGRPCWebH3 {
 			clientOptions = append(clientOptions, connect.WithGRPCWeb())
 		}
-		// add client option if the implementation is grpc or grpc-web
-		var clientOptions []connect.ClientOption
 		transport := &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
