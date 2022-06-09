@@ -55,6 +55,7 @@ const (
 	connectGRPCH2    = "connect-grpc-h2"
 	connectGRPCWebH1 = "connect-grpc-web-h1"
 	connectGRPCWebH2 = "connect-grpc-web-h2"
+	connectGRPCWebH3 = "connect-grpc-web-h3"
 	grpcGo           = "grpc-go"
 )
 
@@ -98,6 +99,7 @@ func bind(cmd *cobra.Command, flags *flags) error {
 			connectGRPCH2,
 			connectGRPCWebH1,
 			connectGRPCWebH2,
+			connectGRPCWebH3,
 			grpcGo,
 		),
 	)
@@ -211,7 +213,10 @@ func run(flags *flags) {
 	// connectGRPCH3 and connectGRPCWebH3 have both been disabled since we are now strictly
 	// requiring `grpc-status` headers to be set on response, which requires trailer support.
 	// Once trailer support is available, they will be renabled.
-	case connectH3:
+	case connectH3, connectGRPCWebH3:
+		if flags.implementation == connectGRPCWebH3 {
+			clientOptions = append(clientOptions, connect.WithGRPCWeb())
+		}
 		// add client option if the implementation is grpc or grpc-web
 		var clientOptions []connect.ClientOption
 		transport := &http3.RoundTripper{
