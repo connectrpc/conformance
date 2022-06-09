@@ -53,10 +53,8 @@ const (
 	connectH3        = "connect-h3"
 	connectGRPCH1    = "connect-grpc-h1"
 	connectGRPCH2    = "connect-grpc-h2"
-	connectGRPCH3    = "connect-grpc-h3"
 	connectGRPCWebH1 = "connect-grpc-web-h1"
 	connectGRPCWebH2 = "connect-grpc-web-h2"
-	connectGRPCWebH3 = "connect-grpc-web-h3"
 	grpcGo           = "grpc-go"
 )
 
@@ -92,16 +90,14 @@ func bind(cmd *cobra.Command, flags *flags) error {
 		"i",
 		"",
 		fmt.Sprintf(
-			"the client implementation tested, accepted values are %q, %q, %q, %q, %q, %q, %q, %q, %q, or %q",
+			"the client implementation tested, accepted values are %q, %q, %q, %q, %q, %q, %q, or %q",
 			connectH1,
 			connectH2,
 			connectH3,
 			connectGRPCH1,
 			connectGRPCH2,
-			connectGRPCH3,
 			connectGRPCWebH1,
 			connectGRPCWebH2,
-			connectGRPCWebH3,
 			grpcGo,
 		),
 	)
@@ -212,15 +208,12 @@ func run(flags *flags) {
 		)
 	// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
-	case connectH3, connectGRPCH3, connectGRPCWebH3:
+	// connectGRPCH3 and connectGRPCWebH3 have both been disabled since we are now strictly
+	// requiring `grpc-status` headers to be set on response, which requires trailer support.
+	// Once trailer support is available, they will be renabled.
+	case connectH3:
 		// add client option if the implementation is grpc or grpc-web
 		var clientOptions []connect.ClientOption
-		switch flags.implementation {
-		case connectGRPCH3:
-			clientOptions = append(clientOptions, connect.WithGRPC())
-		case connectGRPCWebH3:
-			clientOptions = append(clientOptions, connect.WithGRPCWeb())
-		}
 		transport := &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
