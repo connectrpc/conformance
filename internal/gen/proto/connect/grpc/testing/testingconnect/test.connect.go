@@ -82,6 +82,9 @@ type TestServiceClient interface {
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
 	UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
+	// The test server will not implement this method. It will be used
+	// to test the behavior when clients call unimplemented streaming output methods.
+	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.ServerStreamForClient[testing.Empty], error)
 }
 
 // NewTestServiceClient constructs a client for the grpc.testing.TestService service. By default, it
@@ -144,21 +147,27 @@ func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/grpc.testing.TestService/UnimplementedCall",
 			opts...,
 		),
+		unimplementedStreamingOutputCall: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/UnimplementedStreamingOutputCall",
+			opts...,
+		),
 	}
 }
 
 // testServiceClient implements TestServiceClient.
 type testServiceClient struct {
-	emptyCall               *connect_go.Client[testing.Empty, testing.Empty]
-	unaryCall               *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
-	failUnaryCall           *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
-	cacheableUnaryCall      *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
-	streamingOutputCall     *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	failStreamingOutputCall *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	streamingInputCall      *connect_go.Client[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
-	fullDuplexCall          *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	halfDuplexCall          *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	unimplementedCall       *connect_go.Client[testing.Empty, testing.Empty]
+	emptyCall                        *connect_go.Client[testing.Empty, testing.Empty]
+	unaryCall                        *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
+	failUnaryCall                    *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
+	cacheableUnaryCall               *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
+	streamingOutputCall              *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	failStreamingOutputCall          *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	streamingInputCall               *connect_go.Client[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
+	fullDuplexCall                   *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	halfDuplexCall                   *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	unimplementedCall                *connect_go.Client[testing.Empty, testing.Empty]
+	unimplementedStreamingOutputCall *connect_go.Client[testing.Empty, testing.Empty]
 }
 
 // EmptyCall calls grpc.testing.TestService.EmptyCall.
@@ -211,6 +220,11 @@ func (c *testServiceClient) UnimplementedCall(ctx context.Context, req *connect_
 	return c.unimplementedCall.CallUnary(ctx, req)
 }
 
+// UnimplementedStreamingOutputCall calls grpc.testing.TestService.UnimplementedStreamingOutputCall.
+func (c *testServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.Empty]) (*connect_go.ServerStreamForClient[testing.Empty], error) {
+	return c.unimplementedStreamingOutputCall.CallServerStream(ctx, req)
+}
+
 // TestServiceHandler is an implementation of the grpc.testing.TestService service.
 type TestServiceHandler interface {
 	// One empty request followed by one empty response.
@@ -243,6 +257,9 @@ type TestServiceHandler interface {
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
 	UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
+	// The test server will not implement this method. It will be used
+	// to test the behavior when clients call unimplemented streaming output methods.
+	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[testing.Empty], *connect_go.ServerStream[testing.Empty]) error
 }
 
 // NewTestServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -302,6 +319,11 @@ func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOpt
 		svc.UnimplementedCall,
 		opts...,
 	))
+	mux.Handle("/grpc.testing.TestService/UnimplementedStreamingOutputCall", connect_go.NewServerStreamHandler(
+		"/grpc.testing.TestService/UnimplementedStreamingOutputCall",
+		svc.UnimplementedStreamingOutputCall,
+		opts...,
+	))
 	return "/grpc.testing.TestService/", mux
 }
 
@@ -346,6 +368,10 @@ func (UnimplementedTestServiceHandler) HalfDuplexCall(context.Context, *connect_
 
 func (UnimplementedTestServiceHandler) UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.UnimplementedCall is not implemented"))
+}
+
+func (UnimplementedTestServiceHandler) UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[testing.Empty], *connect_go.ServerStream[testing.Empty]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.UnimplementedStreamingOutputCall is not implemented"))
 }
 
 // UnimplementedServiceClient is a client for the grpc.testing.UnimplementedService service.

@@ -470,13 +470,6 @@ func DoSpecialStatusMessage(t crosstesting.TB, client testpb.TestServiceClient, 
 	t.Successf("successful special status message")
 }
 
-// DoUnimplementedService attempts to call a method from an unimplemented service.
-func DoUnimplementedService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
-	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{}, args...)
-	assert.Equal(t, status.Code(err), codes.Unimplemented)
-	t.Successf("successful unimplemented service")
-}
-
 // DoUnimplementedMethod attempts to call an unimplemented method.
 func DoUnimplementedMethod(t crosstesting.TB, cc *grpc.ClientConn, args ...grpc.CallOption) {
 	var req, reply proto.Message
@@ -484,6 +477,22 @@ func DoUnimplementedMethod(t crosstesting.TB, cc *grpc.ClientConn, args ...grpc.
 	assert.Error(t, err)
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
 	t.Successf("successful unimplemented method")
+}
+
+// DoUnimplementedServerStreamingMethod performs a server streaming RPC that is unimplemented.
+func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &testpb.Empty{}, args...)
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	assert.Equal(t, status.Code(err), codes.Unimplemented)
+	t.Successf("successful unimplemented server streaming method")
+}
+
+// DoUnimplementedService attempts to call a method from an unimplemented service.
+func DoUnimplementedService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
+	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{}, args...)
+	assert.Equal(t, status.Code(err), codes.Unimplemented)
+	t.Successf("successful unimplemented service")
 }
 
 // DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.

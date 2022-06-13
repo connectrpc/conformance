@@ -137,6 +137,16 @@ func run(flags *flags) {
 			serverURL.String(),
 			clientOptions...,
 		)
+		unresolvableClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			"https://unresolvable-host.some.domain",
+			clientOptions...,
+		)
+		unimplementedClient := testingconnect.NewUnimplementedServiceClient(
+			&http.Client{Transport: transport},
+			serverURL.String(),
+			clientOptions...,
+		)
 		clientOptions = append(clientOptions, connect.WithSendGzip())
 		compressedClient := testingconnect.NewTestServiceClient(
 			&http.Client{Transport: transport},
@@ -151,17 +161,13 @@ func run(flags *flags) {
 			interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
 			interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
 			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-			interopconnect.DoUnimplementedService(console.NewTB(), client)
+			interopconnect.DoUnimplementedMethod(console.NewTB(), client)
+			interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 			interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 		}
-		interopconnect.DoUnresolvableHost(
-			console.NewTB(), testingconnect.NewTestServiceClient(
-				&http.Client{Transport: transport},
-				"https://unresolvable-host.some.domain",
-				connect.WithGRPC(),
-			),
-		)
+		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
+		interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
 		// add client option if the implementation is grpc or grpc-web
 		var clientOptions []connect.ClientOption
@@ -175,6 +181,16 @@ func run(flags *flags) {
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
 		uncompressedClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			serverURL.String(),
+			clientOptions...,
+		)
+		unresolvableClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			"https://unresolvable-host.some.domain",
+			clientOptions...,
+		)
+		unimplementedClient := testingconnect.NewUnimplementedServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
 			clientOptions...,
@@ -204,17 +220,13 @@ func run(flags *flags) {
 			interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
 			interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
 			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-			interopconnect.DoUnimplementedService(console.NewTB(), client)
+			interopconnect.DoUnimplementedMethod(console.NewTB(), client)
+			interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 			interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 		}
-		interopconnect.DoUnresolvableHost(
-			console.NewTB(), testingconnect.NewTestServiceClient(
-				&http.Client{Transport: transport},
-				"https://unresolvable-host.some.domain",
-				connect.WithGRPC(),
-			),
-		)
+		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
+		interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
 	// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
 	// connectGRPCH3 and connectGRPCWebH3 have both been disabled since we are now strictly
@@ -230,6 +242,16 @@ func run(flags *flags) {
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
 		uncompressedClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			serverURL.String(),
+			clientOptions...,
+		)
+		unresolvableClient := testingconnect.NewTestServiceClient(
+			&http.Client{Transport: transport},
+			"https://unresolvable-host.some.domain",
+			clientOptions...,
+		)
+		unimplementedClient := testingconnect.NewUnimplementedServiceClient(
 			&http.Client{Transport: transport},
 			serverURL.String(),
 			clientOptions...,
@@ -260,10 +282,15 @@ func run(flags *flags) {
 				interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
 				interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
 				interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-				interopconnect.DoUnimplementedService(console.NewTB(), client)
+				interopconnect.DoUnimplementedMethod(console.NewTB(), client)
+				interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 				interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 				interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 			}
+		}
+		if flags.implementation == connectH3 {
+			interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
+			interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
 		}
 	case grpcGo:
 		clientConn, err := grpc.Dial(
@@ -292,10 +319,11 @@ func run(flags *flags) {
 			interopgrpc.DoStatusCodeAndMessage(console.NewTB(), client, args...)
 			interopgrpc.DoSpecialStatusMessage(console.NewTB(), client, args...)
 			interopgrpc.DoUnimplementedMethod(console.NewTB(), clientConn, args...)
-			interopgrpc.DoUnimplementedService(console.NewTB(), client, args...)
+			interopgrpc.DoUnimplementedServerStreamingMethod(console.NewTB(), client, args...)
 			interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, args...)
 			interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
 		}
+		interopgrpc.DoUnimplementedService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
 		unresolvableClientConn, err := grpc.Dial(
 			"unresolvable-host.some.domain",
 			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))),

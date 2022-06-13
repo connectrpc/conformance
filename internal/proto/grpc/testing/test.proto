@@ -4,6 +4,8 @@
 // call that always returns a readable non-ASCII error.
 // FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse):
 // this RPC is a server streaming call that always returns a readable non-ASCII error.
+// UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
+// is a server streaming call that will not be implemented.
 
 // Copyright 2015-2016 gRPC authors.
 //
@@ -71,6 +73,10 @@ service TestService {
   // The test server will not implement this method. It will be used
   // to test the behavior when clients call unimplemented methods.
   rpc UnimplementedCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+
+  // The test server will not implement this method. It will be used
+  // to test the behavior when clients call unimplemented streaming output methods.
+  rpc UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty);
 }
 
 // A simple service NOT implemented at servers so clients can test for

@@ -31,26 +31,27 @@ The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-int
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
 a range of expected behaviours and functionality for gRPC and Connect.
 
-| Test Case                     | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
-|-------------------------------|-------------------------|---------------------------|
-| `empty_unary`                 | ✓                       | ✓                         |
-| `large_unary`                 | ✓                       | ✓                         |
-| `client_streaming`            | ✓                       |                           |
-| `server_streaming`            | ✓                       | ✓                         |
-| `ping_pong`                   | ✓                       |                           |
-| `empty_stream`                | ✓                       | ✓                         |
-| `fail_unary`                  | ✓                       | ✓                         |
-| `fail_server_streaming`       | ✓                       | ✓                         |
-| `cancel_after_begin`          | ✓                       |                           |
-| `cancel_after_first_response` | ✓                       |                           |
-| `timeout_on_sleeping_server`  | ✓                       | ✓                         |
-| `custom_metadata`             | ✓                       | ✓                         |
-| `duplicated_custom_metadata`  | ✓                       |                           |
-| `status_code_and_message`     | ✓                       | ✓                         |
-| `special_status_message`      | ✓                       | ✓                         |
-| `unimplemented_method`        | ✓                       | ✓                         |
-| `unimplemented_service`       | ✓                       | ✓                         |
-| `unresolvable_host`           | ✓                       |                           |
+| Test Case                               | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
+|-----------------------------------------|-------------------------|---------------------------|
+| `empty_unary`                           | ✓                       | ✓                         |
+| `large_unary`                           | ✓                       | ✓                         |
+| `client_streaming`                      | ✓                       |                           |
+| `server_streaming`                      | ✓                       | ✓                         |
+| `ping_pong`                             | ✓                       |                           |
+| `empty_stream`                          | ✓                       | ✓                         |
+| `fail_unary`                            | ✓                       | ✓                         |
+| `fail_server_streaming`                 | ✓                       | ✓                         |
+| `cancel_after_begin`                    | ✓                       |                           |
+| `cancel_after_first_response`           | ✓                       |                           |
+| `timeout_on_sleeping_server`            | ✓                       | ✓                         |
+| `custom_metadata`                       | ✓                       | ✓                         |
+| `duplicated_custom_metadata`            | ✓                       |                           |
+| `status_code_and_message`               | ✓                       | ✓                         |
+| `special_status_message`                | ✓                       | ✓                         |
+| `unimplemented_method`                  | ✓                       | ✓                         |
+| `unimplemented_server_streaming_method` | ✓                       | ✓                         |
+| `unimplemented_service`                 | ✓                       | ✓                         |
+| `unresolvable_host`                     | ✓                       |                           |
 
 ### Test Descriptions
 
@@ -176,6 +177,13 @@ in response.
 RPC: N/A
 
 Client calls `UnimplementedCall` with an empty request and expects an error with the status
+`UNIMPLEMENTED`.
+
+#### unimplemented_server_streaming_method
+
+RPC: N/A
+
+Client calls `UnimplementedStreamingOutputCall` with an empty request and expects an error with the status
 `UNIMPLEMENTED`.
 
 #### unimplemented_service

@@ -309,6 +309,28 @@ export class TestServiceClient {
     this.methodDescriptorUnimplementedCall);
   }
 
+  methodDescriptorUnimplementedStreamingOutputCall = new grpcWeb.MethodDescriptor(
+    '/grpc.testing.TestService/UnimplementedStreamingOutputCall',
+    grpcWeb.MethodType.SERVER_STREAMING,
+    grpc_testing_empty_pb.Empty,
+    grpc_testing_empty_pb.Empty,
+    (request: grpc_testing_empty_pb.Empty) => {
+      return request.serializeBinary();
+    },
+    grpc_testing_empty_pb.Empty.deserializeBinary
+  );
+
+  unimplementedStreamingOutputCall(
+    request: grpc_testing_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty> {
+    return this.client_.serverStreaming(
+      this.hostname_ +
+        '/grpc.testing.TestService/UnimplementedStreamingOutputCall',
+      request,
+      metadata || {},
+      this.methodDescriptorUnimplementedStreamingOutputCall);
+  }
+
 }
 
 export class UnimplementedServiceClient {

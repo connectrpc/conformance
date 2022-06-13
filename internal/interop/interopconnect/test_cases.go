@@ -564,6 +564,24 @@ func DoSpecialStatusMessage(t crosstesting.TB, client connectpb.TestServiceClien
 	t.Successf("successful code and message")
 }
 
+// DoUnimplementedMethod attempts to call an unimplemented method.
+func DoUnimplementedMethod(t crosstesting.TB, client connectpb.TestServiceClient) {
+	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
+	t.Successf("successful unimplemented method")
+}
+
+// DoUnimplementedServerStreamingMethod performs a server streaming RPC that is unimplemented.
+func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client connectpb.TestServiceClient) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	require.NoError(t, err)
+	stream.Receive()
+	err = stream.Err()
+	assert.Error(t, err)
+	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
+	t.Successf("successful unimplemented server streaming method")
+}
+
 // DoUnimplementedService attempts to call a method from an unimplemented service.
 func DoUnimplementedService(t crosstesting.TB, client connectpb.UnimplementedServiceClient) {
 	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&testpb.Empty{}))

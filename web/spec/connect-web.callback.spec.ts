@@ -277,6 +277,19 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_method", function (done) {
+    client.unimplementedStreamingOutputCall(
+        {},
+        (response) => {
+          fail(`expecting no response from fail server streaming, got: ${response}`);
+        },
+        (err) => {
+          expect(err).toBeInstanceOf(ConnectError);
+          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          done();
+        }
+    );
+  });
   it("unimplemented_service", function (done) {
     const badClient = makeCallbackClient(UnimplementedService, transport);
     badClient.unimplementedCall({}, (err: ConnectError | undefined) => {

@@ -294,6 +294,17 @@ describe("grpc_web", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_method", function (done) {
+    const stream = client.unimplementedStreamingOutputCall(new Empty());
+    stream.on("data", () => {
+      fail(`expecting no response from fail server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(12);
+      done();
+    });
+  });
   it("unimplemented_service", function (done) {
     const badClient = new UnimplementedServiceClient(SERVER_HOST, null, null);
     badClient.unimplementedCall(new Empty(), null, (err) => {
