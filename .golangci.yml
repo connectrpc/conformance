@@ -60,11 +60,3 @@ issues:
     - linters: [gocritic]
       path: cmd/serverconnect/main.go
       text: "exitAfterDefer: log.Fatalln will exit"
-    # This is a false positive as an issue of gci https://github.com/daixiang0/gci/issues/60.
-    - linters: [gci]
-      path: internal/interopgrpc/test_cases.go
-      text: "Expected 't', Found '\"'"
-    # This is a false positive as an issue of gci https://github.com/daixiang0/gci/issues/60.
-    - linters: [gci]
-      path: internal/interopconnect/test_cases.go
-      text: "Expected 'c', Found '\"'"
