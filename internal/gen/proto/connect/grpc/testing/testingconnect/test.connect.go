@@ -56,7 +56,7 @@ type TestServiceClient interface {
 	EmptyCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
 	// One request followed by one response.
 	UnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error)
-	// One request followed by one response. This RPC always failes.
+	// One request followed by one response. This RPC always fails.
 	FailUnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
@@ -65,6 +65,8 @@ type TestServiceClient interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error)
+	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	FailStreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
 	StreamingInputCall(context.Context) *connect_go.ClientStreamForClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
@@ -117,6 +119,11 @@ func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 			baseURL+"/grpc.testing.TestService/StreamingOutputCall",
 			opts...,
 		),
+		failStreamingOutputCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
+			httpClient,
+			baseURL+"/grpc.testing.TestService/FailStreamingOutputCall",
+			opts...,
+		),
 		streamingInputCall: connect_go.NewClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse](
 			httpClient,
 			baseURL+"/grpc.testing.TestService/StreamingInputCall",
@@ -142,15 +149,16 @@ func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // testServiceClient implements TestServiceClient.
 type testServiceClient struct {
-	emptyCall           *connect_go.Client[testing.Empty, testing.Empty]
-	unaryCall           *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
-	failUnaryCall       *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
-	cacheableUnaryCall  *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
-	streamingOutputCall *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	streamingInputCall  *connect_go.Client[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
-	fullDuplexCall      *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	halfDuplexCall      *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
-	unimplementedCall   *connect_go.Client[testing.Empty, testing.Empty]
+	emptyCall               *connect_go.Client[testing.Empty, testing.Empty]
+	unaryCall               *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
+	failUnaryCall           *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
+	cacheableUnaryCall      *connect_go.Client[testing.SimpleRequest, testing.SimpleResponse]
+	streamingOutputCall     *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	failStreamingOutputCall *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	streamingInputCall      *connect_go.Client[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse]
+	fullDuplexCall          *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	halfDuplexCall          *connect_go.Client[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse]
+	unimplementedCall       *connect_go.Client[testing.Empty, testing.Empty]
 }
 
 // EmptyCall calls grpc.testing.TestService.EmptyCall.
@@ -176,6 +184,11 @@ func (c *testServiceClient) CacheableUnaryCall(ctx context.Context, req *connect
 // StreamingOutputCall calls grpc.testing.TestService.StreamingOutputCall.
 func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error) {
 	return c.streamingOutputCall.CallServerStream(ctx, req)
+}
+
+// FailStreamingOutputCall calls grpc.testing.TestService.FailStreamingOutputCall.
+func (c *testServiceClient) FailStreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error) {
+	return c.failStreamingOutputCall.CallServerStream(ctx, req)
 }
 
 // StreamingInputCall calls grpc.testing.TestService.StreamingInputCall.
@@ -204,7 +217,7 @@ type TestServiceHandler interface {
 	EmptyCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
 	// One request followed by one response.
 	UnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error)
-	// One request followed by one response. This RPC always failes.
+	// One request followed by one response. This RPC always fails.
 	FailUnaryCall(context.Context, *connect_go.Request[testing.SimpleRequest]) (*connect_go.Response[testing.SimpleResponse], error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
@@ -213,6 +226,8 @@ type TestServiceHandler interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error
+	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	FailStreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
 	StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest]) (*connect_go.Response[testing.StreamingInputCallResponse], error)
@@ -262,6 +277,11 @@ func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOpt
 		svc.StreamingOutputCall,
 		opts...,
 	))
+	mux.Handle("/grpc.testing.TestService/FailStreamingOutputCall", connect_go.NewServerStreamHandler(
+		"/grpc.testing.TestService/FailStreamingOutputCall",
+		svc.FailStreamingOutputCall,
+		opts...,
+	))
 	mux.Handle("/grpc.testing.TestService/StreamingInputCall", connect_go.NewClientStreamHandler(
 		"/grpc.testing.TestService/StreamingInputCall",
 		svc.StreamingInputCall,
@@ -306,6 +326,10 @@ func (UnimplementedTestServiceHandler) CacheableUnaryCall(context.Context, *conn
 
 func (UnimplementedTestServiceHandler) StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error {
 	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.StreamingOutputCall is not implemented"))
+}
+
+func (UnimplementedTestServiceHandler) FailStreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.TestService.FailStreamingOutputCall is not implemented"))
 }
 
 func (UnimplementedTestServiceHandler) StreamingInputCall(context.Context, *connect_go.ClientStream[testing.StreamingInputCallRequest]) (*connect_go.Response[testing.StreamingInputCallResponse], error) {

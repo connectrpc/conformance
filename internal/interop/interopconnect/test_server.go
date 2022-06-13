@@ -98,6 +98,10 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 	return nil
 }
 
+func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
+	return connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
+}
+
 func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[testpb.StreamingInputCallRequest]) (*connect.Response[testpb.StreamingInputCallResponse], error) {
 	var sum int
 	for stream.Receive() {

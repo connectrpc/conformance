@@ -262,4 +262,27 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
+  it("fail_server_streaming", function (done) {
+    const sizes = [31415, 9, 2653, 58979];
+    const responseParams = sizes.map((size, index) => {
+      return {
+        size: size,
+        intervalUs: index * 10,
+      };
+    });
+    client.failStreamingOutputCall(
+        {
+          responseParameters: responseParams,
+        },
+        (response) => {
+          fail(`expecting no response from fail server streaming, got: ${response}`);
+        },
+        (err) => {
+          expect(err).toBeInstanceOf(ConnectError);
+          expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+          expect(err?.rawMessage).toEqual("soirée 🎉");
+          done();
+        }
+    );
+  });
 });

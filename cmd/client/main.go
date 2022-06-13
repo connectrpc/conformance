@@ -152,6 +152,7 @@ func run(flags *flags) {
 			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 			interopconnect.DoUnimplementedService(console.NewTB(), client)
 			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+			interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 		}
 		interopconnect.DoUnresolvableHost(
 			console.NewTB(), testingconnect.NewTestServiceClient(
@@ -200,6 +201,7 @@ func run(flags *flags) {
 			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 			interopconnect.DoUnimplementedService(console.NewTB(), client)
 			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+			interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 		}
 		interopconnect.DoUnresolvableHost(
 			console.NewTB(), testingconnect.NewTestServiceClient(
@@ -254,6 +256,7 @@ func run(flags *flags) {
 				interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 				interopconnect.DoUnimplementedService(console.NewTB(), client)
 				interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+				interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 			}
 		}
 	case grpcGo:
@@ -285,6 +288,7 @@ func run(flags *flags) {
 			interopgrpc.DoUnimplementedMethod(console.NewTB(), clientConn, args...)
 			interopgrpc.DoUnimplementedService(console.NewTB(), client, args...)
 			interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, args...)
+			interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
 		}
 		unresolvableClientConn, err := grpc.Dial(
 			"unresolvable-host.some.domain",

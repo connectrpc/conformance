@@ -147,6 +147,10 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 	return nil
 }
 
+func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
+	return status.Error(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+}
+
 func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInputCallServer) error {
 	var sum int
 	for {

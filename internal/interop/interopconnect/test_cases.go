@@ -29,7 +29,6 @@ import (
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -508,7 +507,8 @@ func DoUnimplementedService(t crosstesting.TB, client connectpb.UnimplementedSer
 	t.Successf("successful unimplemented service")
 }
 
-func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClient, args ...grpc.CallOption) {
+// DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.
+func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClient) {
 	reply, err := client.FailUnaryCall(
 		context.Background(),
 		connect.NewRequest(
@@ -524,8 +524,30 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClie
 	t.Successf("successful fail call with non-ASCII error")
 }
 
+// DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
+func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClient) {
+	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+	for i, s := range respSizes {
+		respParam[i] = &testpb.ResponseParameters{
+			Size: int32(s),
+		}
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+	}
+	stream, err := client.FailStreamingOutputCall(context.Background(), connect.NewRequest(req))
+	require.NoError(t, err)
+	stream.Receive()
+	err = stream.Err()
+	assert.Error(t, err)
+	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
+	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+interop.NonASCIIErrMsg)
+	t.Successf("successful fail server streaming with non-ASCII error")
+}
+
 // DoUnresolvableHost attempts to call a method to an unresolvable host.
-func DoUnresolvableHost(t crosstesting.TB, client connectpb.TestServiceClient, args ...grpc.CallOption) {
+func DoUnresolvableHost(t crosstesting.TB, client connectpb.TestServiceClient) {
 	reply, err := client.EmptyCall(
 		context.Background(),
 		connect.NewRequest(&testpb.Empty{}),

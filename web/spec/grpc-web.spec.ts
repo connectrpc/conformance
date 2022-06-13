@@ -275,4 +275,28 @@ describe("grpc_web", function () {
       done();
     });
   });
+  it("fail_server_streaming", function (done) {
+    const sizes = [31415, 9, 2653, 58979];
+
+    const responseParams = sizes.map((size, idx) => {
+      const param = new ResponseParameters();
+      param.setSize(size);
+      param.setIntervalUs(idx * 10);
+      return param;
+    });
+
+    const req = new StreamingOutputCallRequest();
+    req.setResponseParametersList(responseParams);
+
+    const stream = client.failStreamingOutputCall(req);
+    stream.on("data", () => {
+      fail(`expecting no response from fail server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(8);
+      expect(err.message).toEqual("soirée 🎉");
+      done();
+    });
+  });
 });

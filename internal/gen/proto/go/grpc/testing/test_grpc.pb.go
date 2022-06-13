@@ -40,7 +40,7 @@ type TestServiceClient interface {
 	EmptyCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// One request followed by one response.
 	UnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
-	// One request followed by one response. This RPC always failes.
+	// One request followed by one response. This RPC always fails.
 	FailUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
@@ -49,6 +49,8 @@ type TestServiceClient interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_StreamingOutputCallClient, error)
+	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	FailStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_FailStreamingOutputCallClient, error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
 	StreamingInputCall(ctx context.Context, opts ...grpc.CallOption) (TestService_StreamingInputCallClient, error)
@@ -142,8 +144,40 @@ func (x *testServiceStreamingOutputCallClient) Recv() (*StreamingOutputCallRespo
 	return m, nil
 }
 
+func (c *testServiceClient) FailStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_FailStreamingOutputCallClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/grpc.testing.TestService/FailStreamingOutputCall", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &testServiceFailStreamingOutputCallClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TestService_FailStreamingOutputCallClient interface {
+	Recv() (*StreamingOutputCallResponse, error)
+	grpc.ClientStream
+}
+
+type testServiceFailStreamingOutputCallClient struct {
+	grpc.ClientStream
+}
+
+func (x *testServiceFailStreamingOutputCallClient) Recv() (*StreamingOutputCallResponse, error) {
+	m := new(StreamingOutputCallResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *testServiceClient) StreamingInputCall(ctx context.Context, opts ...grpc.CallOption) (TestService_StreamingInputCallClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/grpc.testing.TestService/StreamingInputCall", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[2], "/grpc.testing.TestService/StreamingInputCall", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +211,7 @@ func (x *testServiceStreamingInputCallClient) CloseAndRecv() (*StreamingInputCal
 }
 
 func (c *testServiceClient) FullDuplexCall(ctx context.Context, opts ...grpc.CallOption) (TestService_FullDuplexCallClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[2], "/grpc.testing.TestService/FullDuplexCall", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[3], "/grpc.testing.TestService/FullDuplexCall", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +242,7 @@ func (x *testServiceFullDuplexCallClient) Recv() (*StreamingOutputCallResponse, 
 }
 
 func (c *testServiceClient) HalfDuplexCall(ctx context.Context, opts ...grpc.CallOption) (TestService_HalfDuplexCallClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[3], "/grpc.testing.TestService/HalfDuplexCall", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[4], "/grpc.testing.TestService/HalfDuplexCall", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,7 +289,7 @@ type TestServiceServer interface {
 	EmptyCall(context.Context, *Empty) (*Empty, error)
 	// One request followed by one response.
 	UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
-	// One request followed by one response. This RPC always failes.
+	// One request followed by one response. This RPC always fails.
 	FailUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
@@ -264,6 +298,8 @@ type TestServiceServer interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(*StreamingOutputCallRequest, TestService_StreamingOutputCallServer) error
+	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	FailStreamingOutputCall(*StreamingOutputCallRequest, TestService_FailStreamingOutputCallServer) error
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
 	StreamingInputCall(TestService_StreamingInputCallServer) error
@@ -300,6 +336,9 @@ func (UnimplementedTestServiceServer) CacheableUnaryCall(context.Context, *Simpl
 }
 func (UnimplementedTestServiceServer) StreamingOutputCall(*StreamingOutputCallRequest, TestService_StreamingOutputCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamingOutputCall not implemented")
+}
+func (UnimplementedTestServiceServer) FailStreamingOutputCall(*StreamingOutputCallRequest, TestService_FailStreamingOutputCallServer) error {
+	return status.Errorf(codes.Unimplemented, "method FailStreamingOutputCall not implemented")
 }
 func (UnimplementedTestServiceServer) StreamingInputCall(TestService_StreamingInputCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamingInputCall not implemented")
@@ -416,6 +455,27 @@ type testServiceStreamingOutputCallServer struct {
 }
 
 func (x *testServiceStreamingOutputCallServer) Send(m *StreamingOutputCallResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _TestService_FailStreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamingOutputCallRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TestServiceServer).FailStreamingOutputCall(m, &testServiceFailStreamingOutputCallServer{stream})
+}
+
+type TestService_FailStreamingOutputCallServer interface {
+	Send(*StreamingOutputCallResponse) error
+	grpc.ServerStream
+}
+
+type testServiceFailStreamingOutputCallServer struct {
+	grpc.ServerStream
+}
+
+func (x *testServiceFailStreamingOutputCallServer) Send(m *StreamingOutputCallResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -547,6 +607,11 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "StreamingOutputCall",
 			Handler:       _TestService_StreamingOutputCall_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "FailStreamingOutputCall",
+			Handler:       _TestService_FailStreamingOutputCall_Handler,
 			ServerStreams: true,
 		},
 		{

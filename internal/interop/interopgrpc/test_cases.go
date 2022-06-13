@@ -445,6 +445,7 @@ func DoUnimplementedMethod(t crosstesting.TB, cc *grpc.ClientConn, args ...grpc.
 	t.Successf("successful unimplemented method")
 }
 
+// DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.
 func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
 	reply, err := client.FailUnaryCall(
 		context.Background(),
@@ -460,6 +461,30 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
 	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
 	t.Successf("successful fail call with non-ASCII error")
+}
+
+// DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
+func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+	for i, s := range respSizes {
+		respParam[i] = &testpb.ResponseParameters{
+			Size: int32(s),
+		}
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+	}
+	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
+	require.NoError(t, err)
+	reply, err := stream.Recv()
+	assert.Nil(t, reply)
+	assert.Error(t, err)
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, s.Code(), codes.ResourceExhausted)
+	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
+	t.Successf("successful fail server streaming with non-ASCII error")
 }
 
 // DoUnresolvableHost attempts to call a method to an unresolvable host.

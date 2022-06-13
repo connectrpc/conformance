@@ -19,8 +19,10 @@
 //
 // This is copied from gRPC's testing Protobuf definitions: https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
 // The TestService has been extended to include the following RPCs:
-// Fail(SimpleRequest) returns (SimpleResponse): this RPC is a unary
+// FailUnaryCall(SimpleRequest) returns (SimpleResponse): this RPC is a unary
 // call that always returns a readable non-ASCII error.
+// FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse):
+// this RPC is a server streaming call that always returns a readable non-ASCII error.
 // Copyright 2015-2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -73,7 +75,7 @@ export const TestService = {
       kind: MethodKind.Unary,
     },
     /**
-     * One request followed by one response. This RPC always failes.
+     * One request followed by one response. This RPC always fails.
      *
      * @generated from rpc grpc.testing.TestService.FailUnaryCall
      */
@@ -104,6 +106,17 @@ export const TestService = {
      */
     streamingOutputCall: {
       name: "StreamingOutputCall",
+      I: StreamingOutputCallRequest,
+      O: StreamingOutputCallResponse,
+      kind: MethodKind.ServerStreaming,
+    },
+    /**
+     * One request followed by a sequence of responses (streamed download). This RPC always fails.
+     *
+     * @generated from rpc grpc.testing.TestService.FailStreamingOutputCall
+     */
+    failStreamingOutputCall: {
+      name: "FailStreamingOutputCall",
       I: StreamingOutputCallRequest,
       O: StreamingOutputCallResponse,
       kind: MethodKind.ServerStreaming,

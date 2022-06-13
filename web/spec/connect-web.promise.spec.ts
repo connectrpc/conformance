@@ -223,4 +223,24 @@ describe("connect_web_promise_client", function () {
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
     }
   });
+  it("fail_server_streaming", async function () {
+    const sizes = [31415, 9, 2653, 58979];
+    const responseParams = sizes.map((size, index) => {
+      return {
+        size: size,
+        intervalUs: index * 10,
+      };
+    });
+    try {
+      for await (const response of await client.failStreamingOutputCall({
+        responseParameters: responseParams,
+      })) {
+        fail(`expecting no response from fail server streaming, got: ${response}`);
+      }
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect((e as ConnectError)?.code).toEqual(StatusCode.ResourceExhausted);
+      expect((e as ConnectError)?.rawMessage).toEqual("soirée 🎉");
+    }
+  });
 });
