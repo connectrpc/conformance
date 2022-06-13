@@ -75,6 +75,20 @@ func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request
 }
 
 func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
+	if leadingMetadata := request.Header().Values(leadingMetadataKey); len(leadingMetadata) != 0 {
+		for _, value := range leadingMetadata {
+			stream.ResponseHeader().Add(leadingMetadataKey, value)
+		}
+	}
+	if trailingMetadata := request.Header().Values(trailingMetadataKey); len(trailingMetadata) != 0 {
+		for _, value := range trailingMetadata {
+			decodedTrailingMetadata, err := connect.DecodeBinaryHeader(value)
+			if err != nil {
+				return err
+			}
+			stream.ResponseTrailer().Add(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
+		}
+	}
 	for _, param := range request.Msg.GetResponseParameters() {
 		if us := param.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)

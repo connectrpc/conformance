@@ -92,7 +92,6 @@ describe("connect_web_promise_client", function () {
     }
   });
   it("custom_metadata", async function () {
-    // TODO: adjust this test once we land on the API for reading response headers and trailers
     const size = 314159;
     const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
     const ECHO_LEADING_VALUE = "test_initial_metadata_value";
@@ -121,6 +120,36 @@ describe("connect_web_promise_client", function () {
     });
     expect(response.payload).toBeDefined();
     expect(response.payload?.body.length).toEqual(size);
+  });
+  it("custom_metadata_server_streaming", async function () {
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
+    const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+    const ECHO_TRAILING_VALUE = new Uint8Array([0xab, 0xab, 0xab]);
+
+    const size = 31415;
+    const responseParams = [{
+      size: size,
+    }]
+    for await (const response of await client.streamingOutputCall({
+      responseParameters: responseParams,
+    }, {
+      headers: {
+        [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+        [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
+      },
+      onHeader(header) {
+        expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
+        expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
+      },
+      onTrailer(trailer) {
+        expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+        expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
+      },
+    })) {
+      expect(response.payload).toBeDefined();
+      expect(response.payload?.body.length).toEqual(size);
+    }
   });
   it("status_code_and_message", async function () {
     const TEST_STATUS_MESSAGE = "test status message";

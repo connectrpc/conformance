@@ -307,6 +307,20 @@ func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient
 	t.Successf("successful custom metadata unary")
 }
 
+func DoCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
+	customMetadataServerStreamingTest(
+		t,
+		client,
+		map[string][]string{
+			leadingMetadataKey: {leadingMetadataValue},
+		},
+		map[string][][]byte{
+			trailingMetadataKey: {[]byte(trailingMetadataValue)},
+		},
+	)
+	t.Successf("successful custom metadata server streaming")
+}
+
 // DoCustomMetadataFullDuplex checks that metadata is echoed back to the client with full duplex call.
 func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceClient) {
 	customMetadataFullDuplexTest(
@@ -335,7 +349,21 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestSer
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
 		},
 	)
-	t.Successf("successful duplicated custom metadata")
+	t.Successf("successful duplicated custom metadata unary")
+}
+
+func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
+	customMetadataServerStreamingTest(
+		t,
+		client,
+		map[string][]string{
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+		},
+		map[string][][]byte{
+			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
+		},
+	)
+	t.Successf("successful duplicated custom metadata server streaming")
 }
 
 // DoDuplicatedCustomMetadataFullDuplex adds duplicated metadata keys and checks that the metadata is echoed back
@@ -351,7 +379,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.Te
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
 		},
 	)
-	t.Successf("successful duplicated custom metadata")
+	t.Successf("successful duplicated custom metadata full duplex")
 }
 
 func customMetadataUnaryTest(
@@ -388,6 +416,42 @@ func customMetadataUnaryTest(
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), 1)
 	validateMetadata(t, reply.Header(), reply.Trailer(), customMetadataString, customMetadataBinary)
+}
+
+func customMetadataServerStreamingTest(
+	t crosstesting.TB,
+	client connectpb.TestServiceClient,
+	customMetadataString map[string][]string,
+	customMetadataBinary map[string][][]byte,
+) {
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	require.NoError(t, err)
+	respParam := []*testpb.ResponseParameters{
+		{
+			Size: 1,
+		},
+	}
+	req := connect.NewRequest(&testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+		Payload:            payload,
+	})
+	for key, values := range customMetadataString {
+		for _, value := range values {
+			req.Header().Add(key, value)
+		}
+	}
+	for key, values := range customMetadataBinary {
+		for _, value := range values {
+			req.Header().Add(key, connect.EncodeBinaryHeader(value))
+		}
+	}
+	stream, err := client.StreamingOutputCall(context.Background(), req)
+	require.NoError(t, err)
+	for stream.Receive() {
+		require.NoError(t, stream.Err())
+	}
+	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
 }
 
 func customMetadataFullDuplexTest(

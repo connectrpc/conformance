@@ -335,6 +335,16 @@ func DoDuplicatedCustomMetadata(t crosstesting.TB, client testpb.TestServiceClie
 
 func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	// Testing with UnaryCall.
+	customMetadataUnaryTest(t, client, customMetadata, args...)
+
+	// Testing with Server Streaming
+	customMetadataServerStreamingTest(t, client, customMetadata, args...)
+
+	// Testing with FullDuplex.
+	customMetadataFullDuplexTest(t, client, customMetadata, args...)
+}
+
+func customMetadataUnaryTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
@@ -354,8 +364,39 @@ func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, cust
 	assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.GetPayload().GetBody()), 1)
 	validateMetadata(t, header, trailer, customMetadata)
+}
 
-	// Testing with FullDuplex.
+func customMetadataServerStreamingTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	require.NoError(t, err)
+	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
+	respParam := []*testpb.ResponseParameters{
+		{
+			Size: 1,
+		},
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+		Payload:            payload,
+	}
+	stream, err := client.StreamingOutputCall(ctx, req, args...)
+	require.NoError(t, err)
+	streamHeader, err := stream.Header()
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	require.NoError(t, err)
+	require.NoError(t, stream.CloseSend())
+	_, err = stream.Recv()
+	assert.Equal(t, err, io.EOF)
+	streamTrailer := stream.Trailer()
+	validateMetadata(t, streamHeader, streamTrailer, customMetadata)
+}
+
+func customMetadataFullDuplexTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	require.NoError(t, err)
+	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
 	stream, err := client.FullDuplexCall(ctx, args...)
 	require.NoError(t, err)
 	respParam := []*testpb.ResponseParameters{

@@ -137,16 +137,19 @@ the stream and expects to receive an error with status `DEADLINE_EXCEEDED`.
 
 #### custom_metadata
 
-RPC: `UnaryCall`, `FullDuplexCall`
+RPC: `UnaryCall`, `StreamingOutputCall`, `FullDuplexCall`
 
 Client calls `UnaryCall` with a request with a custom header and custom binary trailer attached
-and expects the same metadata to be attached to the response. Client calls `FullDuplexCall`
+and expects the same metadata to be attached to the response. Client calls `StreamingOutputCall`
 with a request with a custom header and custom binary trailer and expects the same metadata
-to be attached to the response when stream is closed. The `web` flows only test the unary RPC.
+to be attached to the response when stream is closed. Client calls `FullDuplexCall`
+with a request with a custom header and custom binary trailer and expects the same metadata
+to be attached to the response when stream is closed. The `web` flows only test the unary and 
+server streaming RPC.
 
 #### duplicated_custom_metadata
 
-RPC: `UnaryCall`, `FullDuplexCall`
+RPC: `UnaryCall`, `StreamingOutputCall`, `FullDuplexCall`
 
 This is the same as the `custom_metadata` test but uses metadata values that have `,` separators
 to test header and trailer behaviour.

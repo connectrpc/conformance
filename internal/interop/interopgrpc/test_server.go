@@ -129,6 +129,28 @@ func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {
+	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
+		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
+			var metadataPairs []string
+			for _, metadataValue := range leadingMetadata {
+				metadataPairs = append(metadataPairs, leadingMetadataKey)
+				metadataPairs = append(metadataPairs, metadataValue)
+			}
+			header := metadata.Pairs(metadataPairs...)
+			if err := stream.SendHeader(header); err != nil {
+				return err
+			}
+		}
+		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
+			var trailingMetadataPairs []string
+			for _, trailingMetadataValue := range trailingMetadata {
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
+			}
+			trailer := metadata.Pairs(trailingMetadataPairs...)
+			stream.SetTrailer(trailer)
+		}
+	}
 	cs := args.GetResponseParameters()
 	for _, c := range cs {
 		if us := c.GetIntervalUs(); us > 0 {

@@ -168,6 +168,51 @@ describe("grpc_web", function () {
       doneFn();
     });
   });
+  it("custom_metadata_server_streaming", function (done) {
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
+    const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+    const ECHO_TRAILING_VALUE = 0xababab;
+
+    const size = 31415;
+    const doneFn = multiDone(done, 3);
+    const param = new ResponseParameters();
+    param.setSize(size);
+    const responseParams = [param];
+
+    const req = new StreamingOutputCallRequest();
+    req.setResponseParametersList(responseParams);
+
+    const stream = client.streamingOutputCall(
+        req,
+        {
+          [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+          [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
+        },
+    );
+
+    stream.on("metadata", (metadata) => {
+      expect(metadata).toBeDefined();
+      const m = caseless(metadata); // http header is case-insensitive
+      expect(m.has(ECHO_LEADING_KEY) != false).toBeTrue();
+      expect(m.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
+      doneFn();
+    });
+
+    stream.on("status", (status) => {
+      expect(status.metadata).toBeDefined();
+      const m = caseless(status.metadata); // http header is case-insensitive
+      expect(m.has(ECHO_TRAILING_KEY) != false).toBeTrue();
+      expect(m.get(ECHO_TRAILING_KEY)).toEqual(ECHO_TRAILING_VALUE.toString());
+      doneFn();
+    });
+
+    stream.on("data", (response) => {
+      expect(response.getPayload()).toBeDefined();
+      expect(response.getPayload()?.getBody().length).toEqual(size);
+      doneFn();
+    });
+  });
   it("status_code_and_message", function (done) {
     const req = new SimpleRequest();
 
