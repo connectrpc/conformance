@@ -190,12 +190,12 @@ func run(flags *flags) {
 		&serverpb.ServerMetadata{
 			Host:      "localhost",
 			Protocols: protocols,
+			Message:   "server is listening on the above protocols.",
 		},
 	)
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
@@ -215,6 +215,7 @@ func run(flags *flags) {
 			}
 		}()
 	}
+	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	<-done
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()

@@ -20,6 +20,7 @@ package server.v1;
 message ServerMetadata {
   string host = 1;
   repeated ProtocolSupport protocols = 2;
+  string message = 3;
 }
 
 enum Protocol {

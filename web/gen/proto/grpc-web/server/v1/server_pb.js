@@ -137,7 +137,8 @@ proto.server.v1.ServerMetadata.toObject = function(includeInstance, msg) {
   var f, obj = {
     host: jspb.Message.getFieldWithDefault(msg, 1, ""),
     protocolsList: jspb.Message.toObjectList(msg.getProtocolsList(),
-    proto.server.v1.ProtocolSupport.toObject, includeInstance)
+    proto.server.v1.ProtocolSupport.toObject, includeInstance),
+    message: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -183,6 +184,10 @@ proto.server.v1.ServerMetadata.deserializeBinaryFromReader = function(msg, reade
       reader.readMessage(value,proto.server.v1.ProtocolSupport.deserializeBinaryFromReader);
       msg.addProtocols(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMessage(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -225,6 +230,13 @@ proto.server.v1.ServerMetadata.serializeBinaryToWriter = function(message, write
       2,
       f,
       proto.server.v1.ProtocolSupport.serializeBinaryToWriter
+    );
+  }
+  f = message.getMessage();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
     );
   }
 };
@@ -283,6 +295,24 @@ proto.server.v1.ServerMetadata.prototype.addProtocols = function(opt_value, opt_
  */
 proto.server.v1.ServerMetadata.prototype.clearProtocolsList = function() {
   return this.setProtocolsList([]);
+};
+
+
+/**
+ * optional string message = 3;
+ * @return {string}
+ */
+proto.server.v1.ServerMetadata.prototype.getMessage = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.server.v1.ServerMetadata} returns this
+ */
+proto.server.v1.ServerMetadata.prototype.setMessage = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 

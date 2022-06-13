@@ -62,6 +62,11 @@ export class ServerMetadata extends Message<ServerMetadata> {
    */
   protocols: ProtocolSupport[] = [];
 
+  /**
+   * @generated from field: string message = 3;
+   */
+  message = "";
+
   constructor(data?: PartialMessage<ServerMetadata>) {
     super();
     proto3.util.initPartial(data, this);
@@ -72,6 +77,7 @@ export class ServerMetadata extends Message<ServerMetadata> {
   static readonly fields: FieldList = proto3.util.newFieldList(() => [
     { no: 1, name: "host", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "protocols", kind: "message", T: ProtocolSupport, repeated: true },
+    { no: 3, name: "message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ]);
 
   static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ServerMetadata {

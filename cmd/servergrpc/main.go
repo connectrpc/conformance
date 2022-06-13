@@ -94,13 +94,14 @@ func run(flagset *flags) {
 					Port: flagset.port,
 				},
 			},
+			Message: "server is listening on the above protocols.",
 		},
 	)
 	if err != nil {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
-	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
+	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	_ = server.Serve(lis)
 	defer server.GracefulStop()
 }

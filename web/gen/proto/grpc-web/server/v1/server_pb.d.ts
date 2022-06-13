@@ -25,6 +25,9 @@ export class ServerMetadata extends jspb.Message {
   clearProtocolsList(): ServerMetadata;
   addProtocols(value?: ProtocolSupport, index?: number): ProtocolSupport;
 
+  getMessage(): string;
+  setMessage(value: string): ServerMetadata;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerMetadata.AsObject;
   static toObject(includeInstance: boolean, msg: ServerMetadata): ServerMetadata.AsObject;
@@ -37,6 +40,7 @@ export namespace ServerMetadata {
   export type AsObject = {
     host: string,
     protocolsList: Array<ProtocolSupport.AsObject>,
+    message: string,
   }
 }
 
