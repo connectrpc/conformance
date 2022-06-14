@@ -254,6 +254,19 @@ describe("connect_web_promise_client", function () {
       ).toBeTrue();
     }
   });
+  it("unimplemented_server_streaming_service", async function () {
+    const badClient = makePromiseClient(UnimplementedService, transport);
+    try {
+      await badClient.unimplementedStreamingOutputCall({});
+      for await (const response of await badClient.unimplementedStreamingOutputCall({})) {
+        fail(`expecting no response from unimplemented server streaming, got: ${response}`);
+      }
+      fail("expected to catch an error");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect((e as ConnectError).code).toEqual(StatusCode.Unimplemented);
+    }
+  });
   it("fail_unary", async function () {
     try {
       await client.failUnaryCall({});

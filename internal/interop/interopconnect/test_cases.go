@@ -589,6 +589,17 @@ func DoUnimplementedService(t crosstesting.TB, client connectpb.UnimplementedSer
 	t.Successf("successful unimplemented service")
 }
 
+// DoUnimplementedServerStreamingService performs a server streaming RPC from an unimplemented service.
+func DoUnimplementedServerStreamingService(t crosstesting.TB, client connectpb.UnimplementedServiceClient) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	require.NoError(t, err)
+	stream.Receive()
+	err = stream.Err()
+	assert.Error(t, err)
+	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
+	t.Successf("successful unimplemented server streaming service")
+}
+
 // DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.
 func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClient) {
 	reply, err := client.FailUnaryCall(

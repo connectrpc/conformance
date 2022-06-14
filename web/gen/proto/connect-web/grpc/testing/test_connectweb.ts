@@ -18,11 +18,16 @@
 // @generated from file grpc/testing/test.proto (package grpc.testing, syntax proto3)
 //
 // This is copied from gRPC's testing Protobuf definitions: https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
+//
 // The TestService has been extended to include the following RPCs:
 // FailUnaryCall(SimpleRequest) returns (SimpleResponse): this RPC is a unary
 // call that always returns a readable non-ASCII error.
 // FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse):
 // this RPC is a server streaming call that always returns a readable non-ASCII error.
+// UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
+// is a server streaming call that will not be implemented.
+//
+// The UnimplementedService has been extended to include the following RPCs:
 // UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
 // is a server streaming call that will not be implemented.
 // Copyright 2015-2016 gRPC authors.
@@ -208,6 +213,17 @@ export const UnimplementedService = {
       I: Empty,
       O: Empty,
       kind: MethodKind.Unary,
+    },
+    /**
+     * A call that no server should implement
+     *
+     * @generated from rpc grpc.testing.UnimplementedService.UnimplementedStreamingOutputCall
+     */
+    unimplementedStreamingOutputCall: {
+      name: "UnimplementedStreamingOutputCall",
+      I: Empty,
+      O: Empty,
+      kind: MethodKind.ServerStreaming,
     },
   }
 } as const;

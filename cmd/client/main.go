@@ -168,6 +168,7 @@ func run(flags *flags) {
 		}
 		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 		interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
+		interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
 		// add client option if the implementation is grpc or grpc-web
 		var clientOptions []connect.ClientOption
@@ -227,6 +228,7 @@ func run(flags *flags) {
 		}
 		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 		interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
+		interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
 	// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
 	// connectGRPCH3 and connectGRPCWebH3 have both been disabled since we are now strictly
@@ -291,6 +293,7 @@ func run(flags *flags) {
 		if flags.implementation == connectH3 {
 			interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 			interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
+			interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
 		}
 	case grpcGo:
 		clientConn, err := grpc.Dial(
@@ -324,6 +327,7 @@ func run(flags *flags) {
 			interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
 		}
 		interopgrpc.DoUnimplementedService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
+		interopgrpc.DoUnimplementedServerStreamingService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
 		unresolvableClientConn, err := grpc.Dial(
 			"unresolvable-host.some.domain",
 			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))),

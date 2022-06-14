@@ -322,6 +322,31 @@ describe("grpc_web", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_service", function (done) {
+    const badClient = new UnimplementedServiceClient(SERVER_HOST, null, null);
+    const stream = badClient.unimplementedStreamingOutputCall(new Empty());
+
+    stream.on("data", () => {
+      fail(`expecting no response from unimplemented server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      //
+      // In the case for grpc-web is talking to connect-go over HTTP1.x, net/http is returning
+      // a 404, however this is not then handled by Connect, so grpc-web client throws an
+      // Unknown based on Content-Type, which will be followed by a 404 not found, therefore it
+      // can be skipped.
+      if(err.message == "Unknown Content-type received.") {
+        return;
+      }
+      expect([5, 12].includes(err.code)).toBeTrue();
+      done();
+    });
+  });
   it("fail_unary", function (done) {
     client.failUnaryCall(new SimpleRequest(), null, (err) => {
       expect(err).toBeDefined();

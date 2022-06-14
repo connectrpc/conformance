@@ -1,9 +1,14 @@
 // This is copied from gRPC's testing Protobuf definitions: https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
+//
 // The TestService has been extended to include the following RPCs:
 // FailUnaryCall(SimpleRequest) returns (SimpleResponse): this RPC is a unary
 // call that always returns a readable non-ASCII error.
 // FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse):
 // this RPC is a server streaming call that always returns a readable non-ASCII error.
+// UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
+// is a server streaming call that will not be implemented.
+//
+// The UnimplementedService has been extended to include the following RPCs:
 // UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
 // is a server streaming call that will not be implemented.
 
@@ -84,6 +89,9 @@ service TestService {
 service UnimplementedService {
   // A call that no server should implement
   rpc UnimplementedCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+
+  // A call that no server should implement
+  rpc UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty);
 }
 
 // A service used to control reconnect server.

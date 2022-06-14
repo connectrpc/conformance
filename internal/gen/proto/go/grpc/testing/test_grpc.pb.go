@@ -708,6 +708,8 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 type UnimplementedServiceClient interface {
 	// A call that no server should implement
 	UnimplementedCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	// A call that no server should implement
+	UnimplementedStreamingOutputCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (UnimplementedService_UnimplementedStreamingOutputCallClient, error)
 }
 
 type unimplementedServiceClient struct {
@@ -727,12 +729,46 @@ func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (UnimplementedService_UnimplementedStreamingOutputCallClient, error) {
+	stream, err := c.cc.NewStream(ctx, &UnimplementedService_ServiceDesc.Streams[0], "/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &unimplementedServiceUnimplementedStreamingOutputCallClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type UnimplementedService_UnimplementedStreamingOutputCallClient interface {
+	Recv() (*Empty, error)
+	grpc.ClientStream
+}
+
+type unimplementedServiceUnimplementedStreamingOutputCallClient struct {
+	grpc.ClientStream
+}
+
+func (x *unimplementedServiceUnimplementedStreamingOutputCallClient) Recv() (*Empty, error) {
+	m := new(Empty)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // UnimplementedServiceServer is the server API for UnimplementedService service.
 // All implementations must embed UnimplementedUnimplementedServiceServer
 // for forward compatibility
 type UnimplementedServiceServer interface {
 	// A call that no server should implement
 	UnimplementedCall(context.Context, *Empty) (*Empty, error)
+	// A call that no server should implement
+	UnimplementedStreamingOutputCall(*Empty, UnimplementedService_UnimplementedStreamingOutputCallServer) error
 	mustEmbedUnimplementedUnimplementedServiceServer()
 }
 
@@ -742,6 +778,9 @@ type UnimplementedUnimplementedServiceServer struct {
 
 func (UnimplementedUnimplementedServiceServer) UnimplementedCall(context.Context, *Empty) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnimplementedCall not implemented")
+}
+func (UnimplementedUnimplementedServiceServer) UnimplementedStreamingOutputCall(*Empty, UnimplementedService_UnimplementedStreamingOutputCallServer) error {
+	return status.Errorf(codes.Unimplemented, "method UnimplementedStreamingOutputCall not implemented")
 }
 func (UnimplementedUnimplementedServiceServer) mustEmbedUnimplementedUnimplementedServiceServer() {}
 
@@ -774,6 +813,27 @@ func _UnimplementedService_UnimplementedCall_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _UnimplementedService_UnimplementedStreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(Empty)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(UnimplementedServiceServer).UnimplementedStreamingOutputCall(m, &unimplementedServiceUnimplementedStreamingOutputCallServer{stream})
+}
+
+type UnimplementedService_UnimplementedStreamingOutputCallServer interface {
+	Send(*Empty) error
+	grpc.ServerStream
+}
+
+type unimplementedServiceUnimplementedStreamingOutputCallServer struct {
+	grpc.ServerStream
+}
+
+func (x *unimplementedServiceUnimplementedStreamingOutputCallServer) Send(m *Empty) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 // UnimplementedService_ServiceDesc is the grpc.ServiceDesc for UnimplementedService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -786,7 +846,13 @@ var UnimplementedService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _UnimplementedService_UnimplementedCall_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "UnimplementedStreamingOutputCall",
+			Handler:       _UnimplementedService_UnimplementedStreamingOutputCall_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "grpc/testing/test.proto",
 }
 

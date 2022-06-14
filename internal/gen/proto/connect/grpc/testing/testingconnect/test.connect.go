@@ -378,6 +378,8 @@ func (UnimplementedTestServiceHandler) UnimplementedStreamingOutputCall(context.
 type UnimplementedServiceClient interface {
 	// A call that no server should implement
 	UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
+	// A call that no server should implement
+	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.ServerStreamForClient[testing.Empty], error)
 }
 
 // NewUnimplementedServiceClient constructs a client for the grpc.testing.UnimplementedService
@@ -395,12 +397,18 @@ func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL str
 			baseURL+"/grpc.testing.UnimplementedService/UnimplementedCall",
 			opts...,
 		),
+		unimplementedStreamingOutputCall: connect_go.NewClient[testing.Empty, testing.Empty](
+			httpClient,
+			baseURL+"/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall",
+			opts...,
+		),
 	}
 }
 
 // unimplementedServiceClient implements UnimplementedServiceClient.
 type unimplementedServiceClient struct {
-	unimplementedCall *connect_go.Client[testing.Empty, testing.Empty]
+	unimplementedCall                *connect_go.Client[testing.Empty, testing.Empty]
+	unimplementedStreamingOutputCall *connect_go.Client[testing.Empty, testing.Empty]
 }
 
 // UnimplementedCall calls grpc.testing.UnimplementedService.UnimplementedCall.
@@ -408,11 +416,19 @@ func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, req 
 	return c.unimplementedCall.CallUnary(ctx, req)
 }
 
+// UnimplementedStreamingOutputCall calls
+// grpc.testing.UnimplementedService.UnimplementedStreamingOutputCall.
+func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, req *connect_go.Request[testing.Empty]) (*connect_go.ServerStreamForClient[testing.Empty], error) {
+	return c.unimplementedStreamingOutputCall.CallServerStream(ctx, req)
+}
+
 // UnimplementedServiceHandler is an implementation of the grpc.testing.UnimplementedService
 // service.
 type UnimplementedServiceHandler interface {
 	// A call that no server should implement
 	UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error)
+	// A call that no server should implement
+	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[testing.Empty], *connect_go.ServerStream[testing.Empty]) error
 }
 
 // NewUnimplementedServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -427,6 +443,11 @@ func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...con
 		svc.UnimplementedCall,
 		opts...,
 	))
+	mux.Handle("/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall", connect_go.NewServerStreamHandler(
+		"/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall",
+		svc.UnimplementedStreamingOutputCall,
+		opts...,
+	))
 	return "/grpc.testing.UnimplementedService/", mux
 }
 
@@ -435,6 +456,10 @@ type UnimplementedUnimplementedServiceHandler struct{}
 
 func (UnimplementedUnimplementedServiceHandler) UnimplementedCall(context.Context, *connect_go.Request[testing.Empty]) (*connect_go.Response[testing.Empty], error) {
 	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.UnimplementedService.UnimplementedCall is not implemented"))
+}
+
+func (UnimplementedUnimplementedServiceHandler) UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[testing.Empty], *connect_go.ServerStream[testing.Empty]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("grpc.testing.UnimplementedService.UnimplementedStreamingOutputCall is not implemented"))
 }
 
 // ReconnectServiceClient is a client for the grpc.testing.ReconnectService service.
