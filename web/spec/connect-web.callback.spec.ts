@@ -26,9 +26,11 @@ import {
 } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import {
+  ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import {Any} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -322,14 +324,24 @@ describe("connect_web_callback_client", function () {
     );
   });
   it("fail_unary", function (done) {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
     client.failUnaryCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(StatusCode.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
+      expect(err?.details.length).toEqual(1);
+      expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
       done();
     });
   });
   it("fail_server_streaming", function (done) {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
     const sizes = [31415, 9, 2653, 58979];
     const responseParams = sizes.map((size, index) => {
       return {
@@ -348,6 +360,8 @@ describe("connect_web_callback_client", function () {
           expect(err).toBeInstanceOf(ConnectError);
           expect(err?.code).toEqual(StatusCode.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
+          expect(err?.details.length).toEqual(1);
+          expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
           done();
         }
     );

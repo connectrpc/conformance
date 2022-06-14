@@ -519,6 +519,12 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	assert.True(t, ok)
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
 	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
+	errStatus, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Len(t, errStatus.Details(), 1)
+	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	require.True(t, ok)
+	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail call with non-ASCII error")
 }
 
@@ -543,6 +549,12 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.Tes
 	assert.True(t, ok)
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
 	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
+	errStatus, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Len(t, errStatus.Details(), 1)
+	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	require.True(t, ok)
+	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail server streaming with non-ASCII error")
 }
 

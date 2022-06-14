@@ -614,6 +614,13 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClie
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
 	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+interop.NonASCIIErrMsg)
+	var connectErr *connect.Error
+	require.True(t, errors.As(err, &connectErr))
+	require.Len(t, connectErr.Details(), 1)
+	var errorDetail testpb.ErrorDetail
+	err = connectErr.Details()[0].UnmarshalTo(&errorDetail)
+	require.NoError(t, err)
+	assert.True(t, proto.Equal(&errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail call with non-ASCII error")
 }
 
@@ -636,6 +643,13 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
 	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+interop.NonASCIIErrMsg)
+	var connectErr *connect.Error
+	require.True(t, errors.As(err, &connectErr))
+	require.Len(t, connectErr.Details(), 1)
+	var errorDetail testpb.ErrorDetail
+	err = connectErr.Details()[0].UnmarshalTo(&errorDetail)
+	require.NoError(t, err)
+	assert.True(t, proto.Equal(&errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail server streaming with non-ASCII error")
 }
 

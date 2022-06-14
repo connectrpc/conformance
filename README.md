@@ -107,14 +107,14 @@ response or errors are expected.
 RPC: `FailUnary`
 
 Client calls `FailUnary` which always responds with an error with status `RESOURCE_EXHAUSTED`
-and a non-ASCII message.
+and a non-ASCII message with error details.
 
 #### fail_server_streaming
 
 RPC: `FailStreamingOutputCall`
 
 Client calls `FailStreamingOutputCall` which always responds with an error with status `RESOURCE_EXHAUSTED`
-and a non-ASCII message.
+and a non-ASCII message with error details.
 
 #### cancel_after_begin
 

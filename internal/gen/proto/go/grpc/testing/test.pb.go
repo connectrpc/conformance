@@ -16,9 +16,9 @@
 //
 // The TestService has been extended to include the following RPCs:
 // FailUnaryCall(SimpleRequest) returns (SimpleResponse): this RPC is a unary
-// call that always returns a readable non-ASCII error.
+// call that always returns a readable non-ASCII error with error details.
 // FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse):
-// this RPC is a server streaming call that always returns a readable non-ASCII error.
+// this RPC is a server streaming call that always returns a readable non-ASCII error with error details.
 // UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
 // is a server streaming call that will not be implemented.
 //

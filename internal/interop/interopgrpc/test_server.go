@@ -125,7 +125,12 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 
 // FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
-	return nil, status.Error(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "error when adding error details")
+	}
+	return nil, errStatus.Err()
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {
@@ -170,7 +175,12 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 }
 
 func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
-	return status.Error(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
+	if err != nil {
+		return status.Error(codes.Internal, "error when adding error details")
+	}
+	return errStatus.Err()
 }
 
 func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInputCallServer) error {

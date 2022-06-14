@@ -25,6 +25,7 @@ import (
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // NewTestServiceHandler returns a new TestServiceHandler.
@@ -71,7 +72,13 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 }
 
 func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
-	return nil, connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
+	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
+	detail, anyErr := anypb.New(interop.ErrorDetail)
+	if anyErr != nil {
+		return nil, connect.NewError(connect.CodeInternal, errors.New("error when creating error details"))
+	}
+	err.AddDetail(detail)
+	return nil, err
 }
 
 func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
@@ -113,7 +120,13 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 }
 
 func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
-	return connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
+	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
+	detail, anyErr := anypb.New(interop.ErrorDetail)
+	if anyErr != nil {
+		return connect.NewError(connect.CodeInternal, errors.New("error when creating error details"))
+	}
+	err.AddDetail(detail)
+	return err
 }
 
 func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[testpb.StreamingInputCallRequest]) (*connect.Response[testpb.StreamingInputCallResponse], error) {
