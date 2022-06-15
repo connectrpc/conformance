@@ -198,20 +198,25 @@ func run(flags *flags) {
 	// We skipped those streaming tests for http 1 test
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			testConnectUnaryAndServerStreaming(client)
+			testConnectUnary(client)
+			testConnectServerStreaming(client)
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			testConnectUnaryAndServerStreaming(client)
-			testConnectClientStreamingAndBidiStreaming(client)
+			testConnectUnary(client)
+			testConnectServerStreaming(client)
+			testConnectClientStreaming(client)
+			testConnectBidiStreaming(client)
 			interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectH3:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			testConnectUnaryAndServerStreaming(client)
-			testConnectClientStreamingAndBidiStreaming(client)
+			testConnectUnary(client)
+			testConnectServerStreaming(client)
+			testConnectClientStreaming(client)
+			testConnectBidiStreaming(client)
 			// skipped the DoTimeoutOnSleepingServer test as quic-go wrapped the context error,
 			// see https://github.com/lucas-clemente/quic-go/blob/6fbc6d951a4005d7d9d086118e1572b9e8ff9851/http3/client.go#L276-L283
 		}
@@ -230,27 +235,33 @@ func run(flags *flags) {
 	}
 }
 
-func testConnectUnaryAndServerStreaming(client testingconnect.TestServiceClient) {
+func testConnectUnary(client testingconnect.TestServiceClient) {
 	interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 	interopconnect.DoLargeUnaryCall(console.NewTB(), client)
-	interopconnect.DoServerStreaming(console.NewTB(), client)
 	interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
-	interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
 	interopconnect.DoDuplicatedCustomMetadataUnary(console.NewTB(), client)
-	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
 	interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
 	interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 	interopconnect.DoUnimplementedMethod(console.NewTB(), client)
-	interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 	interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+}
+
+func testConnectServerStreaming(client testingconnect.TestServiceClient) {
+	interopconnect.DoServerStreaming(console.NewTB(), client)
+	interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
+	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
+	interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 	interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 }
 
-func testConnectClientStreamingAndBidiStreaming(client testingconnect.TestServiceClient) {
+func testConnectClientStreaming(client testingconnect.TestServiceClient) {
 	interopconnect.DoClientStreaming(console.NewTB(), client)
+	interopconnect.DoCancelAfterBegin(console.NewTB(), client)
+}
+
+func testConnectBidiStreaming(client testingconnect.TestServiceClient) {
 	interopconnect.DoPingPong(console.NewTB(), client)
 	interopconnect.DoEmptyStream(console.NewTB(), client)
-	interopconnect.DoCancelAfterBegin(console.NewTB(), client)
 	interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
 	interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
 	interopconnect.DoDuplicatedCustomMetadataFullDuplex(console.NewTB(), client)
