@@ -31,25 +31,28 @@ The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-int
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
 a range of expected behaviours and functionality for gRPC and Connect.
 
-| Test Case | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
-| --- | --- | --- |
-| `empty_unary` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `large_unary` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `client_streaming` | :ballot_box_with_check: | |
-| `server_streaming` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `ping_pong` | :ballot_box_with_check: | |
-| `empty_stream` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `fail_unary` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `cancel_after_begin` | :ballot_box_with_check: | |
-| `cancel_after_first_response` | :ballot_box_with_check: | |
-| `timeout_on_sleeping_server` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `custom_metadata` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `duplicated_custom_metadata` | :ballot_box_with_check: | |
-| `status_code_and_message` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `special_status_message` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `unimplemented_method` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `unimplemented_service` | :ballot_box_with_check: | :ballot_box_with_check: |
-| `unresolvable_host` | :ballot_box_with_check: | |
+| Test Case                                | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
+|------------------------------------------|-------------------------|---------------------------|
+| `empty_unary`                            | ✓                       | ✓                         |
+| `large_unary`                            | ✓                       | ✓                         |
+| `client_streaming`                       | ✓                       |                           |
+| `server_streaming`                       | ✓                       | ✓                         |
+| `ping_pong`                              | ✓                       |                           |
+| `empty_stream`                           | ✓                       | ✓                         |
+| `fail_unary`                             | ✓                       | ✓                         |
+| `fail_server_streaming`                  | ✓                       | ✓                         |
+| `cancel_after_begin`                     | ✓                       |                           |
+| `cancel_after_first_response`            | ✓                       |                           |
+| `timeout_on_sleeping_server`             | ✓                       | ✓                         |
+| `custom_metadata`                        | ✓                       | ✓                         |
+| `duplicated_custom_metadata`             | ✓                       |                           |
+| `status_code_and_message`                | ✓                       | ✓                         |
+| `special_status_message`                 | ✓                       | ✓                         |
+| `unimplemented_method`                   | ✓                       | ✓                         |
+| `unimplemented_server_streaming_method`  | ✓                       | ✓                         |
+| `unimplemented_service`                  | ✓                       | ✓                         |
+| `unimplemented_server_streaming_service` | ✓                       | ✓                         |
+| `unresolvable_host`                      | ✓                       |                           |
 
 ### Test Descriptions
 
@@ -104,7 +107,14 @@ response or errors are expected.
 RPC: `FailUnary`
 
 Client calls `FailUnary` which always responds with an error with status `RESOURCE_EXHAUSTED`
-and a non-ASCII message.
+and a non-ASCII message with error details.
+
+#### fail_server_streaming
+
+RPC: `FailStreamingOutputCall`
+
+Client calls `FailStreamingOutputCall` which always responds with an error with status `RESOURCE_EXHAUSTED`
+and a non-ASCII message with error details.
 
 #### cancel_after_begin
 
@@ -129,16 +139,19 @@ the stream and expects to receive an error with status `DEADLINE_EXCEEDED`.
 
 #### custom_metadata
 
-RPC: `UnaryCall`, `FullDuplexCall`
+RPC: `UnaryCall`, `StreamingOutputCall`, `FullDuplexCall`
 
 Client calls `UnaryCall` with a request with a custom header and custom binary trailer attached
-and expects the same metadata to be attached to the response. Client calls `FullDuplexCall`
+and expects the same metadata to be attached to the response. Client calls `StreamingOutputCall`
 with a request with a custom header and custom binary trailer and expects the same metadata
-to be attached to the response when stream is closed. The `web` flows only test the unary RPC.
+to be attached to the response when stream is closed. Client calls `FullDuplexCall`
+with a request with a custom header and custom binary trailer and expects the same metadata
+to be attached to the response when stream is closed. The `web` flows only test the unary and 
+server streaming RPC.
 
 #### duplicated_custom_metadata
 
-RPC: `UnaryCall`, `FullDuplexCall`
+RPC: `UnaryCall`, `StreamingOutputCall`, `FullDuplexCall`
 
 This is the same as the `custom_metadata` test but uses metadata values that have `,` separators
 to test header and trailer behaviour.
@@ -167,11 +180,25 @@ RPC: N/A
 Client calls `UnimplementedCall` with an empty request and expects an error with the status
 `UNIMPLEMENTED`.
 
+#### unimplemented_server_streaming_method
+
+RPC: N/A
+
+Client calls `UnimplementedStreamingOutputCall` with an empty request and expects an error with the status
+`UNIMPLEMENTED`.
+
 #### unimplemented_service
 
 RPC: N/A
 
 Client calls an unimplemented service and expects an error with the status `UNIMPLEMENTED`.
+
+#### unimplemented_server_streaming_service
+
+RPC: N/A
+
+Client calls `UnimplementedStreamingOutputCall` to an unimplemented service with an empty request and expects
+an error with the status `UNIMPLEMENTED`.
 
 #### unresolvable_host
 

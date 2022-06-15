@@ -19,6 +19,7 @@ linters-settings:
       - t *console.TB
       - t crosstesting.TB
       - t testing.TB
+      - ok bool
 linters:
   enable-all: true
   disable:

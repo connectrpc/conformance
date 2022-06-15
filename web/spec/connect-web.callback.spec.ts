@@ -26,9 +26,11 @@ import {
 } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import {
+  ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import {Any} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -125,7 +127,6 @@ describe("connect_web_callback_client", function () {
   });
   it("custom_metadata", function (done) {
     const doneFn = multiDone(done, 3);
-    // TODO: adjust this test once we land on the API for reading response headers and trailers
     const size = 314159;
     const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
     const ECHO_LEADING_VALUE = "test_initial_metadata_value";
@@ -162,6 +163,47 @@ describe("connect_web_callback_client", function () {
           doneFn();
         },
       }
+    );
+  });
+  it("custom_metadata_server_streaming", function (done) {
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
+    const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+    const ECHO_TRAILING_VALUE = new Uint8Array([0xab, 0xab, 0xab]);
+
+    const size = 31415;
+    const doneFn = multiDone(done, 3);
+    const responseParams = [{
+      size: size,
+    }]
+    client.streamingOutputCall(
+        {
+          responseParameters: responseParams,
+        },
+        (response) => {
+          expect(response.payload).toBeDefined();
+          expect(response.payload?.body.length).toEqual(size);
+          doneFn();
+        },
+        (err) => {
+          expect(err).toBeUndefined();
+        },
+        {
+          headers: {
+            [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+            [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
+          },
+          onHeader(header) {
+            expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
+            expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
+            doneFn();
+          },
+          onTrailer(trailer) {
+            expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+            expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
+            doneFn();
+          },
+        }
     );
   });
   it("status_code_and_message", function (done) {
@@ -237,6 +279,19 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_method", function (done) {
+    client.unimplementedStreamingOutputCall(
+        {},
+        (response) => {
+          fail(`expecting no response from fail server streaming, got: ${response}`);
+        },
+        (err) => {
+          expect(err).toBeInstanceOf(ConnectError);
+          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          done();
+        }
+    );
+  });
   it("unimplemented_service", function (done) {
     const badClient = makeCallbackClient(UnimplementedService, transport);
     badClient.unimplementedCall({}, (err: ConnectError | undefined) => {
@@ -254,12 +309,61 @@ describe("connect_web_callback_client", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_service", function (done) {
+    const badClient = makeCallbackClient(UnimplementedService, transport);
+    badClient.unimplementedStreamingOutputCall(
+        {},
+        (response) => {
+          fail(`expecting no response from fail server streaming, got: ${response}`);
+        },
+        (err) => {
+          expect(err).toBeInstanceOf(ConnectError);
+          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          done();
+        }
+    );
+  });
   it("fail_unary", function (done) {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
     client.failUnaryCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(StatusCode.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
+      expect(err?.details.length).toEqual(1);
+      expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
       done();
     });
+  });
+  it("fail_server_streaming", function (done) {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
+    const sizes = [31415, 9, 2653, 58979];
+    const responseParams = sizes.map((size, index) => {
+      return {
+        size: size,
+        intervalUs: index * 10,
+      };
+    });
+    client.failStreamingOutputCall(
+        {
+          responseParameters: responseParams,
+        },
+        (response) => {
+          fail(`expecting no response from fail server streaming, got: ${response}`);
+        },
+        (err) => {
+          expect(err).toBeInstanceOf(ConnectError);
+          expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+          expect(err?.rawMessage).toEqual("soirée 🎉");
+          expect(err?.details.length).toEqual(1);
+          expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+          done();
+        }
+    );
   });
 });

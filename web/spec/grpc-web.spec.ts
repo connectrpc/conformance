@@ -26,12 +26,16 @@ import {
 import { Empty } from "../gen/proto/grpc-web/grpc/testing/empty_pb";
 import {
   EchoStatus,
+  ErrorDetail,
+  ErrorStatus,
   Payload,
   ResponseParameters,
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/grpc-web/grpc/testing/messages_pb";
 import caseless = require("caseless");
+import { Message } from "google-protobuf";
+import { Any } from "google-protobuf/google/protobuf/any_pb";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -168,6 +172,51 @@ describe("grpc_web", function () {
       doneFn();
     });
   });
+  it("custom_metadata_server_streaming", function (done) {
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
+    const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+    const ECHO_TRAILING_VALUE = 0xababab;
+
+    const size = 31415;
+    const doneFn = multiDone(done, 3);
+    const param = new ResponseParameters();
+    param.setSize(size);
+    const responseParams = [param];
+
+    const req = new StreamingOutputCallRequest();
+    req.setResponseParametersList(responseParams);
+
+    const stream = client.streamingOutputCall(
+        req,
+        {
+          [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+          [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
+        },
+    );
+
+    stream.on("metadata", (metadata) => {
+      expect(metadata).toBeDefined();
+      const m = caseless(metadata); // http header is case-insensitive
+      expect(m.has(ECHO_LEADING_KEY) != false).toBeTrue();
+      expect(m.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
+      doneFn();
+    });
+
+    stream.on("status", (status) => {
+      expect(status.metadata).toBeDefined();
+      const m = caseless(status.metadata); // http header is case-insensitive
+      expect(m.has(ECHO_TRAILING_KEY) != false).toBeTrue();
+      expect(m.get(ECHO_TRAILING_KEY)).toEqual(ECHO_TRAILING_VALUE.toString());
+      doneFn();
+    });
+
+    stream.on("data", (response) => {
+      expect(response.getPayload()).toBeDefined();
+      expect(response.getPayload()?.getBody().length).toEqual(size);
+      doneFn();
+    });
+  });
   it("status_code_and_message", function (done) {
     const req = new SimpleRequest();
 
@@ -249,6 +298,17 @@ describe("grpc_web", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_method", function (done) {
+    const stream = client.unimplementedStreamingOutputCall(new Empty());
+    stream.on("data", () => {
+      fail(`expecting no response from fail server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(12);
+      done();
+    });
+  });
   it("unimplemented_service", function (done) {
     const badClient = new UnimplementedServiceClient(SERVER_HOST, null, null);
     badClient.unimplementedCall(new Empty(), null, (err) => {
@@ -266,13 +326,90 @@ describe("grpc_web", function () {
       done();
     });
   });
+  it("unimplemented_server_streaming_service", function (done) {
+    const badClient = new UnimplementedServiceClient(SERVER_HOST, null, null);
+    const stream = badClient.unimplementedStreamingOutputCall(new Empty());
+
+    stream.on("data", () => {
+      fail(`expecting no response from unimplemented server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      //
+      // In the case for grpc-web is talking to connect-go over HTTP1.x, net/http is returning
+      // a 404, however this is not then handled by Connect, so grpc-web client throws an
+      // Unknown based on Content-Type, which will be followed by a 404 not found, therefore it
+      // can be skipped.
+      if(err.message == "Unknown Content-type received.") {
+        return;
+      }
+      expect([5, 12].includes(err.code)).toBeTrue();
+      done();
+    });
+  });
   it("fail_unary", function (done) {
+    const expectedErrorDetail = new ErrorDetail();
+    expectedErrorDetail.setReason( "soirée 🎉")
+    expectedErrorDetail.setDomain("connect-crosstest")
     client.failUnaryCall(new SimpleRequest(), null, (err) => {
       expect(err).toBeDefined();
       expect("code" in err).toBeTrue();
       expect(err.code).toEqual(8);
       expect(err.message).toEqual("soirée 🎉");
+      const m = caseless(err.metadata); // http header is case-insensitive
+      expect(m.has("grpc-status-details-bin") != false).toBeTrue();
+      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      expect(errorStatus.getDetailsList().length).toEqual(1);
+      const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
+      expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
+      done();
+    });
+  });
+  it("fail_server_streaming", function (done) {
+    const expectedErrorDetail = new ErrorDetail();
+    expectedErrorDetail.setReason( "soirée 🎉")
+    expectedErrorDetail.setDomain("connect-crosstest")
+
+    const sizes = [31415, 9, 2653, 58979];
+
+    const responseParams = sizes.map((size, idx) => {
+      const param = new ResponseParameters();
+      param.setSize(size);
+      param.setIntervalUs(idx * 10);
+      return param;
+    });
+
+    const req = new StreamingOutputCallRequest();
+    req.setResponseParametersList(responseParams);
+
+    const stream = client.failStreamingOutputCall(req);
+    stream.on("data", () => {
+      fail(`expecting no response from fail server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(8);
+      expect(err.message).toEqual("soirée 🎉");
+      const m = caseless(err.metadata); // http header is case-insensitive
+      expect(m.has("grpc-status-details-bin") != false).toBeTrue();
+      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      expect(errorStatus.getDetailsList().length).toEqual(1);
+      const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
+      expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
       done();
     });
   });
 });
+
+function stringToUint8Array(str: string): Uint8Array {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0; i < str.length; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return bufView;
+}

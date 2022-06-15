@@ -20,6 +20,8 @@ syntax = "proto3";
 
 package grpc.testing;
 
+import "google/protobuf/any.proto";
+
 // TODO(dgq): Go back to using well-known types once
 // https://github.com/grpc/grpc/issues/6980 has been fixed.
 // import "google/protobuf/wrappers.proto";
@@ -269,3 +271,14 @@ message ClientConfigureRequest {
 
 // Response for updating a test client's configuration.
 message ClientConfigureResponse {}
+
+message ErrorDetail {
+  string reason = 1;
+  string domain = 2;
+}
+
+message ErrorStatus {
+  int32 code = 1;
+  string message = 2;
+  repeated google.protobuf.Any details = 3;
+}

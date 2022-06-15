@@ -335,6 +335,16 @@ func DoDuplicatedCustomMetadata(t crosstesting.TB, client testpb.TestServiceClie
 
 func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	// Testing with UnaryCall.
+	customMetadataUnaryTest(t, client, customMetadata, args...)
+
+	// Testing with Server Streaming
+	customMetadataServerStreamingTest(t, client, customMetadata, args...)
+
+	// Testing with FullDuplex.
+	customMetadataFullDuplexTest(t, client, customMetadata, args...)
+}
+
+func customMetadataUnaryTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
@@ -354,8 +364,39 @@ func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, cust
 	assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.GetPayload().GetBody()), 1)
 	validateMetadata(t, header, trailer, customMetadata)
+}
 
-	// Testing with FullDuplex.
+func customMetadataServerStreamingTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	require.NoError(t, err)
+	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
+	respParam := []*testpb.ResponseParameters{
+		{
+			Size: 1,
+		},
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+		Payload:            payload,
+	}
+	stream, err := client.StreamingOutputCall(ctx, req, args...)
+	require.NoError(t, err)
+	streamHeader, err := stream.Header()
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	require.NoError(t, err)
+	require.NoError(t, stream.CloseSend())
+	_, err = stream.Recv()
+	assert.Equal(t, err, io.EOF)
+	streamTrailer := stream.Trailer()
+	validateMetadata(t, streamHeader, streamTrailer, customMetadata)
+}
+
+func customMetadataFullDuplexTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	require.NoError(t, err)
+	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
 	stream, err := client.FullDuplexCall(ctx, args...)
 	require.NoError(t, err)
 	respParam := []*testpb.ResponseParameters{
@@ -429,13 +470,6 @@ func DoSpecialStatusMessage(t crosstesting.TB, client testpb.TestServiceClient, 
 	t.Successf("successful special status message")
 }
 
-// DoUnimplementedService attempts to call a method from an unimplemented service.
-func DoUnimplementedService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
-	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{}, args...)
-	assert.Equal(t, status.Code(err), codes.Unimplemented)
-	t.Successf("successful unimplemented service")
-}
-
 // DoUnimplementedMethod attempts to call an unimplemented method.
 func DoUnimplementedMethod(t crosstesting.TB, cc *grpc.ClientConn, args ...grpc.CallOption) {
 	var req, reply proto.Message
@@ -445,6 +479,32 @@ func DoUnimplementedMethod(t crosstesting.TB, cc *grpc.ClientConn, args ...grpc.
 	t.Successf("successful unimplemented method")
 }
 
+// DoUnimplementedServerStreamingMethod performs a server streaming RPC that is unimplemented.
+func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &testpb.Empty{}, args...)
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	assert.Equal(t, status.Code(err), codes.Unimplemented)
+	t.Successf("successful unimplemented server streaming method")
+}
+
+// DoUnimplementedService attempts to call a method from an unimplemented service.
+func DoUnimplementedService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
+	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{}, args...)
+	assert.Equal(t, status.Code(err), codes.Unimplemented)
+	t.Successf("successful unimplemented service")
+}
+
+// DoUnimplementedServerStreamingService performs a server streaming RPC from an unimplemented service.
+func DoUnimplementedServerStreamingService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &testpb.Empty{}, args...)
+	require.NoError(t, err)
+	_, err = stream.Recv()
+	assert.Equal(t, status.Code(err), codes.Unimplemented)
+	t.Successf("successful unimplemented server streaming service")
+}
+
+// DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.
 func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
 	reply, err := client.FailUnaryCall(
 		context.Background(),
@@ -459,7 +519,43 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	assert.True(t, ok)
 	assert.Equal(t, s.Code(), codes.ResourceExhausted)
 	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
+	errStatus, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Len(t, errStatus.Details(), 1)
+	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	require.True(t, ok)
+	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail call with non-ASCII error")
+}
+
+// DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
+func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+	for i, s := range respSizes {
+		respParam[i] = &testpb.ResponseParameters{
+			Size: int32(s),
+		}
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+	}
+	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
+	require.NoError(t, err)
+	reply, err := stream.Recv()
+	assert.Nil(t, reply)
+	assert.Error(t, err)
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, s.Code(), codes.ResourceExhausted)
+	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
+	errStatus, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Len(t, errStatus.Details(), 1)
+	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	require.True(t, ok)
+	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
+	t.Successf("successful fail server streaming with non-ASCII error")
 }
 
 // DoUnresolvableHost attempts to call a method to an unresolvable host.

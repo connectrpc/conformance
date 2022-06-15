@@ -14,6 +14,7 @@
 
 import * as jspb from 'google-protobuf'
 
+import * as google_protobuf_any_pb from 'google-protobuf/google/protobuf/any_pb';
 
 
 export class BoolValue extends jspb.Message {
@@ -559,6 +560,56 @@ export class ClientConfigureResponse extends jspb.Message {
 
 export namespace ClientConfigureResponse {
   export type AsObject = {
+  }
+}
+
+export class ErrorDetail extends jspb.Message {
+  getReason(): string;
+  setReason(value: string): ErrorDetail;
+
+  getDomain(): string;
+  setDomain(value: string): ErrorDetail;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ErrorDetail.AsObject;
+  static toObject(includeInstance: boolean, msg: ErrorDetail): ErrorDetail.AsObject;
+  static serializeBinaryToWriter(message: ErrorDetail, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ErrorDetail;
+  static deserializeBinaryFromReader(message: ErrorDetail, reader: jspb.BinaryReader): ErrorDetail;
+}
+
+export namespace ErrorDetail {
+  export type AsObject = {
+    reason: string,
+    domain: string,
+  }
+}
+
+export class ErrorStatus extends jspb.Message {
+  getCode(): number;
+  setCode(value: number): ErrorStatus;
+
+  getMessage(): string;
+  setMessage(value: string): ErrorStatus;
+
+  getDetailsList(): Array<google_protobuf_any_pb.Any>;
+  setDetailsList(value: Array<google_protobuf_any_pb.Any>): ErrorStatus;
+  clearDetailsList(): ErrorStatus;
+  addDetails(value?: google_protobuf_any_pb.Any, index?: number): google_protobuf_any_pb.Any;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ErrorStatus.AsObject;
+  static toObject(includeInstance: boolean, msg: ErrorStatus): ErrorStatus.AsObject;
+  static serializeBinaryToWriter(message: ErrorStatus, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ErrorStatus;
+  static deserializeBinaryFromReader(message: ErrorStatus, reader: jspb.BinaryReader): ErrorStatus;
+}
+
+export namespace ErrorStatus {
+  export type AsObject = {
+    code: number,
+    message: string,
+    detailsList: Array<google_protobuf_any_pb.Any.AsObject>,
   }
 }
 

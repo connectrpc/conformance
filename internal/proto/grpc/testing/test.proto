@@ -1,7 +1,16 @@
 // This is copied from gRPC's testing Protobuf definitions: https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
+//
 // The TestService has been extended to include the following RPCs:
-// Fail(SimpleRequest) returns (SimpleResponse): this RPC is a unary
-// call that always returns a readable non-ASCII error.
+// FailUnaryCall(SimpleRequest) returns (SimpleResponse): this RPC is a unary
+// call that always returns a readable non-ASCII error with error details.
+// FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse):
+// this RPC is a server streaming call that always returns a readable non-ASCII error with error details.
+// UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
+// is a server streaming call that will not be implemented.
+//
+// The UnimplementedService has been extended to include the following RPCs:
+// UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty): this RPC
+// is a server streaming call that will not be implemented.
 
 // Copyright 2015-2016 gRPC authors.
 //
@@ -36,7 +45,7 @@ service TestService {
   // One request followed by one response.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);
 
-  // One request followed by one response. This RPC always failes.
+  // One request followed by one response. This RPC always fails.
   rpc FailUnaryCall(SimpleRequest) returns (SimpleResponse);
 
   // One request followed by one response. Response has cache control
@@ -47,6 +56,9 @@ service TestService {
   // One request followed by a sequence of responses (streamed download).
   // The server returns the payload with client desired type and sizes.
   rpc StreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse);
+
+  // One request followed by a sequence of responses (streamed download). This RPC always fails.
+  rpc FailStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse);
 
   // A sequence of requests followed by one response (streamed upload).
   // The server returns the aggregated size of client payload as the result.
@@ -66,6 +78,10 @@ service TestService {
   // The test server will not implement this method. It will be used
   // to test the behavior when clients call unimplemented methods.
   rpc UnimplementedCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+
+  // The test server will not implement this method. It will be used
+  // to test the behavior when clients call unimplemented streaming output methods.
+  rpc UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty);
 }
 
 // A simple service NOT implemented at servers so clients can test for
@@ -73,6 +89,9 @@ service TestService {
 service UnimplementedService {
   // A call that no server should implement
   rpc UnimplementedCall(grpc.testing.Empty) returns (grpc.testing.Empty);
+
+  // A call that no server should implement
+  rpc UnimplementedStreamingOutputCall(grpc.testing.Empty) returns (stream grpc.testing.Empty);
 }
 
 // A service used to control reconnect server.

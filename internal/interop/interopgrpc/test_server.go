@@ -125,10 +125,37 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 
 // FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
-	return nil, status.Error(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
+	if err != nil {
+		return nil, status.Error(codes.Internal, "error when adding error details")
+	}
+	return nil, errStatus.Err()
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {
+	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
+		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
+			var metadataPairs []string
+			for _, metadataValue := range leadingMetadata {
+				metadataPairs = append(metadataPairs, leadingMetadataKey)
+				metadataPairs = append(metadataPairs, metadataValue)
+			}
+			header := metadata.Pairs(metadataPairs...)
+			if err := stream.SendHeader(header); err != nil {
+				return err
+			}
+		}
+		if trailingMetadata, ok := data[trailingMetadataKey]; ok {
+			var trailingMetadataPairs []string
+			for _, trailingMetadataValue := range trailingMetadata {
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataKey)
+				trailingMetadataPairs = append(trailingMetadataPairs, trailingMetadataValue)
+			}
+			trailer := metadata.Pairs(trailingMetadataPairs...)
+			stream.SetTrailer(trailer)
+		}
+	}
 	cs := args.GetResponseParameters()
 	for _, c := range cs {
 		if us := c.GetIntervalUs(); us > 0 {
@@ -145,6 +172,15 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 		}
 	}
 	return nil
+}
+
+func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
+	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
+	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
+	if err != nil {
+		return status.Error(codes.Internal, "error when adding error details")
+	}
+	return errStatus.Err()
 }
 
 func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInputCallServer) error {

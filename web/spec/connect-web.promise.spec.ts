@@ -26,9 +26,11 @@ import {
 } from "../gen/proto/connect-web/grpc/testing/test_connectweb";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import {
+  ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import {Any} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -92,7 +94,6 @@ describe("connect_web_promise_client", function () {
     }
   });
   it("custom_metadata", async function () {
-    // TODO: adjust this test once we land on the API for reading response headers and trailers
     const size = 314159;
     const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
     const ECHO_LEADING_VALUE = "test_initial_metadata_value";
@@ -121,6 +122,36 @@ describe("connect_web_promise_client", function () {
     });
     expect(response.payload).toBeDefined();
     expect(response.payload?.body.length).toEqual(size);
+  });
+  it("custom_metadata_server_streaming", async function () {
+    const ECHO_LEADING_KEY = "x-grpc-test-echo-initial";
+    const ECHO_LEADING_VALUE = "test_initial_metadata_value";
+    const ECHO_TRAILING_KEY = "x-grpc-test-echo-trailing-bin";
+    const ECHO_TRAILING_VALUE = new Uint8Array([0xab, 0xab, 0xab]);
+
+    const size = 31415;
+    const responseParams = [{
+      size: size,
+    }]
+    for await (const response of await client.streamingOutputCall({
+      responseParameters: responseParams,
+    }, {
+      headers: {
+        [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+        [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
+      },
+      onHeader(header) {
+        expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
+        expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
+      },
+      onTrailer(trailer) {
+        expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+        expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
+      },
+    })) {
+      expect(response.payload).toBeDefined();
+      expect(response.payload?.body.length).toEqual(size);
+    }
   });
   it("status_code_and_message", async function () {
     const TEST_STATUS_MESSAGE = "test status message";
@@ -196,6 +227,17 @@ describe("connect_web_promise_client", function () {
       expect((e as ConnectError).code).toEqual(StatusCode.Unimplemented);
     }
   });
+  it("unimplemented_server_streaming_method", async function () {
+    try {
+      for await (const response of await client.unimplementedStreamingOutputCall({})) {
+        fail(`expecting no response from fail server streaming, got: ${response}`);
+      }
+      fail("expected to catch an error");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect((e as ConnectError).code).toEqual(StatusCode.Unimplemented);
+    }
+  });
   it("unimplemented_service", async function () {
     const badClient = makePromiseClient(UnimplementedService, transport);
     try {
@@ -214,13 +256,58 @@ describe("connect_web_promise_client", function () {
       ).toBeTrue();
     }
   });
+  it("unimplemented_server_streaming_service", async function () {
+    const badClient = makePromiseClient(UnimplementedService, transport);
+    try {
+      await badClient.unimplementedStreamingOutputCall({});
+      for await (const response of await badClient.unimplementedStreamingOutputCall({})) {
+        fail(`expecting no response from unimplemented server streaming, got: ${response}`);
+      }
+      fail("expected to catch an error");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect((e as ConnectError).code).toEqual(StatusCode.Unimplemented);
+    }
+  });
   it("fail_unary", async function () {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
     try {
       await client.failUnaryCall({});
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(StatusCode.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
+      expect((e as ConnectError).details.length).toEqual(1);
+      expect((e as ConnectError).details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+    }
+  });
+  it("fail_server_streaming", async function () {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
+    const sizes = [31415, 9, 2653, 58979];
+    const responseParams = sizes.map((size, index) => {
+      return {
+        size: size,
+        intervalUs: index * 10,
+      };
+    });
+    try {
+      for await (const response of await client.failStreamingOutputCall({
+        responseParameters: responseParams,
+      })) {
+        fail(`expecting no response from fail server streaming, got: ${response}`);
+      }
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect((e as ConnectError)?.code).toEqual(StatusCode.ResourceExhausted);
+      expect((e as ConnectError)?.rawMessage).toEqual("soirée 🎉");
+      expect((e as ConnectError).details.length).toEqual(1);
+      expect((e as ConnectError).details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
     }
   });
 });

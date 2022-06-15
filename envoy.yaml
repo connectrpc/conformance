@@ -33,7 +33,7 @@ static_resources:
                         allow_methods: GET, PUT, DELETE, POST, OPTIONS
                         allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,connect-timeout-ms,connect-content-encoding,connect-accept-encoding
                         max_age: "1728000"
-                        expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message
+                        expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message,grpc-status-details-bin
                 http_filters:
                   - name: envoy.filters.http.grpc_web
                   - name: envoy.filters.http.cors
@@ -79,7 +79,7 @@ static_resources:
                         allow_methods: GET, PUT, DELETE, POST, OPTIONS
                         allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout
                         max_age: "1728000"
-                        expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message
+                        expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message,grpc-status-details-bin
                 http_filters:
                   - name: envoy.filters.http.grpc_web
                   - name: envoy.filters.http.cors
