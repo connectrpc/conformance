@@ -332,8 +332,8 @@ describe("connect_web_callback_client", function () {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
-      expect(err?.details.length).toEqual(1);
-      expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect(err?.rawDetails.length).toEqual(1);
+      expect((err?.rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
       done();
     });
   });
@@ -360,8 +360,8 @@ describe("connect_web_callback_client", function () {
           expect(err).toBeInstanceOf(ConnectError);
           expect(err?.code).toEqual(Code.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
-          expect(err?.details.length).toEqual(1);
-          expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+          expect(err?.rawDetails.length).toEqual(1);
+          expect((err?.rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
           done();
         }
     );

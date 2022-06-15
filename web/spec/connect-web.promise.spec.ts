@@ -280,8 +280,8 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      expect((e as ConnectError).details.length).toEqual(1);
-      expect((e as ConnectError).details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect((e as ConnectError).rawDetails.length).toEqual(1);
+      expect(((e as ConnectError).rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
     }
   });
   it("fail_server_streaming", async function () {
@@ -306,8 +306,8 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      expect((e as ConnectError).details.length).toEqual(1);
-      expect((e as ConnectError).details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect((e as ConnectError).rawDetails.length).toEqual(1);
+      expect(((e as ConnectError).rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
     }
   });
 });
