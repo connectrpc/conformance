@@ -114,235 +114,196 @@ func bind(cmd *cobra.Command, flags *flags) error {
 }
 
 func run(flags *flags) {
-	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flags.host, flags.port))
-	if err != nil {
-		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flags.host, flags.port))
-	}
-	switch flags.implementation {
-	// We skipped those streaming tests for http 1 test
-	case connectH1, connectGRPCH1, connectGRPCWebH1:
-		// add client option if the implementation is grpc or grpc-web
-		var clientOptions []connect.ClientOption
-		switch flags.implementation {
-		case connectGRPCH1:
-			clientOptions = append(clientOptions, connect.WithGRPC())
-		case connectGRPCWebH1:
-			clientOptions = append(clientOptions, connect.WithGRPCWeb())
-		}
-		transport := &http.Transport{
-			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
-		}
-		uncompressedClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		unresolvableClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			"https://unresolvable-host.some.domain",
-			clientOptions...,
-		)
-		unimplementedClient := testingconnect.NewUnimplementedServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		clientOptions = append(clientOptions, connect.WithSendGzip())
-		compressedClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
-			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
-			interopconnect.DoServerStreaming(console.NewTB(), client)
-			interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
-			interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
-			interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
-			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-			interopconnect.DoUnimplementedMethod(console.NewTB(), client)
-			interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
-			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
-			interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
-		}
-		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
-		interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
-		interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
-	case connectGRPCH2, connectH2, connectGRPCWebH2:
-		// add client option if the implementation is grpc or grpc-web
-		var clientOptions []connect.ClientOption
-		switch flags.implementation {
-		case connectGRPCH2:
-			clientOptions = append(clientOptions, connect.WithGRPC())
-		case connectGRPCWebH2:
-			clientOptions = append(clientOptions, connect.WithGRPCWeb())
-		}
-		transport := &http2.Transport{
-			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
-		}
-		uncompressedClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		unresolvableClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			"https://unresolvable-host.some.domain",
-			clientOptions...,
-		)
-		unimplementedClient := testingconnect.NewUnimplementedServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		clientOptions = append(clientOptions, connect.WithSendGzip())
-		compressedClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
-			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
-			interopconnect.DoClientStreaming(console.NewTB(), client)
-			interopconnect.DoServerStreaming(console.NewTB(), client)
-			interopconnect.DoPingPong(console.NewTB(), client)
-			interopconnect.DoEmptyStream(console.NewTB(), client)
-			interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
-			interopconnect.DoCancelAfterBegin(console.NewTB(), client)
-			interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
-			interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
-			interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
-			interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
-			interopconnect.DoDuplicatedCustomMetadataUnary(console.NewTB(), client)
-			interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
-			interopconnect.DoDuplicatedCustomMetadataFullDuplex(console.NewTB(), client)
-			interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
-			interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
-			interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-			interopconnect.DoUnimplementedMethod(console.NewTB(), client)
-			interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
-			interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
-			interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
-		}
-		interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
-		interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
-		interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
-	// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
-	// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
-	// connectGRPCH3 and connectGRPCWebH3 have both been disabled since we are now strictly
-	// requiring `grpc-status` headers to be set on response, which requires trailer support.
-	// Once trailer support is available, they will be renabled.
-	case connectH3, connectGRPCWebH3:
-		// add client option if the implementation is grpc or grpc-web
-		var clientOptions []connect.ClientOption
-		if flags.implementation == connectGRPCWebH3 {
-			clientOptions = append(clientOptions, connect.WithGRPCWeb())
-		}
-		transport := &http3.RoundTripper{
-			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
-		}
-		uncompressedClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		unresolvableClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			"https://unresolvable-host.some.domain",
-			clientOptions...,
-		)
-		unimplementedClient := testingconnect.NewUnimplementedServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		clientOptions = append(clientOptions, connect.WithSendGzip())
-		compressedClient := testingconnect.NewTestServiceClient(
-			&http.Client{Transport: transport},
-			serverURL.String(),
-			clientOptions...,
-		)
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
-			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
-			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
-			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
-			interopconnect.DoClientStreaming(console.NewTB(), client)
-			interopconnect.DoServerStreaming(console.NewTB(), client)
-			interopconnect.DoPingPong(console.NewTB(), client)
-			if flags.implementation == connectH3 {
-				interopconnect.DoEmptyStream(console.NewTB(), client)
-				// skipped the DoTimeoutOnSleepingServer test as quic-go wrapped the context error,
-				// see https://github.com/lucas-clemente/quic-go/blob/b5ef99a32c250fc63f89cc686c13a008c5419d01/http3/client.go#L275-L282
-				interopconnect.DoCancelAfterBegin(console.NewTB(), client)
-				interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
-				interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
-				interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
-				interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
-				interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
-				interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
-				interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
-				interopconnect.DoUnimplementedMethod(console.NewTB(), client)
-				interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
-				interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
-				interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
-			}
-		}
-		if flags.implementation == connectH3 {
-			interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
-			interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
-			interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
-		}
-	case grpcGo:
+	// tests for grpc client
+	if flags.implementation == grpcGo {
+		transportCredentials := credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))
 		clientConn, err := grpc.Dial(
 			net.JoinHostPort(flags.host, flags.port),
-			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))),
+			grpc.WithTransportCredentials(transportCredentials),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
 		}
 		defer clientConn.Close()
-		client := testgrpc.NewTestServiceClient(clientConn)
-		for _, args := range [][]grpc.CallOption{
-			nil,
-			{grpc.UseCompressor(gzip.Name)},
-		} {
-			interopgrpc.DoEmptyUnaryCall(console.NewTB(), client, args...)
-			interopgrpc.DoLargeUnaryCall(console.NewTB(), client, args...)
-			interopgrpc.DoClientStreaming(console.NewTB(), client, args...)
-			interopgrpc.DoServerStreaming(console.NewTB(), client, args...)
-			interopgrpc.DoPingPong(console.NewTB(), client, args...)
-			interopgrpc.DoEmptyStream(console.NewTB(), client, args...)
-			interopgrpc.DoTimeoutOnSleepingServer(console.NewTB(), client, args...)
-			interopgrpc.DoCancelAfterBegin(console.NewTB(), client, args...)
-			interopgrpc.DoCancelAfterFirstResponse(console.NewTB(), client, args...)
-			interopgrpc.DoCustomMetadata(console.NewTB(), client, args...)
-			interopgrpc.DoStatusCodeAndMessage(console.NewTB(), client, args...)
-			interopgrpc.DoSpecialStatusMessage(console.NewTB(), client, args...)
-			interopgrpc.DoUnimplementedMethod(console.NewTB(), clientConn, args...)
-			interopgrpc.DoUnimplementedServerStreamingMethod(console.NewTB(), client, args...)
-			interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, args...)
-			interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
-		}
-		interopgrpc.DoUnimplementedService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
-		interopgrpc.DoUnimplementedServerStreamingService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
 		unresolvableClientConn, err := grpc.Dial(
 			"unresolvable-host.some.domain",
-			grpc.WithTransportCredentials(credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))),
+			grpc.WithTransportCredentials(transportCredentials),
 		)
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
 		}
 		defer unresolvableClientConn.Close()
-		interopgrpc.DoUnresolvableHost(
-			console.NewTB(),
-			testgrpc.NewTestServiceClient(unresolvableClientConn),
-		)
-	default:
-		log.Fatalf(`must set --implementation or -i to "connect-h2", "connect-h3" or "grpc-go"`)
+		testGrpc(clientConn, unresolvableClientConn)
+		return
 	}
+
+	// tests for connect clients
+	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flags.host, flags.port))
+	if err != nil {
+		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flags.host, flags.port))
+	}
+	tlsConfig := newTLSConfig(flags.certFile, flags.keyFile)
+	// create transport base on HTTP protocol of the implementation
+	var transport http.RoundTripper
+	switch flags.implementation {
+	case connectH1, connectGRPCH1, connectGRPCWebH1:
+		transport = &http.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	case connectGRPCH2, connectH2, connectGRPCWebH2:
+		transport = &http2.Transport{
+			TLSClientConfig: tlsConfig,
+		}
+	case connectH3, connectGRPCWebH3:
+		transport = &http3.RoundTripper{
+			TLSClientConfig: tlsConfig,
+		}
+	default:
+		log.Fatalf(`the --implementation or -i flag is invalid"`)
+	}
+	// create client options base on protocol of the implementation
+	var clientOptions []connect.ClientOption
+	switch flags.implementation {
+	case connectGRPCH1, connectGRPCH2:
+		clientOptions = append(clientOptions, connect.WithGRPC())
+	case connectGRPCWebH1, connectGRPCWebH2, connectGRPCWebH3:
+		clientOptions = append(clientOptions, connect.WithGRPCWeb())
+	}
+	// create test clients using the transport and client options
+	uncompressedClient := testingconnect.NewTestServiceClient(
+		&http.Client{Transport: transport},
+		serverURL.String(),
+		clientOptions...,
+	)
+	unresolvableClient := testingconnect.NewTestServiceClient(
+		&http.Client{Transport: transport},
+		"https://unresolvable-host.some.domain",
+		clientOptions...,
+	)
+	unimplementedClient := testingconnect.NewUnimplementedServiceClient(
+		&http.Client{Transport: transport},
+		serverURL.String(),
+		clientOptions...,
+	)
+	// add compress options to create compressed client
+	clientOptions = append(clientOptions, connect.WithSendGzip())
+	compressedClient := testingconnect.NewTestServiceClient(
+		&http.Client{Transport: transport},
+		serverURL.String(),
+		clientOptions...,
+	)
+
+	// run tests base on the implementation
+	switch flags.implementation {
+	// We skipped those streaming tests for http 1 test
+	case connectH1, connectGRPCH1, connectGRPCWebH1:
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+			testConnectUnary(client)
+			testConnectServerStreaming(client)
+		}
+		testConnectSpecialClients(unresolvableClient, unimplementedClient)
+	case connectGRPCH2, connectH2, connectGRPCWebH2:
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+			testConnectUnary(client)
+			testConnectServerStreaming(client)
+			testConnectClientStreaming(client)
+			testConnectBidiStreaming(client)
+			interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
+		}
+		testConnectSpecialClients(unresolvableClient, unimplementedClient)
+	case connectH3:
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+			testConnectUnary(client)
+			testConnectServerStreaming(client)
+			testConnectClientStreaming(client)
+			testConnectBidiStreaming(client)
+			// skipped the DoTimeoutOnSleepingServer test as quic-go wrapped the context error,
+			// see https://github.com/lucas-clemente/quic-go/blob/6fbc6d951a4005d7d9d086118e1572b9e8ff9851/http3/client.go#L276-L283
+		}
+		testConnectSpecialClients(unresolvableClient, unimplementedClient)
+	case connectGRPCWebH3:
+		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+			// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
+			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
+			// Once trailer support is available, they will be renabled.
+			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
+			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
+			interopconnect.DoClientStreaming(console.NewTB(), client)
+			interopconnect.DoServerStreaming(console.NewTB(), client)
+			interopconnect.DoPingPong(console.NewTB(), client)
+		}
+	}
+}
+
+func testConnectUnary(client testingconnect.TestServiceClient) {
+	interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
+	interopconnect.DoLargeUnaryCall(console.NewTB(), client)
+	interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
+	interopconnect.DoDuplicatedCustomMetadataUnary(console.NewTB(), client)
+	interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
+	interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
+	interopconnect.DoUnimplementedMethod(console.NewTB(), client)
+	interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+}
+
+func testConnectServerStreaming(client testingconnect.TestServiceClient) {
+	interopconnect.DoServerStreaming(console.NewTB(), client)
+	interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
+	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
+	interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
+	interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
+}
+
+func testConnectClientStreaming(client testingconnect.TestServiceClient) {
+	interopconnect.DoClientStreaming(console.NewTB(), client)
+	interopconnect.DoCancelAfterBegin(console.NewTB(), client)
+}
+
+func testConnectBidiStreaming(client testingconnect.TestServiceClient) {
+	interopconnect.DoPingPong(console.NewTB(), client)
+	interopconnect.DoEmptyStream(console.NewTB(), client)
+	interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
+	interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
+	interopconnect.DoDuplicatedCustomMetadataFullDuplex(console.NewTB(), client)
+	interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
+}
+
+func testConnectSpecialClients(
+	unresolvableClient testingconnect.TestServiceClient,
+	unimplementedClient testingconnect.UnimplementedServiceClient,
+) {
+	interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
+	interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
+	interopconnect.DoUnimplementedServerStreamingService(console.NewTB(), unimplementedClient)
+}
+
+func testGrpc(clientConn *grpc.ClientConn, unresolvableClientConn *grpc.ClientConn) {
+	client := testgrpc.NewTestServiceClient(clientConn)
+	unresolvableClient := testgrpc.NewTestServiceClient(unresolvableClientConn)
+	for _, args := range [][]grpc.CallOption{
+		nil,
+		{grpc.UseCompressor(gzip.Name)},
+	} {
+		interopgrpc.DoEmptyUnaryCall(console.NewTB(), client, args...)
+		interopgrpc.DoLargeUnaryCall(console.NewTB(), client, args...)
+		interopgrpc.DoClientStreaming(console.NewTB(), client, args...)
+		interopgrpc.DoServerStreaming(console.NewTB(), client, args...)
+		interopgrpc.DoPingPong(console.NewTB(), client, args...)
+		interopgrpc.DoEmptyStream(console.NewTB(), client, args...)
+		interopgrpc.DoTimeoutOnSleepingServer(console.NewTB(), client, args...)
+		interopgrpc.DoCancelAfterBegin(console.NewTB(), client, args...)
+		interopgrpc.DoCancelAfterFirstResponse(console.NewTB(), client, args...)
+		interopgrpc.DoCustomMetadata(console.NewTB(), client, args...)
+		interopgrpc.DoStatusCodeAndMessage(console.NewTB(), client, args...)
+		interopgrpc.DoSpecialStatusMessage(console.NewTB(), client, args...)
+		interopgrpc.DoUnimplementedMethod(console.NewTB(), clientConn, args...)
+		interopgrpc.DoUnimplementedServerStreamingMethod(console.NewTB(), client, args...)
+		interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, args...)
+		interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
+	}
+	interopgrpc.DoUnimplementedService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
+	interopgrpc.DoUnimplementedServerStreamingService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
+	interopgrpc.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 }
 
 func newTLSConfig(certFile, keyFile string) *tls.Config {
