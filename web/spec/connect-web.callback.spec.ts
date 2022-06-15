@@ -15,7 +15,7 @@
 import {
   Code,
   ConnectError,
-  createConnectTransport,
+  createGrpcWebTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
   makeCallbackClient,
@@ -48,7 +48,7 @@ function multiDone(done: DoneFn, count: number) {
 describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const transport = createConnectTransport({
+  const transport = createGrpcWebTransport({
     baseUrl: `https://${host}:${port}`,
   });
   const client = makeCallbackClient(TestService, transport);

@@ -15,7 +15,7 @@
 import {
   Code,
   ConnectError,
-  createConnectTransport,
+  createGrpcWebTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
   makePromiseClient,
@@ -39,7 +39,7 @@ declare const __karma__: any;
 describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const transport = createConnectTransport({
+  const transport = createGrpcWebTransport({
     baseUrl: `https://${host}:${port}`,
   });
   const client = makePromiseClient(TestService, transport);
@@ -304,8 +304,8 @@ describe("connect_web_promise_client", function () {
       }
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
-      expect((e as ConnectError)?.code).toEqual(Code.ResourceExhausted);
-      expect((e as ConnectError)?.rawMessage).toEqual("soirée 🎉");
+      expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
+      expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
       expect((e as ConnectError).details.length).toEqual(1);
       expect((e as ConnectError).details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
     }
