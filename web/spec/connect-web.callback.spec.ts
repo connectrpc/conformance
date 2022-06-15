@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import {
+  Code,
   ConnectError,
   createConnectTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
   makeCallbackClient,
-  StatusCode,
 } from "@bufbuild/connect-web";
 import {
   TestService,
@@ -68,7 +68,7 @@ describe("connect_web_callback_client", function () {
         expect(response).toEqual(new Empty());
         done();
       },
-      { timeout: deadlineMs }
+      { timeoutMs: deadlineMs }
     );
   });
   it("large_unary", function (done) {
@@ -210,13 +210,13 @@ describe("connect_web_callback_client", function () {
     const TEST_STATUS_MESSAGE = "test status message";
     const req = new SimpleRequest({
       responseStatus: {
-        code: StatusCode.Unknown,
+        code: Code.Unknown,
         message: TEST_STATUS_MESSAGE,
       },
     });
     client.unaryCall(req, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.Unknown);
+      expect(err?.code).toEqual(Code.Unknown);
       expect(err?.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
@@ -225,13 +225,13 @@ describe("connect_web_callback_client", function () {
     const TEST_STATUS_MESSAGE = `\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n`;
     const req = new SimpleRequest({
       responseStatus: {
-        code: StatusCode.Unknown,
+        code: Code.Unknown,
         message: TEST_STATUS_MESSAGE,
       },
     });
     client.unaryCall(req, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.Unknown);
+      expect(err?.code).toEqual(Code.Unknown);
       expect(err?.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
@@ -263,19 +263,19 @@ describe("connect_web_callback_client", function () {
           // Already asserted the error type above, ignore types-check error here for err.code.
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
-          [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(err?.code)
+          [Code.Unknown, Code.DeadlineExceeded].includes(err?.code)
         ).toBeTrue();
         done();
       },
       {
-        timeout: 1, // 1ms
+        timeoutMs: 1,
       }
     );
   });
   it("unimplemented_method", function (done) {
     client.unimplementedCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.Unimplemented);
+      expect(err?.code).toEqual(Code.Unimplemented);
       done();
     });
   });
@@ -287,7 +287,7 @@ describe("connect_web_callback_client", function () {
         },
         (err) => {
           expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          expect(err?.code).toEqual(Code.Unimplemented);
           done();
         }
     );
@@ -304,7 +304,7 @@ describe("connect_web_callback_client", function () {
         // Already asserted the error type above, ignore types-check error here for err.code.
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        [StatusCode.Unimplemented, StatusCode.NotFound].includes(err.code)
+        [Code.Unimplemented, Code.NotFound].includes(err.code)
       ).toBeTrue();
       done();
     });
@@ -318,7 +318,7 @@ describe("connect_web_callback_client", function () {
         },
         (err) => {
           expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          expect(err?.code).toEqual(Code.Unimplemented);
           done();
         }
     );
@@ -330,7 +330,7 @@ describe("connect_web_callback_client", function () {
     });
     client.failUnaryCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+      expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
       expect(err?.details.length).toEqual(1);
       expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
@@ -358,7 +358,7 @@ describe("connect_web_callback_client", function () {
         },
         (err) => {
           expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+          expect(err?.code).toEqual(Code.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
           expect(err?.details.length).toEqual(1);
           expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
