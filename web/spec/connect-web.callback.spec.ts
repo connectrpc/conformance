@@ -30,7 +30,7 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
-import {Any} from "@bufbuild/protobuf";
+import {TypeRegistry} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -48,8 +48,10 @@ function multiDone(done: DoneFn, count: number) {
 describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
+  const typeRegistry = TypeRegistry.from(ErrorDetail);
   const transport = createGrpcWebTransport({
     baseUrl: `https://${host}:${port}`,
+    typeRegistry: typeRegistry,
   });
   const client = makeCallbackClient(TestService, transport);
   it("empty_unary", function (done) {
@@ -332,8 +334,8 @@ describe("connect_web_callback_client", function () {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
-      expect(err?.rawDetails.length).toEqual(1);
-      expect((err?.rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect(err?.details.length).toEqual(1);
+      expect(err?.details[0].equals(expectedErrorDetail)).toBeTrue();
       done();
     });
   });
@@ -360,8 +362,8 @@ describe("connect_web_callback_client", function () {
           expect(err).toBeInstanceOf(ConnectError);
           expect(err?.code).toEqual(Code.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
-          expect(err?.rawDetails.length).toEqual(1);
-          expect((err?.rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
+          expect(err?.details.length).toEqual(1);
+          expect(err?.details[0].equals(expectedErrorDetail)).toBeTrue();
           done();
         }
     );

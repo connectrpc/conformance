@@ -30,7 +30,7 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
-import {Any} from "@bufbuild/protobuf";
+import {TypeRegistry} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -39,8 +39,10 @@ declare const __karma__: any;
 describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
+  const typeRegistry = TypeRegistry.from(ErrorDetail);
   const transport = createGrpcWebTransport({
     baseUrl: `https://${host}:${port}`,
+    typeRegistry: typeRegistry,
   });
   const client = makePromiseClient(TestService, transport);
   it("empty_unary", async function () {
@@ -280,8 +282,8 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      expect((e as ConnectError).rawDetails.length).toEqual(1);
-      expect(((e as ConnectError).rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect((e as ConnectError).details.length).toEqual(1);
+      expect((e as ConnectError).details[0].equals(expectedErrorDetail)).toBeTrue();
     }
   });
   it("fail_server_streaming", async function () {
@@ -306,8 +308,8 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      expect((e as ConnectError).rawDetails.length).toEqual(1);
-      expect(((e as ConnectError).rawDetails[0] as Any).equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect((e as ConnectError).details.length).toEqual(1);
+      expect((e as ConnectError).details[0].equals(expectedErrorDetail)).toBeTrue();
     }
   });
 });
