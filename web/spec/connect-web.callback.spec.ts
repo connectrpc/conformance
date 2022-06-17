@@ -13,12 +13,12 @@
 // limitations under the License.
 
 import {
+  Code,
   ConnectError,
-  createConnectTransport,
+  createGrpcWebTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
   makeCallbackClient,
-  StatusCode,
 } from "@bufbuild/connect-web";
 import {
   TestService,
@@ -30,7 +30,7 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
-import {Any} from "@bufbuild/protobuf";
+import {TypeRegistry} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -48,8 +48,10 @@ function multiDone(done: DoneFn, count: number) {
 describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const transport = createConnectTransport({
+  const typeRegistry = TypeRegistry.from(ErrorDetail);
+  const transport = createGrpcWebTransport({
     baseUrl: `https://${host}:${port}`,
+    typeRegistry: typeRegistry,
   });
   const client = makeCallbackClient(TestService, transport);
   it("empty_unary", function (done) {
@@ -68,7 +70,7 @@ describe("connect_web_callback_client", function () {
         expect(response).toEqual(new Empty());
         done();
       },
-      { timeout: deadlineMs }
+      { timeoutMs: deadlineMs }
     );
   });
   it("large_unary", function (done) {
@@ -210,13 +212,13 @@ describe("connect_web_callback_client", function () {
     const TEST_STATUS_MESSAGE = "test status message";
     const req = new SimpleRequest({
       responseStatus: {
-        code: StatusCode.Unknown,
+        code: Code.Unknown,
         message: TEST_STATUS_MESSAGE,
       },
     });
     client.unaryCall(req, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.Unknown);
+      expect(err?.code).toEqual(Code.Unknown);
       expect(err?.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
@@ -225,13 +227,13 @@ describe("connect_web_callback_client", function () {
     const TEST_STATUS_MESSAGE = `\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n`;
     const req = new SimpleRequest({
       responseStatus: {
-        code: StatusCode.Unknown,
+        code: Code.Unknown,
         message: TEST_STATUS_MESSAGE,
       },
     });
     client.unaryCall(req, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.Unknown);
+      expect(err?.code).toEqual(Code.Unknown);
       expect(err?.rawMessage).toEqual(TEST_STATUS_MESSAGE);
       done();
     });
@@ -263,19 +265,19 @@ describe("connect_web_callback_client", function () {
           // Already asserted the error type above, ignore types-check error here for err.code.
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
-          [StatusCode.Unknown, StatusCode.DeadlineExceeded].includes(err?.code)
+          [Code.Unknown, Code.DeadlineExceeded].includes(err?.code)
         ).toBeTrue();
         done();
       },
       {
-        timeout: 1, // 1ms
+        timeoutMs: 1,
       }
     );
   });
   it("unimplemented_method", function (done) {
     client.unimplementedCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.Unimplemented);
+      expect(err?.code).toEqual(Code.Unimplemented);
       done();
     });
   });
@@ -287,7 +289,7 @@ describe("connect_web_callback_client", function () {
         },
         (err) => {
           expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          expect(err?.code).toEqual(Code.Unimplemented);
           done();
         }
     );
@@ -304,7 +306,7 @@ describe("connect_web_callback_client", function () {
         // Already asserted the error type above, ignore types-check error here for err.code.
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
-        [StatusCode.Unimplemented, StatusCode.NotFound].includes(err.code)
+        [Code.Unimplemented, Code.NotFound].includes(err.code)
       ).toBeTrue();
       done();
     });
@@ -318,7 +320,7 @@ describe("connect_web_callback_client", function () {
         },
         (err) => {
           expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(StatusCode.Unimplemented);
+          expect(err?.code).toEqual(Code.Unimplemented);
           done();
         }
     );
@@ -330,10 +332,10 @@ describe("connect_web_callback_client", function () {
     });
     client.failUnaryCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
-      expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+      expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
       expect(err?.details.length).toEqual(1);
-      expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+      expect(expectedErrorDetail.equals(err?.details[0] as ErrorDetail)).toBeTrue();
       done();
     });
   });
@@ -358,10 +360,10 @@ describe("connect_web_callback_client", function () {
         },
         (err) => {
           expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(StatusCode.ResourceExhausted);
+          expect(err?.code).toEqual(Code.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
           expect(err?.details.length).toEqual(1);
-          expect(err?.details[0].equals(Any.pack(expectedErrorDetail))).toBeTrue();
+          expect(expectedErrorDetail.equals(err?.details[0] as ErrorDetail)).toBeTrue();
           done();
         }
     );

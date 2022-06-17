@@ -143,8 +143,8 @@ $(BIN)/protoc-gen-go: Makefile
 
 $(BIN)/protoc-gen-es: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.4
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.6
 
 $(BIN)/protoc-gen-connect-web: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.0-20220518200055-152f8020ecfa
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.7
