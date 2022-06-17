@@ -335,7 +335,7 @@ describe("connect_web_callback_client", function () {
       expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
       expect(err?.details.length).toEqual(1);
-      expect(err?.details[0].equals(expectedErrorDetail)).toBeTrue();
+      expect(expectedErrorDetail.equals(err?.details[0] as ErrorDetail)).toBeTrue();
       done();
     });
   });
@@ -363,7 +363,7 @@ describe("connect_web_callback_client", function () {
           expect(err?.code).toEqual(Code.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
           expect(err?.details.length).toEqual(1);
-          expect(err?.details[0].equals(expectedErrorDetail)).toBeTrue();
+          expect(expectedErrorDetail.equals(err?.details[0] as ErrorDetail)).toBeTrue();
           done();
         }
     );

@@ -283,7 +283,7 @@ describe("connect_web_promise_client", function () {
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
       expect((e as ConnectError).details.length).toEqual(1);
-      expect((e as ConnectError).details[0].equals(expectedErrorDetail)).toBeTrue();
+      expect(expectedErrorDetail.equals((e as ConnectError).details[0] as ErrorDetail)).toBeTrue();
     }
   });
   it("fail_server_streaming", async function () {
@@ -309,7 +309,7 @@ describe("connect_web_promise_client", function () {
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
       expect((e as ConnectError).details.length).toEqual(1);
-      expect((e as ConnectError).details[0].equals(expectedErrorDetail)).toBeTrue();
+      expect(expectedErrorDetail.equals((e as ConnectError).details[0] as ErrorDetail)).toBeTrue();
     }
   });
 });
