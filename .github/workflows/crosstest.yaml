@@ -1,7 +1,7 @@
 name: crosstest
 on:
   schedule:
-    - cron: 10 15 * * * # Runs 00:10 UTC, 20:10 Eastern
+    - cron: '14 10 * * *' # Runs 14:10 UTC, 10:10 Eastern
   workflow_dispatch: # support manual runs
     inputs:
       test_connect_go_branch:
@@ -25,7 +25,7 @@ permissions:
   contents: read
   issues: write
 jobs:
-  connect-go-crosstest:
+  connect-crosstest:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

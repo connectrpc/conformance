@@ -2,6 +2,7 @@
 
 [![License](https://img.shields.io/github/license/bufbuild/connect-crosstest?color=blue)][license]
 [![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
+[![crosstest](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml/badge.svg?branch=main)][github-action]
 
 `connect-crosstest` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
@@ -18,8 +19,8 @@ following clients and servers:
 - [grpc-web][grpc-web]
 - connect-web (still in private alpha)
 
-The test suite is run nightly against the latest commits of [connect-go][connect-go] and
-connect-web to ensure that we are continuously testing for compatibility.
+The test suite is run daily against the latest commits of [connect-go][connect-go], connect-web 
+and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
 
 For more on Connect, see the [announcement blog post][blog], the documentation
 on [connect.build][docs] (especially the [Getting Started] guide for Go), or
@@ -56,7 +57,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 
 ### Test Descriptions
 
-#### empty_unary**
+#### empty_unary
 
 RPC: `EmptyCall`
 
@@ -125,9 +126,9 @@ an error with the code `CANCELED`.
 
 #### cancel_after_first_response
 
-RPC: `StreamingInputCall`
+RPC: `FullDuplexCall`
 
-Client calls `StreamingInputCall`, receives a response, then cancels the context, then closes
+Client calls `FullDuplexCall`, receives a response, then cancels the context, then closes
 the stream, and expects an error with the code `CANCELED`.
 
 #### timeout_on_sleeping_server
@@ -210,13 +211,8 @@ Client calls an unresolvable host and expects an error with the status `UNAVAILA
 
 ### Github Actions
 
-There is a Github Actions workflow configured for running the nightly crosstest. This can
-also be used to trigger a manual run.
-
-In the [Github Action crosstest workflow][github-action], you can trigger a manual run of
-crosstest using the "Run workflow" button. This will also allow you to configure a branch
-for `connect-go`, `protobuf-es`, or `connect-web` if you want to use the Github Actions to
-test against a development branch of any of these packages.
+There is a [Github Actions workflow][github-action] configured for running the daily crosstest against 
+the latest commits of [connect-go][connect-go], connect-web and [protobuf-es][protobuf-es].
 
 ### Locally
 
@@ -229,9 +225,8 @@ You can run the tests using `make dockercomposetest`.
 
 > The following will no longer be needed once `connect-web` is public.
 
-For our NPM tests, we need to pull private packages, `connect-web` and `protobuf-es` from
-the NPM registry. This requires you to set a `NPM_TOKEN` env var in the environment you are
-running the tests from.
+For our NPM tests, we need to pull the private package `connect-web` from the NPM registry. 
+This requires you to set a `NPM_TOKEN` env var in the environment you are running the tests from.
 
 ## Support and Versioning
 
@@ -258,4 +253,5 @@ in mind.
 [grpc-web-interop]: https://github.com/grpc/grpc-web/blob/master/doc/interop-test-descriptions.md
 [grpc-web]: https://github.com/grpc/grpc-web
 [license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE
+[protobuf-es]: https://github.com/bufbuild/protobuf-es
 [test.proto]: https://github.com/bufbuild/connect-crosstest/blob/main/internal/proto/grpc/testing/test.proto
