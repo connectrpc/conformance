@@ -13,7 +13,7 @@
     "@bufbuild/connect-web": "0.0.7",
     "@bufbuild/protobuf": "0.0.6",
     "@types/karma": "^6.3.3",
-    "prettier": "^2.6.2"
+    "prettier": "^2.7.1"
   },
   "devDependencies": {
     "@types/caseless": "^0.12.2",
