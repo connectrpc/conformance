@@ -75,7 +75,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 	)
 	require.NoError(t, err)
 	assert.True(t, proto.Equal(&testpb.Empty{}, reply.Msg))
-	t.Successf("succcessful unary call")
+	t.Successf("successful unary call")
 }
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
@@ -130,12 +130,14 @@ func DoServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
 	var respCnt int
 	var index int
 	for stream.Receive() {
+		assert.NoError(t, stream.Err())
 		assert.Equal(t, stream.Msg().GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
 		assert.Equal(t, len(stream.Msg().GetPayload().GetBody()), respSizes[index])
 		index++
 		respCnt++
 	}
 	require.NoError(t, stream.Err())
+	require.NoError(t, stream.Close())
 	assert.Equal(t, respCnt, len(respSizes))
 	t.Successf("successful server streaming test")
 }
@@ -168,6 +170,7 @@ func DoPingPong(t crosstesting.TB, client connectpb.TestServiceClient) {
 	require.NoError(t, stream.CloseSend())
 	_, err := stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
+	require.NoError(t, stream.CloseReceive())
 	t.Successf("successful ping pong")
 }
 
@@ -179,6 +182,7 @@ func DoEmptyStream(t crosstesting.TB, client connectpb.TestServiceClient) {
 	_, err := stream.Receive()
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, io.EOF))
+	assert.NoError(t, stream.CloseReceive())
 	t.Successf("successful empty stream")
 }
 
@@ -208,6 +212,8 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceCl
 	_, err = stream.Receive()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeDeadlineExceeded)
+	assert.NoError(t, stream.CloseSend())
+	assert.NoError(t, stream.CloseReceive())
 	t.Successf("successful timeout on sleep")
 }
 
@@ -251,6 +257,8 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client connectpb.TestServiceC
 	cancel()
 	_, err = stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeCanceled)
+	assert.NoError(t, stream.CloseSend())
+	assert.Error(t, stream.CloseReceive()) // expected error on a canceled stream, but the error from quic-go will be different
 	t.Successf("successful cancel after first response")
 }
 
@@ -451,6 +459,7 @@ func customMetadataServerStreamingTest(
 	for stream.Receive() {
 		require.NoError(t, stream.Err())
 	}
+	assert.NoError(t, stream.Close())
 	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
 }
 
@@ -491,6 +500,7 @@ func customMetadataFullDuplexTest(
 	require.NoError(t, stream.CloseSend())
 	_, err = stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
+	require.NoError(t, stream.CloseReceive())
 	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
 }
 
@@ -539,6 +549,7 @@ func DoStatusCodeAndMessageFullDuplex(t crosstesting.TB, client connectpb.TestSe
 	require.NoError(t, stream.CloseSend())
 	_, err := stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
+	require.NoError(t, stream.CloseReceive())
 	assert.Equal(t, err.Error(), expectedErr.Error())
 	t.Successf("successful code and message full duplex")
 }
@@ -579,6 +590,7 @@ func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client connectpb.Te
 	err = stream.Err()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
+	require.NoError(t, stream.Close())
 	t.Successf("successful unimplemented server streaming method")
 }
 
@@ -597,6 +609,7 @@ func DoUnimplementedServerStreamingService(t crosstesting.TB, client connectpb.U
 	err = stream.Err()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
+	require.NoError(t, stream.Close())
 	t.Successf("successful unimplemented server streaming service")
 }
 
@@ -650,6 +663,7 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.
 	err = connectErr.Details()[0].UnmarshalTo(&errorDetail)
 	require.NoError(t, err)
 	assert.True(t, proto.Equal(&errorDetail, interop.ErrorDetail))
+	require.NoError(t, stream.Close())
 	t.Successf("successful fail server streaming with non-ASCII error")
 }
 
