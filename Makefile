@@ -103,12 +103,13 @@ endif
 	docker-compose run client-connect-grpc-to-server-grpc
 	docker-compose run client-grpc-to-server-connect
 	docker-compose run client-grpc-to-server-grpc
-	docker-compose run client-connect-web-to-server-connect-h1
-	docker-compose run client-connect-web-to-envoy-server-connect
-	docker-compose run client-connect-web-to-envoy-server-grpc
-	docker-compose run client-grpc-web-to-server-connect-h1
-	docker-compose run client-grpc-web-to-envoy-server-connect
-	docker-compose run client-grpc-web-to-envoy-server-grpc
+	docker-compose run client-web-connect-web-to-server-connect-h1
+	docker-compose run client-web-connect-grpc-web-to-server-connect-h1
+	docker-compose run client-web-connect-grpc-web-to-envoy-server-connect
+	docker-compose run client-web-connect-grpc-web-to-envoy-server-grpc
+	docker-compose run client-web-grpc-web-to-server-connect-h1
+	docker-compose run client-web-grpc-web-to-envoy-server-connect
+	docker-compose run client-web-grpc-web-to-envoy-server-grpc
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposeclean

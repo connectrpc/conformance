@@ -13,8 +13,10 @@
 // limitations under the License.
 
 import {
+  ClientTransport,
   Code,
   ConnectError,
+  createConnectTransport,
   createGrpcWebTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
@@ -40,10 +42,23 @@ describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const typeRegistry = TypeRegistry.from(ErrorDetail);
-  const transport = createGrpcWebTransport({
-    baseUrl: `https://${host}:${port}`,
-    typeRegistry: typeRegistry,
-  });
+  let transport: ClientTransport;
+  switch (__karma__.config.implementation) {
+    case "connect-web":
+      transport = createConnectTransport({
+        baseUrl: `https://${host}:${port}`,
+        typeRegistry: typeRegistry,
+      });
+      break;
+    case "connect-grpc-web":
+      transport = createGrpcWebTransport({
+        baseUrl: `https://${host}:${port}`,
+        typeRegistry: typeRegistry,
+      });
+      break;
+    default:
+      throw "unknown implementation flag for connect web test";
+  }
   const client = makePromiseClient(TestService, transport);
   it("empty_unary", async function () {
     const response = await client.emptyCall({});
