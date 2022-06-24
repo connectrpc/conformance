@@ -17,6 +17,7 @@ module.exports = function (config) {
   let testFiles = ["gen/**/*.ts"];
   switch (config.implementation) {
     case "connect-web":
+    case "connect-grpc-web":
       testFiles.push("spec/connect-web.*.spec.ts");
       break;
     case "grpc-web":
@@ -55,6 +56,7 @@ module.exports = function (config) {
     client: {
       host: config.host,
       port: config.port,
+      implementation: config.implementation,
     },
   });
 };
