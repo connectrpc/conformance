@@ -10,7 +10,7 @@
     "types-check": "tsc --noemit"
   },
   "dependencies": {
-    "@bufbuild/connect-web": "0.0.7",
+    "@bufbuild/connect-web": "0.0.8",
     "@bufbuild/protobuf": "0.0.6",
     "@types/karma": "^6.3.3",
     "prettier": "^2.7.1"
