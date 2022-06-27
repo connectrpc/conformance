@@ -6,8 +6,8 @@ require (
 	github.com/bufbuild/connect-go v0.1.1
 	github.com/lucas-clemente/quic-go v0.27.2
 	github.com/rs/cors v1.8.2
-	github.com/spf13/cobra v1.4.0
-	github.com/stretchr/testify v1.7.2
+	github.com/spf13/cobra v1.5.0
+	github.com/stretchr/testify v1.7.5
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93
 	google.golang.org/grpc v1.48.0-dev
 	google.golang.org/protobuf v1.28.0
