@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import {
-  ClientTransport,
   Code,
   ConnectError,
+  createCallbackClient,
   createConnectTransport,
   createGrpcWebTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
-  makeCallbackClient,
+  Transport,
 } from "@bufbuild/connect-web";
 import {
   TestService,
@@ -51,24 +51,24 @@ describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const typeRegistry = TypeRegistry.from(ErrorDetail);
-  let transport: ClientTransport;
+  let transport: Transport;
   switch (__karma__.config.implementation) {
     case "connect-web":
       transport = createConnectTransport({
         baseUrl: `https://${host}:${port}`,
-        typeRegistry: typeRegistry,
+        errorDetailRegistry: typeRegistry,
       });
       break;
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
         baseUrl: `https://${host}:${port}`,
-        typeRegistry: typeRegistry,
+        errorDetailRegistry: typeRegistry,
       });
       break;
     default:
       throw "unknown implementation flag for connect web test";
   }
-  const client = makeCallbackClient(TestService, transport);
+  const client = createCallbackClient(TestService, transport);
   it("empty_unary", function (done) {
     client.emptyCall({}, (err, response) => {
       expect(err).toBeUndefined();
@@ -310,7 +310,7 @@ describe("connect_web_callback_client", function () {
     );
   });
   it("unimplemented_service", function (done) {
-    const badClient = makeCallbackClient(UnimplementedService, transport);
+    const badClient = createCallbackClient(UnimplementedService, transport);
     badClient.unimplementedCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
       // We expect this to be either Unimplemented or NotFound, depending on the implementation.
@@ -327,7 +327,7 @@ describe("connect_web_callback_client", function () {
     });
   });
   it("unimplemented_server_streaming_service", function (done) {
-    const badClient = makeCallbackClient(UnimplementedService, transport);
+    const badClient = createCallbackClient(UnimplementedService, transport);
     badClient.unimplementedStreamingOutputCall(
         {},
         (response) => {

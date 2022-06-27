@@ -118,12 +118,12 @@ dockercomposeclean:
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.4.0
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.6.0
 
 $(BIN)/license-header: Makefile
 	@mkdir -p $(@D)
 	GOBIN=$(abspath $(@D)) $(GO) install \
-		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.4.0
+		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.6.0
 
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
@@ -144,8 +144,8 @@ $(BIN)/protoc-gen-go: Makefile
 
 $(BIN)/protoc-gen-es: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.6
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/protobuf-es/cmd/protoc-gen-es@v0.0.7
 
 $(BIN)/protoc-gen-connect-web: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.7
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/connect-web/cmd/protoc-gen-connect-web@v0.0.9

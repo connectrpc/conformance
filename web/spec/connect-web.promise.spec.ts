@@ -13,14 +13,14 @@
 // limitations under the License.
 
 import {
-  ClientTransport,
   Code,
   ConnectError,
   createConnectTransport,
   createGrpcWebTransport,
+  createPromiseClient,
   decodeBinaryHeader,
   encodeBinaryHeader,
-  makePromiseClient,
+  Transport,
 } from "@bufbuild/connect-web";
 import {
   TestService,
@@ -42,24 +42,24 @@ describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
   const typeRegistry = TypeRegistry.from(ErrorDetail);
-  let transport: ClientTransport;
+  let transport: Transport;
   switch (__karma__.config.implementation) {
     case "connect-web":
       transport = createConnectTransport({
         baseUrl: `https://${host}:${port}`,
-        typeRegistry: typeRegistry,
+        errorDetailRegistry: typeRegistry,
       });
       break;
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
         baseUrl: `https://${host}:${port}`,
-        typeRegistry: typeRegistry,
+        errorDetailRegistry: typeRegistry,
       });
       break;
     default:
       throw "unknown implementation flag for connect web test";
   }
-  const client = makePromiseClient(TestService, transport);
+  const client = createPromiseClient(TestService, transport);
   it("empty_unary", async function () {
     const response = await client.emptyCall({});
     expect(response).toEqual(new Empty());
@@ -90,7 +90,7 @@ describe("connect_web_promise_client", function () {
       };
     });
     let responseCount = 0;
-    for await (const response of await client.streamingOutputCall({
+    for await (const response of client.streamingOutputCall({
       responseParameters: responseParams,
     })) {
       expect(response.payload).toBeDefined();
@@ -101,7 +101,7 @@ describe("connect_web_promise_client", function () {
   });
   it("empty_stream", async function () {
     try {
-      for await (const response of await client.streamingOutputCall({
+      for await (const response of client.streamingOutputCall({
         responseParameters: [],
       })) {
         fail(`expecting no response in the empty stream, got: ${response}`);
@@ -150,7 +150,7 @@ describe("connect_web_promise_client", function () {
     const responseParams = [{
       size: size,
     }]
-    for await (const response of await client.streamingOutputCall({
+    for await (const response of client.streamingOutputCall({
       responseParameters: responseParams,
     }, {
       headers: {
@@ -217,7 +217,7 @@ describe("connect_web_promise_client", function () {
       ],
     });
     try {
-      for await (const response of await client.streamingOutputCall(request, {
+      for await (const response of client.streamingOutputCall(request, {
         timeoutMs: 1,
       })) {
         fail(`expecting no response from sleeping server, got: ${response}`);
@@ -246,7 +246,7 @@ describe("connect_web_promise_client", function () {
   });
   it("unimplemented_server_streaming_method", async function () {
     try {
-      for await (const response of await client.unimplementedStreamingOutputCall({})) {
+      for await (const response of client.unimplementedStreamingOutputCall({})) {
         fail(`expecting no response from fail server streaming, got: ${response}`);
       }
       fail("expected to catch an error");
@@ -256,7 +256,7 @@ describe("connect_web_promise_client", function () {
     }
   });
   it("unimplemented_service", async function () {
-    const badClient = makePromiseClient(UnimplementedService, transport);
+    const badClient = createPromiseClient(UnimplementedService, transport);
     try {
       await badClient.unimplementedCall({});
       fail("expected to catch an error");
@@ -274,10 +274,10 @@ describe("connect_web_promise_client", function () {
     }
   });
   it("unimplemented_server_streaming_service", async function () {
-    const badClient = makePromiseClient(UnimplementedService, transport);
+    const badClient = createPromiseClient(UnimplementedService, transport);
     try {
       await badClient.unimplementedStreamingOutputCall({});
-      for await (const response of await badClient.unimplementedStreamingOutputCall({})) {
+      for await (const response of badClient.unimplementedStreamingOutputCall({})) {
         fail(`expecting no response from unimplemented server streaming, got: ${response}`);
       }
       fail("expected to catch an error");
@@ -314,7 +314,7 @@ describe("connect_web_promise_client", function () {
       };
     });
     try {
-      for await (const response of await client.failStreamingOutputCall({
+      for await (const response of client.failStreamingOutputCall({
         responseParameters: responseParams,
       })) {
         fail(`expecting no response from fail server streaming, got: ${response}`);
