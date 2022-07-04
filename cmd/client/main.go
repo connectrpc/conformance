@@ -223,7 +223,7 @@ func run(flags *flags) {
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectGRPCWebH3:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			// For tests that depend  trailers, we only run them for HTTP2, since the HTTP3 client
+			// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
 			// Once trailer support is available, they will be renabled.
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
