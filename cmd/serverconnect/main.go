@@ -130,11 +130,9 @@ func run(flags *flags) {
 	var h3Server http3.Server
 	if flags.h3Port != "" {
 		h3Server = http3.Server{
-			Server: &http.Server{
-				Addr:      ":" + flags.h3Port,
-				Handler:   mux,
-				TLSConfig: tlsConfig,
-			},
+			Addr:      ":" + flags.h3Port,
+			Handler:   mux,
+			TLSConfig: tlsConfig,
 		}
 	}
 	protocols := []*serverpb.ProtocolSupport{
@@ -225,7 +223,7 @@ func run(flags *flags) {
 		log.Fatalln(err)
 	}
 	if flags.h3Port != "" {
-		if err := h3Server.Shutdown(ctx); err != nil {
+		if err := h3Server.Close(); err != nil {
 			log.Fatalln(err)
 		}
 	}
