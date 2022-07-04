@@ -9,7 +9,7 @@ require (
 	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.7.5
 	golang.org/x/net v0.0.0-20220531201128-c960675eff93
-	google.golang.org/grpc v1.48.0-dev
+	google.golang.org/grpc v1.49.0-dev
 	google.golang.org/protobuf v1.28.0
 )
 
