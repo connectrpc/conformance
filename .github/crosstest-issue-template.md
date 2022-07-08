@@ -1,7 +1,6 @@
 ---
-title: connect-crosstest workflow has failed
+title: {{ tools.context.action }} workflow has failed
 assignees: doriable
 labels: bug
 ---
-The most recent run of connect-crosstest against connect-go
-has failed, please investigate.
+The most recent run of {{ tools.context.action }} has failed, please investigate.

@@ -2,7 +2,8 @@
 
 [![License](https://img.shields.io/github/license/bufbuild/connect-crosstest?color=blue)][license]
 [![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
-[![crosstest](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml/badge.svg?branch=main)][github-action]
+[![crosstest-go](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-go.yaml/badge.svg?branch=main)][github-action]
+[![crosstest-web](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-web.yaml/badge.svg?branch=main)][github-action]
 
 `connect-crosstest` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:

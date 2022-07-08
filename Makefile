@@ -79,8 +79,22 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
-.PHONY: dockercomposetest
-dockercomposetest: dockercomposeclean
+.PHONY: dockercomposetestgo
+dockercomposetestgo: dockercomposeclean
+	docker-compose run client-connect-to-server-connect-h1
+	docker-compose run client-connect-to-server-connect-h2
+	docker-compose run client-connect-to-server-connect-h3
+	docker-compose run client-connect-grpc-to-server-connect-h1
+	docker-compose run client-connect-grpc-to-server-connect-h2
+	docker-compose run client-connect-grpc-web-to-server-connect-h1
+	docker-compose run client-connect-grpc-web-to-server-connect-h2
+	docker-compose run client-connect-grpc-to-server-grpc
+	docker-compose run client-grpc-to-server-connect
+	docker-compose run client-grpc-to-server-grpc
+	$(MAKE) dockercomposeclean
+
+.PHONY: dockercomposetestweb
+dockercomposetestweb: dockercomposeclean
 	@# The NPM_TOKEN checking can be remove when connect-web and protobuf-es become public
 ifeq ($(NPM_TOKEN),)
 	$(error "$$NPM_TOKEN must be set to run docker tests")
@@ -93,16 +107,6 @@ endif
 		--build-arg "NPM_TOKEN=$(NPM_TOKEN)" \
 		--ssh default \
 		.
-	docker-compose run client-connect-to-server-connect-h1
-	docker-compose run client-connect-to-server-connect-h2
-	docker-compose run client-connect-to-server-connect-h3
-	docker-compose run client-connect-grpc-to-server-connect-h1
-	docker-compose run client-connect-grpc-to-server-connect-h2
-	docker-compose run client-connect-grpc-web-to-server-connect-h1
-	docker-compose run client-connect-grpc-web-to-server-connect-h2
-	docker-compose run client-connect-grpc-to-server-grpc
-	docker-compose run client-grpc-to-server-connect
-	docker-compose run client-grpc-to-server-grpc
 	docker-compose run client-web-connect-web-to-server-connect-h1
 	docker-compose run client-web-connect-grpc-web-to-server-connect-h1
 	docker-compose run client-web-connect-grpc-web-to-envoy-server-connect
@@ -111,6 +115,11 @@ endif
 	docker-compose run client-web-grpc-web-to-envoy-server-connect
 	docker-compose run client-web-grpc-web-to-envoy-server-grpc
 	$(MAKE) dockercomposeclean
+
+.PHONY: dockercomposetest
+dockercomposetest:
+	$(MAKE) dockercomposetestgo
+	$(MAKE) dockercomposetestweb
 
 .PHONY: dockercomposeclean
 dockercomposeclean:
