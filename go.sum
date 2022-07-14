@@ -12,8 +12,6 @@ github.com/anmitsu/go-shlex v0.0.0-20161002113705-648efa622239/go.mod h1:2FmKhYU
 github.com/antihax/optional v1.0.0/go.mod h1:uupD/76wgC+ih3iEmQUL+0Ugr19nfwCT1kdvxnR2qWY=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
-github.com/bufbuild/connect-go v0.1.2-0.20220713142124-84b2b2f94bec h1:7jvT8JV9VEym3RGRuljvvgl8utO7ywnwvGF7sH7n4AU=
-github.com/bufbuild/connect-go v0.1.2-0.20220713142124-84b2b2f94bec/go.mod h1:4efZ2eXFENwd4p7tuLaL9m0qtTsCOzuBvrohvRGevDM=
 github.com/bufbuild/connect-go v0.1.2-0.20220714163050-ac4b4eef3ace h1:tMYKub2geZkwVfM6ZC7M7/pm8vpvpTgSGp+BGB1shb8=
 github.com/bufbuild/connect-go v0.1.2-0.20220714163050-ac4b4eef3ace/go.mod h1:4efZ2eXFENwd4p7tuLaL9m0qtTsCOzuBvrohvRGevDM=
 github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
