@@ -167,10 +167,10 @@ func DoPingPong(t crosstesting.TB, client connectpb.TestServiceClient) {
 		assert.Equal(t, len(reply.GetPayload().GetBody()), respSizes[index])
 		index++
 	}
-	require.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.CloseRequest())
 	_, err := stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
-	require.NoError(t, stream.CloseReceive())
+	require.NoError(t, stream.CloseResponse())
 	t.Successf("successful ping pong")
 }
 
@@ -178,11 +178,11 @@ func DoPingPong(t crosstesting.TB, client connectpb.TestServiceClient) {
 func DoEmptyStream(t crosstesting.TB, client connectpb.TestServiceClient) {
 	stream := client.FullDuplexCall(context.Background())
 	assert.NotNil(t, stream)
-	require.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.CloseRequest())
 	_, err := stream.Receive()
 	assert.Error(t, err)
 	assert.True(t, errors.Is(err, io.EOF))
-	assert.NoError(t, stream.CloseReceive())
+	assert.NoError(t, stream.CloseResponse())
 	t.Successf("successful empty stream")
 }
 
@@ -212,8 +212,8 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceCl
 	_, err = stream.Receive()
 	assert.Error(t, err)
 	assert.Equal(t, connect.CodeOf(err), connect.CodeDeadlineExceeded)
-	assert.NoError(t, stream.CloseSend())
-	assert.NoError(t, stream.CloseReceive())
+	assert.NoError(t, stream.CloseRequest())
+	assert.NoError(t, stream.CloseResponse())
 	t.Successf("successful timeout on sleep")
 }
 
@@ -257,8 +257,8 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client connectpb.TestServiceC
 	cancel()
 	_, err = stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeCanceled)
-	assert.NoError(t, stream.CloseSend())
-	assert.Error(t, stream.CloseReceive()) // expected error on a canceled stream, but the error from quic-go will be different
+	assert.NoError(t, stream.CloseRequest())
+	assert.Error(t, stream.CloseResponse()) // expected error on a canceled stream, but the error from quic-go will be different
 	t.Successf("successful cancel after first response")
 }
 
@@ -497,10 +497,10 @@ func customMetadataFullDuplexTest(
 	require.NoError(t, stream.Send(streamReq))
 	_, err = stream.Receive()
 	require.NoError(t, err)
-	require.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.CloseRequest())
 	_, err = stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
-	require.NoError(t, stream.CloseReceive())
+	require.NoError(t, stream.CloseResponse())
 	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
 }
 
@@ -546,10 +546,10 @@ func DoStatusCodeAndMessageFullDuplex(t crosstesting.TB, client connectpb.TestSe
 		ResponseStatus: respStatus,
 	}
 	require.NoError(t, stream.Send(streamReq))
-	require.NoError(t, stream.CloseSend())
+	require.NoError(t, stream.CloseRequest())
 	_, err := stream.Receive()
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnknown)
-	require.NoError(t, stream.CloseReceive())
+	require.NoError(t, stream.CloseResponse())
 	assert.Equal(t, err.Error(), expectedErr.Error())
 	t.Successf("successful code and message full duplex")
 }
