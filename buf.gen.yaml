@@ -13,10 +13,10 @@ plugins:
   - name: connect-go
     out: internal/gen/proto/connect
     opt: paths=source_relative
-  - name: es
+  - remote: buf.build/bufbuild/plugins/es:v0.0.9-1
     out: web/gen/proto/connect-web
     opt: target=ts
-  - name: connect-web
+  - remote: buf.build/bufbuild/plugins/connect-web:v0.0.10-1
     out: web/gen/proto/connect-web
     opt: target=ts
   - remote: buf.build/protocolbuffers/plugins/js:v3.20.1-1

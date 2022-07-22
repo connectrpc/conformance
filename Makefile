@@ -52,7 +52,7 @@ lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
 	$(BIN)/buf format -w .
 
 .PHONY: generate
-generate: node_modules $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/license-header ## Regenerate code and licenses
+generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/license-header ## Regenerate code and licenses
 	rm -rf internal/gen
 	rm -rf web/gen
 	PATH=$(BIN) $(BIN)/buf generate
@@ -124,9 +124,6 @@ dockercomposetest:
 .PHONY: dockercomposeclean
 dockercomposeclean:
 	-docker-compose down --rmi local --remove-orphans
-
-node_modules: web/package-lock.json
-	cd web; npm ci
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
