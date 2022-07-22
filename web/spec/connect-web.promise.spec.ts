@@ -15,6 +15,7 @@
 import {
   Code,
   ConnectError,
+  connectErrorDetails,
   createConnectTransport,
   createGrpcWebTransport,
   createPromiseClient,
@@ -32,7 +33,6 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
-import {TypeRegistry} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -41,19 +41,16 @@ declare const __karma__: any;
 describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const typeRegistry = TypeRegistry.from(ErrorDetail);
   let transport: Transport;
   switch (__karma__.config.implementation) {
     case "connect-web":
       transport = createConnectTransport({
         baseUrl: `https://${host}:${port}`,
-        errorDetailRegistry: typeRegistry,
       });
       break;
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
         baseUrl: `https://${host}:${port}`,
-        errorDetailRegistry: typeRegistry,
       });
       break;
     default:
@@ -297,8 +294,9 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      expect((e as ConnectError).details.length).toEqual(1);
-      expect(expectedErrorDetail.equals((e as ConnectError).details[0] as ErrorDetail)).toBeTrue();
+      const errDetails = connectErrorDetails((e as ConnectError), ErrorDetail);
+      expect(errDetails.length).toEqual(1);
+      expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
   });
   it("fail_server_streaming", async function () {
@@ -323,8 +321,9 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      expect((e as ConnectError).details.length).toEqual(1);
-      expect(expectedErrorDetail.equals((e as ConnectError).details[0] as ErrorDetail)).toBeTrue();
+      const errDetails = connectErrorDetails((e as ConnectError), ErrorDetail);
+      expect(errDetails.length).toEqual(1);
+      expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
   });
 });

@@ -15,6 +15,7 @@
 import {
   Code,
   ConnectError,
+  connectErrorDetails,
   createCallbackClient,
   createConnectTransport,
   createGrpcWebTransport,
@@ -32,7 +33,6 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
-import {TypeRegistry} from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
@@ -50,19 +50,16 @@ function multiDone(done: DoneFn, count: number) {
 describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const typeRegistry = TypeRegistry.from(ErrorDetail);
   let transport: Transport;
   switch (__karma__.config.implementation) {
     case "connect-web":
       transport = createConnectTransport({
         baseUrl: `https://${host}:${port}`,
-        errorDetailRegistry: typeRegistry,
       });
       break;
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
         baseUrl: `https://${host}:${port}`,
-        errorDetailRegistry: typeRegistry,
       });
       break;
     default:
@@ -349,8 +346,9 @@ describe("connect_web_callback_client", function () {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
-      expect(err?.details.length).toEqual(1);
-      expect(expectedErrorDetail.equals(err?.details[0] as ErrorDetail)).toBeTrue();
+      const errDetails = connectErrorDetails((err as ConnectError), ErrorDetail);
+      expect(errDetails.length).toEqual(1);
+      expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
       done();
     });
   });
@@ -377,8 +375,9 @@ describe("connect_web_callback_client", function () {
           expect(err).toBeInstanceOf(ConnectError);
           expect(err?.code).toEqual(Code.ResourceExhausted);
           expect(err?.rawMessage).toEqual("soirée 🎉");
-          expect(err?.details.length).toEqual(1);
-          expect(expectedErrorDetail.equals(err?.details[0] as ErrorDetail)).toBeTrue();
+          const errDetails = connectErrorDetails((err as ConnectError), ErrorDetail);
+          expect(errDetails.length).toEqual(1);
+          expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
           done();
         }
     );
