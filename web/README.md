@@ -6,9 +6,6 @@ and gRPC servers. The test cases are at parity with [gRPC-web interop test cases
 
 ## Developers
 
-In order to have access to the private `@bufbuild/connect-web` package, you'll need to use
-an `NPM_TOKEN` before running `npm install`.
-
 To lint and format:
 
 ```

@@ -95,18 +95,6 @@ dockercomposetestgo: dockercomposeclean
 
 .PHONY: dockercomposetestweb
 dockercomposetestweb: dockercomposeclean
-	@# The NPM_TOKEN checking can be remove when connect-web and protobuf-es become public
-ifeq ($(NPM_TOKEN),)
-	$(error "$$NPM_TOKEN must be set to run docker tests")
-endif
-	@# TODO: docker build is a work around for the --ssh, can be removed when connect-web become public
-	docker build \
-		-f Dockerfile.crosstestweb \
-		--build-arg "TEST_PROTOBUF_ES_BRANCH=$(TEST_PROTOBUF_ES_BRANCH)" \
-		--build-arg "TEST_CONNECT_WEB_BRANCH=$(TEST_CONNECT_WEB_BRANCH)" \
-		--build-arg "NPM_TOKEN=$(NPM_TOKEN)" \
-		--ssh default \
-		.
 	docker-compose run client-web-connect-web-to-server-connect-h1
 	docker-compose run client-web-connect-grpc-web-to-server-connect-h1
 	docker-compose run client-web-connect-grpc-web-to-envoy-server-connect

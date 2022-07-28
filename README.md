@@ -224,11 +224,6 @@ Compose V2, then click Apply & Restart.
 
 You can run the tests using `make dockercomposetest`.
 
-> The following will no longer be needed once `connect-web` is public.
-
-For our NPM tests, we need to pull the private package `connect-web` from the NPM registry. 
-This requires you to set a `NPM_TOKEN` env var in the environment you are running the tests from.
-
 ## Support and Versioning
 
 `connect-crosstest` works with:
