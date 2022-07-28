@@ -72,8 +72,8 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 
 func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
 	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
-	detail, anyErr := connect.NewErrorDetail(interop.ErrorDetail)
-	if anyErr != nil {
+	detail, detailErr := connect.NewErrorDetail(interop.ErrorDetail)
+	if detailErr != nil {
 		return nil, connect.NewError(connect.CodeInternal, errors.New("error when creating error details"))
 	}
 	err.AddDetail(detail)
@@ -120,8 +120,8 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 
 func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
 	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
-	detail, anyErr := connect.NewErrorDetail(interop.ErrorDetail)
-	if anyErr != nil {
+	detail, detailErr := connect.NewErrorDetail(interop.ErrorDetail)
+	if detailErr != nil {
 		return connect.NewError(connect.CodeInternal, errors.New("error when creating error details"))
 	}
 	err.AddDetail(detail)
