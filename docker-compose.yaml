@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --h3port "8082" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
     ports:
       - "8080:8080"
@@ -13,6 +15,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/servergrpc --port "8083" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8083:8083"
@@ -28,6 +32,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -35,6 +41,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -42,6 +50,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -49,6 +59,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -56,6 +68,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -63,6 +77,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -70,6 +86,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -77,6 +95,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-web-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -84,6 +104,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-web-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -91,6 +113,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
@@ -98,6 +122,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
@@ -105,6 +131,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstest
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
@@ -112,6 +140,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
     depends_on:
       - server-connect
@@ -119,6 +150,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-grpc-web"
     depends_on:
       - server-connect
@@ -126,6 +160,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-grpc-web"
     depends_on:
       - server-connect
@@ -134,6 +171,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-grpc-web"
     depends_on:
       - server-grpc
@@ -142,6 +182,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
       - server-connect
@@ -149,6 +192,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
     depends_on:
       - server-connect
@@ -157,6 +203,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
     depends_on:
       - server-grpc
