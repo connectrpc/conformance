@@ -143,8 +143,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
     depends_on:
       - server-connect
@@ -155,8 +153,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-grpc-web"
     depends_on:
       - server-connect
@@ -167,8 +163,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-grpc-web"
     depends_on:
       - server-connect
@@ -180,8 +174,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-grpc-web"
     depends_on:
       - server-grpc
@@ -193,8 +185,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
       - server-connect
@@ -205,8 +195,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
     depends_on:
       - server-connect
@@ -218,8 +206,6 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-        # TODO: Remove when connect-web is public.
-        NPM_TOKEN: "${NPM_TOKEN}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
     depends_on:
       - server-grpc
