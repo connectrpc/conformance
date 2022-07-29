@@ -7,8 +7,7 @@ ARG TEST_CONNECT_WEB_BRANCH
 ENV CHROME_BIN /usr/bin/chromium-browser
 RUN apk add --update --no-cache \
     chromium \
-    git && \
-    rm -rf /var/cache/apk/*
+    git
 COPY web/package.json web/package-lock.json /workspace/
 COPY web/.npmrc /workspace/
 COPY web/tsconfig.json web/karma.conf.js /workspace/
