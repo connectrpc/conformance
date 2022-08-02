@@ -31,12 +31,6 @@ jobs:
         with:
           driver: docker
           install: true
-      # TODO: Remove when connect-web is public.
-      - name: Configure Private Repo Access
-        uses: webfactory/ssh-agent@v0.5.4
-        with:
-          ssh-private-key: |
-            ${{ secrets.CONNECT_WEB_DEPLOY_KEY }}
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -48,16 +42,11 @@ jobs:
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
-          # TODO: Remove when connect-web is public.
-          NPM_TOKEN: ${{ secrets.NPM_RO_TOKEN }}
       - name: Lint
         # Often, lint & gofmt guidelines depend on the Go version. To prevent
         # conflicting guidance, run only on the most recent supported version.
         if: matrix.latest
         run: make lint && make checkgenerate
-        env:
-          # TODO: Remove when connect-web is public.
-          NPM_TOKEN: ${{ secrets.NPM_RO_TOKEN }}
   docker:
     runs-on: ubuntu-latest
     needs:
