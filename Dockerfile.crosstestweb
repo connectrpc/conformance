@@ -7,7 +7,6 @@ ARG TEST_CONNECT_WEB_BRANCH
 ENV CHROME_BIN /usr/bin/chromium-browser
 RUN apk add chromium
 COPY web/package.json web/package-lock.json /workspace/
-COPY web/.npmrc /workspace/
 COPY web/tsconfig.json web/karma.conf.js /workspace/
 COPY web/gen /workspace/gen
 COPY web/spec /workspace/spec
