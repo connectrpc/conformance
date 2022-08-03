@@ -9,7 +9,6 @@ RUN apk add --update --no-cache \
     chromium \
     git
 COPY web/package.json web/package-lock.json /workspace/
-COPY web/.npmrc /workspace/
 COPY web/tsconfig.json web/karma.conf.js /workspace/
 COPY web/gen /workspace/gen
 COPY web/spec /workspace/spec
