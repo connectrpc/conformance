@@ -81,6 +81,8 @@ checkgenerate:
 
 .PHONY: dockercomposetestgo
 dockercomposetestgo: dockercomposeclean
+	docker-compose run -d server-connect
+	docker-compose run -d server-grpc
 	docker-compose run client-connect-to-server-connect-h1
 	docker-compose run client-connect-to-server-connect-h2
 	docker-compose run client-connect-to-server-connect-h3
@@ -95,6 +97,9 @@ dockercomposetestgo: dockercomposeclean
 
 .PHONY: dockercomposetestweb
 dockercomposetestweb: dockercomposeclean
+	docker-compose run -d server-connect
+	docker-compose run -d server-grpc
+	docker-compose run -d envoy
 	docker-compose run client-web-connect-web-to-server-connect-h1
 	docker-compose run client-web-connect-grpc-web-to-server-connect-h1
 	docker-compose run client-web-connect-grpc-web-to-envoy-server-connect
