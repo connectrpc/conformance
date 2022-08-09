@@ -31,6 +31,7 @@ import (
 	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
+	grpchealth "github.com/bufbuild/connect-grpchealth-go"
 	"github.com/lucas-clemente/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
@@ -84,6 +85,10 @@ func bind(cmd *cobra.Command, flagset *flags) error {
 
 func run(flags *flags) {
 	mux := http.NewServeMux()
+	checker := grpchealth.NewStaticChecker(
+		testingconnect.TestServiceName,
+	)
+	mux.Handle(grpchealth.NewHandler(checker))
 	mux.Handle(testingconnect.NewTestServiceHandler(
 		interopconnect.NewTestServiceHandler(),
 	))

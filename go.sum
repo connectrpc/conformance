@@ -14,6 +14,8 @@ github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24
 github.com/bradfitz/go-smtpd v0.0.0-20170404230938-deb6d6237625/go.mod h1:HYsPBTaaSFSlLx/70C2HPIMNZpVV8+vt/A+FMnYP11g=
 github.com/bufbuild/connect-go v0.3.0 h1:B0vyZrTR11SNEYpodL6P0NzluDCsuqmr8CNKblXvVto=
 github.com/bufbuild/connect-go v0.3.0/go.mod h1:4efZ2eXFENwd4p7tuLaL9m0qtTsCOzuBvrohvRGevDM=
+github.com/bufbuild/connect-grpchealth-go v0.1.0 h1:r3HMBCXkqocR7z1ET98kteRE5K4B84lP9XMCRQXIGmw=
+github.com/bufbuild/connect-grpchealth-go v0.1.0/go.mod h1:Vm0Mk9/DurVa0pThTknZTXTzzfNio6EDpU64SP4JONc=
 github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23/go.mod h1:bbYlZJ7hK1yFx9hf58LP0zeX7UjIGs20ufpu3evjr+s=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/cespare/xxhash/v2 v2.1.1/go.mod h1:VGX0DQ3Q6kWi7AoAeZDth3/j3BFtOZR5XLFGgcrjCOs=
