@@ -11,6 +11,11 @@ services:
       - "8080:8080"
       - "8081:8081"
       - "8082:8082"
+    healthcheck:
+      test: [ "CMD", "/usr/local/bin/grpc-health-probe", "-addr=localhost:8081", "-service=grpc.testing.TestService", "-tls", "-tls-ca-cert=cert/CrosstestCA.crt", "-tls-server-name=server-connect"]
+      interval: 1s
+      timeout: 1s
+      retries: 5
   server-grpc:
     build:
       context: .
@@ -20,6 +25,11 @@ services:
     entrypoint: /usr/local/bin/servergrpc --port "8083" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8083:8083"
+    healthcheck:
+      test: [ "CMD", "/usr/local/bin/grpc-health-probe", "-addr=localhost:8083", "-service=grpc.testing.TestService", "-tls", "-tls-ca-cert=cert/CrosstestCA.crt", "-tls-server-name=server-grpc"]
+      interval: 1s
+      timeout: 1s
+      retries: 5
   envoy:
     image: envoyproxy/envoy:v1.20-latest
     ports:
@@ -28,6 +38,11 @@ services:
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./cert:/cert/:ro
+    depends_on:
+      server-connect:
+        condition: service_healthy
+      server-grpc:
+        condition: service_healthy
   client-connect-to-server-connect-h1:
     build:
       context: .
@@ -36,7 +51,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-to-server-connect-h2:
     build:
       context: .
@@ -45,7 +61,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-to-server-connect-h3:
     build:
       context: .
@@ -54,7 +71,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-to-server-connect-h1:
     build:
       context: .
@@ -63,7 +81,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-to-server-connect-h2:
     build:
       context: .
@@ -72,7 +91,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-to-server-connect-h3:
     build:
       context: .
@@ -81,7 +101,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-web-to-server-connect-h1:
     build:
       context: .
@@ -90,7 +111,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-web-to-server-connect-h2:
     build:
       context: .
@@ -99,7 +121,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-web-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-web-to-server-connect-h3:
     build:
       context: .
@@ -108,7 +131,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-web-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-connect-grpc-to-server-grpc:
     build:
       context: .
@@ -117,7 +141,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-grpc
+      server-grpc:
+        condition: service_healthy
   client-grpc-to-server-connect:
     build:
       context: .
@@ -126,7 +151,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-grpc-to-server-grpc:
     build:
       context: .
@@ -135,7 +161,8 @@ services:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-grpc
+      server-grpc:
+        condition: service_healthy
   client-web-connect-web-to-server-connect-h1:
     build:
       context: .
@@ -145,7 +172,8 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-web-connect-grpc-web-to-server-connect-h1:
     build:
       context: .
@@ -155,7 +183,8 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-grpc-web"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-web-connect-grpc-web-to-envoy-server-connect:
     build:
       context: .
@@ -165,7 +194,6 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-grpc-web"
     depends_on:
-      - server-connect
       - envoy
   client-web-connect-grpc-web-to-envoy-server-grpc:
     build:
@@ -176,7 +204,6 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-grpc-web"
     depends_on:
-      - server-grpc
       - envoy
   client-web-grpc-web-to-server-connect-h1:
     build:
@@ -187,7 +214,8 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
-      - server-connect
+      server-connect:
+        condition: service_healthy
   client-web-grpc-web-to-envoy-server-connect:
     build:
       context: .
@@ -197,7 +225,6 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
     depends_on:
-      - server-connect
       - envoy
   client-web-grpc-web-to-envoy-server-grpc:
     build:
@@ -208,5 +235,4 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
     depends_on:
-      - server-grpc
       - envoy
