@@ -19,14 +19,10 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 RUN --mount=type=cache,target=/root/.cache/go-build \
     CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
     go build -o /go/bin/servergrpc ./cmd/servergrpc
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
-    go install github.com/grpc-ecosystem/grpc-health-probe@v0.4.11
 
 FROM --platform=${TARGETPLATFORM} alpine:3.16.1
 
 COPY --from=builder /go/bin/client /usr/local/bin/client
 COPY --from=builder /go/bin/serverconnect /usr/local/bin/serverconnect
 COPY --from=builder /go/bin/servergrpc /usr/local/bin/servergrpc
-COPY --from=builder /go/bin/grpc-health-probe /usr/local/bin/grpc-health-probe
 COPY --from=builder /workspace/cert /cert
