@@ -30,8 +30,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip" // this register the gzip compressor to the grpc server
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -103,9 +101,6 @@ func run(flagset *flags) {
 	}
 	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
-	healthServer := health.NewServer()
-	healthServer.SetServingStatus(testrpc.TestService_ServiceDesc.ServiceName, grpc_health_v1.HealthCheckResponse_SERVING)
-	grpc_health_v1.RegisterHealthServer(server, healthServer)
 	_ = server.Serve(lis)
 	defer server.GracefulStop()
 }
