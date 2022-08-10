@@ -28,6 +28,9 @@ services:
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
       - ./cert:/cert/:ro
+    depends_on:
+      - server-connect
+      - server-grpc
   client-connect-to-server-connect-h1:
     build:
       context: .
@@ -165,7 +168,6 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-grpc-web"
     depends_on:
-      - server-connect
       - envoy
   client-web-connect-grpc-web-to-envoy-server-grpc:
     build:
@@ -176,7 +178,6 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-grpc-web"
     depends_on:
-      - server-grpc
       - envoy
   client-web-grpc-web-to-server-connect-h1:
     build:
@@ -197,7 +198,6 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
     depends_on:
-      - server-connect
       - envoy
   client-web-grpc-web-to-envoy-server-grpc:
     build:
@@ -208,5 +208,4 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
     depends_on:
-      - server-grpc
       - envoy
