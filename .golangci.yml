@@ -46,6 +46,12 @@ issues:
     # Don't ban use of fmt.Errorf to create new errors, but the remaining
     # checks from err113 are useful.
     - "err113: do not define dynamic errors.*"
+    # Don't ban use of protobuf enums that contains underscore as they are generated,
+    # but the remaining checks from nosnakecase are useful.
+    # These can be removed when https://github.com/sivchari/nosnakecase/issues/14 is resolved.
+    - "Protocol_PROTOCOL_GRPC contains underscore. You should use mixedCap or MixedCap."
+    - "Protocol_PROTOCOL_GRPC_WEB contains underscore. You should use mixedCap or MixedCap."
+    - "PayloadType_COMPRESSABLE contains underscore. You should use mixedCap or MixedCap."
   exclude-rules:
     # We need to init some globals to use in tests.
     - linters: [gochecknoglobals]
@@ -61,3 +67,7 @@ issues:
     - linters: [gocritic]
       path: cmd/serverconnect/main.go
       text: "exitAfterDefer: log.Fatalln will exit"
+    # We can skip this check as the server is for test purpose only.
+    - linters: [gosec]
+      path: cmd/serverconnect/main.go
+      text: "G112: Potential Slowloris Attack because ReadHeaderTimeout is not configured in the http.Server"
