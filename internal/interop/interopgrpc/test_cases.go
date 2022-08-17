@@ -71,20 +71,19 @@ const (
 )
 
 var (
-	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
-	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 )
 
-// clientNewPayload returns a payload of the given type and size.
-func clientNewPayload(t crosstesting.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
+// clientNewPayload returns a payload of the given size.
+func clientNewPayload(t crosstesting.TB, size int) (*testpb.Payload, error) {
 	t.Helper()
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
-	assert.Equal(t, payloadType, testpb.PayloadType_COMPRESSABLE)
 	return &testpb.Payload{
-		Type: payloadType,
+		Type: testpb.PayloadType_COMPRESSABLE,
 		Body: body,
 	}, nil
 }
@@ -99,7 +98,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args .
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
 func DoLargeUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	pl, err := clientNewPayload(t, largeReqSize)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -119,7 +118,7 @@ func DoClientStreaming(t crosstesting.TB, client testpb.TestServiceClient, args 
 	require.NoError(t, err)
 	var sum int
 	for _, size := range reqSizes {
-		pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
+		pl, err := clientNewPayload(t, size)
 		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
@@ -177,7 +176,7 @@ func DoPingPong(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc
 				Size: int32(respSizes[index]),
 			},
 		}
-		pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
+		pl, err := clientNewPayload(t, reqSizes[index])
 		require.NoError(t, err)
 		req := &testpb.StreamingOutputCallRequest{
 			ResponseType:       testpb.PayloadType_COMPRESSABLE,
@@ -221,7 +220,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClien
 		}
 	}
 	require.NoError(t, err)
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := clientNewPayload(t, 27182)
 	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -235,7 +234,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClien
 	t.Successf("successful timeout on sleep")
 }
 
-var testMetadata = metadata.MD{ // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+var testMetadata = metadata.MD{ //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 	"key1": []string{"value1"},
 	"key2": []string{"value2"},
 }
@@ -261,7 +260,7 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client testpb.TestServiceClie
 			Size: 31415,
 		},
 	}
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := clientNewPayload(t, 27182)
 	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
@@ -283,11 +282,11 @@ const (
 )
 
 var (
-	customMetadata = metadata.Pairs( // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	customMetadata = metadata.Pairs( //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 	)
-	duplicatedCustomMetadata = metadata.Pairs( // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	duplicatedCustomMetadata = metadata.Pairs( //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 		leadingMetadataKey, leadingMetadataValue,
 		trailingMetadataKey, trailingMetadataValue,
 		leadingMetadataKey, leadingMetadataValue+",more_stuff",
@@ -345,7 +344,7 @@ func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, cust
 }
 
 func customMetadataUnaryTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
-	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -367,7 +366,7 @@ func customMetadataUnaryTest(t crosstesting.TB, client testpb.TestServiceClient,
 }
 
 func customMetadataServerStreamingTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
-	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
 	respParam := []*testpb.ResponseParameters{
@@ -394,7 +393,7 @@ func customMetadataServerStreamingTest(t crosstesting.TB, client testpb.TestServ
 }
 
 func customMetadataFullDuplexTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
-	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
 	stream, err := client.FullDuplexCall(ctx, args...)

@@ -49,20 +49,19 @@ const (
 )
 
 var (
-	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
-	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	reqSizes  = []int{twoFiftyKiB, eightBytes, oneKiB, thirtyTwoKiB}      //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+	respSizes = []int{fiveHundredKiB, sixteenBytes, twoKiB, sixtyFourKiB} //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 )
 
-// clientNewPayload returns a payload of the given type and size.
-func clientNewPayload(t crosstesting.TB, payloadType testpb.PayloadType, size int) (*testpb.Payload, error) {
+// clientNewPayload returns a payload of the given size.
+func clientNewPayload(t crosstesting.TB, size int) (*testpb.Payload, error) {
 	t.Helper()
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
-	assert.Equal(t, payloadType, testpb.PayloadType_COMPRESSABLE)
 	return &testpb.Payload{
-		Type: payloadType,
+		Type: testpb.PayloadType_COMPRESSABLE,
 		Body: body,
 	}, nil
 }
@@ -80,7 +79,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
 func DoLargeUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, largeReqSize)
+	pl, err := clientNewPayload(t, largeReqSize)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -99,7 +98,7 @@ func DoClientStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
 	stream := client.StreamingInputCall(context.Background())
 	var sum int
 	for _, size := range reqSizes {
-		pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, size)
+		pl, err := clientNewPayload(t, size)
 		require.NoError(t, err)
 		req := &testpb.StreamingInputCallRequest{
 			Payload: pl,
@@ -153,7 +152,7 @@ func DoPingPong(t crosstesting.TB, client connectpb.TestServiceClient) {
 				Size: int32(respSizes[index]),
 			},
 		}
-		pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, reqSizes[index])
+		pl, err := clientNewPayload(t, reqSizes[index])
 		require.NoError(t, err)
 		req := &testpb.StreamingOutputCallRequest{
 			ResponseType:       testpb.PayloadType_COMPRESSABLE,
@@ -192,7 +191,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceCl
 	defer cancel()
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := clientNewPayload(t, 27182)
 	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -217,7 +216,7 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client connectpb.TestServiceCl
 	t.Successf("successful timeout on sleep")
 }
 
-var testMetadata = metadata.MD{ // nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
+var testMetadata = metadata.MD{ //nolint:gochecknoglobals // We do want to make this a global so that we can use it in multiple methods
 	"key1": []string{"value1"},
 	"key2": []string{"value2"},
 }
@@ -244,7 +243,7 @@ func DoCancelAfterFirstResponse(t crosstesting.TB, client connectpb.TestServiceC
 			Size: 31415,
 		},
 	}
-	pl, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 27182)
+	pl, err := clientNewPayload(t, 27182)
 	require.NoError(t, err)
 	req := &testpb.StreamingOutputCallRequest{
 		ResponseType:       testpb.PayloadType_COMPRESSABLE,
@@ -397,7 +396,7 @@ func customMetadataUnaryTest(
 	customMetadataBinary map[string][][]byte,
 ) {
 	// Testing with UnaryCall.
-	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
 		ResponseType: testpb.PayloadType_COMPRESSABLE,
@@ -432,7 +431,7 @@ func customMetadataServerStreamingTest(
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
 ) {
-	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	respParam := []*testpb.ResponseParameters{
 		{
@@ -469,7 +468,7 @@ func customMetadataFullDuplexTest(
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
 ) {
-	payload, err := clientNewPayload(t, testpb.PayloadType_COMPRESSABLE, 1)
+	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	ctx := context.Background()
 	stream := client.FullDuplexCall(ctx)
@@ -559,7 +558,7 @@ func DoStatusCodeAndMessageFullDuplex(t crosstesting.TB, client connectpb.TestSe
 func DoSpecialStatusMessage(t crosstesting.TB, client connectpb.TestServiceClient) {
 	code := int32(connect.CodeUnknown)
 	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
-	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg)) // nolint:stylecheck // we do want to test the behaviour for error string that end with a newline
+	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg)) //nolint:stylecheck // we do want to test the behaviour for error string that end with a newline
 	req := &testpb.SimpleRequest{
 		ResponseStatus: &testpb.EchoStatus{
 			Code:    code,
