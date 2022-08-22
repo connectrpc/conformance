@@ -195,7 +195,7 @@ func run(flags *flags) {
 
 	// run tests base on the implementation
 	switch flags.implementation {
-	// We skipped those streaming tests for http 1 test
+	// We skipped those client and bidi streaming tests for http 1 test
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			testConnectUnary(client)
