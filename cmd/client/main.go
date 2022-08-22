@@ -225,7 +225,7 @@ func run(flags *flags) {
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
-			// Once trailer support is available, they will be renabled.
+			// Once trailer support is available, they will be reenabled.
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
 			interopconnect.DoClientStreaming(console.NewTB(), client)
