@@ -195,7 +195,7 @@ func run(flags *flags) {
 
 	// run tests base on the implementation
 	switch flags.implementation {
-	// We skipped those streaming tests for http 1 test
+	// We skipped those client and bidi streaming tests for http 1 test
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			testConnectUnary(client)
@@ -225,7 +225,7 @@ func run(flags *flags) {
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
-			// Once trailer support is available, they will be renabled.
+			// Once trailer support is available, they will be reenabled.
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
 			interopconnect.DoClientStreaming(console.NewTB(), client)
