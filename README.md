@@ -2,8 +2,8 @@
 
 [![License](https://img.shields.io/github/license/bufbuild/connect-crosstest?color=blue)][license]
 [![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
-[![crosstest-go](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-go.yaml/badge.svg?branch=main)][github-action]
-[![crosstest-web](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-web.yaml/badge.svg?branch=main)][github-action]
+[![crosstest-go](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-go.yaml/badge.svg?branch=main)][github-action-go]
+[![crosstest-web](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-web.yaml/badge.svg?branch=main)][github-action-web]
 
 `connect-crosstest` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
@@ -17,10 +17,10 @@ following clients and servers:
 
 - Connect, using [Connect's Go implementation][connect-go]
 - gRPC, using [grpc-go][grpc-go]
+- [connect-web][connect-web]
 - [grpc-web][grpc-web]
-- connect-web (still in private alpha)
 
-The test suite is run daily against the latest commits of [connect-go][connect-go], connect-web 
+The test suite is run daily against the latest commits of [connect-go][connect-go], [connect-web][connect-web] 
 and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
 
 For more on Connect, see the [announcement blog post][blog], the documentation
@@ -212,8 +212,8 @@ Client calls an unresolvable host and expects an error with the status `UNAVAILA
 
 ### Github Actions
 
-There is a [Github Actions workflow][github-action] configured for running the daily crosstest against 
-the latest commits of [connect-go][connect-go], connect-web and [protobuf-es][protobuf-es].
+There are Github Actions workflows for [go][github-action-go] and [web][github-action-web] configured for running the daily crosstest against 
+the latest commits of [connect-go][connect-go], [connect-web][connect-web] and [protobuf-es][protobuf-es].
 
 ### Locally
 
@@ -239,10 +239,12 @@ in mind.
 [blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml
 [connect-go]: https://github.com/bufbuild/connect-go
+[connect-web]: https://github.com/bufbuild/connect-web
 [demo]: https://github.com/bufbuild/connect-demo
 [docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
 [docs]: https://connect.build
-[github-action]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest.yaml
+[github-action-go]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-go.yaml
+[github-action-web]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-web.yaml
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [grpc-go]: https://github.com/grpc/grpc-go
 [grpc-interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
