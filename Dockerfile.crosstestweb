@@ -15,14 +15,16 @@ COPY web/spec /workspace/spec
 RUN npm install
 RUN local_npm_packages="" && \
     if [ ! -z "${TEST_PROTOBUF_ES_BRANCH}" ]; then \
-        git clone --branch "${TEST_PROTOBUF_ES_BRANCH}" --depth 1 https://github.com/bufbuild/protobuf-es.git && \
-        npm --prefix ./protobuf-es/packages/protobuf/ run build && \
-        local_npm_packages="${local_npm_packages} ./protobuf-es/packages/protobuf/"; \
+        git clone --branch "${TEST_PROTOBUF_ES_BRANCH}" --depth 1 https://github.com/bufbuild/protobuf-es.git ../protobuf-es && \
+        npm --prefix ../protobuf-es install --ignore-script esbuild && \
+        npm --prefix ../protobuf-es -w @bufbuild/protobuf run build && \
+        local_npm_packages="${local_npm_packages} ../protobuf-es/packages/protobuf/"; \
     fi && \
     if [ ! -z "${TEST_CONNECT_WEB_BRANCH}" ]; then \
-        git clone --branch "${TEST_CONNECT_WEB_BRANCH}" --depth 1 https://github.com/bufbuild/connect-web.git && \
-        npm --prefix ./connect-web/packages/connect-web/ run build && \
-        local_npm_packages="${local_npm_packages} ./connect-web/packages/connect-web/"; \
+        git clone --branch "${TEST_CONNECT_WEB_BRANCH}" --depth 1 https://github.com/bufbuild/connect-web.git ../connect-web && \
+        npm --prefix ../connect-web install && \
+        npm --prefix ../connect-web -w @bufbuild/connect-web run build && \
+        local_npm_packages="${local_npm_packages} ../connect-web/packages/connect-web/"; \
     fi && \
     if [ ! -z "${local_npm_packages}" ]; then \
         npm link ${local_npm_packages}; \
