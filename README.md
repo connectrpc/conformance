@@ -11,14 +11,14 @@ following clients and servers:
 ### Servers
 
 - Connect, using [Connect's Go implementation][connect-go]
-- gRPC, using [gRPC-go][grpc-go]
+- gRPC, using [grpc-go][grpc-go]
 
 ### Clients
 
 - [connect-go][connect-go] (connect protocol, gRPC protocol and gRPC-web protocol)
-- [gRPC-go][grpc-go]
+- [grpc-go][grpc-go]
 - [connect-web][connect-web] (connect protocol and gRPC-web protocol)
-- [gRPC-web][grpc-web]
+- [grpc-web][grpc-web]
 
 The test suite is run daily against the latest commits of [connect-go][connect-go], [connect-web][connect-web] 
 and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
@@ -29,7 +29,7 @@ the [demo service][demo].
 
 ## Test Suite
 
-The test suite is a superset of [gRPC][grpc-interop] and [gRPC-web][grpc-web-interop] interop
+The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
 a range of expected behaviours and functionality for gRPC and Connect.
 
