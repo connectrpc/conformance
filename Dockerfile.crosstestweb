@@ -16,7 +16,7 @@ RUN npm install
 RUN local_npm_packages="" && \
     if [ ! -z "${TEST_PROTOBUF_ES_BRANCH}" ]; then \
         git clone --branch "${TEST_PROTOBUF_ES_BRANCH}" --depth 1 https://github.com/bufbuild/protobuf-es.git ../protobuf-es && \
-        npm --prefix ../protobuf-es install --ignore-script esbuild && \
+        npm --prefix ../protobuf-es install && \
         npm --prefix ../protobuf-es -w @bufbuild/protobuf run build && \
         local_npm_packages="${local_npm_packages} ../protobuf-es/packages/protobuf/"; \
     fi && \
