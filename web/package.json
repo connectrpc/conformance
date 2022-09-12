@@ -10,8 +10,8 @@
     "types-check": "tsc --noemit"
   },
   "dependencies": {
-    "@bufbuild/connect-web": "^0.1.0",
-    "@bufbuild/protobuf": "^0.0.10",
+    "@bufbuild/connect-web": "^0.2.1",
+    "@bufbuild/protobuf": "^0.1.1",
     "prettier": "^2.7.1"
   },
   "devDependencies": {
