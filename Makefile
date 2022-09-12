@@ -138,4 +138,4 @@ $(BIN)/protoc-gen-go-grpc: Makefile
 
 $(BIN)/protoc-gen-go: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.0
+	GOBIN=$(abspath $(@D)) $(GO) install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
