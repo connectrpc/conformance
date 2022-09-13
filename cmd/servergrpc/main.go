@@ -18,7 +18,6 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -110,7 +109,7 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 	if err != nil {
 		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
-	caCert, err := ioutil.ReadFile("cert/CrosstestCA.crt")
+	caCert, err := os.ReadFile("cert/CrosstestCA.crt")
 	if err != nil {
 		log.Fatalf("Error opening cert file")
 	}
