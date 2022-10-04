@@ -12,10 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.18.x]
-        include:
-          - go: 1.18.x
-            latest: true
+        go-version: 1.19.x
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -42,9 +39,6 @@ jobs:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
       - name: Lint
-        # Often, lint & gofmt guidelines depend on the Go version. To prevent
-        # conflicting guidance, run only on the most recent supported version.
-        if: matrix.latest
         run: make lint && make checkgenerate
   docker:
     runs-on: ubuntu-latest
