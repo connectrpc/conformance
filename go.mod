@@ -7,7 +7,7 @@ require (
 	github.com/lucas-clemente/quic-go v0.30.0
 	github.com/rs/cors v1.8.2
 	github.com/spf13/cobra v1.6.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/net v0.0.0-20221004154528-8021a29435af
 	google.golang.org/grpc v1.51.0-dev
 	google.golang.org/protobuf v1.28.1
