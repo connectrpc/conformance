@@ -8,8 +8,8 @@ require (
 	github.com/rs/cors v1.8.2
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/net v0.1.0
-	google.golang.org/grpc v1.51.0-dev
+	golang.org/x/net v0.2.0
+	google.golang.org/grpc v1.52.0-dev
 	google.golang.org/protobuf v1.28.1
 )
 
@@ -30,7 +30,7 @@ require (
 	golang.org/x/crypto v0.0.0-20220926161630-eccd6366d1be // indirect
 	golang.org/x/exp v0.0.0-20221004191654-4bbd8505dc59 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/sys v0.1.1-0.20221102194838-fc697a31fa06 // indirect
+	golang.org/x/sys v0.2.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/genproto v0.0.0-20220930163606-c98284e70a91 // indirect
