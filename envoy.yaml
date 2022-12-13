@@ -1,8 +1,3 @@
-admin:
-  access_log_path: /tmp/admin_access.log
-  address:
-    socket_address: { address: 0.0.0.0, port_value: 9901 }
-
 static_resources:
   listeners:
     - name: listener_0
@@ -27,17 +22,25 @@ static_resources:
                             timeout: 0s
                             max_stream_duration:
                               grpc_timeout_header_max: 0s
-                      cors:
-                        allow_origin_string_match:
-                          - prefix: "*"
-                        allow_methods: GET, PUT, DELETE, POST, OPTIONS
-                        allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,connect-timeout-ms,connect-content-encoding,connect-accept-encoding
-                        max_age: "1728000"
-                        expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message,grpc-status-details-bin
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          allow_origin_string_match:
+                            - prefix: "*"
+                          allow_methods: GET, PUT, DELETE, POST, OPTIONS
+                          allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout,connect-timeout-ms,connect-content-encoding,connect-accept-encoding
+                          max_age: "1728000"
+                          expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message,grpc-status-details-bin
                 http_filters:
                   - name: envoy.filters.http.grpc_web
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
                   - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
                   - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
           transport_socket:
             name: envoy.transport_sockets.tls
             typed_config:
@@ -73,17 +76,25 @@ static_resources:
                             timeout: 0s
                             max_stream_duration:
                               grpc_timeout_header_max: 0s
-                      cors:
-                        allow_origin_string_match:
-                          - prefix: "*"
-                        allow_methods: GET, PUT, DELETE, POST, OPTIONS
-                        allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout
-                        max_age: "1728000"
-                        expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message,grpc-status-details-bin
+                      typed_per_filter_config:
+                        envoy.filters.http.cors:
+                          "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.CorsPolicy
+                          allow_origin_string_match:
+                            - prefix: "*"
+                          allow_methods: GET, PUT, DELETE, POST, OPTIONS
+                          allow_headers: keep-alive,user-agent,cache-control,content-type,content-transfer-encoding,x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,x-accept-content-transfer-encoding,x-accept-response-streaming,x-user-agent,x-grpc-web,grpc-timeout
+                          max_age: "1728000"
+                          expose_headers: x-grpc-test-echo-initial,x-grpc-test-echo-trailing-bin,grpc-status,grpc-message,grpc-status-details-bin
                 http_filters:
                   - name: envoy.filters.http.grpc_web
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.grpc_web.v3.GrpcWeb
                   - name: envoy.filters.http.cors
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.cors.v3.Cors
                   - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
           transport_socket:
             name: envoy.transport_sockets.tls
             typed_config:
@@ -101,7 +112,11 @@ static_resources:
     - name: interop_service_connect
       connect_timeout: 0.25s
       type: logical_dns
-      http2_protocol_options: {}
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
       lb_policy: round_robin
       load_assignment:
         cluster_name: cluster_0
@@ -128,7 +143,11 @@ static_resources:
     - name: interop_service_grpc
       connect_timeout: 0.25s
       type: logical_dns
-      http2_protocol_options: {}
+      typed_extension_protocol_options:
+        envoy.extensions.upstreams.http.v3.HttpProtocolOptions:
+          "@type": type.googleapis.com/envoy.extensions.upstreams.http.v3.HttpProtocolOptions
+          explicit_http_config:
+            http2_protocol_options: {}
       lb_policy: round_robin
       load_assignment:
         cluster_name: cluster_1
