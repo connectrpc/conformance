@@ -225,7 +225,6 @@ describe("connect_web_promise_client", function () {
       // We expect this to be DEADLINE_EXCEEDED, however envoy is monitoring the stream timeout
       // and will return an HTTP status code 504 when stream max duration time reached, which
       // will be translated to connect error code Unavailable by connect-web client.
-      console.log((e as ConnectError).code, (e as ConnectError).rawMessage)
       expect(
         [Code.DeadlineExceeded, Code.Unavailable].includes(
           (e as ConnectError).code
