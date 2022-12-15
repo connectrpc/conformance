@@ -21,7 +21,7 @@ services:
     ports:
       - "8083:8083"
   envoy:
-    image: envoyproxy/envoy:v1.24-latest
+    image: envoyproxy/envoy:v1.20-latest
     ports:
       - "9091:9091"
       - "9092:9092"

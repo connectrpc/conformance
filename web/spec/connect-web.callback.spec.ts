@@ -271,13 +271,13 @@ describe("connect_web_callback_client", function () {
         expect(err).toBeDefined();
         expect(err).toBeInstanceOf(ConnectError);
         // We expect this to be DEADLINE_EXCEEDED, however envoy is monitoring the stream timeout
-        // and will return an HTTP status code 504 when stream max duration time reached, which
-        // will be translated to connect error code Unavailable by connect-web client.
+        // and will return an HTTP status code 408 when stream max duration time reached, which
+        // cannot be translated to a connect error code, so connect-web client throws an Unknown.
         expect(
           // Already asserted the error type above, ignore types-check error here for err.code.
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
           // @ts-ignore
-          [Code.DeadlineExceeded, Code.Unavailable].includes(err?.code)
+          [Code.Unknown, Code.DeadlineExceeded].includes(err?.code)
         ).toBeTrue();
         done();
       },
