@@ -9,7 +9,7 @@ require (
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/net v0.4.0
-	google.golang.org/grpc v1.52.0-dev
+	google.golang.org/grpc v1.53.0-dev
 	google.golang.org/protobuf v1.28.1
 )
 
@@ -33,6 +33,6 @@ require (
 	golang.org/x/sys v0.3.0 // indirect
 	golang.org/x/text v0.5.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
-	google.golang.org/genproto v0.0.0-20220930163606-c98284e70a91 // indirect
+	google.golang.org/genproto v0.0.0-20221118155620-16455021b5e6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
