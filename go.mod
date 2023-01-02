@@ -5,7 +5,7 @@ go 1.18
 require (
 	github.com/bufbuild/connect-go v1.4.1
 	github.com/lucas-clemente/quic-go v0.31.1
-	github.com/rs/cors v1.8.2
+	github.com/rs/cors v1.8.3
 	github.com/spf13/cobra v1.6.1
 	github.com/stretchr/testify v1.8.1
 	golang.org/x/net v0.4.0
