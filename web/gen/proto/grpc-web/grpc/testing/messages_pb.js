@@ -27,7 +27,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() { return this || window || global || self || Function('return this')(); }).call(null);
+var global =
+    (typeof globalThis !== 'undefined' && globalThis) ||
+    (typeof window !== 'undefined' && window) ||
+    (typeof global !== 'undefined' && global) ||
+    (typeof self !== 'undefined' && self) ||
+    (function () { return this; }).call(null) ||
+    Function('return this')();
 
 var google_protobuf_any_pb = require('google-protobuf/google/protobuf/any_pb.js');
 goog.object.extend(proto, google_protobuf_any_pb);
@@ -3527,7 +3533,8 @@ proto.grpc.testing.LoadBalancerStatsResponse.RpcsByPeer.prototype.getRpcsByPeerM
  */
 proto.grpc.testing.LoadBalancerStatsResponse.RpcsByPeer.prototype.clearRpcsByPeerMap = function() {
   this.getRpcsByPeerMap().clear();
-  return this;};
+  return this;
+};
 
 
 /**
@@ -3549,7 +3556,8 @@ proto.grpc.testing.LoadBalancerStatsResponse.prototype.getRpcsByPeerMap = functi
  */
 proto.grpc.testing.LoadBalancerStatsResponse.prototype.clearRpcsByPeerMap = function() {
   this.getRpcsByPeerMap().clear();
-  return this;};
+  return this;
+};
 
 
 /**
@@ -3589,7 +3597,8 @@ proto.grpc.testing.LoadBalancerStatsResponse.prototype.getRpcsByMethodMap = func
  */
 proto.grpc.testing.LoadBalancerStatsResponse.prototype.clearRpcsByMethodMap = function() {
   this.getRpcsByMethodMap().clear();
-  return this;};
+  return this;
+};
 
 
 
@@ -3997,7 +4006,8 @@ proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats.prototype.ge
  */
 proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats.prototype.clearResultMap = function() {
   this.getResultMap().clear();
-  return this;};
+  return this;
+};
 
 
 /**
@@ -4019,7 +4029,8 @@ proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.getNumRpcsStar
  */
 proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.clearNumRpcsStartedByMethodMap = function() {
   this.getNumRpcsStartedByMethodMap().clear();
-  return this;};
+  return this;
+};
 
 
 /**
@@ -4041,7 +4052,8 @@ proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.getNumRpcsSucc
  */
 proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.clearNumRpcsSucceededByMethodMap = function() {
   this.getNumRpcsSucceededByMethodMap().clear();
-  return this;};
+  return this;
+};
 
 
 /**
@@ -4063,7 +4075,8 @@ proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.getNumRpcsFail
  */
 proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.clearNumRpcsFailedByMethodMap = function() {
   this.getNumRpcsFailedByMethodMap().clear();
-  return this;};
+  return this;
+};
 
 
 /**
@@ -4085,7 +4098,8 @@ proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.getStatsPerMet
  */
 proto.grpc.testing.LoadBalancerAccumulatedStatsResponse.prototype.clearStatsPerMethodMap = function() {
   this.getStatsPerMethodMap().clear();
-  return this;};
+  return this;
+};
 
 
 
