@@ -30,7 +30,7 @@ import (
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
 	"github.com/bufbuild/connect-go"
-	"github.com/lucas-clemente/quic-go/http3"
+	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
@@ -217,13 +217,13 @@ func run(flags *flags) {
 			testConnectClientStreaming(client)
 			testConnectBidiStreaming(client)
 			// skipped the DoTimeoutOnSleepingServer test as quic-go wrapped the context error,
-			// see https://github.com/lucas-clemente/quic-go/blob/6fbc6d951a4005d7d9d086118e1572b9e8ff9851/http3/client.go#L276-L283
+			// see https://github.com/quic-go/quic-go/blob/6fbc6d951a4005d7d9d086118e1572b9e8ff9851/http3/client.go#L276-L283
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectGRPCWebH3:
 		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
-			// does not yet have trailers support https://github.com/lucas-clemente/quic-go/issues/2266
+			// does not yet have trailers support https://github.com/quic-go/quic-go/issues/2266
 			// Once trailer support is available, they will be reenabled.
 			interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 			interopconnect.DoLargeUnaryCall(console.NewTB(), client)
