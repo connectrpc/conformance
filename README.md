@@ -124,9 +124,9 @@ and a non-ASCII message with error details.
 RPC: `FailStreamingOutputCall`
 
 Client calls `FailStreamingOutputCall`, and asks for four response messages. The server
-responds with the response messages, then an error with status `RESOURCE_EXHAUSTED`
-and a non-ASCII message with error details. The client verifies that four response messages
-and the error status with code, message, and details was received.
+responds with the messages, the status `RESOURCE_EXHAUSTED` and a non-ASCII message, and 
+error details. The client verifies that four response messages and the error status with 
+code, message, and details was received.
 
 #### cancel_after_begin
 
