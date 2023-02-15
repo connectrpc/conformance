@@ -43,6 +43,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 | `empty_stream`                           | ✓                       | ✓                         |
 | `fail_unary`                             | ✓                       | ✓                         |
 | `fail_server_streaming`                  | ✓                       | ✓                         |
+| `fail_server_streaming_after_response`   |                         | ✓                         |
 | `cancel_after_begin`                     | ✓                       |                           |
 | `cancel_after_first_response`            | ✓                       |                           |
 | `timeout_on_sleeping_server`             | ✓                       | ✓                         |
@@ -117,6 +118,15 @@ RPC: `FailStreamingOutputCall`
 
 Client calls `FailStreamingOutputCall` which always responds with an error with status `RESOURCE_EXHAUSTED`
 and a non-ASCII message with error details.
+
+#### fail_server_streaming_after_response
+
+RPC: `FailStreamingOutputCall`
+
+Client calls `FailStreamingOutputCall`, and asks for four response messages. The server
+responds with the response messages, then an error with status `RESOURCE_EXHAUSTED`
+and a non-ASCII message with error details. The client verifies that four response messages
+and the error status with code, message, and details was received.
 
 #### cancel_after_begin
 

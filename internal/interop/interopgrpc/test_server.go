@@ -134,6 +134,7 @@ func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {
+	responseStatus := args.GetResponseStatus()
 	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
 			var metadataPairs []string
@@ -171,10 +172,28 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 			return err
 		}
 	}
+	if responseStatus != nil && responseStatus.Code != 0 {
+		return status.Error(codes.Code(responseStatus.Code), responseStatus.Message)
+	}
 	return nil
 }
 
 func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
+	cs := args.GetResponseParameters()
+	for _, c := range cs {
+		if us := c.GetIntervalUs(); us > 0 {
+			time.Sleep(time.Duration(us) * time.Microsecond)
+		}
+		pl, err := serverNewPayload(args.GetResponseType(), c.GetSize())
+		if err != nil {
+			return err
+		}
+		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			Payload: pl,
+		}); err != nil {
+			return err
+		}
+	}
 	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
 	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
 	if err != nil {

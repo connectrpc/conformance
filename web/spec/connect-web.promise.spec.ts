@@ -32,6 +32,7 @@ import {
   ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
+  StreamingOutputCallResponse,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
@@ -304,6 +305,24 @@ describe("connect_web_promise_client", function () {
       reason: "soirée 🎉",
       domain: "connect-crosstest",
     });
+    try {
+      for await (const response of client.failStreamingOutputCall({})) {
+        fail(`expecting no response from fail server streaming, got: ${response}`);
+      }
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
+      expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
+      const errDetails = connectErrorDetails((e as ConnectError), ErrorDetail);
+      expect(errDetails.length).toEqual(1);
+      expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
+    }
+  });
+  it("fail_server_streaming_after_response", async function () {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
     const sizes = [31415, 9, 2653, 58979];
     const responseParams = sizes.map((size, index) => {
       return {
@@ -311,13 +330,17 @@ describe("connect_web_promise_client", function () {
         intervalUs: index * 10,
       };
     });
+    const receivedResponses: StreamingOutputCallResponse[] = [];
     try {
       for await (const response of client.failStreamingOutputCall({
         responseParameters: responseParams,
       })) {
-        fail(`expecting no response from fail server streaming, got: ${response}`);
+        receivedResponses.push(response);
       }
     } catch (e) {
+      // we expect to receive all messages we asked for
+      expect(receivedResponses.length).toEqual(sizes.length);
+      // we expect an error at the end
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");

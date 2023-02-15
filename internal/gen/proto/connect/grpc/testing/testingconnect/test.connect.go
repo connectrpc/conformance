@@ -65,7 +65,9 @@ type TestServiceClient interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error)
-	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	// One request followed by a sequence of responses (streamed download).
+	// The server returns the payload with client desired type and sizes.
+	// This RPC always responds with an error status.
 	FailStreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[testing.StreamingOutputCallResponse], error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
@@ -240,7 +242,9 @@ type TestServiceHandler interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error
-	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	// One request followed by a sequence of responses (streamed download).
+	// The server returns the payload with client desired type and sizes.
+	// This RPC always responds with an error status.
 	FailStreamingOutputCall(context.Context, *connect_go.Request[testing.StreamingOutputCallRequest], *connect_go.ServerStream[testing.StreamingOutputCallResponse]) error
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
