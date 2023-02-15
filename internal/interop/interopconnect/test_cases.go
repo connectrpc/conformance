@@ -637,15 +637,8 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClie
 
 // DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
 func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClient) {
-	respParam := make([]*testpb.ResponseParameters, len(respSizes))
-	for i, s := range respSizes {
-		respParam[i] = &testpb.ResponseParameters{
-			Size: int32(s),
-		}
-	}
 	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
-		ResponseParameters: respParam,
+		ResponseType: testpb.PayloadType_COMPRESSABLE,
 	}
 	stream, err := client.FailStreamingOutputCall(context.Background(), connect.NewRequest(req))
 	require.NoError(t, err)
