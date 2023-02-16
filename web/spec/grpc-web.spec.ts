@@ -33,7 +33,6 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
 } from "../gen/proto/grpc-web/grpc/testing/messages_pb";
-import caseless = require("caseless");
 import { Message } from "google-protobuf";
 import { Any } from "google-protobuf/google/protobuf/any_pb";
 
@@ -158,17 +157,15 @@ describe("grpc_web", function () {
 
     call.on("metadata", (metadata) => {
       expect(metadata).toBeDefined();
-      const m = caseless(metadata); // http header is case-insensitive
-      expect(m.has(ECHO_LEADING_KEY) != false).toBeTrue();
-      expect(m.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
+      expect(metadata.has(ECHO_LEADING_KEY) != false).toBeTrue();
+      expect(metadata.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
       doneFn();
     });
 
     call.on("status", (status) => {
       expect(status.metadata).toBeDefined();
-      const m = caseless(status.metadata); // http header is case-insensitive
-      expect(m.has(ECHO_TRAILING_KEY) != false).toBeTrue();
-      expect(m.get(ECHO_TRAILING_KEY)).toEqual(ECHO_TRAILING_VALUE.toString());
+      expect(status.metadata.has(ECHO_TRAILING_KEY) != false).toBeTrue();
+      expect(status.metadata.get(ECHO_TRAILING_KEY)).toEqual(ECHO_TRAILING_VALUE.toString());
       doneFn();
     });
   });
@@ -197,17 +194,15 @@ describe("grpc_web", function () {
 
     stream.on("metadata", (metadata) => {
       expect(metadata).toBeDefined();
-      const m = caseless(metadata); // http header is case-insensitive
-      expect(m.has(ECHO_LEADING_KEY) != false).toBeTrue();
-      expect(m.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
+      expect(metadata.has(ECHO_LEADING_KEY) != false).toBeTrue();
+      expect(metadata.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE.toString());
       doneFn();
     });
 
     stream.on("status", (status) => {
       expect(status.metadata).toBeDefined();
-      const m = caseless(status.metadata); // http header is case-insensitive
-      expect(m.has(ECHO_TRAILING_KEY) != false).toBeTrue();
-      expect(m.get(ECHO_TRAILING_KEY)).toEqual(ECHO_TRAILING_VALUE.toString());
+      expect(status.metadata.has(ECHO_TRAILING_KEY) != false).toBeTrue();
+      expect(status.metadata.get(ECHO_TRAILING_KEY)).toEqual(ECHO_TRAILING_VALUE.toString());
       doneFn();
     });
 
@@ -360,9 +355,8 @@ describe("grpc_web", function () {
       expect("code" in err).toBeTrue();
       expect(err.code).toEqual(8);
       expect(err.message).toEqual("soirée 🎉");
-      const m = caseless(err.metadata); // http header is case-insensitive
-      expect(m.has("grpc-status-details-bin") != false).toBeTrue();
-      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      expect(err.metadata.has("grpc-status-details-bin") != false).toBeTrue();
+      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(err.metadata.get('grpc-status-details-bin'))));
       expect(errorStatus.getDetailsList().length).toEqual(1);
       const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
       expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
@@ -394,9 +388,8 @@ describe("grpc_web", function () {
       expect("code" in err).toBeTrue();
       expect(err.code).toEqual(8);
       expect(err.message).toEqual("soirée 🎉");
-      const m = caseless(err.metadata); // http header is case-insensitive
-      expect(m.has("grpc-status-details-bin") != false).toBeTrue();
-      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      expect(err.metadata.has("grpc-status-details-bin") != false).toBeTrue();
+      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(err.metadata.get('grpc-status-details-bin'))));
       expect(errorStatus.getDetailsList().length).toEqual(1);
       const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
       expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
