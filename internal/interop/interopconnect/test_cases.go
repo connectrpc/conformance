@@ -657,6 +657,39 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.
 	t.Successf("successful fail server streaming with non-ASCII error")
 }
 
+func DoFailServerStreamingAfterResponse(t crosstesting.TB, client connectpb.TestServiceClient) {
+	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+	for i, s := range respSizes {
+		respParam[i] = &testpb.ResponseParameters{
+			Size: int32(s),
+		}
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+	}
+	stream, err := client.FailStreamingOutputCall(context.Background(), connect.NewRequest(req))
+	require.NoError(t, err)
+	for i := 0; i < 4; i++ {
+		require.True(t, stream.Receive())
+		require.NoError(t, stream.Err())
+		require.NotNil(t, stream.Msg())
+	}
+	require.False(t, stream.Receive())
+	err = stream.Err()
+	assert.Error(t, err)
+	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
+	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+interop.NonASCIIErrMsg)
+	var connectErr *connect.Error
+	require.True(t, errors.As(err, &connectErr))
+	require.Len(t, connectErr.Details(), 1)
+	detail, detailErr := connectErr.Details()[0].Value()
+	require.NoError(t, detailErr)
+	assert.True(t, proto.Equal(detail, interop.ErrorDetail))
+	require.NoError(t, stream.Close())
+	t.Successf("successful fail server streaming after response")
+}
+
 // DoUnresolvableHost attempts to call a method to an unresolvable host.
 func DoUnresolvableHost(t crosstesting.TB, client connectpb.TestServiceClient) {
 	reply, err := client.EmptyCall(

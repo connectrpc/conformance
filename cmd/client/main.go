@@ -251,6 +251,7 @@ func testConnectServerStreaming(client testingconnect.TestServiceClient) {
 	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
 	interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 	interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
+	interopconnect.DoFailServerStreamingAfterResponse(console.NewTB(), client)
 }
 
 func testConnectClientStreaming(client testingconnect.TestServiceClient) {
