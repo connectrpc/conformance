@@ -16,17 +16,19 @@ import {
   Code,
   ConnectError,
   connectErrorDetails,
-  createConnectTransport,
-  createGrpcWebTransport,
   createPromiseClient,
   decodeBinaryHeader,
   encodeBinaryHeader,
   Transport,
+} from "@bufbuild/connect";
+import {
+  createConnectTransport,
+  createGrpcWebTransport,
 } from "@bufbuild/connect-web";
 import {
   TestService,
   UnimplementedService,
-} from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+} from "../gen/proto/connect-web/grpc/testing/test_connect";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import {
   ErrorDetail,

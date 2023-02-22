@@ -10,6 +10,7 @@
     "types-check": "tsc --noemit"
   },
   "dependencies": {
+    "@bufbuild/connect": "^0.7.0",
     "@bufbuild/connect-web": "^0.7.0",
     "@bufbuild/protobuf": "^1.0.0",
     "caseless": "^0.12.0",
