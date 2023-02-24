@@ -53,6 +53,7 @@ describe("connect_web_promise_client", function () {
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
         baseUrl: `https://${host}:${port}`,
+        useBinaryFormat: false,
       });
       break;
     default:
