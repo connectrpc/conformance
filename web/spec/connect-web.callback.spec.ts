@@ -62,6 +62,7 @@ describe("connect_web_callback_client", function () {
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
         baseUrl: `https://${host}:${port}`,
+        useBinaryFormat: true
       });
       break;
     default:
