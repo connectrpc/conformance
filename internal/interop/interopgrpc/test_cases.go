@@ -564,7 +564,7 @@ func DoFailServerStreamingAfterResponse(t crosstesting.TB, client testpb.TestSer
 	}
 	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
 	require.NoError(t, err)
-	for i := 0; i < 4; i++ {
+	for i := 0; i < len(respSizes); i++ {
 		reply, err := stream.Recv()
 		require.NoError(t, err)
 		require.NotNil(t, reply)
