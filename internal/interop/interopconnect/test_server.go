@@ -115,10 +115,33 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 			return err
 		}
 	}
+	if status := request.Msg.GetResponseStatus(); status != nil && status.Code != 0 {
+		return connect.NewError(connect.Code(status.Code), errors.New(status.Message))
+	}
 	return nil
 }
 
 func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
+	for _, param := range request.Msg.GetResponseParameters() {
+		if us := param.GetIntervalUs(); us > 0 {
+			time.Sleep(time.Duration(us) * time.Microsecond)
+		}
+		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
+		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
+		// but in order to simulate a network latency issue, we put the context checking here.
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		payload, err := newServerPayload(request.Msg.GetResponseType(), param.GetSize())
+		if err != nil {
+			return err
+		}
+		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			Payload: payload,
+		}); err != nil {
+			return err
+		}
+	}
 	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
 	detail, detailErr := connect.NewErrorDetail(interop.ErrorDetail)
 	if detailErr != nil {

@@ -251,6 +251,7 @@ func testConnectServerStreaming(client testingconnect.TestServiceClient) {
 	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
 	interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 	interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
+	interopconnect.DoFailServerStreamingAfterResponse(console.NewTB(), client)
 }
 
 func testConnectClientStreaming(client testingconnect.TestServiceClient) {
@@ -299,6 +300,7 @@ func testGrpc(clientConn *grpc.ClientConn, unresolvableClientConn *grpc.ClientCo
 		interopgrpc.DoUnimplementedServerStreamingMethod(console.NewTB(), client, args...)
 		interopgrpc.DoFailWithNonASCIIError(console.NewTB(), client, args...)
 		interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
+		interopgrpc.DoFailServerStreamingAfterResponse(console.NewTB(), client, args...)
 	}
 	interopgrpc.DoUnimplementedService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
 	interopgrpc.DoUnimplementedServerStreamingService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))

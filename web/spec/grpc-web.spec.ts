@@ -32,6 +32,7 @@ import {
   ResponseParameters,
   SimpleRequest,
   StreamingOutputCallRequest,
+  StreamingOutputCallResponse,
 } from "../gen/proto/grpc-web/grpc/testing/messages_pb";
 import caseless = require("caseless");
 import { Message } from "google-protobuf";
@@ -255,7 +256,6 @@ describe("grpc_web", function () {
       done();
     });
   });
-  // TODO: enable this test when we have a fix on connect-go
   it("timeout_on_sleeping_server", function (done) {
     const responseParam = new ResponseParameters();
     responseParam.setSize(31415);
@@ -374,6 +374,30 @@ describe("grpc_web", function () {
     expectedErrorDetail.setReason( "soirée 🎉")
     expectedErrorDetail.setDomain("connect-crosstest")
 
+    const req = new StreamingOutputCallRequest();
+
+    const stream = client.failStreamingOutputCall(req);
+    stream.on("data", () => {
+      fail(`expecting no response from fail server streaming`);
+    });
+    stream.on("error", (err) => {
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(8);
+      expect(err.message).toEqual("soirée 🎉");
+      const m = caseless(err.metadata); // http header is case-insensitive
+      expect(m.has("grpc-status-details-bin") != false).toBeTrue();
+      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      expect(errorStatus.getDetailsList().length).toEqual(1);
+      const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
+      expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
+      done();
+    });
+  });
+  it("fail_server_streaming_after_response", function (done) {
+    const expectedErrorDetail = new ErrorDetail();
+    expectedErrorDetail.setReason( "soirée 🎉")
+    expectedErrorDetail.setDomain("connect-crosstest")
+
     const sizes = [31415, 9, 2653, 58979];
 
     const responseParams = sizes.map((size, idx) => {
@@ -383,14 +407,19 @@ describe("grpc_web", function () {
       return param;
     });
 
+    const receivedResponses: StreamingOutputCallResponse[] = [];
+
     const req = new StreamingOutputCallRequest();
     req.setResponseParametersList(responseParams);
 
     const stream = client.failStreamingOutputCall(req);
-    stream.on("data", () => {
-      fail(`expecting no response from fail server streaming`);
+    stream.on("data", (response) => {
+      receivedResponses.push(response);
     });
     stream.on("error", (err) => {
+      // we expect to receive all messages we asked for
+      expect(receivedResponses.length).toEqual(sizes.length);
+      // we expect an error at the end
       expect("code" in err).toBeTrue();
       expect(err.code).toEqual(8);
       expect(err.message).toEqual("soirée 🎉");

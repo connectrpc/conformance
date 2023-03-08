@@ -49,7 +49,9 @@ type TestServiceClient interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_StreamingOutputCallClient, error)
-	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	// One request followed by a sequence of responses (streamed download).
+	// The server returns the payload with client desired type and sizes.
+	// This RPC always responds with an error status.
 	FailStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_FailStreamingOutputCallClient, error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
@@ -333,7 +335,9 @@ type TestServiceServer interface {
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	StreamingOutputCall(*StreamingOutputCallRequest, TestService_StreamingOutputCallServer) error
-	// One request followed by a sequence of responses (streamed download). This RPC always fails.
+	// One request followed by a sequence of responses (streamed download).
+	// The server returns the payload with client desired type and sizes.
+	// This RPC always responds with an error status.
 	FailStreamingOutputCall(*StreamingOutputCallRequest, TestService_FailStreamingOutputCallServer) error
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
