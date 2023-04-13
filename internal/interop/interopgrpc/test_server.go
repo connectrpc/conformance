@@ -158,8 +158,8 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 		}
 	}
 	cs := args.GetResponseParameters()
-	for _, c := range cs {
-		if us := c.GetIntervalUs(); us > 0 {
+	for _, responseParameter := range cs {
+		if us := responseParameter.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
 		}
 		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
@@ -168,7 +168,7 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 		if err := stream.Context().Err(); err != nil {
 			return err
 		}
-		pl, err := serverNewPayload(args.GetResponseType(), c.GetSize())
+		pl, err := serverNewPayload(args.GetResponseType(), responseParameter.GetSize())
 		if err != nil {
 			return err
 		}
@@ -186,8 +186,8 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 
 func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
 	cs := args.GetResponseParameters()
-	for _, c := range cs {
-		if us := c.GetIntervalUs(); us > 0 {
+	for _, responseParameter := range cs {
+		if us := responseParameter.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
 		}
 		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
@@ -196,7 +196,7 @@ func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallReq
 		if err := stream.Context().Err(); err != nil {
 			return err
 		}
-		pl, err := serverNewPayload(args.GetResponseType(), c.GetSize())
+		pl, err := serverNewPayload(args.GetResponseType(), responseParameter.GetSize())
 		if err != nil {
 			return err
 		}
