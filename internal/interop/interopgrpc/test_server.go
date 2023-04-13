@@ -162,6 +162,12 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 		if us := c.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
 		}
+		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
+		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
+		// but in order to simulate a network latency issue, we put the context checking here.
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
 		pl, err := serverNewPayload(args.GetResponseType(), c.GetSize())
 		if err != nil {
 			return err
@@ -183,6 +189,12 @@ func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallReq
 	for _, c := range cs {
 		if us := c.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
+		}
+		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
+		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
+		// but in order to simulate a network latency issue, we put the context checking here.
+		if err := stream.Context().Err(); err != nil {
+			return err
 		}
 		pl, err := serverNewPayload(args.GetResponseType(), c.GetSize())
 		if err != nil {
@@ -214,6 +226,9 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 		if err != nil {
 			return err
 		}
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
 		p := req.GetPayload().GetBody()
 		sum += len(p)
 	}
@@ -243,6 +258,9 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 		}
 	}
 	for {
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
 			// read done.
@@ -276,6 +294,9 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 func (s *testServer) HalfDuplexCall(stream testpb.TestService_HalfDuplexCallServer) error {
 	var msgBuf []*testpb.StreamingOutputCallRequest
 	for {
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
 			// read done.
