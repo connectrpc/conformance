@@ -162,6 +162,7 @@ func run(flags *flags) {
 	}
 	// create client options base on protocol of the implementation
 	var clientOptions []connect.ClientOption
+	clientOptions = append(clientOptions, connect.WithHTTPGet())
 	switch flags.implementation {
 	case connectGRPCH1, connectGRPCH2:
 		clientOptions = append(clientOptions, connect.WithGRPC())
@@ -243,6 +244,7 @@ func testConnectUnary(client testingconnect.TestServiceClient) {
 	interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 	interopconnect.DoUnimplementedMethod(console.NewTB(), client)
 	interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
+	interopconnect.DoGetUnaryCall(console.NewTB(), client)
 }
 
 func testConnectServerStreaming(client testingconnect.TestServiceClient) {

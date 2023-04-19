@@ -140,6 +140,49 @@ export class TestServiceClient {
     this.methodDescriptorUnaryCall);
   }
 
+  methodDescriptorGetUnaryCall = new grpcWeb.MethodDescriptor(
+    '/grpc.testing.TestService/GetUnaryCall',
+    grpcWeb.MethodType.UNARY,
+    grpc_testing_messages_pb.SimpleRequest,
+    grpc_testing_messages_pb.SimpleResponse,
+    (request: grpc_testing_messages_pb.SimpleRequest) => {
+      return request.serializeBinary();
+    },
+    grpc_testing_messages_pb.SimpleResponse.deserializeBinary
+  );
+
+  getUnaryCall(
+    request: grpc_testing_messages_pb.SimpleRequest,
+    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.SimpleResponse>;
+
+  getUnaryCall(
+    request: grpc_testing_messages_pb.SimpleRequest,
+    metadata: grpcWeb.Metadata | null,
+    callback: (err: grpcWeb.RpcError,
+               response: grpc_testing_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.SimpleResponse>;
+
+  getUnaryCall(
+    request: grpc_testing_messages_pb.SimpleRequest,
+    metadata: grpcWeb.Metadata | null,
+    callback?: (err: grpcWeb.RpcError,
+               response: grpc_testing_messages_pb.SimpleResponse) => void) {
+    if (callback !== undefined) {
+      return this.client_.rpcCall(
+        this.hostname_ +
+          '/grpc.testing.TestService/GetUnaryCall',
+        request,
+        metadata || {},
+        this.methodDescriptorGetUnaryCall,
+        callback);
+    }
+    return this.client_.unaryCall(
+    this.hostname_ +
+      '/grpc.testing.TestService/GetUnaryCall',
+    request,
+    metadata || {},
+    this.methodDescriptorGetUnaryCall);
+  }
+
   methodDescriptorFailUnaryCall = new grpcWeb.MethodDescriptor(
     '/grpc.testing.TestService/FailUnaryCall',
     grpcWeb.MethodType.UNARY,
@@ -246,6 +289,28 @@ export class TestServiceClient {
       request,
       metadata || {},
       this.methodDescriptorStreamingOutputCall);
+  }
+
+  methodDescriptorGetStreamingOutputCall = new grpcWeb.MethodDescriptor(
+    '/grpc.testing.TestService/GetStreamingOutputCall',
+    grpcWeb.MethodType.SERVER_STREAMING,
+    grpc_testing_messages_pb.StreamingOutputCallRequest,
+    grpc_testing_messages_pb.StreamingOutputCallResponse,
+    (request: grpc_testing_messages_pb.StreamingOutputCallRequest) => {
+      return request.serializeBinary();
+    },
+    grpc_testing_messages_pb.StreamingOutputCallResponse.deserializeBinary
+  );
+
+  getStreamingOutputCall(
+    request: grpc_testing_messages_pb.StreamingOutputCallRequest,
+    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.StreamingOutputCallResponse> {
+    return this.client_.serverStreaming(
+      this.hostname_ +
+        '/grpc.testing.TestService/GetStreamingOutputCall',
+      request,
+      metadata || {},
+      this.methodDescriptorGetStreamingOutputCall);
   }
 
   methodDescriptorFailStreamingOutputCall = new grpcWeb.MethodDescriptor(

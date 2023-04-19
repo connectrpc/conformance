@@ -70,6 +70,10 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 	return response, nil
 }
 
+func (s *testServer) GetUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
+	return s.UnaryCall(ctx, request)
+}
+
 func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
 	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
 	detail, detailErr := connect.NewErrorDetail(interop.ErrorDetail)
@@ -119,6 +123,10 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 		return connect.NewError(connect.Code(status.Code), errors.New(status.Message))
 	}
 	return nil
+}
+
+func (s *testServer) GetStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
+	return s.StreamingOutputCall(ctx, request, stream)
 }
 
 func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {

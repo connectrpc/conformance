@@ -77,6 +77,27 @@ func DoEmptyUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 	t.Successf("successful unary call")
 }
 
+// DoGetUnaryCall performs a unary RPC with empty request and response messages.
+func DoGetUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
+	payload, err := clientNewPayload(t, 1)
+	require.NoError(t, err)
+	req := &testpb.SimpleRequest{
+		ResponseType: testpb.PayloadType_COMPRESSABLE,
+		ResponseSize: int32(1),
+		Payload:      payload,
+	}
+	reply, err := client.GetUnaryCall(
+		context.Background(),
+		connect.NewRequest(req),
+	)
+	require.NoError(t, err)
+	msg := reply.Msg
+	assert.True(t, proto.Equal(&testpb.SimpleResponse{
+		Payload: payload,
+	}, msg))
+	t.Successf("successful unary call")
+}
+
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
 func DoLargeUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 	pl, err := clientNewPayload(t, largeReqSize)
