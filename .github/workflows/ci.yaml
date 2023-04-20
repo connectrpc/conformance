@@ -48,7 +48,7 @@ jobs:
     # 1. The previous ci job has completed successfully
     # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/connect-crosstest
     # 3. The workflow run is triggered by push to main branch
-    if:  ${{ success() && github.repository == 'bufbuild/connect-crosstest' }}
+    if:  ${{ success() && github.repository == 'bufbuild/connect-crosstest' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       # qemu is used when executing things like `apk` in the final build
       # stage which must execute on the target platform. We currently do
