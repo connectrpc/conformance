@@ -123,6 +123,10 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	}, nil
 }
 
+func (s *testServer) CacheableUnaryCall(ctx context.Context, request *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+	return s.UnaryCall(ctx, request)
+}
+
 func (s *testServer) CacheableStreamingOutputCall(request *testpb.StreamingOutputCallRequest, stream testpb.TestService_CacheableStreamingOutputCallServer) error {
 	return s.StreamingOutputCall(request, stream)
 }
