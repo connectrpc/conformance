@@ -123,6 +123,14 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	}, nil
 }
 
+func (s *testServer) GetUnaryCall(ctx context.Context, request *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+	return s.UnaryCall(ctx, request)
+}
+
+func (s *testServer) GetStreamingOutputCall(request *testpb.StreamingOutputCallRequest, stream testpb.TestService_GetStreamingOutputCallServer) error {
+	return s.StreamingOutputCall(request, stream)
+}
+
 // FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
 	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
