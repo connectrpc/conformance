@@ -244,7 +244,7 @@ func testConnectUnary(client testingconnect.TestServiceClient) {
 	interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 	interopconnect.DoUnimplementedMethod(console.NewTB(), client)
 	interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
-	interopconnect.DoGetUnaryCall(console.NewTB(), client)
+	interopconnect.DoCacheableUnaryCall(console.NewTB(), client)
 }
 
 func testConnectServerStreaming(client testingconnect.TestServiceClient) {
