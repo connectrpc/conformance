@@ -48,7 +48,7 @@ service TestService {
   // One request with the GET method.
   rpc GetUnaryCall(SimpleRequest) returns (SimpleResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-  };
+  }
 
   // One request followed by one response. This RPC always fails.
   rpc FailUnaryCall(SimpleRequest) returns (SimpleResponse);
@@ -66,7 +66,7 @@ service TestService {
   // The server returns the payload with client desired type and sizes.
   rpc GetStreamingOutputCall(StreamingOutputCallRequest) returns (stream StreamingOutputCallResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
-  };
+  }
 
   // One request followed by a sequence of responses (streamed download).
   // The server returns the payload with client desired type and sizes.
