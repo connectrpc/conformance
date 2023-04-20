@@ -84,18 +84,6 @@ export const TestService = {
       kind: MethodKind.Unary,
     },
     /**
-     * One request with the GET method.
-     *
-     * @generated from rpc grpc.testing.TestService.GetUnaryCall
-     */
-    getUnaryCall: {
-      name: "GetUnaryCall",
-      I: SimpleRequest,
-      O: SimpleResponse,
-      kind: MethodKind.Unary,
-    idempotency: MethodIdempotency.NoSideEffects,
-    },
-    /**
      * One request followed by one response. This RPC always fails.
      *
      * @generated from rpc grpc.testing.TestService.FailUnaryCall
@@ -118,6 +106,20 @@ export const TestService = {
       I: SimpleRequest,
       O: SimpleResponse,
       kind: MethodKind.Unary,
+    idempotency: MethodIdempotency.NoSideEffects,
+    },
+    /**
+     * One request followed by a sequence of responses (streamed download).
+     * The server returns the payload with client desired type and sizes.
+     *
+     * @generated from rpc grpc.testing.TestService.CacheableStreamingOutputCall
+     */
+    cacheableStreamingOutputCall: {
+      name: "CacheableStreamingOutputCall",
+      I: StreamingOutputCallRequest,
+      O: StreamingOutputCallResponse,
+      kind: MethodKind.ServerStreaming,
+    idempotency: MethodIdempotency.NoSideEffects,
     },
     /**
      * One request followed by a sequence of responses (streamed download).
@@ -130,19 +132,6 @@ export const TestService = {
       I: StreamingOutputCallRequest,
       O: StreamingOutputCallResponse,
       kind: MethodKind.ServerStreaming,
-    },
-    /**
-     * One request followed by a sequence of responses (streamed download).
-     * The server returns the payload with client desired type and sizes.
-     *
-     * @generated from rpc grpc.testing.TestService.GetStreamingOutputCall
-     */
-    getStreamingOutputCall: {
-      name: "GetStreamingOutputCall",
-      I: StreamingOutputCallRequest,
-      O: StreamingOutputCallResponse,
-      kind: MethodKind.ServerStreaming,
-    idempotency: MethodIdempotency.NoSideEffects,
     },
     /**
      * One request followed by a sequence of responses (streamed download).

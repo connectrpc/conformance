@@ -78,7 +78,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 }
 
 // DoGetUnaryCall performs a unary RPC with empty request and response messages.
-func DoGetUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
+func DoCacheableUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	req := &testpb.SimpleRequest{
@@ -86,7 +86,7 @@ func DoGetUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 		ResponseSize: int32(1),
 		Payload:      payload,
 	}
-	reply, err := client.GetUnaryCall(
+	reply, err := client.CacheableUnaryCall(
 		context.Background(),
 		connect.NewRequest(req),
 	)

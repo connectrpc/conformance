@@ -40,8 +40,6 @@ type TestServiceClient interface {
 	EmptyCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
 	// One request followed by one response.
 	UnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
-	// One request with the GET method.
-	GetUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
 	// One request followed by one response. This RPC always fails.
 	FailUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
 	// One request followed by one response. Response has cache control
@@ -50,10 +48,10 @@ type TestServiceClient interface {
 	CacheableUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	StreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_StreamingOutputCallClient, error)
+	CacheableStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_CacheableStreamingOutputCallClient, error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	GetStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_GetStreamingOutputCallClient, error)
+	StreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_StreamingOutputCallClient, error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	// This RPC always responds with an error status.
@@ -104,15 +102,6 @@ func (c *testServiceClient) UnaryCall(ctx context.Context, in *SimpleRequest, op
 	return out, nil
 }
 
-func (c *testServiceClient) GetUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error) {
-	out := new(SimpleResponse)
-	err := c.cc.Invoke(ctx, "/grpc.testing.TestService/GetUnaryCall", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *testServiceClient) FailUnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error) {
 	out := new(SimpleResponse)
 	err := c.cc.Invoke(ctx, "/grpc.testing.TestService/FailUnaryCall", in, out, opts...)
@@ -131,8 +120,40 @@ func (c *testServiceClient) CacheableUnaryCall(ctx context.Context, in *SimpleRe
 	return out, nil
 }
 
+func (c *testServiceClient) CacheableStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_CacheableStreamingOutputCallClient, error) {
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[0], "/grpc.testing.TestService/CacheableStreamingOutputCall", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &testServiceCacheableStreamingOutputCallClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type TestService_CacheableStreamingOutputCallClient interface {
+	Recv() (*StreamingOutputCallResponse, error)
+	grpc.ClientStream
+}
+
+type testServiceCacheableStreamingOutputCallClient struct {
+	grpc.ClientStream
+}
+
+func (x *testServiceCacheableStreamingOutputCallClient) Recv() (*StreamingOutputCallResponse, error) {
+	m := new(StreamingOutputCallResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *testServiceClient) StreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_StreamingOutputCallClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[0], "/grpc.testing.TestService/StreamingOutputCall", opts...)
+	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/grpc.testing.TestService/StreamingOutputCall", opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,38 +177,6 @@ type testServiceStreamingOutputCallClient struct {
 }
 
 func (x *testServiceStreamingOutputCallClient) Recv() (*StreamingOutputCallResponse, error) {
-	m := new(StreamingOutputCallResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-func (c *testServiceClient) GetStreamingOutputCall(ctx context.Context, in *StreamingOutputCallRequest, opts ...grpc.CallOption) (TestService_GetStreamingOutputCallClient, error) {
-	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[1], "/grpc.testing.TestService/GetStreamingOutputCall", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &testServiceGetStreamingOutputCallClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type TestService_GetStreamingOutputCallClient interface {
-	Recv() (*StreamingOutputCallResponse, error)
-	grpc.ClientStream
-}
-
-type testServiceGetStreamingOutputCallClient struct {
-	grpc.ClientStream
-}
-
-func (x *testServiceGetStreamingOutputCallClient) Recv() (*StreamingOutputCallResponse, error) {
 	m := new(StreamingOutputCallResponse)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -372,8 +361,6 @@ type TestServiceServer interface {
 	EmptyCall(context.Context, *Empty) (*Empty, error)
 	// One request followed by one response.
 	UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
-	// One request with the GET method.
-	GetUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
 	// One request followed by one response. This RPC always fails.
 	FailUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
 	// One request followed by one response. Response has cache control
@@ -382,10 +369,10 @@ type TestServiceServer interface {
 	CacheableUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	StreamingOutputCall(*StreamingOutputCallRequest, TestService_StreamingOutputCallServer) error
+	CacheableStreamingOutputCall(*StreamingOutputCallRequest, TestService_CacheableStreamingOutputCallServer) error
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	GetStreamingOutputCall(*StreamingOutputCallRequest, TestService_GetStreamingOutputCallServer) error
+	StreamingOutputCall(*StreamingOutputCallRequest, TestService_StreamingOutputCallServer) error
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	// This RPC always responds with an error status.
@@ -421,20 +408,17 @@ func (UnimplementedTestServiceServer) EmptyCall(context.Context, *Empty) (*Empty
 func (UnimplementedTestServiceServer) UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnaryCall not implemented")
 }
-func (UnimplementedTestServiceServer) GetUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetUnaryCall not implemented")
-}
 func (UnimplementedTestServiceServer) FailUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FailUnaryCall not implemented")
 }
 func (UnimplementedTestServiceServer) CacheableUnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CacheableUnaryCall not implemented")
 }
+func (UnimplementedTestServiceServer) CacheableStreamingOutputCall(*StreamingOutputCallRequest, TestService_CacheableStreamingOutputCallServer) error {
+	return status.Errorf(codes.Unimplemented, "method CacheableStreamingOutputCall not implemented")
+}
 func (UnimplementedTestServiceServer) StreamingOutputCall(*StreamingOutputCallRequest, TestService_StreamingOutputCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method StreamingOutputCall not implemented")
-}
-func (UnimplementedTestServiceServer) GetStreamingOutputCall(*StreamingOutputCallRequest, TestService_GetStreamingOutputCallServer) error {
-	return status.Errorf(codes.Unimplemented, "method GetStreamingOutputCall not implemented")
 }
 func (UnimplementedTestServiceServer) FailStreamingOutputCall(*StreamingOutputCallRequest, TestService_FailStreamingOutputCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method FailStreamingOutputCall not implemented")
@@ -503,24 +487,6 @@ func _TestService_UnaryCall_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _TestService_GetUnaryCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SimpleRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(TestServiceServer).GetUnaryCall(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/grpc.testing.TestService/GetUnaryCall",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServiceServer).GetUnaryCall(ctx, req.(*SimpleRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _TestService_FailUnaryCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(SimpleRequest)
 	if err := dec(in); err != nil {
@@ -557,6 +523,27 @@ func _TestService_CacheableUnaryCall_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _TestService_CacheableStreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(StreamingOutputCallRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(TestServiceServer).CacheableStreamingOutputCall(m, &testServiceCacheableStreamingOutputCallServer{stream})
+}
+
+type TestService_CacheableStreamingOutputCallServer interface {
+	Send(*StreamingOutputCallResponse) error
+	grpc.ServerStream
+}
+
+type testServiceCacheableStreamingOutputCallServer struct {
+	grpc.ServerStream
+}
+
+func (x *testServiceCacheableStreamingOutputCallServer) Send(m *StreamingOutputCallResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _TestService_StreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(StreamingOutputCallRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -575,27 +562,6 @@ type testServiceStreamingOutputCallServer struct {
 }
 
 func (x *testServiceStreamingOutputCallServer) Send(m *StreamingOutputCallResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func _TestService_GetStreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(StreamingOutputCallRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(TestServiceServer).GetStreamingOutputCall(m, &testServiceGetStreamingOutputCallServer{stream})
-}
-
-type TestService_GetStreamingOutputCallServer interface {
-	Send(*StreamingOutputCallResponse) error
-	grpc.ServerStream
-}
-
-type testServiceGetStreamingOutputCallServer struct {
-	grpc.ServerStream
-}
-
-func (x *testServiceGetStreamingOutputCallServer) Send(m *StreamingOutputCallResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -753,10 +719,6 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _TestService_UnaryCall_Handler,
 		},
 		{
-			MethodName: "GetUnaryCall",
-			Handler:    _TestService_GetUnaryCall_Handler,
-		},
-		{
 			MethodName: "FailUnaryCall",
 			Handler:    _TestService_FailUnaryCall_Handler,
 		},
@@ -771,13 +733,13 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "StreamingOutputCall",
-			Handler:       _TestService_StreamingOutputCall_Handler,
+			StreamName:    "CacheableStreamingOutputCall",
+			Handler:       _TestService_CacheableStreamingOutputCall_Handler,
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "GetStreamingOutputCall",
-			Handler:       _TestService_GetStreamingOutputCall_Handler,
+			StreamName:    "StreamingOutputCall",
+			Handler:       _TestService_StreamingOutputCall_Handler,
 			ServerStreams: true,
 		},
 		{
