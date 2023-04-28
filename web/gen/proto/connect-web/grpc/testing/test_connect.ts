@@ -49,7 +49,7 @@
 // @ts-nocheck
 
 import { Empty } from "./empty_pb.js";
-import { MethodKind } from "@bufbuild/protobuf";
+import { MethodIdempotency, MethodKind } from "@bufbuild/protobuf";
 import { ClientConfigureRequest, ClientConfigureResponse, LoadBalancerAccumulatedStatsRequest, LoadBalancerAccumulatedStatsResponse, LoadBalancerStatsRequest, LoadBalancerStatsResponse, ReconnectInfo, ReconnectParams, SimpleRequest, SimpleResponse, StreamingInputCallRequest, StreamingInputCallResponse, StreamingOutputCallRequest, StreamingOutputCallResponse } from "./messages_pb.js";
 
 /**
@@ -106,6 +106,7 @@ export const TestService = {
       I: SimpleRequest,
       O: SimpleResponse,
       kind: MethodKind.Unary,
+    idempotency: MethodIdempotency.NoSideEffects,
     },
     /**
      * One request followed by a sequence of responses (streamed download).

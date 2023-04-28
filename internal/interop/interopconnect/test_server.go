@@ -36,6 +36,13 @@ type testServer struct {
 	testingconnect.UnimplementedTestServiceHandler
 }
 
+func (s *testServer) CacheableUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
+	if request.Peer().Protocol == connect.ProtocolConnect && !request.Peer().Query.Has("message") {
+		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("expected get request"))
+	}
+	return s.UnaryCall(ctx, request)
+}
+
 func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[testpb.Empty]) (*connect.Response[testpb.Empty], error) {
 	return connect.NewResponse(new(testpb.Empty)), nil
 }

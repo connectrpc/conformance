@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect_go.IsAtLeastVersion1_7_0
 
 const (
 	// TestServiceName is the fully-qualified name of the TestService service.
@@ -48,6 +48,72 @@ const (
 	// XdsUpdateClientConfigureServiceName is the fully-qualified name of the
 	// XdsUpdateClientConfigureService service.
 	XdsUpdateClientConfigureServiceName = "grpc.testing.XdsUpdateClientConfigureService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// TestServiceEmptyCallProcedure is the fully-qualified name of the TestService's EmptyCall RPC.
+	TestServiceEmptyCallProcedure = "/grpc.testing.TestService/EmptyCall"
+	// TestServiceUnaryCallProcedure is the fully-qualified name of the TestService's UnaryCall RPC.
+	TestServiceUnaryCallProcedure = "/grpc.testing.TestService/UnaryCall"
+	// TestServiceFailUnaryCallProcedure is the fully-qualified name of the TestService's FailUnaryCall
+	// RPC.
+	TestServiceFailUnaryCallProcedure = "/grpc.testing.TestService/FailUnaryCall"
+	// TestServiceCacheableUnaryCallProcedure is the fully-qualified name of the TestService's
+	// CacheableUnaryCall RPC.
+	TestServiceCacheableUnaryCallProcedure = "/grpc.testing.TestService/CacheableUnaryCall"
+	// TestServiceStreamingOutputCallProcedure is the fully-qualified name of the TestService's
+	// StreamingOutputCall RPC.
+	TestServiceStreamingOutputCallProcedure = "/grpc.testing.TestService/StreamingOutputCall"
+	// TestServiceFailStreamingOutputCallProcedure is the fully-qualified name of the TestService's
+	// FailStreamingOutputCall RPC.
+	TestServiceFailStreamingOutputCallProcedure = "/grpc.testing.TestService/FailStreamingOutputCall"
+	// TestServiceStreamingInputCallProcedure is the fully-qualified name of the TestService's
+	// StreamingInputCall RPC.
+	TestServiceStreamingInputCallProcedure = "/grpc.testing.TestService/StreamingInputCall"
+	// TestServiceFullDuplexCallProcedure is the fully-qualified name of the TestService's
+	// FullDuplexCall RPC.
+	TestServiceFullDuplexCallProcedure = "/grpc.testing.TestService/FullDuplexCall"
+	// TestServiceHalfDuplexCallProcedure is the fully-qualified name of the TestService's
+	// HalfDuplexCall RPC.
+	TestServiceHalfDuplexCallProcedure = "/grpc.testing.TestService/HalfDuplexCall"
+	// TestServiceUnimplementedCallProcedure is the fully-qualified name of the TestService's
+	// UnimplementedCall RPC.
+	TestServiceUnimplementedCallProcedure = "/grpc.testing.TestService/UnimplementedCall"
+	// TestServiceUnimplementedStreamingOutputCallProcedure is the fully-qualified name of the
+	// TestService's UnimplementedStreamingOutputCall RPC.
+	TestServiceUnimplementedStreamingOutputCallProcedure = "/grpc.testing.TestService/UnimplementedStreamingOutputCall"
+	// UnimplementedServiceUnimplementedCallProcedure is the fully-qualified name of the
+	// UnimplementedService's UnimplementedCall RPC.
+	UnimplementedServiceUnimplementedCallProcedure = "/grpc.testing.UnimplementedService/UnimplementedCall"
+	// UnimplementedServiceUnimplementedStreamingOutputCallProcedure is the fully-qualified name of the
+	// UnimplementedService's UnimplementedStreamingOutputCall RPC.
+	UnimplementedServiceUnimplementedStreamingOutputCallProcedure = "/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall"
+	// ReconnectServiceStartProcedure is the fully-qualified name of the ReconnectService's Start RPC.
+	ReconnectServiceStartProcedure = "/grpc.testing.ReconnectService/Start"
+	// ReconnectServiceStopProcedure is the fully-qualified name of the ReconnectService's Stop RPC.
+	ReconnectServiceStopProcedure = "/grpc.testing.ReconnectService/Stop"
+	// LoadBalancerStatsServiceGetClientStatsProcedure is the fully-qualified name of the
+	// LoadBalancerStatsService's GetClientStats RPC.
+	LoadBalancerStatsServiceGetClientStatsProcedure = "/grpc.testing.LoadBalancerStatsService/GetClientStats"
+	// LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure is the fully-qualified name of the
+	// LoadBalancerStatsService's GetClientAccumulatedStats RPC.
+	LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure = "/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats"
+	// XdsUpdateHealthServiceSetServingProcedure is the fully-qualified name of the
+	// XdsUpdateHealthService's SetServing RPC.
+	XdsUpdateHealthServiceSetServingProcedure = "/grpc.testing.XdsUpdateHealthService/SetServing"
+	// XdsUpdateHealthServiceSetNotServingProcedure is the fully-qualified name of the
+	// XdsUpdateHealthService's SetNotServing RPC.
+	XdsUpdateHealthServiceSetNotServingProcedure = "/grpc.testing.XdsUpdateHealthService/SetNotServing"
+	// XdsUpdateClientConfigureServiceConfigureProcedure is the fully-qualified name of the
+	// XdsUpdateClientConfigureService's Configure RPC.
+	XdsUpdateClientConfigureServiceConfigureProcedure = "/grpc.testing.XdsUpdateClientConfigureService/Configure"
 )
 
 // TestServiceClient is a client for the grpc.testing.TestService service.
@@ -101,57 +167,58 @@ func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 	return &testServiceClient{
 		emptyCall: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/EmptyCall",
+			baseURL+TestServiceEmptyCallProcedure,
 			opts...,
 		),
 		unaryCall: connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/UnaryCall",
+			baseURL+TestServiceUnaryCallProcedure,
 			opts...,
 		),
 		failUnaryCall: connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/FailUnaryCall",
+			baseURL+TestServiceFailUnaryCallProcedure,
 			opts...,
 		),
 		cacheableUnaryCall: connect_go.NewClient[testing.SimpleRequest, testing.SimpleResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/CacheableUnaryCall",
-			opts...,
+			baseURL+TestServiceCacheableUnaryCallProcedure,
+			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+			connect_go.WithClientOptions(opts...),
 		),
 		streamingOutputCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/StreamingOutputCall",
+			baseURL+TestServiceStreamingOutputCallProcedure,
 			opts...,
 		),
 		failStreamingOutputCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/FailStreamingOutputCall",
+			baseURL+TestServiceFailStreamingOutputCallProcedure,
 			opts...,
 		),
 		streamingInputCall: connect_go.NewClient[testing.StreamingInputCallRequest, testing.StreamingInputCallResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/StreamingInputCall",
+			baseURL+TestServiceStreamingInputCallProcedure,
 			opts...,
 		),
 		fullDuplexCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/FullDuplexCall",
+			baseURL+TestServiceFullDuplexCallProcedure,
 			opts...,
 		),
 		halfDuplexCall: connect_go.NewClient[testing.StreamingOutputCallRequest, testing.StreamingOutputCallResponse](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/HalfDuplexCall",
+			baseURL+TestServiceHalfDuplexCallProcedure,
 			opts...,
 		),
 		unimplementedCall: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/UnimplementedCall",
+			baseURL+TestServiceUnimplementedCallProcedure,
 			opts...,
 		),
 		unimplementedStreamingOutputCall: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.TestService/UnimplementedStreamingOutputCall",
+			baseURL+TestServiceUnimplementedStreamingOutputCallProcedure,
 			opts...,
 		),
 	}
@@ -273,58 +340,59 @@ type TestServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/grpc.testing.TestService/EmptyCall", connect_go.NewUnaryHandler(
-		"/grpc.testing.TestService/EmptyCall",
+	mux.Handle(TestServiceEmptyCallProcedure, connect_go.NewUnaryHandler(
+		TestServiceEmptyCallProcedure,
 		svc.EmptyCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/UnaryCall", connect_go.NewUnaryHandler(
-		"/grpc.testing.TestService/UnaryCall",
+	mux.Handle(TestServiceUnaryCallProcedure, connect_go.NewUnaryHandler(
+		TestServiceUnaryCallProcedure,
 		svc.UnaryCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/FailUnaryCall", connect_go.NewUnaryHandler(
-		"/grpc.testing.TestService/FailUnaryCall",
+	mux.Handle(TestServiceFailUnaryCallProcedure, connect_go.NewUnaryHandler(
+		TestServiceFailUnaryCallProcedure,
 		svc.FailUnaryCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/CacheableUnaryCall", connect_go.NewUnaryHandler(
-		"/grpc.testing.TestService/CacheableUnaryCall",
+	mux.Handle(TestServiceCacheableUnaryCallProcedure, connect_go.NewUnaryHandler(
+		TestServiceCacheableUnaryCallProcedure,
 		svc.CacheableUnaryCall,
-		opts...,
+		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
+		connect_go.WithHandlerOptions(opts...),
 	))
-	mux.Handle("/grpc.testing.TestService/StreamingOutputCall", connect_go.NewServerStreamHandler(
-		"/grpc.testing.TestService/StreamingOutputCall",
+	mux.Handle(TestServiceStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+		TestServiceStreamingOutputCallProcedure,
 		svc.StreamingOutputCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/FailStreamingOutputCall", connect_go.NewServerStreamHandler(
-		"/grpc.testing.TestService/FailStreamingOutputCall",
+	mux.Handle(TestServiceFailStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+		TestServiceFailStreamingOutputCallProcedure,
 		svc.FailStreamingOutputCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/StreamingInputCall", connect_go.NewClientStreamHandler(
-		"/grpc.testing.TestService/StreamingInputCall",
+	mux.Handle(TestServiceStreamingInputCallProcedure, connect_go.NewClientStreamHandler(
+		TestServiceStreamingInputCallProcedure,
 		svc.StreamingInputCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/FullDuplexCall", connect_go.NewBidiStreamHandler(
-		"/grpc.testing.TestService/FullDuplexCall",
+	mux.Handle(TestServiceFullDuplexCallProcedure, connect_go.NewBidiStreamHandler(
+		TestServiceFullDuplexCallProcedure,
 		svc.FullDuplexCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/HalfDuplexCall", connect_go.NewBidiStreamHandler(
-		"/grpc.testing.TestService/HalfDuplexCall",
+	mux.Handle(TestServiceHalfDuplexCallProcedure, connect_go.NewBidiStreamHandler(
+		TestServiceHalfDuplexCallProcedure,
 		svc.HalfDuplexCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/UnimplementedCall", connect_go.NewUnaryHandler(
-		"/grpc.testing.TestService/UnimplementedCall",
+	mux.Handle(TestServiceUnimplementedCallProcedure, connect_go.NewUnaryHandler(
+		TestServiceUnimplementedCallProcedure,
 		svc.UnimplementedCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.TestService/UnimplementedStreamingOutputCall", connect_go.NewServerStreamHandler(
-		"/grpc.testing.TestService/UnimplementedStreamingOutputCall",
+	mux.Handle(TestServiceUnimplementedStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+		TestServiceUnimplementedStreamingOutputCallProcedure,
 		svc.UnimplementedStreamingOutputCall,
 		opts...,
 	))
@@ -398,12 +466,12 @@ func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL str
 	return &unimplementedServiceClient{
 		unimplementedCall: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.UnimplementedService/UnimplementedCall",
+			baseURL+UnimplementedServiceUnimplementedCallProcedure,
 			opts...,
 		),
 		unimplementedStreamingOutputCall: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall",
+			baseURL+UnimplementedServiceUnimplementedStreamingOutputCallProcedure,
 			opts...,
 		),
 	}
@@ -442,13 +510,13 @@ type UnimplementedServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/grpc.testing.UnimplementedService/UnimplementedCall", connect_go.NewUnaryHandler(
-		"/grpc.testing.UnimplementedService/UnimplementedCall",
+	mux.Handle(UnimplementedServiceUnimplementedCallProcedure, connect_go.NewUnaryHandler(
+		UnimplementedServiceUnimplementedCallProcedure,
 		svc.UnimplementedCall,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall", connect_go.NewServerStreamHandler(
-		"/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall",
+	mux.Handle(UnimplementedServiceUnimplementedStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+		UnimplementedServiceUnimplementedStreamingOutputCallProcedure,
 		svc.UnimplementedStreamingOutputCall,
 		opts...,
 	))
@@ -484,12 +552,12 @@ func NewReconnectServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 	return &reconnectServiceClient{
 		start: connect_go.NewClient[testing.ReconnectParams, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.ReconnectService/Start",
+			baseURL+ReconnectServiceStartProcedure,
 			opts...,
 		),
 		stop: connect_go.NewClient[testing.Empty, testing.ReconnectInfo](
 			httpClient,
-			baseURL+"/grpc.testing.ReconnectService/Stop",
+			baseURL+ReconnectServiceStopProcedure,
 			opts...,
 		),
 	}
@@ -524,13 +592,13 @@ type ReconnectServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/grpc.testing.ReconnectService/Start", connect_go.NewUnaryHandler(
-		"/grpc.testing.ReconnectService/Start",
+	mux.Handle(ReconnectServiceStartProcedure, connect_go.NewUnaryHandler(
+		ReconnectServiceStartProcedure,
 		svc.Start,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.ReconnectService/Stop", connect_go.NewUnaryHandler(
-		"/grpc.testing.ReconnectService/Stop",
+	mux.Handle(ReconnectServiceStopProcedure, connect_go.NewUnaryHandler(
+		ReconnectServiceStopProcedure,
 		svc.Stop,
 		opts...,
 	))
@@ -568,12 +636,12 @@ func NewLoadBalancerStatsServiceClient(httpClient connect_go.HTTPClient, baseURL
 	return &loadBalancerStatsServiceClient{
 		getClientStats: connect_go.NewClient[testing.LoadBalancerStatsRequest, testing.LoadBalancerStatsResponse](
 			httpClient,
-			baseURL+"/grpc.testing.LoadBalancerStatsService/GetClientStats",
+			baseURL+LoadBalancerStatsServiceGetClientStatsProcedure,
 			opts...,
 		),
 		getClientAccumulatedStats: connect_go.NewClient[testing.LoadBalancerAccumulatedStatsRequest, testing.LoadBalancerAccumulatedStatsResponse](
 			httpClient,
-			baseURL+"/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats",
+			baseURL+LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure,
 			opts...,
 		),
 	}
@@ -611,13 +679,13 @@ type LoadBalancerStatsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/grpc.testing.LoadBalancerStatsService/GetClientStats", connect_go.NewUnaryHandler(
-		"/grpc.testing.LoadBalancerStatsService/GetClientStats",
+	mux.Handle(LoadBalancerStatsServiceGetClientStatsProcedure, connect_go.NewUnaryHandler(
+		LoadBalancerStatsServiceGetClientStatsProcedure,
 		svc.GetClientStats,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats", connect_go.NewUnaryHandler(
-		"/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats",
+	mux.Handle(LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure, connect_go.NewUnaryHandler(
+		LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure,
 		svc.GetClientAccumulatedStats,
 		opts...,
 	))
@@ -653,12 +721,12 @@ func NewXdsUpdateHealthServiceClient(httpClient connect_go.HTTPClient, baseURL s
 	return &xdsUpdateHealthServiceClient{
 		setServing: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.XdsUpdateHealthService/SetServing",
+			baseURL+XdsUpdateHealthServiceSetServingProcedure,
 			opts...,
 		),
 		setNotServing: connect_go.NewClient[testing.Empty, testing.Empty](
 			httpClient,
-			baseURL+"/grpc.testing.XdsUpdateHealthService/SetNotServing",
+			baseURL+XdsUpdateHealthServiceSetNotServingProcedure,
 			opts...,
 		),
 	}
@@ -694,13 +762,13 @@ type XdsUpdateHealthServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/grpc.testing.XdsUpdateHealthService/SetServing", connect_go.NewUnaryHandler(
-		"/grpc.testing.XdsUpdateHealthService/SetServing",
+	mux.Handle(XdsUpdateHealthServiceSetServingProcedure, connect_go.NewUnaryHandler(
+		XdsUpdateHealthServiceSetServingProcedure,
 		svc.SetServing,
 		opts...,
 	))
-	mux.Handle("/grpc.testing.XdsUpdateHealthService/SetNotServing", connect_go.NewUnaryHandler(
-		"/grpc.testing.XdsUpdateHealthService/SetNotServing",
+	mux.Handle(XdsUpdateHealthServiceSetNotServingProcedure, connect_go.NewUnaryHandler(
+		XdsUpdateHealthServiceSetNotServingProcedure,
 		svc.SetNotServing,
 		opts...,
 	))
@@ -738,7 +806,7 @@ func NewXdsUpdateClientConfigureServiceClient(httpClient connect_go.HTTPClient, 
 	return &xdsUpdateClientConfigureServiceClient{
 		configure: connect_go.NewClient[testing.ClientConfigureRequest, testing.ClientConfigureResponse](
 			httpClient,
-			baseURL+"/grpc.testing.XdsUpdateClientConfigureService/Configure",
+			baseURL+XdsUpdateClientConfigureServiceConfigureProcedure,
 			opts...,
 		),
 	}
@@ -768,8 +836,8 @@ type XdsUpdateClientConfigureServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
 	mux := http.NewServeMux()
-	mux.Handle("/grpc.testing.XdsUpdateClientConfigureService/Configure", connect_go.NewUnaryHandler(
-		"/grpc.testing.XdsUpdateClientConfigureService/Configure",
+	mux.Handle(XdsUpdateClientConfigureServiceConfigureProcedure, connect_go.NewUnaryHandler(
+		XdsUpdateClientConfigureServiceConfigureProcedure,
 		svc.Configure,
 		opts...,
 	))
