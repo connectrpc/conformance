@@ -27,7 +27,7 @@
     "@types/jasmine": "^4.3.1",
     "@types/karma": "^6.3.3",
     "@typescript-eslint/eslint-plugin": "^5.52.0",
-    "@typescript-eslint/parser": "^5.50.0",
+    "@typescript-eslint/parser": "^5.59.1",
     "eslint": "^8.34.0",
     "jasmine-spec-reporter": "^7.0.0",
     "prettier": "^2.8.4",
