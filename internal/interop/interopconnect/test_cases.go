@@ -95,6 +95,9 @@ func DoCacheableUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient)
 	assert.True(t, proto.Equal(&testpb.SimpleResponse{
 		Payload: payload,
 	}, msg))
+	if reply.Header().Get("Request-Protocol") == connect.ProtocolConnect {
+		assert.Equal(t, "true", reply.Header().Get("Get-Request"))
+	}
 	t.Successf("successful cacheable unary call")
 }
 

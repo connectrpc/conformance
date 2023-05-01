@@ -101,6 +101,7 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 			trailer = metadata.Pairs(trailingMetadataPairs...)
 		}
 	}
+	header = metadata.Join(header, metadata.Pairs("Request-Protocol", "grpc"))
 	if header != nil {
 		if err := grpc.SendHeader(ctx, header); err != nil {
 			return nil, err

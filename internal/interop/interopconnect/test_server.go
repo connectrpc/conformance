@@ -37,10 +37,13 @@ type testServer struct {
 }
 
 func (s *testServer) CacheableUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
-	if request.Peer().Protocol == connect.ProtocolConnect && !request.Peer().Query.Has("message") {
-		return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("expected get request"))
+	response, err := s.UnaryCall(ctx, request)
+	if response != nil {
+		if request.Peer().Query.Has("message") {
+			response.Header().Set("Get-Request", "true")
+		}
 	}
-	return s.UnaryCall(ctx, request)
+	return response, err
 }
 
 func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[testpb.Empty]) (*connect.Response[testpb.Empty], error) {
@@ -74,6 +77,7 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 			response.Trailer().Add(trailingMetadataKey, connect.EncodeBinaryHeader(decodedTrailingMetadata))
 		}
 	}
+	response.Header().Set("Request-Protocol", request.Peer().Protocol)
 	return response, nil
 }
 
