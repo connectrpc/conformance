@@ -161,7 +161,7 @@ func run(flags *flags) {
 		log.Fatalf(`the --implementation or -i flag is invalid"`)
 	}
 	// create client options base on protocol of the implementation
-	var clientOptions []connect.ClientOption
+	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
 	switch flags.implementation {
 	case connectGRPCH1, connectGRPCH2:
 		clientOptions = append(clientOptions, connect.WithGRPC())
@@ -236,6 +236,7 @@ func run(flags *flags) {
 
 func testConnectUnary(client testingconnect.TestServiceClient) {
 	interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
+	interopconnect.DoCacheableUnaryCall(console.NewTB(), client)
 	interopconnect.DoLargeUnaryCall(console.NewTB(), client)
 	interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
 	interopconnect.DoDuplicatedCustomMetadataUnary(console.NewTB(), client)

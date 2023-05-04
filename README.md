@@ -36,6 +36,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 | Test Case                                | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
 |------------------------------------------|-------------------------|---------------------------|
 | `empty_unary`                            | ✓                       | ✓                         |
+| `cacheable_unary`                        | ✓                       | ✓                         |
 | `large_unary`                            | ✓                       | ✓                         |
 | `client_streaming`                       | ✓                       |                           |
 | `server_streaming`                       | ✓                       | ✓                         |
@@ -71,6 +72,13 @@ RPC: `UnaryCall`
 
 Client calls `UnaryCall` with a payload size of 250 KiB bytes and expects a response with a
 payload size of 500 KiB and no errors.
+
+#### cacheable_unary
+
+RPC: `CacheableUnaryCall`
+
+Client calls `CacheableUnaryCall` with a small payload. Expected to be called via `GET`
+request when called with the Connect protocol.
 
 #### client_streaming
 
