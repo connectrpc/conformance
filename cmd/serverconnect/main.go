@@ -114,7 +114,7 @@ func run(flags *flags) {
 		// name "*" without special semantics.
 		ExposedHeaders: []string{
 			"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial",
-			"Trailer-X-Grpc-Test-Echo-Trailing-Bin"},
+			"Trailer-X-Grpc-Test-Echo-Trailing-Bin", "Request-Protocol", "Get-Request"},
 	}).Handler(mux)
 	tlsConfig := newTLSConfig(flags.certFile, flags.keyFile)
 	h1Server := http.Server{
