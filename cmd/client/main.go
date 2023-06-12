@@ -137,7 +137,7 @@ func run(flags *flags) {
 	}
 
 	// tests for connect clients
-	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flags.host, flags.port))
+	serverURL, err := url.ParseRequestURI("http://" + net.JoinHostPort(flags.host, flags.port))
 	if err != nil {
 		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flags.host, flags.port))
 	}
@@ -146,9 +146,7 @@ func run(flags *flags) {
 	var transport http.RoundTripper
 	switch flags.implementation {
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
-		transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
-		}
+		transport = &http.Transport{}
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
 		transport = &http2.Transport{
 			TLSClientConfig: tlsConfig,
