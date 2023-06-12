@@ -298,6 +298,9 @@ func validateMetadata(
 	expectedStringHeaders map[string][]string,
 	expectedBinaryHeaders map[string][][]byte,
 ) {
+	fmt.Println("Using a canonical header: ", trailer.Values("X-Grpc-Test-Echo-Trailing-Bin"))
+	fmt.Println("Using all lowercase: ", trailer.Values("x-grpc-test-echo-trailing-bin"))
+	fmt.Println("Using the map directly: ", trailer["x-grpc-test-echo-trailing-bin"])
 	for key, values := range expectedStringHeaders {
 		actualValues := header.Values(key)
 		// If the returned header values are not equal to what we expect, next check whether the header
@@ -318,11 +321,6 @@ func validateMetadata(
 		}
 	}
 	for key, values := range expectedBinaryHeaders {
-		fmt.Println("expected trailers key ", key)
-		fmt.Println("expected trailer values ", values)
-		fmt.Println("expected trailer values len", len(values))
-		fmt.Println("actual trailer values ", trailer.Values(key))
-		fmt.Println("actual trailer values len", len(trailer.Values(key)))
 		actualValues := trailer.Values(key)
 		// If the returned trailer values are not equal to what we expect, next check whether the trailer
 		// values were combined into one comma-delimited string. The Fetch API Headers object will return
@@ -346,6 +344,7 @@ func validateMetadata(
 
 // DoCustomMetadataUnary checks that metadata is echoed back to the client with unary call.
 func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
+	fmt.Println("DoCustomMetadataUnary")
 	customMetadataUnaryTest(
 		t,
 		client,
