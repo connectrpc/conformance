@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
@@ -298,23 +299,43 @@ func validateMetadata(
 	expectedBinaryHeaders map[string][][]byte,
 ) {
 	for key, values := range expectedStringHeaders {
-		assert.Equal(t, len(values), len(header.Values(key)))
+		actualValues := header.Values(key)
+		// If the returned header values are not equal to what we expect, next check whether the header
+		// values were combined into one comma-delimited string. The Fetch API Headers object will return
+		// duplicate headers this way.
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
+			actualValues = strings.Split(actualValues[0], ", ")
+		}
+
+		assert.Equal(t, len(values), len(actualValues))
 		valuesMap := map[string]struct{}{}
 		for _, value := range values {
 			valuesMap[value] = struct{}{}
 		}
-		for _, headerValue := range header.Values(key) {
+		for _, headerValue := range actualValues {
 			_, ok := valuesMap[headerValue]
 			assert.True(t, ok)
 		}
 	}
 	for key, values := range expectedBinaryHeaders {
-		assert.Equal(t, len(values), len(trailer.Values(key)))
+		fmt.Println("expected trailers key ", key)
+		fmt.Println("expected trailer values ", values)
+		fmt.Println("expected trailer values len", len(values))
+		fmt.Println("actual trailer values ", trailer.Values(key))
+		fmt.Println("actual trailer values len", len(trailer.Values(key)))
+		actualValues := trailer.Values(key)
+		// If the returned trailer values are not equal to what we expect, next check whether the trailer
+		// values were combined into one comma-delimited string. The Fetch API Headers object will return
+		// duplicate headers this way.
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
+			actualValues = strings.Split(actualValues[0], ", ")
+		}
+		assert.Equal(t, len(values), len(actualValues))
 		valuesMap := map[string]struct{}{}
 		for _, value := range values {
 			valuesMap[string(value)] = struct{}{}
 		}
-		for _, trailerValue := range trailer.Values(key) {
+		for _, trailerValue := range actualValues {
 			decodedTrailerValue, err := connect.DecodeBinaryHeader(trailerValue)
 			assert.NoError(t, err)
 			_, ok := valuesMap[string(decodedTrailerValue)]
@@ -339,6 +360,7 @@ func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient
 }
 
 func DoCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
+	fmt.Println("DoCustomMetadataServerStreaming")
 	customMetadataServerStreamingTest(
 		t,
 		client,
@@ -354,6 +376,7 @@ func DoCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestSer
 
 // DoCustomMetadataFullDuplex checks that metadata is echoed back to the client with full duplex call.
 func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceClient) {
+	fmt.Println("DoCustomMetadataFullDuplex")
 	customMetadataFullDuplexTest(
 		t,
 		client,
@@ -370,11 +393,12 @@ func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceC
 // DoDuplicatedCustomMetadataUnary adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client with unary call.
 func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
+	fmt.Println("DoDuplicatedCustomMetadataUnary")
 	customMetadataUnaryTest(
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -384,11 +408,12 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestSer
 }
 
 func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
+	fmt.Println("DoDuplicatedCustomMetadataServerStreaming")
 	customMetadataServerStreamingTest(
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -404,7 +429,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.Te
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
