@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
@@ -298,23 +299,40 @@ func validateMetadata(
 	expectedBinaryHeaders map[string][][]byte,
 ) {
 	for key, values := range expectedStringHeaders {
-		assert.Equal(t, len(values), len(header.Values(key)))
+		actualValues := header.Values(key)
+		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
+		// This is not a complete semantic comparison as it doesn't cover all possible cases. For example:
+		// Foo: a
+		// Foo: b, c, d
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
+			actualValues = strings.Split(actualValues[0], ", ")
+		}
+
+		assert.Equal(t, len(values), len(actualValues))
 		valuesMap := map[string]struct{}{}
 		for _, value := range values {
 			valuesMap[value] = struct{}{}
 		}
-		for _, headerValue := range header.Values(key) {
+		for _, headerValue := range actualValues {
 			_, ok := valuesMap[headerValue]
 			assert.True(t, ok)
 		}
 	}
 	for key, values := range expectedBinaryHeaders {
-		assert.Equal(t, len(values), len(trailer.Values(key)))
+		actualValues := trailer.Values(key)
+		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
+		// This is not a complete semantic comparison as it doesn't cover all possible cases. For example:
+		// Foo: a
+		// Foo: b, c, d
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
+			actualValues = strings.Split(actualValues[0], ", ")
+		}
+		assert.Equal(t, len(values), len(actualValues))
 		valuesMap := map[string]struct{}{}
 		for _, value := range values {
 			valuesMap[string(value)] = struct{}{}
 		}
-		for _, trailerValue := range trailer.Values(key) {
+		for _, trailerValue := range actualValues {
 			decodedTrailerValue, err := connect.DecodeBinaryHeader(trailerValue)
 			assert.NoError(t, err)
 			_, ok := valuesMap[string(decodedTrailerValue)]
@@ -374,7 +392,7 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestSer
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -388,7 +406,7 @@ func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client connect
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -404,7 +422,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.Te
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
