@@ -319,10 +319,7 @@ func validateMetadata(
 	}
 	for key, values := range expectedBinaryHeaders {
 		actualValues := trailer.Values(key)
-		// If the returned trailer values are not equal to what we expect, next check whether the trailer
-		// values were combined into one comma-delimited string. The Fetch API Headers object will return
-		// duplicate headers this way.
-		if len(values) != len(actualValues) && len(actualValues) == 1 {
+		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
 			actualValues = strings.Split(actualValues[0], ", ")
 		}
 		assert.Equal(t, len(values), len(actualValues))
