@@ -160,6 +160,16 @@ func DoServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
 		index++
 		respCnt++
 	}
+	if stream.Err() != nil {
+		if connectErr := new(connect.Error); errors.As(stream.Err(), &connectErr) {
+			fmt.Println("Code: ", connectErr.Code())
+			fmt.Println("Message: ", connectErr.Message())
+			fmt.Println("Details: ", connectErr.Details())
+			fmt.Println("Metadata: ", connectErr.Meta())
+			fmt.Println("Acme: ", connectErr.Meta().Values("acme-operation-cost"))
+		}
+	}
+
 	require.NoError(t, stream.Err())
 	require.NoError(t, stream.Close())
 	assert.Equal(t, respCnt, len(respSizes))
@@ -298,9 +308,6 @@ func validateMetadata(
 	expectedStringHeaders map[string][]string,
 	expectedBinaryHeaders map[string][][]byte,
 ) {
-	fmt.Println("Using a canonical header: ", trailer.Values("X-Grpc-Test-Echo-Trailing-Bin"))
-	fmt.Println("Using all lowercase: ", trailer.Values("x-grpc-test-echo-trailing-bin"))
-	fmt.Println("Using the map directly: ", trailer["x-grpc-test-echo-trailing-bin"])
 	for key, values := range expectedStringHeaders {
 		actualValues := header.Values(key)
 		// If the returned header values are not equal to what we expect, next check whether the header
@@ -344,7 +351,6 @@ func validateMetadata(
 
 // DoCustomMetadataUnary checks that metadata is echoed back to the client with unary call.
 func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
-	fmt.Println("DoCustomMetadataUnary")
 	customMetadataUnaryTest(
 		t,
 		client,
@@ -359,7 +365,6 @@ func DoCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient
 }
 
 func DoCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
-	fmt.Println("DoCustomMetadataServerStreaming")
 	customMetadataServerStreamingTest(
 		t,
 		client,
@@ -375,7 +380,6 @@ func DoCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestSer
 
 // DoCustomMetadataFullDuplex checks that metadata is echoed back to the client with full duplex call.
 func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceClient) {
-	fmt.Println("DoCustomMetadataFullDuplex")
 	customMetadataFullDuplexTest(
 		t,
 		client,
@@ -392,7 +396,6 @@ func DoCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.TestServiceC
 // DoDuplicatedCustomMetadataUnary adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client with unary call.
 func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestServiceClient) {
-	fmt.Println("DoDuplicatedCustomMetadataUnary")
 	customMetadataUnaryTest(
 		t,
 		client,
@@ -407,7 +410,6 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestSer
 }
 
 func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
-	fmt.Println("DoDuplicatedCustomMetadataServerStreaming")
 	customMetadataServerStreamingTest(
 		t,
 		client,
