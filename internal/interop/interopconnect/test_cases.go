@@ -300,9 +300,7 @@ func validateMetadata(
 ) {
 	for key, values := range expectedStringHeaders {
 		actualValues := header.Values(key)
-		// If the returned header values are not equal to what we expect, next check whether the header
-		// values were combined into one comma-delimited string. The Fetch API Headers object will return
-		// duplicate headers this way.
+		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
 		if len(values) != len(actualValues) && len(actualValues) == 1 {
 			actualValues = strings.Split(actualValues[0], ", ")
 		}
