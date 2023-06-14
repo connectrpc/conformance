@@ -301,6 +301,9 @@ func validateMetadata(
 	for key, values := range expectedStringHeaders {
 		actualValues := header.Values(key)
 		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
+		// This is not a complete semantic comparison as it doesn't cover all possible cases. For example:
+		// Foo: a
+		// Foo: b, c, d
 		if len(values) != len(actualValues) && len(actualValues) == 1 {
 			actualValues = strings.Split(actualValues[0], ", ")
 		}
@@ -318,6 +321,10 @@ func validateMetadata(
 	for key, values := range expectedBinaryHeaders {
 		actualValues := trailer.Values(key)
 		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
+		// This is not a complete semantic comparison as it doesn't cover all possible cases. For example:
+		// Foo: a
+		// Foo: b, c, d
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
 			actualValues = strings.Split(actualValues[0], ", ")
 		}
 		assert.Equal(t, len(values), len(actualValues))
