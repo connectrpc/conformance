@@ -160,16 +160,6 @@ func DoServerStreaming(t crosstesting.TB, client connectpb.TestServiceClient) {
 		index++
 		respCnt++
 	}
-	if stream.Err() != nil {
-		if connectErr := new(connect.Error); errors.As(stream.Err(), &connectErr) {
-			fmt.Println("Code: ", connectErr.Code())
-			fmt.Println("Message: ", connectErr.Message())
-			fmt.Println("Details: ", connectErr.Details())
-			fmt.Println("Metadata: ", connectErr.Meta())
-			fmt.Println("Acme: ", connectErr.Meta().Values("acme-operation-cost"))
-		}
-	}
-
 	require.NoError(t, stream.Err())
 	require.NoError(t, stream.Close())
 	assert.Equal(t, respCnt, len(respSizes))
