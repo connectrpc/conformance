@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "commonjs",
-    "lib": ["esnext", "dom"],
+    "module": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "strict": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true
   },
-  "include": ["spec/*.ts", "gen/**/*.ts"]
+  "include": ["server/**/*.ts"]
 }

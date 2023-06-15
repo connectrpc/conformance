@@ -2,24 +2,30 @@
   "name": "web",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "scripts": {
     "eslint": "eslint --max-warnings 0 .",
     "format": "prettier --write '**/*.{json,js,jsx,ts,tsx,css}' --loglevel error",
     "lint": "npm run eslint && npm run types-check",
-    "test": "./node_modules/.bin/karma start karma.conf.js",
-    "types-check": "tsc --noemit"
+    "test": "npx karma start karma.conf.js",
+    "types-check": "npx tsc --noEmit",
+    "server:fastify:h2c": "npm run types-check && tsx server/fastify/server.ts h2c"
   },
   "dependencies": {
-    "@bufbuild/connect": "^0.8.1",
-    "@bufbuild/connect-web": "^0.8.1",
-    "@bufbuild/protobuf": "^1.0.0",
+    "@bufbuild/connect": "^0.10.0",
+    "@bufbuild/connect-fastify": "^0.10.0",
+    "@bufbuild/connect-node": "^0.10.0",
+    "@bufbuild/connect-web": "^0.10.0",
+    "@bufbuild/protobuf": "^1.2.1",
+    "@fastify/cors": "^8.3.0",
     "caseless": "^0.12.0",
     "google-protobuf": "^3.21.2",
     "grpc-web": "^1.4.2",
     "karma": "^6.4.1",
     "karma-chrome-launcher": "^3.1.1",
     "karma-esbuild": "^2.2.5",
-    "karma-jasmine": "^5.1.0"
+    "karma-jasmine": "^5.1.0",
+    "tsx": "^3.12.7"
   },
   "devDependencies": {
     "@types/caseless": "^0.12.2",
