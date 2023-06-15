@@ -76,14 +76,17 @@ func main() {
 		Short: "Starts a grpc or connect client, based on implementation",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			insecure, _ := cmd.Flags().GetBool(insecureFlagName)
+			certFile, _ := cmd.Flags().GetString(certFlagName)
+			keyFile, _ := cmd.Flags().GetString(keyFlagName)
 			implementation, _ := cmd.Flags().GetString("implementation")
 			if insecure {
 				if implementation == connectGRPCWebH3 || implementation == connectH3 {
 					return errors.New("HTTP/3 implementations cannot be insecure. Either change the implementation or remove the insecure flag and provide a cert and key")
 				}
 			} else {
-				cmd.MarkFlagRequired(certFlagName)
-				cmd.MarkFlagRequired(keyFlagName)
+				if certFile == "" || keyFile == "" {
+					return errors.New("Either a 'cert' and 'key' combination or 'insecure' must be specified")
+				}
 			}
 			return nil
 		},
