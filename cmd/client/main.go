@@ -75,9 +75,7 @@ func main() {
 		Use:   "client",
 		Short: "Starts a grpc or connect client, based on implementation",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			insecure, _ := cmd.Flags().GetBool("insecure")
-			// certFile, _ := cmd.Flags().GetString("cert")
-			// keyFile, _ := cmd.Flags().GetString("key")
+			insecure, _ := cmd.Flags().GetBool(insecureFlagName)
 			implementation, _ := cmd.Flags().GetString("implementation")
 			if insecure {
 				if implementation == connectGRPCWebH3 || implementation == connectH3 {
@@ -128,8 +126,8 @@ func bind(cmd *cobra.Command, flags *flags) error {
 			return err
 		}
 	}
-	cmd.MarkFlagsMutuallyExclusive("insecure", "cert")
-	cmd.MarkFlagsMutuallyExclusive("insecure", "key")
+	cmd.MarkFlagsMutuallyExclusive(insecureFlagName, certFlagName)
+	cmd.MarkFlagsMutuallyExclusive(insecureFlagName, keyFlagName)
 	return nil
 }
 
