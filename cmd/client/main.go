@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -75,17 +76,18 @@ func main() {
 		Use:   "client",
 		Short: "Starts a grpc or connect client, based on implementation",
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			insecure, _ := cmd.Flags().GetBool("insecure")
-			// certFile, _ := cmd.Flags().GetString("cert")
-			// keyFile, _ := cmd.Flags().GetString("key")
+			insecure, _ := cmd.Flags().GetBool(insecureFlagName)
+			certFile, _ := cmd.Flags().GetString(certFlagName)
+			keyFile, _ := cmd.Flags().GetString(keyFlagName)
 			implementation, _ := cmd.Flags().GetString("implementation")
 			if insecure {
 				if implementation == connectGRPCWebH3 || implementation == connectH3 {
 					return errors.New("HTTP/3 implementations cannot be insecure. Either change the implementation or remove the insecure flag and provide a cert and key")
 				}
 			} else {
-				cmd.MarkFlagRequired(certFlagName)
-				cmd.MarkFlagRequired(keyFlagName)
+				if certFile == "" || keyFile == "" {
+					return errors.New("either a 'cert' and 'key' combination or 'insecure' must be specified")
+				}
 			}
 			return nil
 		},
@@ -128,8 +130,8 @@ func bind(cmd *cobra.Command, flags *flags) error {
 			return err
 		}
 	}
-	cmd.MarkFlagsMutuallyExclusive("insecure", "cert")
-	cmd.MarkFlagsMutuallyExclusive("insecure", "key")
+	cmd.MarkFlagsMutuallyExclusive(insecureFlagName, certFlagName)
+	cmd.MarkFlagsMutuallyExclusive(insecureFlagName, keyFlagName)
 	return nil
 }
 
@@ -172,22 +174,22 @@ func run(flags *flags) {
 	var transport http.RoundTripper
 	switch flags.implementation {
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
-		h1 := &http.Transport{}
+		h1Transport := &http.Transport{}
 		if !flags.insecure {
-			h1.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
+			h1Transport.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
 		}
-		transport = h1
+		transport = h1Transport
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
-		h2 := &http2.Transport{}
+		h2Transport := &http2.Transport{}
 		if flags.insecure {
-			h2.AllowHTTP = true
-			h2.DialTLS = func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+			h2Transport.AllowHTTP = true
+			h2Transport.DialTLSContext = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
 				return net.Dial(network, addr)
 			}
 		} else {
-			h2.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
+			h2Transport.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
 		}
-		transport = h2
+		transport = h2Transport
 	case connectH3, connectGRPCWebH3:
 		transport = &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
