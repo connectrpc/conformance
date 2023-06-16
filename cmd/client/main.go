@@ -15,6 +15,7 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
@@ -85,7 +86,7 @@ func main() {
 				}
 			} else {
 				if certFile == "" || keyFile == "" {
-					return errors.New("Either a 'cert' and 'key' combination or 'insecure' must be specified")
+					return errors.New("either a 'cert' and 'key' combination or 'insecure' must be specified")
 				}
 			}
 			return nil
@@ -173,22 +174,22 @@ func run(flags *flags) {
 	var transport http.RoundTripper
 	switch flags.implementation {
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
-		h1 := &http.Transport{}
+		h1Transport := &http.Transport{}
 		if !flags.insecure {
-			h1.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
+			h1Transport.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
 		}
-		transport = h1
+		transport = h1Transport
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
-		h2 := &http2.Transport{}
+		h2Transport := &http2.Transport{}
 		if flags.insecure {
-			h2.AllowHTTP = true
-			h2.DialTLS = func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+			h2Transport.AllowHTTP = true
+			h2Transport.DialTLSContext = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
 				return net.Dial(network, addr)
 			}
 		} else {
-			h2.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
+			h2Transport.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
 		}
-		transport = h2
+		transport = h2Transport
 	case connectH3, connectGRPCWebH3:
 		transport = &http3.RoundTripper{
 			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
