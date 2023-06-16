@@ -13,32 +13,60 @@
 // limitations under the License.
 
 import { readFileSync } from "fs";
-import { fastify } from "fastify";
+import {
+  fastify,
+  FastifyHttpOptions,
+  FastifyHttpsOptions,
+  FastifyHttp2Options,
+} from "fastify";
 import { fastifyConnectPlugin } from "@bufbuild/connect-fastify";
 import { cors as connectCors } from "@bufbuild/connect";
 import fastifyCors from "@fastify/cors";
 import routes from "../routes";
 import path from "path";
 import url from "url";
+import http from "http";
+import http2 from "http2";
+import https from "https";
 
-const protocol = process.argv[2] ?? "h1";
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const opts: any = {};
+interface Implementations {
+  "connect-h1": FastifyHttpsOptions<https.Server>;
+  "connect-h1-insecure": FastifyHttpOptions<http.Server>;
+  "connect-h2": FastifyHttp2Options<http2.Http2SecureServer>;
+  "connect-h2-insecure": FastifyHttp2Options<http2.Http2Server>;
+}
 
-if (protocol === "h2" || protocol === "h2c") {
-  opts.http2 = true;
-  if (protocol === "h2") {
-    const __filename = url.fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    opts.https = {
-      key: readFileSync(
-        path.join(__dirname, "..", "..", "..", "cert", "localhost.key")
-      ),
-      cert: readFileSync(
-        path.join(__dirname, "..", "..", "..", "cert", "localhost.crt")
-      ),
-    };
-  }
+const tls = {
+  key: readFileSync(
+    path.join(__dirname, "..", "..", "cert", "server-connect.key")
+  ),
+  cert: readFileSync(
+    path.join(__dirname, "..", "..", "cert", "server-connect.crt")
+  ),
+};
+
+const implementations = {
+  "connect-h1": {
+    https: tls,
+  },
+  "connect-h1-insecure": { https: null },
+  "connect-h2": {
+    http2: true,
+    https: tls,
+  },
+  "connect-h2-insecure": {
+    http2: false,
+    https: null,
+  },
+};
+
+const impl = process.argv[2];
+const opts = implementations[impl as keyof Implementations];
+if (!opts) {
+  throw "invalid impl";
 }
 
 const server = fastify(opts);
@@ -57,3 +85,7 @@ await server.register(fastifyCors, {
 await server.register(fastifyConnectPlugin, { routes });
 
 await server.listen({ host: "localhost", port: 3000 });
+console.log(
+  `Running server with implementation ${impl} on`,
+  server.addresses()
+);

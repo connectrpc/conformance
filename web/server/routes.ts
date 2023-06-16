@@ -48,6 +48,7 @@ const unimplementedService: ServiceImpl<typeof UnimplementedService> = {
   unimplementedCall() {
     throw new ConnectError("unimplemented", Code.Unimplemented);
   },
+  // eslint-disable-next-line require-yield
   async *unimplementedStreamingOutputCall() {
     throw new ConnectError("unimplemented", Code.Unimplemented);
   },

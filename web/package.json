@@ -7,9 +7,9 @@
     "eslint": "eslint --max-warnings 0 .",
     "format": "prettier --write '**/*.{json,js,jsx,ts,tsx,css}' --loglevel error",
     "lint": "npm run eslint && npm run types-check",
-    "test": "npx karma start karma.conf.js",
-    "types-check": "npx tsc --noEmit",
-    "server:fastify:h2c": "npm run types-check && tsx server/fastify/server.ts h2c"
+    "test": "karma start karma.conf.cjs",
+    "types-check": "tsc --noEmit",
+    "server:fastify": "npm run types-check && tsx server/fastify/server.ts"
   },
   "dependencies": {
     "@bufbuild/connect": "^0.10.0",

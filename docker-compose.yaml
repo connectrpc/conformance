@@ -3,7 +3,7 @@ services:
   server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --h3port "8082" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
@@ -11,15 +11,25 @@ services:
       - "8080:8080"
       - "8081:8081"
       - "8082:8082"
-  server-grpc:
+  server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/servergrpc --port "8083" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8083:8083"
+  server-connect-node-fastify:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
+    entrypoint: npm run server:fastify connect-h1-insecure
+    ports:
+      - "8084:8084"
   envoy:
     image: envoyproxy/envoy:v1.20-latest
     ports:
@@ -30,125 +40,125 @@ services:
       - ./cert:/cert/:ro
     depends_on:
       - server-connect
-      - server-grpc
-  client-connect-to-server-connect-h1:
+      - server-grpc-go
+  client-connect-go-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-to-server-connect-h2:
+  client-connect-go-to-server-connect-go-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-to-server-connect-h3:
+  client-connect-go-to-server-connect-go-h3:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-grpc-to-server-connect-h1:
+  client-connect-go-grpc-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-grpc-to-server-connect-h2:
+  client-connect-go-grpc-to-server-connect-go-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-grpc-web-to-server-connect-h1:
+  client-connect-go-grpc-web-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-grpc-web-to-server-connect-h2:
+  client-connect-go-grpc-web-to-server-connect-go-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-web-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-grpc-web-to-server-connect-h3:
+  client-connect-go-grpc-web-to-server-connect-go-h3:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-web-h3" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-connect-grpc-web-to-envoy-server-connect-h1:
+  client-connect-go-grpc-web-to-envoy-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="envoy" --port="9091" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - envoy
-  client-connect-grpc-web-to-envoy-server-grpc-h1:
+  client-connect-go-grpc-web-to-envoy-server-grpc-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="envoy" --port="9092" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - envoy
-  client-connect-grpc-to-server-grpc:
+  client-connect-go-grpc-to-server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
+    entrypoint: /usr/local/bin/client --host="server-grpc-go" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-grpc
-  client-grpc-to-server-connect:
+      - server-grpc-go
+  client-grpc-go-to-server-connect-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-connect
-  client-grpc-to-server-grpc:
+  client-grpc-go-to-server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
+    entrypoint: /usr/local/bin/client --host="server-grpc-go" --port="8083" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
-      - server-grpc
-  client-web-connect-web-to-server-connect-h1:
+      - server-grpc-go
+  client-connect-web-to-server-connect-go-h1:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -158,7 +168,7 @@ services:
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-web"
     depends_on:
       - server-connect
-  client-web-connect-grpc-web-to-server-connect-h1:
+  client-connect-web-grpc-to-server-connect-go-h1:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -168,7 +178,7 @@ services:
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="connect-grpc-web"
     depends_on:
       - server-connect
-  client-web-connect-grpc-web-to-envoy-server-connect:
+  client-connect-web-grpc-to-envoy-server-connect-go:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -178,7 +188,7 @@ services:
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="connect-grpc-web"
     depends_on:
       - envoy
-  client-web-connect-grpc-web-to-envoy-server-grpc:
+  client-connect-web-grpc-web-to-envoy-server-grpc-go:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -188,7 +198,7 @@ services:
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-grpc-web"
     depends_on:
       - envoy
-  client-web-grpc-web-to-server-connect-h1:
+  client-connect-web-grpc-web-to-server-connect-go-h1:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -198,7 +208,7 @@ services:
     entrypoint: npm run test -- --docker --host="server-connect" --port="8080" --implementation="grpc-web"
     depends_on:
       - server-connect
-  client-web-grpc-web-to-envoy-server-connect:
+  client-connect-web-grpc-web-to-envoy-server-connect-go:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
@@ -208,7 +218,7 @@ services:
     entrypoint: npm run test -- --docker --host="envoy" --port="9091" --implementation="grpc-web"
     depends_on:
       - envoy
-  client-web-grpc-web-to-envoy-server-grpc:
+  client-connect-web-grpc-web-to-envoy-server-grpc-go:
     build:
       context: .
       dockerfile: Dockerfile.crosstestweb
