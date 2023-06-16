@@ -15,8 +15,10 @@
 package main
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -42,6 +44,7 @@ const (
 	hostFlagName           = "host"
 	portFlagName           = "port"
 	implementationFlagName = "implementation"
+	insecureFlagName       = "insecure"
 	certFlagName           = "cert"
 	keyFlagName            = "key"
 )
@@ -62,6 +65,7 @@ type flags struct {
 	host           string
 	port           string
 	implementation string
+	insecure       bool
 	certFile       string
 	keyFile        string
 }
@@ -71,6 +75,22 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "client",
 		Short: "Starts a grpc or connect client, based on implementation",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			insecure, _ := cmd.Flags().GetBool(insecureFlagName)
+			certFile, _ := cmd.Flags().GetString(certFlagName)
+			keyFile, _ := cmd.Flags().GetString(keyFlagName)
+			implementation, _ := cmd.Flags().GetString("implementation")
+			if insecure {
+				if implementation == connectGRPCWebH3 || implementation == connectH3 {
+					return errors.New("HTTP/3 implementations cannot be insecure. Either change the implementation or remove the insecure flag and provide a cert and key")
+				}
+			} else {
+				if certFile == "" || keyFile == "" {
+					return errors.New("either a 'cert' and 'key' combination or 'insecure' must be specified")
+				}
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			run(flagset)
 		},
@@ -104,11 +124,14 @@ func bind(cmd *cobra.Command, flags *flags) error {
 	)
 	cmd.Flags().StringVar(&flags.certFile, certFlagName, "", "path to the TLS cert file")
 	cmd.Flags().StringVar(&flags.keyFile, keyFlagName, "", "path to the TLS key file")
-	for _, requiredFlag := range []string{portFlagName, implementationFlagName, certFlagName, keyFlagName} {
+	cmd.Flags().BoolVar(&flags.insecure, insecureFlagName, false, "whether to use cleartext with the client (not permitted with HTTP/3 implementations)")
+	for _, requiredFlag := range []string{portFlagName, implementationFlagName} {
 		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
 			return err
 		}
 	}
+	cmd.MarkFlagsMutuallyExclusive(insecureFlagName, certFlagName)
+	cmd.MarkFlagsMutuallyExclusive(insecureFlagName, keyFlagName)
 	return nil
 }
 
@@ -137,25 +160,39 @@ func run(flags *flags) {
 	}
 
 	// tests for connect clients
-	serverURL, err := url.ParseRequestURI("https://" + net.JoinHostPort(flags.host, flags.port))
-	if err != nil {
-		log.Fatalf("invalid url: %s", "https://"+net.JoinHostPort(flags.host, flags.port))
+	var scheme string
+	if flags.insecure {
+		scheme = "http://"
+	} else {
+		scheme = "https://"
 	}
-	tlsConfig := newTLSConfig(flags.certFile, flags.keyFile)
+	serverURL, err := url.ParseRequestURI(scheme + net.JoinHostPort(flags.host, flags.port))
+	if err != nil {
+		log.Fatalf("invalid url: %s", scheme+net.JoinHostPort(flags.host, flags.port))
+	}
 	// create transport base on HTTP protocol of the implementation
 	var transport http.RoundTripper
 	switch flags.implementation {
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
-		transport = &http.Transport{
-			TLSClientConfig: tlsConfig,
+		h1Transport := &http.Transport{}
+		if !flags.insecure {
+			h1Transport.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
 		}
+		transport = h1Transport
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
-		transport = &http2.Transport{
-			TLSClientConfig: tlsConfig,
+		h2Transport := &http2.Transport{}
+		if flags.insecure {
+			h2Transport.AllowHTTP = true
+			h2Transport.DialTLSContext = func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
+				return net.Dial(network, addr)
+			}
+		} else {
+			h2Transport.TLSClientConfig = newTLSConfig(flags.certFile, flags.keyFile)
 		}
+		transport = h2Transport
 	case connectH3, connectGRPCWebH3:
 		transport = &http3.RoundTripper{
-			TLSClientConfig: tlsConfig,
+			TLSClientConfig: newTLSConfig(flags.certFile, flags.keyFile),
 		}
 	default:
 		log.Fatalf(`the --implementation or -i flag is invalid"`)
