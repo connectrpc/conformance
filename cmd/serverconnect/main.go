@@ -246,33 +246,33 @@ func run(flags *flags) {
 	}
 }
 
-func newH1Server(f *flags, handler http.Handler) http.Server {
-	h1Server := http.Server{
-		Addr:    ":" + f.h1Port,
+func newH1Server(flags *flags, handler http.Handler) *http.Server {
+	h1Server := &http.Server{
+		Addr:    ":" + flags.h1Port,
 		Handler: handler,
 	}
-	if !f.insecure {
-		h1Server.TLSConfig = newTLSConfig(f.certFile, f.keyFile)
+	if !flags.insecure {
+		h1Server.TLSConfig = newTLSConfig(flags.certFile, flags.keyFile)
 	}
 	return h1Server
 }
 
-func newH2Server(f *flags, handler http.Handler) http.Server {
-	h2Server := http.Server{
-		Addr:    ":" + f.h2Port,
+func newH2Server(flags *flags, handler http.Handler) *http.Server {
+	h2Server := &http.Server{
+		Addr:    ":" + flags.h2Port,
 		Handler: handler,
 	}
-	if !f.insecure {
-		h2Server.TLSConfig = newTLSConfig(f.certFile, f.keyFile)
+	if !flags.insecure {
+		h2Server.TLSConfig = newTLSConfig(flags.certFile, flags.keyFile)
 	}
 	return h2Server
 }
 
-func newH3Server(f *flags, handler http.Handler) http3.Server {
+func newH3Server(flags *flags, handler http.Handler) http3.Server {
 	return http3.Server{
-		Addr:      ":" + f.h3Port,
+		Addr:      ":" + flags.h3Port,
 		Handler:   handler,
-		TLSConfig: newTLSConfig(f.certFile, f.keyFile),
+		TLSConfig: newTLSConfig(flags.certFile, flags.keyFile),
 	}
 }
 
