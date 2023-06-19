@@ -84,7 +84,7 @@ await server.register(fastifyCors, {
 
 await server.register(fastifyConnectPlugin, { routes });
 
-await server.listen({ host: "localhost", port: 3000 });
+await server.listen({ host: "0.0.0.0", port: 8084 });
 console.log(
   `Running server with implementation ${impl} on`,
   server.addresses()
