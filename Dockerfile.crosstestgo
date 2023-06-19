@@ -8,6 +8,7 @@ ARG TEST_CONNECT_GO_BRANCH
 COPY go.mod go.sum /workspace/
 COPY cmd /workspace/cmd
 COPY internal /workspace/internal
+COPY proto /workspace/proto
 COPY cert /workspace/cert
 RUN if [ ! -z "$TEST_CONNECT_GO_BRANCH" ]; then go get github.com/bufbuild/connect-go@$TEST_CONNECT_GO_BRANCH; fi
 RUN --mount=type=cache,target=/root/.cache/go-build \
