@@ -33,15 +33,18 @@ import (
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
-	h1PortFlagName = "h1port"
-	h2PortFlagName = "h2port"
-	h3PortFlagName = "h3port"
-	certFlagName   = "cert"
-	keyFlagName    = "key"
+	h1PortFlagName   = "h1port"
+	h2PortFlagName   = "h2port"
+	h3PortFlagName   = "h3port"
+	certFlagName     = "cert"
+	keyFlagName      = "key"
+	insecureFlagName = "insecure"
 )
 
 type flags struct {
@@ -50,6 +53,7 @@ type flags struct {
 	h3Port   string
 	certFile string
 	keyFile  string
+	insecure bool
 }
 
 func main() {
@@ -57,6 +61,19 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "serverconnect",
 		Short: "Starts a connect test server",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			insecure, _ := cmd.Flags().GetBool(insecureFlagName)
+			certFile, _ := cmd.Flags().GetString(certFlagName)
+			keyFile, _ := cmd.Flags().GetString(keyFlagName)
+			h3Port, _ := cmd.Flags().GetString(h3PortFlagName)
+			if !insecure && (certFile == "" || keyFile == "") {
+				return errors.New("either a 'cert' and 'key' combination or 'insecure' must be specified")
+			}
+			if h3Port != "" && (certFile == "" || keyFile == "") {
+				return errors.New("a 'cert' and 'key' combination is required when an HTTP/3 port is specified")
+			}
+			return nil
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			run(flagset)
 		},
@@ -73,7 +90,8 @@ func bind(cmd *cobra.Command, flagset *flags) error {
 	cmd.Flags().StringVar(&flagset.h3Port, h3PortFlagName, "", "port for HTTP/3 traffic")
 	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
 	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
-	for _, requiredFlag := range []string{h1PortFlagName, h2PortFlagName, certFlagName, keyFlagName} {
+	cmd.Flags().BoolVar(&flagset.insecure, insecureFlagName, false, "whether to serve cleartext or TLS. HTTP/3 requires TLS.")
+	for _, requiredFlag := range []string{h1PortFlagName, h2PortFlagName} {
 		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
 			return err
 		}
@@ -116,23 +134,13 @@ func run(flags *flags) {
 			"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial",
 			"Trailer-X-Grpc-Test-Echo-Trailing-Bin", "Request-Protocol", "Get-Request"},
 	}).Handler(mux)
-	tlsConfig := newTLSConfig(flags.certFile, flags.keyFile)
-	h1Server := http.Server{
-		Addr:    ":" + flags.h1Port,
-		Handler: corsHandler,
-	}
-	h2Server := http.Server{
-		Addr:      ":" + flags.h2Port,
-		Handler:   mux,
-		TLSConfig: tlsConfig,
-	}
+
+	// Create servers
+	h1Server := newH1Server(flags, corsHandler)
+	h2Server := newH2Server(flags, mux)
 	var h3Server http3.Server
 	if flags.h3Port != "" {
-		h3Server = http3.Server{
-			Addr:      ":" + flags.h3Port,
-			Handler:   mux,
-			TLSConfig: tlsConfig,
-		}
+		h3Server = newH3Server(flags, mux)
 	}
 	protocols := []*serverpb.ProtocolSupport{
 		{
@@ -196,12 +204,24 @@ func run(flags *flags) {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		if err := h1Server.ListenAndServeTLS(flags.certFile, flags.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		var err error
+		if flags.insecure {
+			err = h1Server.ListenAndServe()
+		} else {
+			err = h1Server.ListenAndServeTLS(flags.certFile, flags.keyFile)
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
 	go func() {
-		if err := h2Server.ListenAndServeTLS(flags.certFile, flags.keyFile); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		var err error
+		if flags.insecure {
+			err = h2Server.ListenAndServe()
+		} else {
+			err = h2Server.ListenAndServeTLS(flags.certFile, flags.keyFile)
+		}
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
 	}()
@@ -225,6 +245,38 @@ func run(flags *flags) {
 		if err := h3Server.Close(); err != nil {
 			log.Fatalln(err)
 		}
+	}
+}
+
+func newH1Server(flags *flags, handler http.Handler) *http.Server {
+	h1Server := &http.Server{
+		Addr:    ":" + flags.h1Port,
+		Handler: handler,
+	}
+	if !flags.insecure {
+		h1Server.TLSConfig = newTLSConfig(flags.certFile, flags.keyFile)
+	}
+	return h1Server
+}
+
+func newH2Server(flags *flags, handler http.Handler) *http.Server {
+	h2Server := &http.Server{
+		Addr: ":" + flags.h2Port,
+	}
+	if !flags.insecure {
+		h2Server.TLSConfig = newTLSConfig(flags.certFile, flags.keyFile)
+		h2Server.Handler = handler
+	} else {
+		h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
+	}
+	return h2Server
+}
+
+func newH3Server(flags *flags, handler http.Handler) http3.Server {
+	return http3.Server{
+		Addr:      ":" + flags.h3Port,
+		Handler:   handler,
+		TLSConfig: newTLSConfig(flags.certFile, flags.keyFile),
 	}
 }
 
