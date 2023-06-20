@@ -88,7 +88,7 @@ func bind(cmd *cobra.Command, flagset *flags) error {
 	cmd.Flags().StringVar(&flagset.h3Port, h3PortFlagName, "", "port for HTTP/3 traffic")
 	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
 	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
-	cmd.Flags().BoolVar(&flagset.insecure, insecureFlagName, false, "whether to serve cleartext or TLS. Note that the HTTP/3 port will always serve TLS. ")
+	cmd.Flags().BoolVar(&flagset.insecure, insecureFlagName, false, "whether to serve cleartext or TLS. HTTP/3 requires TLS.")
 	for _, requiredFlag := range []string{h1PortFlagName, h2PortFlagName} {
 		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
 			return err
