@@ -33,6 +33,8 @@ import (
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -259,11 +261,13 @@ func newH1Server(flags *flags, handler http.Handler) *http.Server {
 
 func newH2Server(flags *flags, handler http.Handler) *http.Server {
 	h2Server := &http.Server{
-		Addr:    ":" + flags.h2Port,
-		Handler: handler,
+		Addr: ":" + flags.h2Port,
 	}
 	if !flags.insecure {
 		h2Server.TLSConfig = newTLSConfig(flags.certFile, flags.keyFile)
+		h2Server.Handler = handler
+	} else {
+		h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	}
 	return h2Server
 }
