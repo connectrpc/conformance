@@ -8,7 +8,7 @@
     "format": "prettier --write '**/*.{json,js,jsx,ts,tsx,css}' --loglevel error",
     "lint": "npm run eslint && npm run types-check",
     "test": "karma start karma.conf.cjs",
-    "server:fastify": "node --loader ts-node/esm server/fastify/program.ts"
+    "types-check": "tsc --noEmit"
   },
   "dependencies": {
     "@bufbuild/connect": "^0.10.0",

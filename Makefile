@@ -8,7 +8,7 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-print-directory
 BIN := .tmp/bin
 COPYRIGHT_YEARS := 2022
-LICENSE_IGNORE := -e internal/proto/grpc -e internal/interopgrpc -e web/spec/grpc-web.spec.ts
+LICENSE_IGNORE := -e proto/grpc -e internal/interopgrpc -e web/spec/grpc-web.spec.ts -e web/server/fastify/program.ts
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 
