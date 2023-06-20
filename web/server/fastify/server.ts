@@ -13,79 +13,86 @@
 // limitations under the License.
 
 import { readFileSync } from "fs";
-import {
-  fastify,
-  FastifyHttpOptions,
-  FastifyHttpsOptions,
-  FastifyHttp2Options,
-} from "fastify";
+import { fastify, FastifyHttpsOptions } from "fastify";
 import { fastifyConnectPlugin } from "@bufbuild/connect-fastify";
 import { cors as connectCors } from "@bufbuild/connect";
 import fastifyCors from "@fastify/cors";
-import routes from "../routes";
-import path from "path";
-import url from "url";
-import http from "http";
-import http2 from "http2";
+import routes from "../routes.js";
 import https from "https";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-interface Implementations {
-  "connect-h1": FastifyHttpsOptions<https.Server>;
-  "connect-h1-insecure": FastifyHttpOptions<http.Server>;
-  "connect-h2": FastifyHttp2Options<http2.Http2SecureServer>;
-  "connect-h2-insecure": FastifyHttp2Options<http2.Http2Server>;
-}
+const HOST = "0.0.0.0";
 
-const tls = {
-  key: readFileSync(
-    path.join(__dirname, "..", "..", "cert", "server-connect.key")
-  ),
-  cert: readFileSync(
-    path.join(__dirname, "..", "..", "cert", "server-connect.crt")
-  ),
-};
-
-const implementations = {
-  "connect-h1": {
-    https: tls,
-  },
-  "connect-h1-insecure": { https: null },
-  "connect-h2": {
-    http2: true,
-    https: tls,
-  },
-  "connect-h2-insecure": {
-    http2: false,
-    https: null,
-  },
-};
-
-const impl = process.argv[2];
-const opts = implementations[impl as keyof Implementations];
-if (!opts) {
-  throw "invalid impl";
-}
-
-const server = fastify(opts);
-
-// Options for configuring CORS. The @bufbuild/connect package exports
-// convenience variables for configuring a CORS setup.
-await server.register(fastifyCors, {
+const CORS_OPTIONS = {
   // Reflects the request origin. This should only be used for development.
   // Production should explicitly specify an origin
   origin: true,
   methods: [...connectCors.allowedMethods],
   allowedHeaders: [...connectCors.allowedHeaders],
   exposedHeaders: [...connectCors.exposedHeaders],
-});
+};
 
-await server.register(fastifyConnectPlugin, { routes });
+export interface Options {
+  h1port: number;
+  h2port: number;
+  cert?: string;
+  key?: string;
+  insecure?: boolean;
+}
 
-await server.listen({ host: "0.0.0.0", port: 8084 });
-console.log(
-  `Running server with implementation ${impl} on`,
-  server.addresses()
-);
+function getTLSConfig(key: string, cert: string) {
+  return {
+    key: readFileSync(path.join(__dirname, "..", "..", "..", key), "utf-8"),
+    cert: readFileSync(path.join(__dirname, "..", "..", "..", cert), "utf-8"),
+  };
+}
+
+function createH1Server(opts: Options) {
+  const serverOpts: FastifyHttpsOptions<https.Server> = { https: null };
+  if (!opts.insecure && opts.key && opts.cert) {
+    serverOpts.https = getTLSConfig(opts.key, opts.cert);
+  }
+
+  return fastify(serverOpts);
+}
+
+function createH2Server(opts: Options) {
+  if (!opts.insecure && opts.key && opts.cert) {
+    return fastify({
+      http2: true,
+      https: getTLSConfig(opts.key, opts.cert),
+    });
+  } else {
+    return fastify({
+      http2: true,
+    });
+  }
+}
+
+export async function start(opts: Options) {
+  const h1Server = createH1Server(opts);
+  await h1Server.register(fastifyCors, CORS_OPTIONS);
+  await h1Server.register(fastifyConnectPlugin, { routes });
+  await h1Server.listen({ host: HOST, port: opts.h1port });
+  console.log(
+    `Running ${opts.insecure ? "insecure" : "secure"} HTTP/1.1 server on `,
+    h1Server.addresses()
+  );
+
+  const h2Server = createH2Server(opts);
+  await h2Server.register(fastifyCors, CORS_OPTIONS);
+  await h2Server.register(fastifyConnectPlugin, { routes });
+  await h2Server.listen({ host: HOST, port: opts.h2port });
+  console.log(
+    `Running ${opts.insecure ? "insecure" : "secure"} HTTP/2 server on `,
+    h2Server.addresses()
+  );
+  return new Promise<void>((resolve) => {
+    resolve();
+  });
+}

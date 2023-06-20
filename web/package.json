@@ -8,8 +8,7 @@
     "format": "prettier --write '**/*.{json,js,jsx,ts,tsx,css}' --loglevel error",
     "lint": "npm run eslint && npm run types-check",
     "test": "karma start karma.conf.cjs",
-    "types-check": "tsc --noEmit",
-    "server:fastify": "npm run types-check && tsx server/fastify/server.ts"
+    "server:fastify": "node --loader ts-node/esm server/fastify/program.ts"
   },
   "dependencies": {
     "@bufbuild/connect": "^0.10.0",
@@ -19,12 +18,14 @@
     "@bufbuild/protobuf": "^1.2.1",
     "@fastify/cors": "^8.3.0",
     "caseless": "^0.12.0",
+    "commander": "^11.0.0",
     "google-protobuf": "^3.21.2",
     "grpc-web": "^1.4.2",
     "karma": "^6.4.1",
     "karma-chrome-launcher": "^3.1.1",
     "karma-esbuild": "^2.2.5",
     "karma-jasmine": "^5.1.0",
+    "ts-node": "^10.9.1",
     "tsx": "^3.12.7"
   },
   "devDependencies": {

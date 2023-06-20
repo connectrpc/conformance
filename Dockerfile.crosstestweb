@@ -16,7 +16,6 @@ COPY web/gen /workspace/gen
 COPY web/spec /workspace/spec
 COPY web/server /workspace/server
 COPY cert /workspace/cert
-EXPOSE 8084
 RUN npm install
 RUN local_npm_packages="" && \
     if [ ! -z "${TEST_PROTOBUF_ES_BRANCH}" ]; then \

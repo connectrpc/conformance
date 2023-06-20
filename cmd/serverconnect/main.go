@@ -33,6 +33,8 @@ import (
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -88,7 +90,7 @@ func bind(cmd *cobra.Command, flagset *flags) error {
 	cmd.Flags().StringVar(&flagset.h3Port, h3PortFlagName, "", "port for HTTP/3 traffic")
 	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
 	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
-	cmd.Flags().BoolVar(&flagset.insecure, insecureFlagName, false, "whether to serve cleartext or TLS. Note that the HTTP/3 port will always serve TLS. ")
+	cmd.Flags().BoolVar(&flagset.insecure, insecureFlagName, false, "whether to serve cleartext or TLS. HTTP/3 requires TLS.")
 	for _, requiredFlag := range []string{h1PortFlagName, h2PortFlagName} {
 		if err := cmd.MarkFlagRequired(requiredFlag); err != nil {
 			return err
@@ -259,11 +261,13 @@ func newH1Server(flags *flags, handler http.Handler) *http.Server {
 
 func newH2Server(flags *flags, handler http.Handler) *http.Server {
 	h2Server := &http.Server{
-		Addr:    ":" + flags.h2Port,
-		Handler: handler,
+		Addr: ":" + flags.h2Port,
 	}
 	if !flags.insecure {
 		h2Server.TLSConfig = newTLSConfig(flags.certFile, flags.keyFile)
+		h2Server.Handler = handler
+	} else {
+		h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	}
 	return h2Server
 }
