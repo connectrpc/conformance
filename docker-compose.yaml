@@ -17,10 +17,10 @@ services:
       dockerfile: Dockerfile.crosstest
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/servergrpc --port "8083" --transcodeport "8084" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
+    entrypoint: /usr/local/bin/servergrpc --port "8083" --transcodeport "8085" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
     ports:
       - "8083:8083"
-      - "8084:8084"
+      - "8085:8085"
   envoy:
     image: envoyproxy/envoy:v1.20-latest
     ports:
@@ -137,7 +137,7 @@ services:
       dockerfile: Dockerfile.crosstest
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8084" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
+    entrypoint: /usr/local/bin/client --host="server-grpc" --port="8085" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
   client-grpc-to-server-connect:
