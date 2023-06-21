@@ -15,9 +15,9 @@
 import { readFileSync } from "fs";
 import { fastify, FastifyHttpsOptions } from "fastify";
 import { fastifyConnectPlugin } from "@bufbuild/connect-fastify";
-import { cors as connectCors } from "@bufbuild/connect";
 import fastifyCors from "@fastify/cors";
 import routes from "../routes.js";
+import { interop } from "../interop.js";
 import https from "https";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -27,15 +27,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const HOST = "0.0.0.0";
-
-const CORS_OPTIONS = {
-  // Reflects the request origin. This should only be used for development.
-  // Production should explicitly specify an origin
-  origin: true,
-  methods: [...connectCors.allowedMethods],
-  allowedHeaders: [...connectCors.allowedHeaders],
-  exposedHeaders: [...connectCors.exposedHeaders],
-};
 
 export interface Options {
   h1port: number;
@@ -76,7 +67,7 @@ function createH2Server(opts: Options) {
 
 export async function start(opts: Options) {
   const h1Server = createH1Server(opts);
-  await h1Server.register(fastifyCors, CORS_OPTIONS);
+  await h1Server.register(fastifyCors, interop.corsOptions);
   await h1Server.register(fastifyConnectPlugin, { routes });
   await h1Server.listen({ host: HOST, port: opts.h1port });
   console.log(
@@ -85,7 +76,7 @@ export async function start(opts: Options) {
   );
 
   const h2Server = createH2Server(opts);
-  await h2Server.register(fastifyCors, CORS_OPTIONS);
+  await h2Server.register(fastifyCors, interop.corsOptions);
   await h2Server.register(fastifyConnectPlugin, { routes });
   await h2Server.listen({ host: HOST, port: opts.h2port });
   console.log(

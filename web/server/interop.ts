@@ -17,6 +17,7 @@ import {
   Payload,
   PayloadType,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb.js";
+import { cors as connectCors } from "@bufbuild/connect";
 
 export const interop = {
   /**
@@ -46,5 +47,27 @@ export const interop = {
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         throw new Error(`unsupported payload type: ${payloadType}`);
     }
+  },
+
+  corsOptions: {
+    // Reflects the request origin. This should only be used for development.
+    // Production should explicitly specify an origin
+    origin: true,
+    methods: [...connectCors.allowedMethods],
+    allowedHeaders: [
+      ...connectCors.allowedHeaders,
+      "X-Grpc-Test-Echo-Initial",
+      "X-Grpc-Test-Echo-Trailing-Bin",
+      "Request-Protocol",
+      "Get-Request",
+    ],
+    exposedHeaders: [
+      ...connectCors.exposedHeaders,
+      "X-Grpc-Test-Echo-Initial",
+      "X-Grpc-Test-Echo-Trailing-Bin",
+      "Trailer-X-Grpc-Test-Echo-Trailing-Bin", // unary trailer in Connect
+      "Request-Protocol",
+      "Get-Request",
+    ],
   },
 };
