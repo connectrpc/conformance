@@ -17,15 +17,22 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"fmt"
 	"log"
 	"net"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
+	connect "github.com/bufbuild/connect-go"
 	"github.com/spf13/cobra"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	_ "google.golang.org/grpc/encoding/gzip" // this register the gzip compressor to the grpc server
@@ -33,15 +40,17 @@ import (
 )
 
 const (
-	portFlagName = "port"
-	certFlagName = "cert"
-	keyFlagName  = "key"
+	portFlagName          = "port"
+	transcodePortFlagName = "transcodeport"
+	certFlagName          = "cert"
+	keyFlagName           = "key"
 )
 
 type flags struct {
-	port     string
-	certFile string
-	keyFile  string
+	port          string
+	transcodePort string
+	certFile      string
+	keyFile       string
 }
 
 func main() {
@@ -61,6 +70,7 @@ func main() {
 
 func bind(cmd *cobra.Command, flagset *flags) error {
 	cmd.Flags().StringVar(&flagset.port, portFlagName, "", "the port the server will listen on")
+	cmd.Flags().StringVar(&flagset.transcodePort, transcodePortFlagName, "", "port for gRPC transcode traffic")
 	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
 	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
 	for _, requiredFlag := range []string{portFlagName, certFlagName, keyFlagName} {
@@ -100,8 +110,22 @@ func run(flagset *flags) {
 	}
 	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
-	_ = server.Serve(lis)
-	defer server.GracefulStop()
+
+	transcodeServer := newTranscodeServer(flagset, server)
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		err := transcodeServer.ListenAndServeTLS(flagset.certFile, flagset.keyFile)
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Fatalln(err)
+		}
+	}()
+	go func() {
+		_ = server.Serve(lis)
+	}()
+	<-done
+	server.GracefulStop()
 }
 
 func newTLSConfig(certFile, keyFile string) *tls.Config {
@@ -120,4 +144,13 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 		Certificates: []tls.Certificate{cert},
 		RootCAs:      caCertPool,
 	}
+}
+
+func newTranscodeServer(flags *flags, server *grpc.Server) *http.Server {
+	handler := connect.GRPCHandler(server)
+	transcodeServer := &http.Server{
+		Addr: ":" + flags.transcodePort,
+	}
+	transcodeServer.Handler = h2c.NewHandler(handler, &http2.Server{})
+	return transcodeServer
 }

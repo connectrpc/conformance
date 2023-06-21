@@ -110,7 +110,7 @@ func bind(cmd *cobra.Command, flags *flags) error {
 		"i",
 		"",
 		fmt.Sprintf(
-			"the client implementation tested, accepted values are %q, %q, %q, %q, %q, %q, %q, %q, or %q",
+			"the client implementation tested, accepted values are %q, %q, %q, %q, %q, %q, %q, %q or %q",
 			connectH1,
 			connectH2,
 			connectH3,

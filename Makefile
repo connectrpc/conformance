@@ -92,6 +92,7 @@ dockercomposetestgo: dockercomposeclean
 	docker-compose run client-connect-grpc-web-to-envoy-server-connect-h1
 	docker-compose run client-connect-grpc-web-to-envoy-server-grpc-h1
 	docker-compose run client-connect-grpc-to-server-grpc
+	docker-compose run client-connect-to-server-grpc-transcode-h1
 	docker-compose run client-grpc-to-server-connect
 	docker-compose run client-grpc-to-server-grpc
 	$(MAKE) dockercomposeclean
