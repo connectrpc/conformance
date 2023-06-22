@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
@@ -149,7 +150,8 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 func newTranscodeServer(flags *flags, server *grpc.Server) *http.Server {
 	handler := connect.GRPCHandler(server)
 	transcodeServer := &http.Server{
-		Addr: ":" + flags.transcodePort,
+		Addr:              ":" + flags.transcodePort,
+		ReadHeaderTimeout: 3 * time.Second,
 	}
 	transcodeServer.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return transcodeServer
