@@ -6,7 +6,7 @@
     "eslint": "eslint --max-warnings 0 .",
     "format": "prettier --write '**/*.{json,js,jsx,ts,tsx,css}' --loglevel error",
     "lint": "npm run eslint && npm run types-check",
-    "test": "karma start karma.conf.cjs",
+    "test": "karma start karma.conf.js",
     "types-check": "tsc --noEmit",
     "build": "npx esbuild server/fastify/program.ts --outdir=dist --format=cjs"
   },

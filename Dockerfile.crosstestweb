@@ -11,7 +11,7 @@ RUN apk add --update --no-cache \
     make \
     bash
 COPY web/package.json web/package-lock.json /workspace/
-COPY web/tsconfig.json web/karma.conf.cjs /workspace/
+COPY web/tsconfig.json web/karma.conf.js /workspace/
 COPY web/gen /workspace/gen
 COPY web/spec /workspace/spec
 COPY web/server /workspace/server
