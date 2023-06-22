@@ -29,7 +29,7 @@ services:
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: node --loader ts-node/esm server/fastify/program.ts start --h1port=8084 --h2port=8085 --insecure
     healthcheck:
-      test: [ "CMD", "curl", "-f", "--http2-prior-knowledge", "http://localhost:8085/healthy" ]
+      test: [ "CMD", "nc", "-z", "localhost", "8085" ]
       interval: 3s
       timeout: 10s
     ports:

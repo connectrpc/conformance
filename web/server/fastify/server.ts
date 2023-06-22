@@ -87,7 +87,6 @@ export async function start(opts: Options) {
   const h2Server = createH2Server(opts);
   await h2Server.register(fastifyCors, CORS_OPTIONS);
   await h2Server.register(fastifyConnectPlugin, { routes });
-  h2Server.get('/healthy', (_request, reply) => reply.status(204).send());
   await h2Server.listen({ host: HOST, port: opts.h2port });
   console.log(
     `Running ${opts.insecure ? "insecure" : "secure"} HTTP/2 server on `,
