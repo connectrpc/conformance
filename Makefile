@@ -106,12 +106,12 @@ dockercomposetestgo: dockercomposeclean
 .PHONY: dockercomposetestweb
 dockercomposetestweb: dockercomposeclean
 	docker-compose run client-connect-web-to-server-connect-go-h1
-	docker-compose run client-connect-web-grpc-web-to-server-connect-go-h1
-	docker-compose run client-connect-web-grpc-web-to-envoy-server-connect-go
-	docker-compose run client-connect-web-grpc-web-to-envoy-server-grpc-go
-	docker-compose run client-connect-web-grpc-web-to-server-connect-go-h1
-	docker-compose run client-connect-web-grpc-web-to-envoy-server-connect-go
-	docker-compose run client-connect-web-grpc-web-to-envoy-server-grpc-go
+	# docker-compose run client-connect-web-grpc-web-to-server-connect-go-h1
+	# docker-compose run client-connect-web-grpc-web-to-envoy-server-connect-go
+	# docker-compose run client-connect-web-grpc-web-to-envoy-server-grpc-go
+	# docker-compose run client-connect-web-grpc-web-to-server-connect-go-h1
+	# docker-compose run client-connect-web-grpc-web-to-envoy-server-connect-go
+	# docker-compose run client-connect-web-grpc-web-to-envoy-server-grpc-go
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposetest

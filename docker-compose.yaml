@@ -27,7 +27,7 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-    entrypoint: node --loader ts-node/esm server/fastify/program.ts start --h1port=8084 --h2port=8085 --insecure
+    entrypoint: node dist/server/fastify/program.js start --h1port=8084 --h2port=8085 --insecure
     ports:
       - "8084:8084"
       - "8085:8085"
