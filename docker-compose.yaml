@@ -28,6 +28,10 @@ services:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: node --loader ts-node/esm server/fastify/program.ts start --h1port=8084 --h2port=8085 --insecure
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "--http2-prior-knowledge", "http://localhost:8085/healthy" ]
+      interval: 3s
+      timeout: 10s
     ports:
       - "8084:8084"
       - "8085:8085"
@@ -75,17 +79,10 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    command: >
-        /bin/sh -c "
-        echo Waiting for Fastify to start...;
-        while ! nc -z server-connect-node-fastify 8084;
-        do
-          sleep 1;
-        done;
-        /usr/local/bin/client --host='server-connect-node-fastify' --port='8084' --implementation='connect-h1' --insecure
-        "
+    entrypoint: /usr/local/bin/client --host="server-connect-node-fastify" --port="8084" --implementation="connect-h1" --insecure
     depends_on:
-      - server-connect-node-fastify
+      server-connect-node-fastify:
+        condition: service_healthy
   client-connect-go-to-server-connect-node-fastify-h2:
     build:
       context: .

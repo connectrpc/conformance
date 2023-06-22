@@ -9,7 +9,8 @@ RUN apk add --update --no-cache \
     chromium \
     git \
     make \
-    bash
+    bash \
+    curl
 COPY web/package.json web/package-lock.json /workspace/
 COPY web/tsconfig.json web/karma.conf.cjs /workspace/
 COPY web/gen /workspace/gen
