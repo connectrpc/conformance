@@ -27,14 +27,14 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-    entrypoint: node dist/server/fastify/program.js start --h1port=8084 --h2port=8085 --insecure
+    entrypoint: node dist/server/fastify/program.js start --h1port=8086 --h2port=8087 --insecure
     healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "8085" ]
+      test: [ "CMD", "nc", "-z", "localhost", "8087" ]
       interval: 3s
       timeout: 10s
     ports:
-      - "8084:8084"
-      - "8085:8085"
+      - "8086:8086"
+      - "8087:8087"
   envoy:
     image: envoyproxy/envoy:v1.20-latest
     ports:
@@ -79,7 +79,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8084' --implementation='connect-h1' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8086' --implementation='connect-h1' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -89,7 +89,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8085' --implementation='connect-h2' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='connect-h2' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -99,7 +99,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8084' --implementation='connect-grpc-h1' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8086' --implementation='connect-grpc-h1' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -109,7 +109,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8085' --implementation='connect-grpc-h2' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='connect-grpc-h2' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -119,7 +119,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8084' --implementation='connect-grpc-web-h1' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8086' --implementation='connect-grpc-web-h1' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -129,7 +129,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8085' --implementation='connect-grpc-web-h2' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='connect-grpc-web-h2' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -139,7 +139,7 @@ services:
       dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8085' --implementation='grpc-go' --insecure
+    entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='grpc-go' --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -310,7 +310,7 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-    entrypoint: npm run test -- --docker --host="server-connect-node-fastify" --port="8084" --implementation="connect-web" --insecure
+    entrypoint: npm run test -- --docker --host="server-connect-node-fastify" --port="8086" --implementation="connect-web" --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -321,7 +321,7 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-    entrypoint: npm run test -- --docker --host="server-connect-node-fastify" --port="8084" --implementation="connect-grpc-web" --insecure
+    entrypoint: npm run test -- --docker --host="server-connect-node-fastify" --port="8086" --implementation="connect-grpc-web" --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
@@ -332,7 +332,7 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-    entrypoint: npm run test -- --docker --host="server-connect-node-fastify" --port="8084" --implementation="grpc-web" --insecure
+    entrypoint: npm run test -- --docker --host="server-connect-node-fastify" --port="8086" --implementation="grpc-web" --insecure
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy

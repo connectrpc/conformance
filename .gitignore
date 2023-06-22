@@ -5,4 +5,3 @@ cover.out
 node_modules
 web/node_modules
 web/coverage
-web/dist
