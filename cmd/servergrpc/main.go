@@ -41,17 +41,17 @@ import (
 )
 
 const (
-	portFlagName          = "port"
-	transcodePortFlagName = "transcodeport"
-	certFlagName          = "cert"
-	keyFlagName           = "key"
+	portFlagName        = "port"
+	adapterPortFlagName = "adapterport"
+	certFlagName        = "cert"
+	keyFlagName         = "key"
 )
 
 type flags struct {
-	port          string
-	transcodePort string
-	certFile      string
-	keyFile       string
+	port        string
+	adapterPort string
+	certFile    string
+	keyFile     string
 }
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 
 func bind(cmd *cobra.Command, flagset *flags) error {
 	cmd.Flags().StringVar(&flagset.port, portFlagName, "", "the port the server will listen on")
-	cmd.Flags().StringVar(&flagset.transcodePort, transcodePortFlagName, "", "port for gRPC transcode traffic")
+	cmd.Flags().StringVar(&flagset.adapterPort, adapterPortFlagName, "", "port for gRPC adapter traffic")
 	cmd.Flags().StringVar(&flagset.certFile, certFlagName, "", "path to the TLS cert file")
 	cmd.Flags().StringVar(&flagset.keyFile, keyFlagName, "", "path to the TLS key file")
 	for _, requiredFlag := range []string{portFlagName, certFlagName, keyFlagName} {
@@ -112,12 +112,12 @@ func run(flagset *flags) {
 	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
 	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
 
-	transcodeServer := newTranscodeServer(flagset, server)
+	adapterServer := newAdapterServer(flagset, server)
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		err := transcodeServer.ListenAndServeTLS(flagset.certFile, flagset.keyFile)
+		err := adapterServer.ListenAndServeTLS(flagset.certFile, flagset.keyFile)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalln(err)
 		}
@@ -147,12 +147,12 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 	}
 }
 
-func newTranscodeServer(flags *flags, server *grpc.Server) *http.Server {
-	handler := connect.GRPCHandler(server)
-	transcodeServer := &http.Server{
-		Addr:              ":" + flags.transcodePort,
+func newAdapterServer(flags *flags, server *grpc.Server) *http.Server {
+	handler := connect.NewGRPCAdapter(server)
+	adapterServer := &http.Server{
+		Addr:              ":" + flags.adapterPort,
 		ReadHeaderTimeout: 3 * time.Second,
 	}
-	transcodeServer.Handler = h2c.NewHandler(handler, &http2.Server{})
-	return transcodeServer
+	adapterServer.Handler = h2c.NewHandler(handler, &http2.Server{})
+	return adapterServer
 }
