@@ -30,7 +30,30 @@ var import_cors = __toESM(require("@fastify/cors"));
 var import_routes = __toESM(require("../routes.js"));
 var import_interop = require("../interop.js");
 var import_path = __toESM(require("path"));
+var import_server_pb = require("../../gen/proto/connect-web/server/v1/server_pb.js");
 const HOST = "0.0.0.0";
+function getServerMetadata(opts) {
+  return new import_server_pb.ServerMetadata({
+    host: HOST,
+    protocols: [
+      {
+        protocol: import_server_pb.Protocol.GRPC_WEB,
+        httpVersions: [{ major: 1, minor: 1 }],
+        port: String(opts.h1port)
+      },
+      {
+        protocol: import_server_pb.Protocol.GRPC_WEB,
+        httpVersions: [{ major: 1, minor: 1 }, { major: 2 }],
+        port: String(opts.h2port)
+      },
+      {
+        protocol: import_server_pb.Protocol.GRPC,
+        httpVersions: [{ major: 1, minor: 1 }, { major: 2 }],
+        port: String(opts.h2port)
+      }
+    ]
+  });
+}
 function getTLSConfig(key, cert) {
   return {
     key: (0, import_fs.readFileSync)(import_path.default.join(__dirname, "..", "..", "..", key), "utf-8"),
@@ -61,12 +84,12 @@ async function start(opts) {
   await h1Server.register(import_cors.default, import_interop.interop.corsOptions);
   await h1Server.register(import_connect_fastify.fastifyConnectPlugin, { routes: import_routes.default });
   await h1Server.listen({ host: HOST, port: opts.h1port });
-  console.log(`Running ${opts.insecure ? "insecure" : "secure"} HTTP/1.1 server on `, h1Server.addresses());
   const h2Server = createH2Server(opts);
   await h2Server.register(import_cors.default, import_interop.interop.corsOptions);
   await h2Server.register(import_connect_fastify.fastifyConnectPlugin, { routes: import_routes.default });
   await h2Server.listen({ host: HOST, port: opts.h2port });
-  console.log(`Running ${opts.insecure ? "insecure" : "secure"} HTTP/2 server on `, h2Server.addresses());
+  const serverData = getServerMetadata(opts);
+  console.log(serverData.toJsonString());
   return new Promise((resolve) => {
     resolve();
   });

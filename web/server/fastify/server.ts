@@ -20,6 +20,10 @@ import routes from "../routes.js";
 import { interop } from "../interop.js";
 import https from "https";
 import path from "path";
+import {
+  Protocol,
+  ServerMetadata,
+} from "../../gen/proto/connect-web/server/v1/server_pb.js";
 
 const HOST = "0.0.0.0";
 
@@ -29,6 +33,29 @@ export interface Options {
   cert?: string;
   key?: string;
   insecure?: boolean;
+}
+
+function getServerMetadata(opts: Options) {
+  return new ServerMetadata({
+    host: HOST,
+    protocols: [
+      {
+        protocol: Protocol.GRPC_WEB,
+        httpVersions: [{ major: 1, minor: 1 }],
+        port: String(opts.h1port),
+      },
+      {
+        protocol: Protocol.GRPC_WEB,
+        httpVersions: [{ major: 1, minor: 1 }, { major: 2 }],
+        port: String(opts.h2port),
+      },
+      {
+        protocol: Protocol.GRPC,
+        httpVersions: [{ major: 1, minor: 1 }, { major: 2 }],
+        port: String(opts.h2port),
+      },
+    ],
+  });
 }
 
 function getTLSConfig(key: string, cert: string) {
@@ -65,19 +92,14 @@ export async function start(opts: Options) {
   await h1Server.register(fastifyCors, interop.corsOptions);
   await h1Server.register(fastifyConnectPlugin, { routes });
   await h1Server.listen({ host: HOST, port: opts.h1port });
-  console.log(
-    `Running ${opts.insecure ? "insecure" : "secure"} HTTP/1.1 server on `,
-    h1Server.addresses()
-  );
 
   const h2Server = createH2Server(opts);
   await h2Server.register(fastifyCors, interop.corsOptions);
   await h2Server.register(fastifyConnectPlugin, { routes });
   await h2Server.listen({ host: HOST, port: opts.h2port });
-  console.log(
-    `Running ${opts.insecure ? "insecure" : "secure"} HTTP/2 server on `,
-    h2Server.addresses()
-  );
+
+  const serverData = getServerMetadata(opts);
+  console.log(serverData.toJsonString());
   return new Promise<void>((resolve) => {
     resolve();
   });

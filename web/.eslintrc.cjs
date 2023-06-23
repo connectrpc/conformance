@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-const ignoreFiles = [".eslintrc.js", "karma.conf.js", "gen/**/*"];
+const ignoreFiles = [".eslintrc.js", "karma.conf.js", "gen/**/*", "dist/**/*"];
 
 module.exports = {
   env: {
