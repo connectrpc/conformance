@@ -114,7 +114,7 @@ dockercomposetestweb: dockercomposeclean
 	docker-compose run client-grpc-web-to-envoy-server-grpc-go
 	docker-compose run client-connect-web-to-server-connect-node-fastify-h1
 	docker-compose run client-connect-web-grpc-web-to-server-connect-node-fastify-h1
-	# docker-compose run client-grpc-web-to-server-connect-node-fastify-h1
+	docker-compose run client-grpc-web-to-server-connect-node-fastify-h1
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposetest
