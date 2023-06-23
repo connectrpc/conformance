@@ -15,7 +15,6 @@ COPY web/tsconfig.json web/karma.conf.js /workspace/
 COPY web/gen /workspace/gen
 COPY web/spec /workspace/spec
 COPY web/server /workspace/server
-COPY web/dist /workspace/dist
 COPY cert /workspace/cert
 RUN npm install
 RUN local_npm_packages="" && \
@@ -33,3 +32,5 @@ RUN local_npm_packages="" && \
     if [ ! -z "${local_npm_packages}" ]; then \
         npm link ${local_npm_packages}; \
     fi
+RUN npm run build
+
