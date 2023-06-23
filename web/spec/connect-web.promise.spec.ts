@@ -278,23 +278,23 @@ describe("connect_web_promise_client", function () {
     }
   });
   // TODO(sayers)
-  // it("unimplemented_service", async function () {
-  //   const badClient = createPromiseClient(UnimplementedService, transport);
-  //   try {
-  //     await badClient.unimplementedCall({});
-  //     fail("expected to catch an error");
-  //   } catch (e) {
-  //     expect(e).toBeInstanceOf(ConnectError);
-  //     // We expect this to be either Unimplemented or NotFound, depending on the implementation.
-  //     // In order to support a consistent behaviour for this case, the backend would need to
-  //     // own the router and all fallback behaviours. Both statuses are valid returns for this
-  //     // case and the client should not retry on either status.
-  //     console.log(e);
-  //     expect(
-  //       [Code.Unimplemented, Code.NotFound].includes((e as ConnectError).code)
-  //     ).toBeTrue();
-  //   }
-  // });
+  it("unimplemented_service", async function () {
+    const badClient = createPromiseClient(UnimplementedService, transport);
+    try {
+      await badClient.unimplementedCall({});
+      fail("expected to catch an error");
+    } catch (e) {
+      expect(e).toBeInstanceOf(ConnectError);
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      console.log(e);
+      expect(
+        [Code.Unimplemented, Code.NotFound].includes((e as ConnectError).code)
+      ).toBeTrue();
+    }
+  });
   it("unimplemented_server_streaming_service", async function () {
     const badClient = createPromiseClient(UnimplementedService, transport);
     try {
