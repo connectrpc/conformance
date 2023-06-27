@@ -54,7 +54,14 @@ function multiDone(done: DoneFn, count: number) {
 describe("grpc_web", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const SERVER_HOST = `https://${host}:${port}`;
+  const insecure = __karma__.config.insecure;
+  let scheme = "";
+  if (insecure === "true" || insecure === true) {
+    scheme = "http://";
+  } else {
+    scheme = "https://";
+  }
+  const SERVER_HOST = `${scheme}${host}:${port}`;
   const client = new TestServiceClient(SERVER_HOST, null, null);
   it("empty_unary", function (done) {
     client.emptyCall(new Empty(), null, (err, response) => {
