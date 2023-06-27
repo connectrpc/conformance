@@ -100,7 +100,4 @@ export async function start(opts: Options) {
 
   const serverData = getServerMetadata(opts);
   console.log(serverData.toJsonString());
-  return new Promise<void>((resolve) => {
-    resolve();
-  });
 }
