@@ -32,5 +32,3 @@ RUN local_npm_packages="" && \
     if [ ! -z "${local_npm_packages}" ]; then \
         npm link ${local_npm_packages}; \
     fi
-RUN npm run build
-

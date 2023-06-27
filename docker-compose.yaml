@@ -27,7 +27,7 @@ services:
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
-    entrypoint: node dist/server/fastify/program.js start --h1port=8086 --h2port=8087 --insecure
+    entrypoint: npx tsx server/fastify/program.ts start --h1port=8086 --h2port=8087 --insecure
     healthcheck:
       test: [ "CMD", "nc", "-z", "localhost", "8087" ]
       interval: 3s
