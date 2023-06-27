@@ -46,6 +46,7 @@ services:
     depends_on:
       - server-connect
       - server-grpc
+      - server-connect-node-fastify
   client-connect-go-to-server-connect-go-h1:
     build:
       context: .
@@ -206,6 +207,15 @@ services:
     entrypoint: /usr/local/bin/client --host="envoy" --port="9092" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - envoy
+  client-connect-go-grpc-web-to-envoy-server-connect-node-fastify-h1:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestgo
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
+    entrypoint: /usr/local/bin/client --host="envoy" --port="9093" --implementation="connect-grpc-web-h1" --insecure
+    depends_on:
+      - envoy
   client-connect-go-grpc-to-server-grpc-go:
     build:
       context: .
@@ -273,6 +283,16 @@ services:
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="connect-grpc-web"
     depends_on:
       - envoy
+  client-connect-web-grpc-web-to-envoy-server-connect-node-fastify:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9093" --implementation="connect-grpc-web" --insecure
+    depends_on:
+      - envoy
   client-grpc-web-to-server-connect-go-h1:
     build:
       context: .
@@ -301,6 +321,16 @@ services:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
     entrypoint: npm run test -- --docker --host="envoy" --port="9092" --implementation="grpc-web"
+    depends_on:
+      - envoy
+  client-grpc-web-to-envoy-server-connect-node-fastify:
+    build:
+      context: .
+      dockerfile: Dockerfile.crosstestweb
+      args:
+        TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
+        TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
+    entrypoint: npm run test -- --docker --host="envoy" --port="9093" --implementation="grpc-web" --insecure
     depends_on:
       - envoy
   client-connect-web-to-server-connect-node-fastify-h1:
