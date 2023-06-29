@@ -339,64 +339,90 @@ type TestServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(TestServiceEmptyCallProcedure, connect_go.NewUnaryHandler(
+	testServiceEmptyCallHandler := connect_go.NewUnaryHandler(
 		TestServiceEmptyCallProcedure,
 		svc.EmptyCall,
 		opts...,
-	))
-	mux.Handle(TestServiceUnaryCallProcedure, connect_go.NewUnaryHandler(
+	)
+	testServiceUnaryCallHandler := connect_go.NewUnaryHandler(
 		TestServiceUnaryCallProcedure,
 		svc.UnaryCall,
 		opts...,
-	))
-	mux.Handle(TestServiceFailUnaryCallProcedure, connect_go.NewUnaryHandler(
+	)
+	testServiceFailUnaryCallHandler := connect_go.NewUnaryHandler(
 		TestServiceFailUnaryCallProcedure,
 		svc.FailUnaryCall,
 		opts...,
-	))
-	mux.Handle(TestServiceCacheableUnaryCallProcedure, connect_go.NewUnaryHandler(
+	)
+	testServiceCacheableUnaryCallHandler := connect_go.NewUnaryHandler(
 		TestServiceCacheableUnaryCallProcedure,
 		svc.CacheableUnaryCall,
 		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
 		connect_go.WithHandlerOptions(opts...),
-	))
-	mux.Handle(TestServiceStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+	)
+	testServiceStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
 		TestServiceStreamingOutputCallProcedure,
 		svc.StreamingOutputCall,
 		opts...,
-	))
-	mux.Handle(TestServiceFailStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+	)
+	testServiceFailStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
 		TestServiceFailStreamingOutputCallProcedure,
 		svc.FailStreamingOutputCall,
 		opts...,
-	))
-	mux.Handle(TestServiceStreamingInputCallProcedure, connect_go.NewClientStreamHandler(
+	)
+	testServiceStreamingInputCallHandler := connect_go.NewClientStreamHandler(
 		TestServiceStreamingInputCallProcedure,
 		svc.StreamingInputCall,
 		opts...,
-	))
-	mux.Handle(TestServiceFullDuplexCallProcedure, connect_go.NewBidiStreamHandler(
+	)
+	testServiceFullDuplexCallHandler := connect_go.NewBidiStreamHandler(
 		TestServiceFullDuplexCallProcedure,
 		svc.FullDuplexCall,
 		opts...,
-	))
-	mux.Handle(TestServiceHalfDuplexCallProcedure, connect_go.NewBidiStreamHandler(
+	)
+	testServiceHalfDuplexCallHandler := connect_go.NewBidiStreamHandler(
 		TestServiceHalfDuplexCallProcedure,
 		svc.HalfDuplexCall,
 		opts...,
-	))
-	mux.Handle(TestServiceUnimplementedCallProcedure, connect_go.NewUnaryHandler(
+	)
+	testServiceUnimplementedCallHandler := connect_go.NewUnaryHandler(
 		TestServiceUnimplementedCallProcedure,
 		svc.UnimplementedCall,
 		opts...,
-	))
-	mux.Handle(TestServiceUnimplementedStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+	)
+	testServiceUnimplementedStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
 		TestServiceUnimplementedStreamingOutputCallProcedure,
 		svc.UnimplementedStreamingOutputCall,
 		opts...,
-	))
-	return "/grpc.testing.TestService/", mux
+	)
+	return "/grpc.testing.TestService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case TestServiceEmptyCallProcedure:
+			testServiceEmptyCallHandler.ServeHTTP(w, r)
+		case TestServiceUnaryCallProcedure:
+			testServiceUnaryCallHandler.ServeHTTP(w, r)
+		case TestServiceFailUnaryCallProcedure:
+			testServiceFailUnaryCallHandler.ServeHTTP(w, r)
+		case TestServiceCacheableUnaryCallProcedure:
+			testServiceCacheableUnaryCallHandler.ServeHTTP(w, r)
+		case TestServiceStreamingOutputCallProcedure:
+			testServiceStreamingOutputCallHandler.ServeHTTP(w, r)
+		case TestServiceFailStreamingOutputCallProcedure:
+			testServiceFailStreamingOutputCallHandler.ServeHTTP(w, r)
+		case TestServiceStreamingInputCallProcedure:
+			testServiceStreamingInputCallHandler.ServeHTTP(w, r)
+		case TestServiceFullDuplexCallProcedure:
+			testServiceFullDuplexCallHandler.ServeHTTP(w, r)
+		case TestServiceHalfDuplexCallProcedure:
+			testServiceHalfDuplexCallHandler.ServeHTTP(w, r)
+		case TestServiceUnimplementedCallProcedure:
+			testServiceUnimplementedCallHandler.ServeHTTP(w, r)
+		case TestServiceUnimplementedStreamingOutputCallProcedure:
+			testServiceUnimplementedStreamingOutputCallHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedTestServiceHandler returns CodeUnimplemented from all methods.
@@ -509,18 +535,26 @@ type UnimplementedServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(UnimplementedServiceUnimplementedCallProcedure, connect_go.NewUnaryHandler(
+	unimplementedServiceUnimplementedCallHandler := connect_go.NewUnaryHandler(
 		UnimplementedServiceUnimplementedCallProcedure,
 		svc.UnimplementedCall,
 		opts...,
-	))
-	mux.Handle(UnimplementedServiceUnimplementedStreamingOutputCallProcedure, connect_go.NewServerStreamHandler(
+	)
+	unimplementedServiceUnimplementedStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
 		UnimplementedServiceUnimplementedStreamingOutputCallProcedure,
 		svc.UnimplementedStreamingOutputCall,
 		opts...,
-	))
-	return "/grpc.testing.UnimplementedService/", mux
+	)
+	return "/grpc.testing.UnimplementedService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case UnimplementedServiceUnimplementedCallProcedure:
+			unimplementedServiceUnimplementedCallHandler.ServeHTTP(w, r)
+		case UnimplementedServiceUnimplementedStreamingOutputCallProcedure:
+			unimplementedServiceUnimplementedStreamingOutputCallHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedUnimplementedServiceHandler returns CodeUnimplemented from all methods.
@@ -591,18 +625,26 @@ type ReconnectServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(ReconnectServiceStartProcedure, connect_go.NewUnaryHandler(
+	reconnectServiceStartHandler := connect_go.NewUnaryHandler(
 		ReconnectServiceStartProcedure,
 		svc.Start,
 		opts...,
-	))
-	mux.Handle(ReconnectServiceStopProcedure, connect_go.NewUnaryHandler(
+	)
+	reconnectServiceStopHandler := connect_go.NewUnaryHandler(
 		ReconnectServiceStopProcedure,
 		svc.Stop,
 		opts...,
-	))
-	return "/grpc.testing.ReconnectService/", mux
+	)
+	return "/grpc.testing.ReconnectService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ReconnectServiceStartProcedure:
+			reconnectServiceStartHandler.ServeHTTP(w, r)
+		case ReconnectServiceStopProcedure:
+			reconnectServiceStopHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedReconnectServiceHandler returns CodeUnimplemented from all methods.
@@ -678,18 +720,26 @@ type LoadBalancerStatsServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(LoadBalancerStatsServiceGetClientStatsProcedure, connect_go.NewUnaryHandler(
+	loadBalancerStatsServiceGetClientStatsHandler := connect_go.NewUnaryHandler(
 		LoadBalancerStatsServiceGetClientStatsProcedure,
 		svc.GetClientStats,
 		opts...,
-	))
-	mux.Handle(LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure, connect_go.NewUnaryHandler(
+	)
+	loadBalancerStatsServiceGetClientAccumulatedStatsHandler := connect_go.NewUnaryHandler(
 		LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure,
 		svc.GetClientAccumulatedStats,
 		opts...,
-	))
-	return "/grpc.testing.LoadBalancerStatsService/", mux
+	)
+	return "/grpc.testing.LoadBalancerStatsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case LoadBalancerStatsServiceGetClientStatsProcedure:
+			loadBalancerStatsServiceGetClientStatsHandler.ServeHTTP(w, r)
+		case LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure:
+			loadBalancerStatsServiceGetClientAccumulatedStatsHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedLoadBalancerStatsServiceHandler returns CodeUnimplemented from all methods.
@@ -761,18 +811,26 @@ type XdsUpdateHealthServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(XdsUpdateHealthServiceSetServingProcedure, connect_go.NewUnaryHandler(
+	xdsUpdateHealthServiceSetServingHandler := connect_go.NewUnaryHandler(
 		XdsUpdateHealthServiceSetServingProcedure,
 		svc.SetServing,
 		opts...,
-	))
-	mux.Handle(XdsUpdateHealthServiceSetNotServingProcedure, connect_go.NewUnaryHandler(
+	)
+	xdsUpdateHealthServiceSetNotServingHandler := connect_go.NewUnaryHandler(
 		XdsUpdateHealthServiceSetNotServingProcedure,
 		svc.SetNotServing,
 		opts...,
-	))
-	return "/grpc.testing.XdsUpdateHealthService/", mux
+	)
+	return "/grpc.testing.XdsUpdateHealthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case XdsUpdateHealthServiceSetServingProcedure:
+			xdsUpdateHealthServiceSetServingHandler.ServeHTTP(w, r)
+		case XdsUpdateHealthServiceSetNotServingProcedure:
+			xdsUpdateHealthServiceSetNotServingHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedXdsUpdateHealthServiceHandler returns CodeUnimplemented from all methods.
@@ -835,13 +893,19 @@ type XdsUpdateClientConfigureServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle(XdsUpdateClientConfigureServiceConfigureProcedure, connect_go.NewUnaryHandler(
+	xdsUpdateClientConfigureServiceConfigureHandler := connect_go.NewUnaryHandler(
 		XdsUpdateClientConfigureServiceConfigureProcedure,
 		svc.Configure,
 		opts...,
-	))
-	return "/grpc.testing.XdsUpdateClientConfigureService/", mux
+	)
+	return "/grpc.testing.XdsUpdateClientConfigureService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case XdsUpdateClientConfigureServiceConfigureProcedure:
+			xdsUpdateClientConfigureServiceConfigureHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedXdsUpdateClientConfigureServiceHandler returns CodeUnimplemented from all methods.

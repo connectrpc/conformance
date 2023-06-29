@@ -6,7 +6,8 @@
     "strict": true,
     "moduleResolution": "node",
     "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["spec/*.ts", "gen/**/*.ts"]
+  "include": ["server/**/*.ts", "spec/*.ts", "gen/**/*.ts"]
 }
