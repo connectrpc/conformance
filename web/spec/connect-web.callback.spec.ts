@@ -324,24 +324,23 @@ describe("connect_web_callback_client", function () {
       }
     );
   });
-  // TODO(sayers)
-  // it("unimplemented_service", function (done) {
-  //   const badClient = createCallbackClient(UnimplementedService, transport);
-  //   badClient.unimplementedCall({}, (err: ConnectError | undefined) => {
-  //     expect(err).toBeInstanceOf(ConnectError);
-  //     // We expect this to be either Unimplemented or NotFound, depending on the implementation.
-  //     // In order to support a consistent behaviour for this case, the backend would need to
-  //     // own the router and all fallback behaviours. Both statuses are valid returns for this
-  //     // case and the client should not retry on either status.
-  //     expect(
-  //       // Already asserted the error type above, ignore types-check error here for err.code.
-  //       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //       // @ts-ignore
-  //       [Code.Unimplemented, Code.NotFound].includes(err.code)
-  //     ).toBeTrue();
-  //     done();
-  //   });
-  // });
+  it("unimplemented_service", function (done) {
+    const badClient = createCallbackClient(UnimplementedService, transport);
+    badClient.unimplementedCall({}, (err: ConnectError | undefined) => {
+      expect(err).toBeInstanceOf(ConnectError);
+      // We expect this to be either Unimplemented or NotFound, depending on the implementation.
+      // In order to support a consistent behaviour for this case, the backend would need to
+      // own the router and all fallback behaviours. Both statuses are valid returns for this
+      // case and the client should not retry on either status.
+      expect(
+        // Already asserted the error type above, ignore types-check error here for err.code.
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        [Code.Unimplemented, Code.NotFound].includes(err.code)
+      ).toBeTrue();
+      done();
+    });
+  });
   it("unimplemented_server_streaming_service", function (done) {
     const badClient = createCallbackClient(UnimplementedService, transport);
     badClient.unimplementedStreamingOutputCall(
