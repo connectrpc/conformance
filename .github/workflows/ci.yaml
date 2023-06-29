@@ -71,7 +71,7 @@ jobs:
       - name: docker-build-push
         uses: docker/build-push-action@v3
         with:
-          file: Dockerfile.crosstest
+          file: Dockerfile.crosstestgo
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
           tags: |
