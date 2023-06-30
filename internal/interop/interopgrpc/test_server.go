@@ -101,6 +101,7 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 			trailer = metadata.Pairs(trailingMetadataPairs...)
 		}
 	}
+	header = metadata.Join(header, metadata.Pairs("Request-Protocol", "grpc"))
 	if header != nil {
 		if err := grpc.SendHeader(ctx, header); err != nil {
 			return nil, err
@@ -121,6 +122,10 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	return &testpb.SimpleResponse{
 		Payload: pl,
 	}, nil
+}
+
+func (s *testServer) CacheableUnaryCall(ctx context.Context, request *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+	return s.UnaryCall(ctx, request)
 }
 
 // FailUnaryCall is an additional RPC added for cross tests.

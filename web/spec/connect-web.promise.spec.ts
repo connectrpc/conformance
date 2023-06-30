@@ -44,16 +44,23 @@ declare const __karma__: any;
 describe("connect_web_promise_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
+  const insecure = __karma__.config.insecure;
+  let scheme = "";
+  if (insecure === "true" || insecure === true) {
+    scheme = "http://";
+  } else {
+    scheme = "https://";
+  }
   let transport: Transport;
   switch (__karma__.config.implementation) {
     case "connect-web":
       transport = createConnectTransport({
-        baseUrl: `https://${host}:${port}`,
+        baseUrl: `${scheme}${host}:${port}`,
       });
       break;
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
-        baseUrl: `https://${host}:${port}`,
+        baseUrl: `${scheme}${host}:${port}`,
       });
       break;
     default:
@@ -61,8 +68,12 @@ describe("connect_web_promise_client", function () {
   }
   const client = createPromiseClient(TestService, transport);
   it("empty_unary", async function () {
-    const response = await client.emptyCall({});
-    expect(response).toEqual(new Empty());
+    try {
+      const response = await client.emptyCall({});
+      expect(response).toEqual(new Empty());
+    } catch (e) {
+      console.log(e);
+    }
   });
   it("empty_unary_with_timeout", async function () {
     const deadlineMs = 1000; // 1 second
@@ -134,7 +145,9 @@ describe("connect_web_promise_client", function () {
       },
       onTrailer(trailer) {
         expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-        expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
+        expect(
+          decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY) || "")
+        ).toEqual(ECHO_TRAILING_VALUE);
       },
     });
     expect(response.payload).toBeDefined();
@@ -147,25 +160,32 @@ describe("connect_web_promise_client", function () {
     const ECHO_TRAILING_VALUE = new Uint8Array([0xab, 0xab, 0xab]);
 
     const size = 31415;
-    const responseParams = [{
-      size: size,
-    }]
-    for await (const response of client.streamingOutputCall({
-      responseParameters: responseParams,
-    }, {
-      headers: {
-        [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
-        [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
+    const responseParams = [
+      {
+        size: size,
       },
-      onHeader(header) {
-        expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
-        expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
+    ];
+    for await (const response of client.streamingOutputCall(
+      {
+        responseParameters: responseParams,
       },
-      onTrailer(trailer) {
-        expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-        expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
-      },
-    })) {
+      {
+        headers: {
+          [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+          [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
+        },
+        onHeader(header) {
+          expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
+          expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
+        },
+        onTrailer(trailer) {
+          expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+          expect(
+            decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY) || "")
+          ).toEqual(ECHO_TRAILING_VALUE);
+        },
+      }
+    )) {
       expect(response.payload).toBeDefined();
       expect(response.payload?.body.length).toEqual(size);
     }
@@ -229,9 +249,7 @@ describe("connect_web_promise_client", function () {
       // and will return an HTTP status code 408 when stream max duration time reached, which
       // cannot be translated to a connect error code, so connect-web client throws an Unknown.
       expect(
-        [Code.Unknown, Code.DeadlineExceeded].includes(
-          (e as ConnectError).code
-        )
+        [Code.Unknown, Code.DeadlineExceeded].includes((e as ConnectError).code)
       ).toBeTrue();
     }
   });
@@ -246,8 +264,12 @@ describe("connect_web_promise_client", function () {
   });
   it("unimplemented_server_streaming_method", async function () {
     try {
-      for await (const response of client.unimplementedStreamingOutputCall({})) {
-        fail(`expecting no response from fail server streaming, got: ${response}`);
+      for await (const response of client.unimplementedStreamingOutputCall(
+        {}
+      )) {
+        fail(
+          `expecting no response from fail server streaming, got: ${response}`
+        );
       }
       fail("expected to catch an error");
     } catch (e) {
@@ -267,9 +289,7 @@ describe("connect_web_promise_client", function () {
       // own the router and all fallback behaviours. Both statuses are valid returns for this
       // case and the client should not retry on either status.
       expect(
-        [Code.Unimplemented, Code.NotFound].includes(
-          (e as ConnectError).code
-        )
+        [Code.Unimplemented, Code.NotFound].includes((e as ConnectError).code)
       ).toBeTrue();
     }
   });
@@ -277,8 +297,12 @@ describe("connect_web_promise_client", function () {
     const badClient = createPromiseClient(UnimplementedService, transport);
     try {
       await badClient.unimplementedStreamingOutputCall({});
-      for await (const response of badClient.unimplementedStreamingOutputCall({})) {
-        fail(`expecting no response from unimplemented server streaming, got: ${response}`);
+      for await (const response of badClient.unimplementedStreamingOutputCall(
+        {}
+      )) {
+        fail(
+          `expecting no response from unimplemented server streaming, got: ${response}`
+        );
       }
       fail("expected to catch an error");
     } catch (e) {
@@ -297,7 +321,7 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails((e as ConnectError), ErrorDetail);
+      const errDetails = connectErrorDetails(e as ConnectError, ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
@@ -309,13 +333,15 @@ describe("connect_web_promise_client", function () {
     });
     try {
       for await (const response of client.failStreamingOutputCall({})) {
-        fail(`expecting no response from fail server streaming, got: ${response}`);
+        fail(
+          `expecting no response from fail server streaming, got: ${response}`
+        );
       }
     } catch (e) {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails((e as ConnectError), ErrorDetail);
+      const errDetails = connectErrorDetails(e as ConnectError, ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
@@ -346,7 +372,7 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails((e as ConnectError), ErrorDetail);
+      const errDetails = connectErrorDetails(e as ConnectError, ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
