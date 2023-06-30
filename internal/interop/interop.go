@@ -20,7 +20,7 @@ import testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/
 const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
 
 // ErrorDetail is an error detail to be included in an error.
-var ErrorDetail = &testpb.ErrorDetail{
+var ErrorDetail = &testpb.ErrorDetail{ //nolint:gochecknoglobals
 	Reason: NonASCIIErrMsg,
 	Domain: "connect-crosstest",
 }

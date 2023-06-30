@@ -529,15 +529,8 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 
 // DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
 func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	respParam := make([]*testpb.ResponseParameters, len(respSizes))
-	for i, s := range respSizes {
-		respParam[i] = &testpb.ResponseParameters{
-			Size: int32(s),
-		}
-	}
 	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
-		ResponseParameters: respParam,
+		ResponseType: testpb.PayloadType_COMPRESSABLE,
 	}
 	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
 	require.NoError(t, err)
@@ -555,6 +548,42 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.Tes
 	require.True(t, ok)
 	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail server streaming with non-ASCII error")
+}
+
+// DoFailServerStreamingAfterResponse performs a server streaming RPC that fails after responses have been sent from the server.
+func DoFailServerStreamingAfterResponse(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+	for i, s := range respSizes {
+		respParam[i] = &testpb.ResponseParameters{
+			Size: int32(s),
+		}
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+	}
+	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
+	require.NoError(t, err)
+	for i := 0; i < len(respSizes); i++ {
+		reply, err := stream.Recv()
+		require.NoError(t, err)
+		require.NotNil(t, reply)
+	}
+	require.NoError(t, err)
+	reply, err := stream.Recv()
+	assert.Nil(t, reply)
+	assert.Error(t, err)
+	s, ok := status.FromError(err)
+	assert.True(t, ok)
+	assert.Equal(t, s.Code(), codes.ResourceExhausted)
+	assert.Equal(t, s.Message(), interop.NonASCIIErrMsg)
+	errStatus, ok := status.FromError(err)
+	require.True(t, ok)
+	require.Len(t, errStatus.Details(), 1)
+	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	require.True(t, ok)
+	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
+	t.Successf("successful fail server streaming after response")
 }
 
 // DoUnresolvableHost attempts to call a method to an unresolvable host.

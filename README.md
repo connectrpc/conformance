@@ -36,6 +36,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 | Test Case                                | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
 |------------------------------------------|-------------------------|---------------------------|
 | `empty_unary`                            | ✓                       | ✓                         |
+| `cacheable_unary`                        | ✓                       | ✓                         |
 | `large_unary`                            | ✓                       | ✓                         |
 | `client_streaming`                       | ✓                       |                           |
 | `server_streaming`                       | ✓                       | ✓                         |
@@ -43,6 +44,7 @@ a range of expected behaviours and functionality for gRPC and Connect.
 | `empty_stream`                           | ✓                       | ✓                         |
 | `fail_unary`                             | ✓                       | ✓                         |
 | `fail_server_streaming`                  | ✓                       | ✓                         |
+| `fail_server_streaming_after_response`   |                         | ✓                         |
 | `cancel_after_begin`                     | ✓                       |                           |
 | `cancel_after_first_response`            | ✓                       |                           |
 | `timeout_on_sleeping_server`             | ✓                       | ✓                         |
@@ -70,6 +72,13 @@ RPC: `UnaryCall`
 
 Client calls `UnaryCall` with a payload size of 250 KiB bytes and expects a response with a
 payload size of 500 KiB and no errors.
+
+#### cacheable_unary
+
+RPC: `CacheableUnaryCall`
+
+Client calls `CacheableUnaryCall` with a small payload. Expected to be called via `GET`
+request when called with the Connect protocol.
 
 #### client_streaming
 
@@ -117,6 +126,15 @@ RPC: `FailStreamingOutputCall`
 
 Client calls `FailStreamingOutputCall` which always responds with an error with status `RESOURCE_EXHAUSTED`
 and a non-ASCII message with error details.
+
+#### fail_server_streaming_after_response
+
+RPC: `FailStreamingOutputCall`
+
+Client calls `FailStreamingOutputCall`, and asks for four response messages. The server
+responds with the messages, the status `RESOURCE_EXHAUSTED` and a non-ASCII message, and 
+error details. The client verifies that four response messages and the error status with 
+code, message, and details was received.
 
 #### cancel_after_begin
 

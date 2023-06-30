@@ -32,6 +32,7 @@ import {
   ResponseParameters,
   SimpleRequest,
   StreamingOutputCallRequest,
+  StreamingOutputCallResponse,
 } from "../gen/proto/grpc-web/grpc/testing/messages_pb";
 import caseless = require("caseless");
 import { Message } from "google-protobuf";
@@ -53,7 +54,14 @@ function multiDone(done: DoneFn, count: number) {
 describe("grpc_web", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
-  const SERVER_HOST = `https://${host}:${port}`;
+  const insecure = __karma__.config.insecure;
+  let scheme = "";
+  if (insecure === "true" || insecure === true) {
+    scheme = "http://";
+  } else {
+    scheme = "https://";
+  }
+  const SERVER_HOST = `${scheme}${host}:${port}`;
   const client = new TestServiceClient(SERVER_HOST, null, null);
   it("empty_unary", function (done) {
     client.emptyCall(new Empty(), null, (err, response) => {
@@ -187,13 +195,10 @@ describe("grpc_web", function () {
     const req = new StreamingOutputCallRequest();
     req.setResponseParametersList(responseParams);
 
-    const stream = client.streamingOutputCall(
-        req,
-        {
-          [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
-          [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
-        },
-    );
+    const stream = client.streamingOutputCall(req, {
+      [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+      [ECHO_TRAILING_KEY]: ECHO_TRAILING_VALUE.toString(),
+    });
 
     stream.on("metadata", (metadata) => {
       expect(metadata).toBeDefined();
@@ -255,8 +260,16 @@ describe("grpc_web", function () {
       done();
     });
   });
-  // TODO: enable this test when we have a fix on connect-go
   it("timeout_on_sleeping_server", function (done) {
+    // Previously this test checked whether the end callback was invoked and if
+    // so, threw an error. However, this won't work consistently across server
+    // implementations because of the way the official grpc-web client behaves.
+    // It emits an "error" event, then an "end" event if it receives a response
+    // with just an error status in the body, but it emits just an "error"
+    // event if it receives the semantically identical response as trailers-only.
+    // Since connect-es servers do not send trailers-only responses, the
+    // behavior with this grpc-web client differs between a connect-es server
+    // and a server that does send trailers-only responses.
     const responseParam = new ResponseParameters();
     responseParam.setSize(31415);
     responseParam.setIntervalUs(5000);
@@ -276,9 +289,6 @@ describe("grpc_web", function () {
     });
     stream.on("data", () => {
       fail(`expecting no response from sleeping server`);
-    });
-    stream.on("end", () => {
-      fail("unexpected end of stream without error");
     });
     stream.on("error", (err) => {
       expect(err).toBeDefined();
@@ -344,7 +354,7 @@ describe("grpc_web", function () {
       // a 404, however this is not then handled by Connect, so grpc-web client throws an
       // Unknown based on Content-Type, which will be followed by a 404 not found, therefore it
       // can be skipped.
-      if(err.message == "Unknown Content-type received.") {
+      if (err.message == "Unknown Content-type received.") {
         return;
       }
       expect([5, 12].includes(err.code)).toBeTrue();
@@ -353,8 +363,8 @@ describe("grpc_web", function () {
   });
   it("fail_unary", function (done) {
     const expectedErrorDetail = new ErrorDetail();
-    expectedErrorDetail.setReason( "soirée 🎉")
-    expectedErrorDetail.setDomain("connect-crosstest")
+    expectedErrorDetail.setReason("soirée 🎉");
+    expectedErrorDetail.setDomain("connect-crosstest");
     client.failUnaryCall(new SimpleRequest(), null, (err) => {
       expect(err).toBeDefined();
       expect("code" in err).toBeTrue();
@@ -362,29 +372,23 @@ describe("grpc_web", function () {
       expect(err.message).toEqual("soirée 🎉");
       const m = caseless(err.metadata); // http header is case-insensitive
       expect(m.has("grpc-status-details-bin") != false).toBeTrue();
-      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      const errorStatus = ErrorStatus.deserializeBinary(
+        stringToUint8Array(atob(m.get("grpc-status-details-bin")))
+      );
       expect(errorStatus.getDetailsList().length).toEqual(1);
-      const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
+      const errorDetail = ErrorDetail.deserializeBinary(
+        (errorStatus.getDetailsList().at(0) as Any).getValue_asU8()
+      );
       expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
       done();
     });
   });
   it("fail_server_streaming", function (done) {
     const expectedErrorDetail = new ErrorDetail();
-    expectedErrorDetail.setReason( "soirée 🎉")
-    expectedErrorDetail.setDomain("connect-crosstest")
-
-    const sizes = [31415, 9, 2653, 58979];
-
-    const responseParams = sizes.map((size, idx) => {
-      const param = new ResponseParameters();
-      param.setSize(size);
-      param.setIntervalUs(idx * 10);
-      return param;
-    });
+    expectedErrorDetail.setReason("soirée 🎉");
+    expectedErrorDetail.setDomain("connect-crosstest");
 
     const req = new StreamingOutputCallRequest();
-    req.setResponseParametersList(responseParams);
 
     const stream = client.failStreamingOutputCall(req);
     stream.on("data", () => {
@@ -396,9 +400,56 @@ describe("grpc_web", function () {
       expect(err.message).toEqual("soirée 🎉");
       const m = caseless(err.metadata); // http header is case-insensitive
       expect(m.has("grpc-status-details-bin") != false).toBeTrue();
-      const errorStatus = ErrorStatus.deserializeBinary(stringToUint8Array(atob(m.get('grpc-status-details-bin'))));
+      const errorStatus = ErrorStatus.deserializeBinary(
+        stringToUint8Array(atob(m.get("grpc-status-details-bin")))
+      );
       expect(errorStatus.getDetailsList().length).toEqual(1);
-      const errorDetail = ErrorDetail.deserializeBinary((errorStatus.getDetailsList().at(0) as Any).getValue_asU8());
+      const errorDetail = ErrorDetail.deserializeBinary(
+        (errorStatus.getDetailsList().at(0) as Any).getValue_asU8()
+      );
+      expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
+      done();
+    });
+  });
+  it("fail_server_streaming_after_response", function (done) {
+    const expectedErrorDetail = new ErrorDetail();
+    expectedErrorDetail.setReason("soirée 🎉");
+    expectedErrorDetail.setDomain("connect-crosstest");
+
+    const sizes = [31415, 9, 2653, 58979];
+
+    const responseParams = sizes.map((size, idx) => {
+      const param = new ResponseParameters();
+      param.setSize(size);
+      param.setIntervalUs(idx * 10);
+      return param;
+    });
+
+    const receivedResponses: StreamingOutputCallResponse[] = [];
+
+    const req = new StreamingOutputCallRequest();
+    req.setResponseParametersList(responseParams);
+
+    const stream = client.failStreamingOutputCall(req);
+    stream.on("data", (response) => {
+      receivedResponses.push(response);
+    });
+    stream.on("error", (err) => {
+      // we expect to receive all messages we asked for
+      expect(receivedResponses.length).toEqual(sizes.length);
+      // we expect an error at the end
+      expect("code" in err).toBeTrue();
+      expect(err.code).toEqual(8);
+      expect(err.message).toEqual("soirée 🎉");
+      const m = caseless(err.metadata); // http header is case-insensitive
+      expect(m.has("grpc-status-details-bin") != false).toBeTrue();
+      const errorStatus = ErrorStatus.deserializeBinary(
+        stringToUint8Array(atob(m.get("grpc-status-details-bin")))
+      );
+      expect(errorStatus.getDetailsList().length).toEqual(1);
+      const errorDetail = ErrorDetail.deserializeBinary(
+        (errorStatus.getDetailsList().at(0) as Any).getValue_asU8()
+      );
       expect(Message.equals(expectedErrorDetail, errorDetail)).toBeTrue();
       done();
     });
