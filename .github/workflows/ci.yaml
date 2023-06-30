@@ -71,9 +71,18 @@ jobs:
       - name: docker-build-push
         uses: docker/build-push-action@v3
         with:
-          file: Dockerfile.crosstest
+          file: Dockerfile.crosstestgo
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
           tags: |
             bufbuild/connect-crosstest:latest
             bufbuild/connect-crosstest:${{ github.sha }}
+      - name: docker-build-push-web
+        uses: docker/build-push-action@v3
+        with:
+          file: Dockerfile.crosstestweb
+          platforms: ${{ steps.qemu.outputs.platforms }}
+          push: true
+          tags: |
+            bufbuild/connect-crosstest-web:latest
+            bufbuild/connect-crosstest-web:${{ github.sha }}
