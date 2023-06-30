@@ -14,7 +14,9 @@ COPY web/package.json web/package-lock.json /workspace/
 COPY web/tsconfig.json web/karma.conf.js /workspace/
 COPY web/gen /workspace/gen
 COPY web/spec /workspace/spec
-RUN npm install --production
+COPY web/server /workspace/server
+COPY cert /workspace/cert
+RUN npm install
 RUN local_npm_packages="" && \
     if [ ! -z "${TEST_PROTOBUF_ES_BRANCH}" ]; then \
         git clone --branch "${TEST_PROTOBUF_ES_BRANCH}" --depth 1 https://github.com/bufbuild/protobuf-es.git ../protobuf-es && \
