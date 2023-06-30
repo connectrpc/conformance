@@ -1,15 +1,5 @@
 github.com/bufbuild/connect-go v1.7.0 h1:MGp82v7SCza+3RhsVhV7aMikwxvI3ZfD72YiGt8FYJo=
 github.com/bufbuild/connect-go v1.7.0/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
-github.com/bufbuild/connect-go v1.8.1-0.20230621163608-20c3d4533d6d h1:RDFrbJqNm/xIAKLVfljLnoDpXgNQoxLYelN8bOhwuUU=
-github.com/bufbuild/connect-go v1.8.1-0.20230621163608-20c3d4533d6d/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
-github.com/bufbuild/connect-go v1.8.1-0.20230621195536-9a358b4148b8 h1:luA5f1GK92mmhm5Axl4a9yaewROpCC3fw0KLz3TJkfM=
-github.com/bufbuild/connect-go v1.8.1-0.20230621195536-9a358b4148b8/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
-github.com/bufbuild/connect-go v1.8.1-0.20230622114132-905be91fe811 h1:6wEO+vfZJpx+zlVPabKV/V/2gWmfwa72lqgEVdATFZM=
-github.com/bufbuild/connect-go v1.8.1-0.20230622114132-905be91fe811/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
-github.com/bufbuild/connect-go v1.8.1-0.20230622134822-f008229488ec h1:GZHPpEMcVDFiYBFrBCrQKB963tQeNx06rJMlp1IFpGI=
-github.com/bufbuild/connect-go v1.8.1-0.20230622134822-f008229488ec/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
-github.com/bufbuild/connect-go v1.8.1-0.20230622140301-2ba61a8ca1ae h1:48tBlO+djhMJskaPCZfn8WICZDWw9BCvwnT5jcujGXI=
-github.com/bufbuild/connect-go v1.8.1-0.20230622140301-2ba61a8ca1ae/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
 github.com/bufbuild/connect-go v1.8.1-0.20230623114306-a88b0b702130 h1:ZdLI77MnxOeq4hc6OYpNWbE4jXLb6ZzlHhY8e8sXuXo=
 github.com/bufbuild/connect-go v1.8.1-0.20230623114306-a88b0b702130/go.mod h1:GmMJYR6orFqD0Y6ZgX8pwQ8j9baizDrIQMm1/a6LnHk=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=

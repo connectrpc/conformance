@@ -37,6 +37,7 @@ import (
 	"golang.org/x/net/http2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 )
 
@@ -138,7 +139,12 @@ func bind(cmd *cobra.Command, flags *flags) error {
 func run(flags *flags) {
 	// tests for grpc client
 	if flags.implementation == grpcGo {
-		transportCredentials := credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))
+		var transportCredentials credentials.TransportCredentials
+		if !flags.insecure {
+			transportCredentials = credentials.NewTLS(newTLSConfig(flags.certFile, flags.keyFile))
+		} else {
+			transportCredentials = insecure.NewCredentials()
+		}
 		clientConn, err := grpc.Dial(
 			net.JoinHostPort(flags.host, flags.port),
 			grpc.WithTransportCredentials(transportCredentials),
@@ -146,7 +152,6 @@ func run(flags *flags) {
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
 		}
-		defer clientConn.Close()
 		unresolvableClientConn, err := grpc.Dial(
 			"unresolvable-host.some.domain",
 			grpc.WithTransportCredentials(transportCredentials),
@@ -154,7 +159,9 @@ func run(flags *flags) {
 		if err != nil {
 			log.Fatalf("failed grpc dial: %v", err)
 		}
+		defer clientConn.Close()
 		defer unresolvableClientConn.Close()
+
 		testGrpc(clientConn, unresolvableClientConn)
 		return
 	}
