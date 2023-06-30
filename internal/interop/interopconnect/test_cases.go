@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
@@ -75,6 +76,30 @@ func DoEmptyUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 	require.NoError(t, err)
 	assert.True(t, proto.Equal(&testpb.Empty{}, reply.Msg))
 	t.Successf("successful unary call")
+}
+
+// DoCacheableUnaryCall performs an idempotent unary RPC with empty request and response messages.
+func DoCacheableUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
+	payload, err := clientNewPayload(t, 1)
+	require.NoError(t, err)
+	req := &testpb.SimpleRequest{
+		ResponseType: testpb.PayloadType_COMPRESSABLE,
+		ResponseSize: int32(1),
+		Payload:      payload,
+	}
+	reply, err := client.CacheableUnaryCall(
+		context.Background(),
+		connect.NewRequest(req),
+	)
+	require.NoError(t, err)
+	msg := reply.Msg
+	assert.True(t, proto.Equal(&testpb.SimpleResponse{
+		Payload: payload,
+	}, msg))
+	if reply.Header().Get("Request-Protocol") == connect.ProtocolConnect {
+		assert.Equal(t, "true", reply.Header().Get("Get-Request"))
+	}
+	t.Successf("successful cacheable unary call")
 }
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
@@ -274,23 +299,40 @@ func validateMetadata(
 	expectedBinaryHeaders map[string][][]byte,
 ) {
 	for key, values := range expectedStringHeaders {
-		assert.Equal(t, len(values), len(header.Values(key)))
+		actualValues := header.Values(key)
+		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
+		// This is not a complete semantic comparison as it doesn't cover all possible cases. For example:
+		// Foo: a
+		// Foo: b, c, d
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
+			actualValues = strings.Split(actualValues[0], ", ")
+		}
+
+		assert.Equal(t, len(values), len(actualValues))
 		valuesMap := map[string]struct{}{}
 		for _, value := range values {
 			valuesMap[value] = struct{}{}
 		}
-		for _, headerValue := range header.Values(key) {
+		for _, headerValue := range actualValues {
 			_, ok := valuesMap[headerValue]
 			assert.True(t, ok)
 		}
 	}
 	for key, values := range expectedBinaryHeaders {
-		assert.Equal(t, len(values), len(trailer.Values(key)))
+		actualValues := trailer.Values(key)
+		// The server may have combined multiple lines for a field to a single line, see https://www.rfc-editor.org/rfc/rfc9110.html#section-5.3
+		// This is not a complete semantic comparison as it doesn't cover all possible cases. For example:
+		// Foo: a
+		// Foo: b, c, d
+		if len(values) != len(actualValues) && len(actualValues) == 1 {
+			actualValues = strings.Split(actualValues[0], ", ")
+		}
+		assert.Equal(t, len(values), len(actualValues))
 		valuesMap := map[string]struct{}{}
 		for _, value := range values {
 			valuesMap[string(value)] = struct{}{}
 		}
-		for _, trailerValue := range trailer.Values(key) {
+		for _, trailerValue := range actualValues {
 			decodedTrailerValue, err := connect.DecodeBinaryHeader(trailerValue)
 			assert.NoError(t, err)
 			_, ok := valuesMap[string(decodedTrailerValue)]
@@ -350,7 +392,7 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client connectpb.TestSer
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -364,7 +406,7 @@ func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client connect
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -380,7 +422,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client connectpb.Te
 		t,
 		client,
 		map[string][]string{
-			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ",more_stuff"},
+			leadingMetadataKey: {leadingMetadataValue, leadingMetadataValue + ";more_stuff"},
 		},
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
@@ -637,15 +679,8 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClie
 
 // DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
 func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.TestServiceClient) {
-	respParam := make([]*testpb.ResponseParameters, len(respSizes))
-	for i, s := range respSizes {
-		respParam[i] = &testpb.ResponseParameters{
-			Size: int32(s),
-		}
-	}
 	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
-		ResponseParameters: respParam,
+		ResponseType: testpb.PayloadType_COMPRESSABLE,
 	}
 	stream, err := client.FailStreamingOutputCall(context.Background(), connect.NewRequest(req))
 	require.NoError(t, err)
@@ -662,6 +697,39 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client connectpb.
 	assert.True(t, proto.Equal(detail, interop.ErrorDetail))
 	require.NoError(t, stream.Close())
 	t.Successf("successful fail server streaming with non-ASCII error")
+}
+
+func DoFailServerStreamingAfterResponse(t crosstesting.TB, client connectpb.TestServiceClient) {
+	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+	for i, s := range respSizes {
+		respParam[i] = &testpb.ResponseParameters{
+			Size: int32(s),
+		}
+	}
+	req := &testpb.StreamingOutputCallRequest{
+		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		ResponseParameters: respParam,
+	}
+	stream, err := client.FailStreamingOutputCall(context.Background(), connect.NewRequest(req))
+	require.NoError(t, err)
+	for i := 0; i < len(respSizes); i++ {
+		require.True(t, stream.Receive())
+		require.NoError(t, stream.Err())
+		require.NotNil(t, stream.Msg())
+	}
+	require.False(t, stream.Receive())
+	err = stream.Err()
+	assert.Error(t, err)
+	assert.Equal(t, connect.CodeOf(err), connect.CodeResourceExhausted)
+	assert.Equal(t, err.Error(), connect.CodeResourceExhausted.String()+": "+interop.NonASCIIErrMsg)
+	var connectErr *connect.Error
+	require.True(t, errors.As(err, &connectErr))
+	require.Len(t, connectErr.Details(), 1)
+	detail, detailErr := connectErr.Details()[0].Value()
+	require.NoError(t, detailErr)
+	assert.True(t, proto.Equal(detail, interop.ErrorDetail))
+	require.NoError(t, stream.Close())
+	t.Successf("successful fail server streaming after response")
 }
 
 // DoUnresolvableHost attempts to call a method to an unresolvable host.

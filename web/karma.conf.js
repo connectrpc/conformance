@@ -57,6 +57,7 @@ module.exports = function (config) {
       host: config.host,
       port: config.port,
       implementation: config.implementation,
+      insecure: config.insecure,
     },
   });
 };

@@ -8,7 +8,7 @@ MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-print-directory
 BIN := .tmp/bin
 COPYRIGHT_YEARS := 2022
-LICENSE_IGNORE := -e internal/proto/grpc -e internal/interopgrpc -e web/spec/grpc-web.spec.ts
+LICENSE_IGNORE := -e proto/grpc -e internal/interopgrpc -e web/spec/grpc-web.spec.ts -e web/server/fastify/program.ts
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 
@@ -81,30 +81,43 @@ checkgenerate:
 
 .PHONY: dockercomposetestgo
 dockercomposetestgo: dockercomposeclean
-	docker-compose run client-connect-to-server-connect-h1
-	docker-compose run client-connect-to-server-connect-h2
-	docker-compose run client-connect-to-server-connect-h3
-	docker-compose run client-connect-grpc-to-server-connect-h1
-	docker-compose run client-connect-grpc-to-server-connect-h2
-	docker-compose run client-connect-grpc-web-to-server-connect-h1
-	docker-compose run client-connect-grpc-web-to-server-connect-h2
-	docker-compose run client-connect-grpc-web-to-server-connect-h3
-	docker-compose run client-connect-grpc-web-to-envoy-server-connect-h1
-	docker-compose run client-connect-grpc-web-to-envoy-server-grpc-h1
-	docker-compose run client-connect-grpc-to-server-grpc
-	docker-compose run client-grpc-to-server-connect
-	docker-compose run client-grpc-to-server-grpc
+	docker-compose run client-connect-go-to-server-connect-go-h1
+	docker-compose run client-connect-go-to-server-connect-go-h2
+	docker-compose run client-connect-go-to-server-connect-go-h3
+	docker-compose run client-connect-go-to-server-connect-node-fastify-h1
+	docker-compose run client-connect-go-to-server-connect-node-fastify-h2
+	docker-compose run client-connect-go-grpc-to-server-connect-node-fastify-h1
+	docker-compose run client-connect-go-grpc-to-server-connect-node-fastify-h2
+	docker-compose run client-connect-go-grpc-web-to-server-connect-node-fastify-h1
+	docker-compose run client-connect-go-grpc-web-to-server-connect-node-fastify-h2
+	docker-compose run client-connect-go-grpc-to-server-connect-go-h1
+	docker-compose run client-connect-go-grpc-to-server-connect-go-h2
+	docker-compose run client-connect-go-grpc-web-to-server-connect-go-h1
+	docker-compose run client-connect-go-grpc-web-to-server-connect-go-h2
+	docker-compose run client-connect-go-grpc-web-to-server-connect-go-h3
+	docker-compose run client-connect-go-grpc-web-to-envoy-server-connect-go-h1
+	docker-compose run client-connect-go-grpc-web-to-envoy-server-grpc-go-h1
+	docker-compose run client-connect-go-grpc-web-to-envoy-server-connect-node-fastify-h1
+	docker-compose run client-connect-go-grpc-to-server-grpc-go
+	docker-compose run client-grpc-go-to-server-connect-go
+	docker-compose run client-grpc-go-to-server-grpc-go
+	docker-compose run client-grpc-go-to-server-connect-node-fastify
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposetestweb
 dockercomposetestweb: dockercomposeclean
-	docker-compose run client-web-connect-web-to-server-connect-h1
-	docker-compose run client-web-connect-grpc-web-to-server-connect-h1
-	docker-compose run client-web-connect-grpc-web-to-envoy-server-connect
-	docker-compose run client-web-connect-grpc-web-to-envoy-server-grpc
-	docker-compose run client-web-grpc-web-to-server-connect-h1
-	docker-compose run client-web-grpc-web-to-envoy-server-connect
-	docker-compose run client-web-grpc-web-to-envoy-server-grpc
+	docker-compose run client-connect-web-to-server-connect-go-h1
+	docker-compose run client-connect-web-grpc-web-to-server-connect-go-h1
+	docker-compose run client-connect-web-grpc-web-to-envoy-server-connect-go
+	docker-compose run client-connect-web-grpc-web-to-envoy-server-grpc-go
+	docker-compose run client-connect-web-grpc-web-to-envoy-server-connect-node-fastify
+	docker-compose run client-grpc-web-to-server-connect-go-h1
+	docker-compose run client-grpc-web-to-envoy-server-connect-go
+	docker-compose run client-grpc-web-to-envoy-server-grpc-go
+	docker-compose run client-grpc-web-to-envoy-server-connect-node-fastify
+	docker-compose run client-connect-web-to-server-connect-node-fastify-h1
+	docker-compose run client-connect-web-grpc-web-to-server-connect-node-fastify-h1
+	docker-compose run client-grpc-web-to-server-connect-node-fastify-h1
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposetest
@@ -127,7 +140,7 @@ $(BIN)/license-header: Makefile
 
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.50.1
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.51.0
 
 $(BIN)/protoc-gen-connect-go: Makefile go.mod
 	@mkdir -p $(@D)

@@ -17,21 +17,24 @@ import {
   ConnectError,
   connectErrorDetails,
   createCallbackClient,
-  createConnectTransport,
-  createGrpcWebTransport,
   decodeBinaryHeader,
   encodeBinaryHeader,
   Transport,
+} from "@bufbuild/connect";
+import {
+  createConnectTransport,
+  createGrpcWebTransport,
 } from "@bufbuild/connect-web";
 import {
   TestService,
   UnimplementedService,
-} from "../gen/proto/connect-web/grpc/testing/test_connectweb";
+} from "../gen/proto/connect-web/grpc/testing/test_connect";
 import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import {
   ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
+  StreamingOutputCallResponse,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
@@ -50,16 +53,23 @@ function multiDone(done: DoneFn, count: number) {
 describe("connect_web_callback_client", function () {
   const host = __karma__.config.host;
   const port = __karma__.config.port;
+  const insecure = __karma__.config.insecure;
+  let scheme = "";
+  if (insecure === "true" || insecure === true) {
+    scheme = "http://";
+  } else {
+    scheme = "https://";
+  }
   let transport: Transport;
   switch (__karma__.config.implementation) {
     case "connect-web":
       transport = createConnectTransport({
-        baseUrl: `https://${host}:${port}`,
+        baseUrl: `${scheme}${host}:${port}`,
       });
       break;
     case "connect-grpc-web":
       transport = createGrpcWebTransport({
-        baseUrl: `https://${host}:${port}`,
+        baseUrl: `${scheme}${host}:${port}`,
       });
       break;
     default:
@@ -173,7 +183,9 @@ describe("connect_web_callback_client", function () {
         },
         onTrailer(trailer) {
           expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-          expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
+          expect(
+            decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY) || "")
+          ).toEqual(ECHO_TRAILING_VALUE);
           doneFn();
         },
       }
@@ -187,37 +199,41 @@ describe("connect_web_callback_client", function () {
 
     const size = 31415;
     const doneFn = multiDone(done, 3);
-    const responseParams = [{
-      size: size,
-    }]
+    const responseParams = [
+      {
+        size: size,
+      },
+    ];
     client.streamingOutputCall(
-        {
-          responseParameters: responseParams,
+      {
+        responseParameters: responseParams,
+      },
+      (response) => {
+        expect(response.payload).toBeDefined();
+        expect(response.payload?.body.length).toEqual(size);
+        doneFn();
+      },
+      (err) => {
+        expect(err).toBeUndefined();
+      },
+      {
+        headers: {
+          [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
+          [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
         },
-        (response) => {
-          expect(response.payload).toBeDefined();
-          expect(response.payload?.body.length).toEqual(size);
+        onHeader(header) {
+          expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
+          expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
           doneFn();
         },
-        (err) => {
-          expect(err).toBeUndefined();
+        onTrailer(trailer) {
+          expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
+          expect(
+            decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY) || "")
+          ).toEqual(ECHO_TRAILING_VALUE);
+          doneFn();
         },
-        {
-          headers: {
-            [ECHO_LEADING_KEY]: ECHO_LEADING_VALUE,
-            [ECHO_TRAILING_KEY]: encodeBinaryHeader(ECHO_TRAILING_VALUE),
-          },
-          onHeader(header) {
-            expect(header.has(ECHO_LEADING_KEY)).toBeTrue();
-            expect(header.get(ECHO_LEADING_KEY)).toEqual(ECHO_LEADING_VALUE);
-            doneFn();
-          },
-          onTrailer(trailer) {
-            expect(trailer.has(ECHO_TRAILING_KEY)).toBeTrue();
-            expect(decodeBinaryHeader(trailer.get(ECHO_TRAILING_KEY)||"")).toEqual(ECHO_TRAILING_VALUE);
-            doneFn();
-          },
-        }
+      }
     );
   });
   it("status_code_and_message", function (done) {
@@ -295,15 +311,17 @@ describe("connect_web_callback_client", function () {
   });
   it("unimplemented_server_streaming_method", function (done) {
     client.unimplementedStreamingOutputCall(
-        {},
-        (response) => {
-          fail(`expecting no response from fail server streaming, got: ${response}`);
-        },
-        (err) => {
-          expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(Code.Unimplemented);
-          done();
-        }
+      {},
+      (response) => {
+        fail(
+          `expecting no response from fail server streaming, got: ${response}`
+        );
+      },
+      (err) => {
+        expect(err).toBeInstanceOf(ConnectError);
+        expect(err?.code).toEqual(Code.Unimplemented);
+        done();
+      }
     );
   });
   it("unimplemented_service", function (done) {
@@ -326,15 +344,17 @@ describe("connect_web_callback_client", function () {
   it("unimplemented_server_streaming_service", function (done) {
     const badClient = createCallbackClient(UnimplementedService, transport);
     badClient.unimplementedStreamingOutputCall(
-        {},
-        (response) => {
-          fail(`expecting no response from fail server streaming, got: ${response}`);
-        },
-        (err) => {
-          expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(Code.Unimplemented);
-          done();
-        }
+      {},
+      (response) => {
+        fail(
+          `expecting no response from fail server streaming, got: ${response}`
+        );
+      },
+      (err) => {
+        expect(err).toBeInstanceOf(ConnectError);
+        expect(err?.code).toEqual(Code.Unimplemented);
+        done();
+      }
     );
   });
   it("fail_unary", function (done) {
@@ -346,13 +366,39 @@ describe("connect_web_callback_client", function () {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails((err as ConnectError), ErrorDetail);
+      const errDetails = connectErrorDetails(err as ConnectError, ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
       done();
     });
   });
   it("fail_server_streaming", function (done) {
+    const expectedErrorDetail = new ErrorDetail({
+      reason: "soirée 🎉",
+      domain: "connect-crosstest",
+    });
+    client.failStreamingOutputCall(
+      {},
+      (response) => {
+        fail(
+          `expecting no response from fail server streaming, got: ${response}`
+        );
+      },
+      (err) => {
+        expect(err).toBeInstanceOf(ConnectError);
+        expect(err?.code).toEqual(Code.ResourceExhausted);
+        expect(err?.rawMessage).toEqual("soirée 🎉");
+        const errDetails = connectErrorDetails(
+          err as ConnectError,
+          ErrorDetail
+        );
+        expect(errDetails.length).toEqual(1);
+        expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
+        done();
+      }
+    );
+  });
+  it("fail_server_streaming_after_response", function (done) {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
       domain: "connect-crosstest",
@@ -364,22 +410,29 @@ describe("connect_web_callback_client", function () {
         intervalUs: index * 10,
       };
     });
+    const receivedResponses: StreamingOutputCallResponse[] = [];
     client.failStreamingOutputCall(
-        {
-          responseParameters: responseParams,
-        },
-        (response) => {
-          fail(`expecting no response from fail server streaming, got: ${response}`);
-        },
-        (err) => {
-          expect(err).toBeInstanceOf(ConnectError);
-          expect(err?.code).toEqual(Code.ResourceExhausted);
-          expect(err?.rawMessage).toEqual("soirée 🎉");
-          const errDetails = connectErrorDetails((err as ConnectError), ErrorDetail);
-          expect(errDetails.length).toEqual(1);
-          expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
-          done();
-        }
+      {
+        responseParameters: responseParams,
+      },
+      (response) => {
+        receivedResponses.push(response);
+      },
+      (err) => {
+        // we expect to receive all messages we asked for
+        expect(receivedResponses.length).toEqual(sizes.length);
+        // we expect an error at the end
+        expect(err).toBeInstanceOf(ConnectError);
+        expect(err?.code).toEqual(Code.ResourceExhausted);
+        expect(err?.rawMessage).toEqual("soirée 🎉");
+        const errDetails = connectErrorDetails(
+          err as ConnectError,
+          ErrorDetail
+        );
+        expect(errDetails.length).toEqual(1);
+        expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
+        done();
+      }
     );
   });
 });

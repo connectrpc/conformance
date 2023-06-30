@@ -101,6 +101,7 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 			trailer = metadata.Pairs(trailingMetadataPairs...)
 		}
 	}
+	header = metadata.Join(header, metadata.Pairs("Request-Protocol", "grpc"))
 	if header != nil {
 		if err := grpc.SendHeader(ctx, header); err != nil {
 			return nil, err
@@ -123,6 +124,10 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	}, nil
 }
 
+func (s *testServer) CacheableUnaryCall(ctx context.Context, request *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+	return s.UnaryCall(ctx, request)
+}
+
 // FailUnaryCall is an additional RPC added for cross tests.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
 	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
@@ -134,6 +139,7 @@ func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest
 }
 
 func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {
+	responseStatus := args.GetResponseStatus()
 	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
 			var metadataPairs []string
@@ -157,11 +163,17 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 		}
 	}
 	cs := args.GetResponseParameters()
-	for _, c := range cs {
-		if us := c.GetIntervalUs(); us > 0 {
+	for _, responseParameter := range cs {
+		if us := responseParameter.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
 		}
-		pl, err := serverNewPayload(args.GetResponseType(), c.GetSize())
+		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
+		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
+		// but in order to simulate a network latency issue, we put the context checking here.
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
+		pl, err := serverNewPayload(args.GetResponseType(), responseParameter.GetSize())
 		if err != nil {
 			return err
 		}
@@ -171,10 +183,34 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 			return err
 		}
 	}
+	if responseStatus != nil && responseStatus.Code != 0 {
+		return status.Error(codes.Code(responseStatus.Code), responseStatus.Message)
+	}
 	return nil
 }
 
 func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
+	cs := args.GetResponseParameters()
+	for _, responseParameter := range cs {
+		if us := responseParameter.GetIntervalUs(); us > 0 {
+			time.Sleep(time.Duration(us) * time.Microsecond)
+		}
+		// Checking if the context is canceled or deadline exceeded, in a real world usage it will
+		// make more sense to put this checking before the expensive works (i.e. the time.Sleep above),
+		// but in order to simulate a network latency issue, we put the context checking here.
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
+		pl, err := serverNewPayload(args.GetResponseType(), responseParameter.GetSize())
+		if err != nil {
+			return err
+		}
+		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			Payload: pl,
+		}); err != nil {
+			return err
+		}
+	}
 	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
 	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
 	if err != nil {
@@ -193,6 +229,9 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 			})
 		}
 		if err != nil {
+			return err
+		}
+		if err := stream.Context().Err(); err != nil {
 			return err
 		}
 		p := req.GetPayload().GetBody()
@@ -224,6 +263,9 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 		}
 	}
 	for {
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
 			// read done.
@@ -257,6 +299,9 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 func (s *testServer) HalfDuplexCall(stream testpb.TestService_HalfDuplexCallServer) error {
 	var msgBuf []*testpb.StreamingOutputCallRequest
 	for {
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
 			// read done.
