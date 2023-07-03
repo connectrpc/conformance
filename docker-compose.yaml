@@ -226,28 +226,28 @@ services:
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
-  client-connect-to-server-grpc-adapter-h1:
+  client-connect-go-to-server-grpc-adapter-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8085" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
-  client-connect-to-server-grpc-adapter-h2:
+  client-connect-go-to-server-grpc-adapter-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8085" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
     depends_on:
       - server-grpc
-  client-connect-grpc-web-to-server-grpc-adapter-h2:
+  client-connect-go-grpc-web-to-server-grpc-adapter-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstest
+      dockerfile: Dockerfile.crosstestgo
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8085" --implementation="connect-grpc-web-h2" --cert "cert/client.crt" --key "cert/client.key"

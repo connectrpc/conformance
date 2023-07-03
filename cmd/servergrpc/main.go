@@ -30,7 +30,7 @@ import (
 	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
-	connect "github.com/bufbuild/connect-go"
+	"github.com/bufbuild/connect-go/grpcadapter"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -148,7 +148,7 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 }
 
 func newAdapterServer(flags *flags, server *grpc.Server) *http.Server {
-	handler := connect.NewGRPCAdapter(server)
+	handler := grpcadapter.NewHandler(server)
 	adapterServer := &http.Server{
 		Addr:              ":" + flags.adapterPort,
 		ReadHeaderTimeout: 3 * time.Second,

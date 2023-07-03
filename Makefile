@@ -86,6 +86,8 @@ dockercomposetestgo: dockercomposeclean
 	docker-compose run client-connect-go-to-server-connect-go-h3
 	docker-compose run client-connect-go-to-server-connect-node-fastify-h1
 	docker-compose run client-connect-go-to-server-connect-node-fastify-h2
+	docker-compose run client-connect-go-to-server-grpc-adapter-h1
+	docker-compose run client-connect-go-to-server-grpc-adapter-h2
 	docker-compose run client-connect-go-grpc-to-server-connect-node-fastify-h1
 	docker-compose run client-connect-go-grpc-to-server-connect-node-fastify-h2
 	docker-compose run client-connect-go-grpc-web-to-server-connect-node-fastify-h1
@@ -98,13 +100,12 @@ dockercomposetestgo: dockercomposeclean
 	docker-compose run client-connect-go-grpc-web-to-envoy-server-connect-go-h1
 	docker-compose run client-connect-go-grpc-web-to-envoy-server-grpc-go-h1
 	docker-compose run client-connect-go-grpc-web-to-envoy-server-connect-node-fastify-h1
+	docker-compose run client-connect-go-grpc-web-to-server-grpc-adapter-h2
 	docker-compose run client-connect-go-grpc-to-server-grpc-go
 	docker-compose run client-grpc-go-to-server-connect-go
 	docker-compose run client-grpc-go-to-server-grpc-go
 	docker-compose run client-grpc-go-to-server-connect-node-fastify
-  docker-compose run client-connect-grpc-to-server-grpc
-	docker-compose run client-connect-to-server-grpc-adapter-h1
-	docker-compose run client-connect-to-server-grpc-adapter-h2
+
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposetestweb
