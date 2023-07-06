@@ -83,6 +83,13 @@ jobs:
     needs:
       - ci
     steps:
+      # qemu is used when executing things like `apk` in the final build
+      # stage which must execute on the target platform. We currently do
+      # not have any CGO and care should be taken in the Dockerfile to ensure
+      # that go cross compilation happens on the build platform.
+      - name: setup-qemu
+        uses: docker/setup-qemu-action@v2
+        id: qemu
       - name: setup-docker-buildx
         uses: docker/setup-buildx-action@v2
       - name: login-docker
@@ -91,7 +98,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: docker-build-push-web
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           file: Dockerfile.crosstestweb
           push: true
