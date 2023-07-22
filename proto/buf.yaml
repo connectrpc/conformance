@@ -7,6 +7,13 @@ lint:
     - grpc/testing/empty.proto
     - grpc/testing/messages.proto
     - grpc/testing/test.proto
+  except:
+    - PACKAGE_VERSION_SUFFIX
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+    - ENUM_ZERO_VALUE_SUFFIX
+    - ENUM_VALUE_PREFIX
 breaking:
   use:
     - WIRE_JSON
