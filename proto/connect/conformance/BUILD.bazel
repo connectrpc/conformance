@@ -1,0 +1,23 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_buf//buf:defs.bzl", "buf_lint_test")
+
+proto_library(
+    name = "connect_conformance_proto",
+    srcs = [
+        "messages.proto",
+        "test.proto",
+    ],
+    strip_import_prefix = "/proto",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+buf_lint_test(
+    name = "connect_conformance_proto_lint",
+    config = "//proto:buf.yaml",
+    targets = [":connect_conformance_proto"],
+)
