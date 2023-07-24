@@ -55,6 +55,7 @@ lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
 generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/license-header ## Regenerate code and licenses
 	rm -rf internal/gen
 	rm -rf web/gen
+	rm -rf cc/gen
 	PATH=$(abspath $(BIN)) $(BIN)/buf generate
 	@# We want to operate on a list of modified and new files, excluding
 	@# deleted and ignored files. git-ls-files can't do this alone. comm -23 takes

@@ -12,3 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cc_binary(
+    name = "client",
+    srcs = ["client.cc"],
+    deps = [
+        "//cc:gen-connect-conformance",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+    ],
+)

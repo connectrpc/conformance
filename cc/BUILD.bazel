@@ -1,4 +1,4 @@
-# Copyright 2023 Buf Technologies, Inc.
+# Copyright 2022 Buf Technologies, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,4 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-exports_files(["buf.yaml"])
+package(default_visibility = ["//cc:__subpackages__"])
+
+cc_library(
+    name = "gen-connect-conformance",
+    srcs = glob(["gen/connect/conformance/*.cc"]),
+    hdrs = glob(["gen/connect/conformance/*.h"]),
+    includes = ["gen"],
+    deps = [
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
