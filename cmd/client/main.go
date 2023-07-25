@@ -27,8 +27,8 @@ import (
 	"os"
 
 	"github.com/bufbuild/connect-crosstest/internal/console"
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
-	testgrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connect/conformance/conformanceconnect"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connect/conformance"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
 	"github.com/bufbuild/connect-go"
@@ -213,24 +213,24 @@ func run(flags *flags) {
 		clientOptions = append(clientOptions, connect.WithGRPCWeb())
 	}
 	// create test clients using the transport and client options
-	uncompressedClient := testingconnect.NewTestServiceClient(
+	uncompressedClient := conformanceconnect.NewTestServiceClient(
 		&http.Client{Transport: transport},
 		serverURL.String(),
 		clientOptions...,
 	)
-	unresolvableClient := testingconnect.NewTestServiceClient(
+	unresolvableClient := conformanceconnect.NewTestServiceClient(
 		&http.Client{Transport: transport},
 		"https://unresolvable-host.some.domain",
 		clientOptions...,
 	)
-	unimplementedClient := testingconnect.NewUnimplementedServiceClient(
+	unimplementedClient := conformanceconnect.NewUnimplementedServiceClient(
 		&http.Client{Transport: transport},
 		serverURL.String(),
 		clientOptions...,
 	)
 	// add compress options to create compressed client
 	clientOptions = append(clientOptions, connect.WithSendGzip())
-	compressedClient := testingconnect.NewTestServiceClient(
+	compressedClient := conformanceconnect.NewTestServiceClient(
 		&http.Client{Transport: transport},
 		serverURL.String(),
 		clientOptions...,
@@ -240,13 +240,13 @@ func run(flags *flags) {
 	switch flags.implementation {
 	// We skipped those client and bidi streaming tests for http 1 test
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			testConnectUnary(client)
 			testConnectServerStreaming(client)
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectGRPCH2, connectH2, connectGRPCWebH2:
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			testConnectUnary(client)
 			testConnectServerStreaming(client)
 			testConnectClientStreaming(client)
@@ -255,7 +255,7 @@ func run(flags *flags) {
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectH3:
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			testConnectUnary(client)
 			testConnectServerStreaming(client)
 			testConnectClientStreaming(client)
@@ -265,7 +265,7 @@ func run(flags *flags) {
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectGRPCWebH3:
-		for _, client := range []testingconnect.TestServiceClient{uncompressedClient, compressedClient} {
+		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
 			// For tests that depend on trailers, we only run them for HTTP2, since the HTTP3 client
 			// does not yet have trailers support https://github.com/quic-go/quic-go/issues/2266
 			// Once trailer support is available, they will be reenabled.
@@ -278,7 +278,7 @@ func run(flags *flags) {
 	}
 }
 
-func testConnectUnary(client testingconnect.TestServiceClient) {
+func testConnectUnary(client conformanceconnect.TestServiceClient) {
 	interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 	interopconnect.DoCacheableUnaryCall(console.NewTB(), client)
 	interopconnect.DoLargeUnaryCall(console.NewTB(), client)
@@ -290,7 +290,7 @@ func testConnectUnary(client testingconnect.TestServiceClient) {
 	interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 }
 
-func testConnectServerStreaming(client testingconnect.TestServiceClient) {
+func testConnectServerStreaming(client conformanceconnect.TestServiceClient) {
 	interopconnect.DoServerStreaming(console.NewTB(), client)
 	interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
 	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
@@ -299,12 +299,12 @@ func testConnectServerStreaming(client testingconnect.TestServiceClient) {
 	interopconnect.DoFailServerStreamingAfterResponse(console.NewTB(), client)
 }
 
-func testConnectClientStreaming(client testingconnect.TestServiceClient) {
+func testConnectClientStreaming(client conformanceconnect.TestServiceClient) {
 	interopconnect.DoClientStreaming(console.NewTB(), client)
 	interopconnect.DoCancelAfterBegin(console.NewTB(), client)
 }
 
-func testConnectBidiStreaming(client testingconnect.TestServiceClient) {
+func testConnectBidiStreaming(client conformanceconnect.TestServiceClient) {
 	interopconnect.DoPingPong(console.NewTB(), client)
 	interopconnect.DoEmptyStream(console.NewTB(), client)
 	interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
@@ -314,8 +314,8 @@ func testConnectBidiStreaming(client testingconnect.TestServiceClient) {
 }
 
 func testConnectSpecialClients(
-	unresolvableClient testingconnect.TestServiceClient,
-	unimplementedClient testingconnect.UnimplementedServiceClient,
+	unresolvableClient conformanceconnect.TestServiceClient,
+	unimplementedClient conformanceconnect.UnimplementedServiceClient,
 ) {
 	interopconnect.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 	interopconnect.DoUnimplementedService(console.NewTB(), unimplementedClient)
@@ -323,8 +323,8 @@ func testConnectSpecialClients(
 }
 
 func testGrpc(clientConn *grpc.ClientConn, unresolvableClientConn *grpc.ClientConn) {
-	client := testgrpc.NewTestServiceClient(clientConn)
-	unresolvableClient := testgrpc.NewTestServiceClient(unresolvableClientConn)
+	client := conformance.NewTestServiceClient(clientConn)
+	unresolvableClient := conformance.NewTestServiceClient(unresolvableClientConn)
 	for _, args := range [][]grpc.CallOption{
 		nil,
 		{grpc.UseCompressor(gzip.Name)},
@@ -347,8 +347,8 @@ func testGrpc(clientConn *grpc.ClientConn, unresolvableClientConn *grpc.ClientCo
 		interopgrpc.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client, args...)
 		interopgrpc.DoFailServerStreamingAfterResponse(console.NewTB(), client, args...)
 	}
-	interopgrpc.DoUnimplementedService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
-	interopgrpc.DoUnimplementedServerStreamingService(console.NewTB(), testgrpc.NewUnimplementedServiceClient(clientConn))
+	interopgrpc.DoUnimplementedService(console.NewTB(), conformance.NewUnimplementedServiceClient(clientConn))
+	interopgrpc.DoUnimplementedServerStreamingService(console.NewTB(), conformance.NewUnimplementedServiceClient(clientConn))
 	interopgrpc.DoUnresolvableHost(console.NewTB(), unresolvableClient)
 }
 

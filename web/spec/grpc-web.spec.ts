@@ -22,7 +22,7 @@
 import {
   TestServiceClient,
   UnimplementedServiceClient,
-} from "../gen/proto/grpc-web/grpc/testing/TestServiceClientPb";
+} from "../gen/proto/grpc-web/connect/conformance/TestServiceClientPb";
 import {
   EchoStatus,
   ErrorDetail,
@@ -32,7 +32,7 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
   StreamingOutputCallResponse,
-} from "../gen/proto/grpc-web/grpc/testing/messages_pb";
+} from "../gen/proto/grpc-web/connect/conformance/messages_pb";
 import caseless = require("caseless");
 import { Message } from "google-protobuf";
 import { Any } from "google-protobuf/google/protobuf/any_pb";

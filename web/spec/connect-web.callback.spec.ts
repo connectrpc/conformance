@@ -28,13 +28,13 @@ import {
 import {
   TestService,
   UnimplementedService,
-} from "../gen/proto/connect-web/grpc/testing/test_connect";
+} from "../gen/proto/connect-web/connect/conformance/test_connect";
 import {
   ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
   StreamingOutputCallResponse,
-} from "../gen/proto/connect-web/grpc/testing/messages_pb";
+} from "../gen/proto/connect-web/connect/conformance/messages_pb";
 import { Empty } from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
