@@ -48,6 +48,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // NewTestServer creates a test server for test service.
@@ -59,8 +60,8 @@ type testServer struct {
 	testpb.UnimplementedTestServiceServer
 }
 
-func (s *testServer) EmptyCall(ctx context.Context, in *testpb.Empty) (*testpb.Empty, error) {
-	return new(testpb.Empty), nil
+func (s *testServer) EmptyCall(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
+	return new(emptypb.Empty), nil
 }
 
 func serverNewPayload(payloadType testpb.PayloadType, size int32) (*testpb.Payload, error) {

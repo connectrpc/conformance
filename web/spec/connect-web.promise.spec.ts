@@ -29,13 +29,13 @@ import {
   TestService,
   UnimplementedService,
 } from "../gen/proto/connect-web/grpc/testing/test_connect";
-import { Empty } from "../gen/proto/connect-web/grpc/testing/empty_pb";
 import {
   ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
   StreamingOutputCallResponse,
 } from "../gen/proto/connect-web/grpc/testing/messages_pb";
+import { Empty } from "@bufbuild/protobuf";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any
