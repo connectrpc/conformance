@@ -36,7 +36,7 @@
 // @ts-nocheck
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
-import { Any, Message, proto3 } from "@bufbuild/protobuf";
+import { Any, BoolValue, Message, proto3 } from "@bufbuild/protobuf";
 
 /**
  * The type of payload that should be returned.
@@ -94,49 +94,6 @@ proto3.util.setEnumType(GrpclbRouteType, "grpc.testing.GrpclbRouteType", [
   { no: 1, name: "GRPCLB_ROUTE_TYPE_FALLBACK" },
   { no: 2, name: "GRPCLB_ROUTE_TYPE_BACKEND" },
 ]);
-
-/**
- * TODO(dgq): Go back to using well-known types once
- * https://github.com/grpc/grpc/issues/6980 has been fixed.
- * import "google/protobuf/wrappers.proto";
- *
- * @generated from message grpc.testing.BoolValue
- */
-export class BoolValue extends Message<BoolValue> {
-  /**
-   * The bool value.
-   *
-   * @generated from field: bool value = 1;
-   */
-  value = false;
-
-  constructor(data?: PartialMessage<BoolValue>) {
-    super();
-    proto3.util.initPartial(data, this);
-  }
-
-  static readonly runtime: typeof proto3 = proto3;
-  static readonly typeName = "grpc.testing.BoolValue";
-  static readonly fields: FieldList = proto3.util.newFieldList(() => [
-    { no: 1, name: "value", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
-  ]);
-
-  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): BoolValue {
-    return new BoolValue().fromBinary(bytes, options);
-  }
-
-  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): BoolValue {
-    return new BoolValue().fromJson(jsonValue, options);
-  }
-
-  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): BoolValue {
-    return new BoolValue().fromJsonString(jsonString, options);
-  }
-
-  static equals(a: BoolValue | PlainMessage<BoolValue> | undefined, b: BoolValue | PlainMessage<BoolValue> | undefined): boolean {
-    return proto3.util.equals(BoolValue, a, b);
-  }
-}
 
 /**
  * A block of data, to simply increase gRPC message size.
@@ -281,9 +238,9 @@ export class SimpleRequest extends Message<SimpleRequest> {
    * implement the full compression tests by introspecting the call to verify
    * the response's compression status.
    *
-   * @generated from field: grpc.testing.BoolValue response_compressed = 6;
+   * @generated from field: google.protobuf.BoolValue response_compressed = 6;
    */
-  responseCompressed?: BoolValue;
+  responseCompressed?: boolean;
 
   /**
    * Whether server should return a given status
@@ -295,9 +252,9 @@ export class SimpleRequest extends Message<SimpleRequest> {
   /**
    * Whether the server should expect this request to be compressed.
    *
-   * @generated from field: grpc.testing.BoolValue expect_compressed = 8;
+   * @generated from field: google.protobuf.BoolValue expect_compressed = 8;
    */
-  expectCompressed?: BoolValue;
+  expectCompressed?: boolean;
 
   /**
    * Whether SimpleResponse should include server_id.
@@ -452,9 +409,9 @@ export class StreamingInputCallRequest extends Message<StreamingInputCallRequest
    * implement the full compression tests by introspecting the call to verify
    * the request's compression status.
    *
-   * @generated from field: grpc.testing.BoolValue expect_compressed = 2;
+   * @generated from field: google.protobuf.BoolValue expect_compressed = 2;
    */
-  expectCompressed?: BoolValue;
+  expectCompressed?: boolean;
 
   constructor(data?: PartialMessage<StreamingInputCallRequest>) {
     super();
@@ -553,9 +510,9 @@ export class ResponseParameters extends Message<ResponseParameters> {
    * implement the full compression tests by introspecting the call to verify
    * the response's compression status.
    *
-   * @generated from field: grpc.testing.BoolValue compressed = 3;
+   * @generated from field: google.protobuf.BoolValue compressed = 3;
    */
-  compressed?: BoolValue;
+  compressed?: boolean;
 
   constructor(data?: PartialMessage<ResponseParameters>) {
     super();
