@@ -22,7 +22,7 @@ import (
 	"net"
 	"os"
 
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connect/conformance"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
 	"github.com/spf13/cobra"

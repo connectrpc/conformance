@@ -32,7 +32,7 @@
 
 syntax = "proto3";
 
-package connect.conformance;
+package connectrpc.conformance;
 
 import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";

@@ -42,7 +42,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connect/conformance"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

@@ -14,7 +14,7 @@
 
 package interop
 
-import "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connect/conformance"
+import "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
 
 // NonASCIIErrMsg is a non-ASCII error message.
 const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII

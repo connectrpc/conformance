@@ -24,8 +24,8 @@ import (
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connect/conformance/conformanceconnect"
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connect/conformance"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connectrpc/conformance/conformanceconnect"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
 	"github.com/stretchr/testify/assert"
