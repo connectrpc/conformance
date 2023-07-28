@@ -25,6 +25,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -37,7 +38,7 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type TestServiceClient interface {
 	// One empty request followed by one empty response.
-	EmptyCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	EmptyCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// One request followed by one response.
 	UnaryCall(ctx context.Context, in *SimpleRequest, opts ...grpc.CallOption) (*SimpleResponse, error)
 	// One request followed by one response. This RPC always fails.
@@ -67,10 +68,10 @@ type TestServiceClient interface {
 	HalfDuplexCall(ctx context.Context, opts ...grpc.CallOption) (TestService_HalfDuplexCallClient, error)
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
-	UnimplementedCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	UnimplementedCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented streaming output methods.
-	UnimplementedStreamingOutputCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TestService_UnimplementedStreamingOutputCallClient, error)
+	UnimplementedStreamingOutputCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (TestService_UnimplementedStreamingOutputCallClient, error)
 }
 
 type testServiceClient struct {
@@ -81,8 +82,8 @@ func NewTestServiceClient(cc grpc.ClientConnInterface) TestServiceClient {
 	return &testServiceClient{cc}
 }
 
-func (c *testServiceClient) EmptyCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *testServiceClient) EmptyCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/grpc.testing.TestService/EmptyCall", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -277,8 +278,8 @@ func (x *testServiceHalfDuplexCallClient) Recv() (*StreamingOutputCallResponse, 
 	return m, nil
 }
 
-func (c *testServiceClient) UnimplementedCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *testServiceClient) UnimplementedCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/grpc.testing.TestService/UnimplementedCall", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -286,7 +287,7 @@ func (c *testServiceClient) UnimplementedCall(ctx context.Context, in *Empty, op
 	return out, nil
 }
 
-func (c *testServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (TestService_UnimplementedStreamingOutputCallClient, error) {
+func (c *testServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (TestService_UnimplementedStreamingOutputCallClient, error) {
 	stream, err := c.cc.NewStream(ctx, &TestService_ServiceDesc.Streams[5], "/grpc.testing.TestService/UnimplementedStreamingOutputCall", opts...)
 	if err != nil {
 		return nil, err
@@ -302,7 +303,7 @@ func (c *testServiceClient) UnimplementedStreamingOutputCall(ctx context.Context
 }
 
 type TestService_UnimplementedStreamingOutputCallClient interface {
-	Recv() (*Empty, error)
+	Recv() (*emptypb.Empty, error)
 	grpc.ClientStream
 }
 
@@ -310,8 +311,8 @@ type testServiceUnimplementedStreamingOutputCallClient struct {
 	grpc.ClientStream
 }
 
-func (x *testServiceUnimplementedStreamingOutputCallClient) Recv() (*Empty, error) {
-	m := new(Empty)
+func (x *testServiceUnimplementedStreamingOutputCallClient) Recv() (*emptypb.Empty, error) {
+	m := new(emptypb.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -323,7 +324,7 @@ func (x *testServiceUnimplementedStreamingOutputCallClient) Recv() (*Empty, erro
 // for forward compatibility
 type TestServiceServer interface {
 	// One empty request followed by one empty response.
-	EmptyCall(context.Context, *Empty) (*Empty, error)
+	EmptyCall(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// One request followed by one response.
 	UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error)
 	// One request followed by one response. This RPC always fails.
@@ -353,10 +354,10 @@ type TestServiceServer interface {
 	HalfDuplexCall(TestService_HalfDuplexCallServer) error
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
-	UnimplementedCall(context.Context, *Empty) (*Empty, error)
+	UnimplementedCall(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented streaming output methods.
-	UnimplementedStreamingOutputCall(*Empty, TestService_UnimplementedStreamingOutputCallServer) error
+	UnimplementedStreamingOutputCall(*emptypb.Empty, TestService_UnimplementedStreamingOutputCallServer) error
 	mustEmbedUnimplementedTestServiceServer()
 }
 
@@ -364,7 +365,7 @@ type TestServiceServer interface {
 type UnimplementedTestServiceServer struct {
 }
 
-func (UnimplementedTestServiceServer) EmptyCall(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedTestServiceServer) EmptyCall(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EmptyCall not implemented")
 }
 func (UnimplementedTestServiceServer) UnaryCall(context.Context, *SimpleRequest) (*SimpleResponse, error) {
@@ -391,10 +392,10 @@ func (UnimplementedTestServiceServer) FullDuplexCall(TestService_FullDuplexCallS
 func (UnimplementedTestServiceServer) HalfDuplexCall(TestService_HalfDuplexCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method HalfDuplexCall not implemented")
 }
-func (UnimplementedTestServiceServer) UnimplementedCall(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedTestServiceServer) UnimplementedCall(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnimplementedCall not implemented")
 }
-func (UnimplementedTestServiceServer) UnimplementedStreamingOutputCall(*Empty, TestService_UnimplementedStreamingOutputCallServer) error {
+func (UnimplementedTestServiceServer) UnimplementedStreamingOutputCall(*emptypb.Empty, TestService_UnimplementedStreamingOutputCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method UnimplementedStreamingOutputCall not implemented")
 }
 func (UnimplementedTestServiceServer) mustEmbedUnimplementedTestServiceServer() {}
@@ -411,7 +412,7 @@ func RegisterTestServiceServer(s grpc.ServiceRegistrar, srv TestServiceServer) {
 }
 
 func _TestService_EmptyCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -423,7 +424,7 @@ func _TestService_EmptyCall_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/grpc.testing.TestService/EmptyCall",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServiceServer).EmptyCall(ctx, req.(*Empty))
+		return srv.(TestServiceServer).EmptyCall(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -603,7 +604,7 @@ func (x *testServiceHalfDuplexCallServer) Recv() (*StreamingOutputCallRequest, e
 }
 
 func _TestService_UnimplementedCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -615,13 +616,13 @@ func _TestService_UnimplementedCall_Handler(srv interface{}, ctx context.Context
 		FullMethod: "/grpc.testing.TestService/UnimplementedCall",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(TestServiceServer).UnimplementedCall(ctx, req.(*Empty))
+		return srv.(TestServiceServer).UnimplementedCall(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _TestService_UnimplementedStreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Empty)
+	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -629,7 +630,7 @@ func _TestService_UnimplementedStreamingOutputCall_Handler(srv interface{}, stre
 }
 
 type TestService_UnimplementedStreamingOutputCallServer interface {
-	Send(*Empty) error
+	Send(*emptypb.Empty) error
 	grpc.ServerStream
 }
 
@@ -637,7 +638,7 @@ type testServiceUnimplementedStreamingOutputCallServer struct {
 	grpc.ServerStream
 }
 
-func (x *testServiceUnimplementedStreamingOutputCallServer) Send(m *Empty) error {
+func (x *testServiceUnimplementedStreamingOutputCallServer) Send(m *emptypb.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -711,9 +712,9 @@ var TestService_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type UnimplementedServiceClient interface {
 	// A call that no server should implement
-	UnimplementedCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	UnimplementedCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// A call that no server should implement
-	UnimplementedStreamingOutputCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (UnimplementedService_UnimplementedStreamingOutputCallClient, error)
+	UnimplementedStreamingOutputCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (UnimplementedService_UnimplementedStreamingOutputCallClient, error)
 }
 
 type unimplementedServiceClient struct {
@@ -724,8 +725,8 @@ func NewUnimplementedServiceClient(cc grpc.ClientConnInterface) UnimplementedSer
 	return &unimplementedServiceClient{cc}
 }
 
-func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/grpc.testing.UnimplementedService/UnimplementedCall", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -733,7 +734,7 @@ func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, in *
 	return out, nil
 }
 
-func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, in *Empty, opts ...grpc.CallOption) (UnimplementedService_UnimplementedStreamingOutputCallClient, error) {
+func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (UnimplementedService_UnimplementedStreamingOutputCallClient, error) {
 	stream, err := c.cc.NewStream(ctx, &UnimplementedService_ServiceDesc.Streams[0], "/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall", opts...)
 	if err != nil {
 		return nil, err
@@ -749,7 +750,7 @@ func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx contex
 }
 
 type UnimplementedService_UnimplementedStreamingOutputCallClient interface {
-	Recv() (*Empty, error)
+	Recv() (*emptypb.Empty, error)
 	grpc.ClientStream
 }
 
@@ -757,8 +758,8 @@ type unimplementedServiceUnimplementedStreamingOutputCallClient struct {
 	grpc.ClientStream
 }
 
-func (x *unimplementedServiceUnimplementedStreamingOutputCallClient) Recv() (*Empty, error) {
-	m := new(Empty)
+func (x *unimplementedServiceUnimplementedStreamingOutputCallClient) Recv() (*emptypb.Empty, error) {
+	m := new(emptypb.Empty)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -770,9 +771,9 @@ func (x *unimplementedServiceUnimplementedStreamingOutputCallClient) Recv() (*Em
 // for forward compatibility
 type UnimplementedServiceServer interface {
 	// A call that no server should implement
-	UnimplementedCall(context.Context, *Empty) (*Empty, error)
+	UnimplementedCall(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	// A call that no server should implement
-	UnimplementedStreamingOutputCall(*Empty, UnimplementedService_UnimplementedStreamingOutputCallServer) error
+	UnimplementedStreamingOutputCall(*emptypb.Empty, UnimplementedService_UnimplementedStreamingOutputCallServer) error
 	mustEmbedUnimplementedUnimplementedServiceServer()
 }
 
@@ -780,10 +781,10 @@ type UnimplementedServiceServer interface {
 type UnimplementedUnimplementedServiceServer struct {
 }
 
-func (UnimplementedUnimplementedServiceServer) UnimplementedCall(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedUnimplementedServiceServer) UnimplementedCall(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UnimplementedCall not implemented")
 }
-func (UnimplementedUnimplementedServiceServer) UnimplementedStreamingOutputCall(*Empty, UnimplementedService_UnimplementedStreamingOutputCallServer) error {
+func (UnimplementedUnimplementedServiceServer) UnimplementedStreamingOutputCall(*emptypb.Empty, UnimplementedService_UnimplementedStreamingOutputCallServer) error {
 	return status.Errorf(codes.Unimplemented, "method UnimplementedStreamingOutputCall not implemented")
 }
 func (UnimplementedUnimplementedServiceServer) mustEmbedUnimplementedUnimplementedServiceServer() {}
@@ -800,7 +801,7 @@ func RegisterUnimplementedServiceServer(s grpc.ServiceRegistrar, srv Unimplement
 }
 
 func _UnimplementedService_UnimplementedCall_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -812,13 +813,13 @@ func _UnimplementedService_UnimplementedCall_Handler(srv interface{}, ctx contex
 		FullMethod: "/grpc.testing.UnimplementedService/UnimplementedCall",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(UnimplementedServiceServer).UnimplementedCall(ctx, req.(*Empty))
+		return srv.(UnimplementedServiceServer).UnimplementedCall(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _UnimplementedService_UnimplementedStreamingOutputCall_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(Empty)
+	m := new(emptypb.Empty)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -826,7 +827,7 @@ func _UnimplementedService_UnimplementedStreamingOutputCall_Handler(srv interfac
 }
 
 type UnimplementedService_UnimplementedStreamingOutputCallServer interface {
-	Send(*Empty) error
+	Send(*emptypb.Empty) error
 	grpc.ServerStream
 }
 
@@ -834,7 +835,7 @@ type unimplementedServiceUnimplementedStreamingOutputCallServer struct {
 	grpc.ServerStream
 }
 
-func (x *unimplementedServiceUnimplementedStreamingOutputCallServer) Send(m *Empty) error {
+func (x *unimplementedServiceUnimplementedStreamingOutputCallServer) Send(m *emptypb.Empty) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -864,8 +865,8 @@ var UnimplementedService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReconnectServiceClient interface {
-	Start(ctx context.Context, in *ReconnectParams, opts ...grpc.CallOption) (*Empty, error)
-	Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ReconnectInfo, error)
+	Start(ctx context.Context, in *ReconnectParams, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReconnectInfo, error)
 }
 
 type reconnectServiceClient struct {
@@ -876,8 +877,8 @@ func NewReconnectServiceClient(cc grpc.ClientConnInterface) ReconnectServiceClie
 	return &reconnectServiceClient{cc}
 }
 
-func (c *reconnectServiceClient) Start(ctx context.Context, in *ReconnectParams, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *reconnectServiceClient) Start(ctx context.Context, in *ReconnectParams, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/grpc.testing.ReconnectService/Start", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -885,7 +886,7 @@ func (c *reconnectServiceClient) Start(ctx context.Context, in *ReconnectParams,
 	return out, nil
 }
 
-func (c *reconnectServiceClient) Stop(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*ReconnectInfo, error) {
+func (c *reconnectServiceClient) Stop(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReconnectInfo, error) {
 	out := new(ReconnectInfo)
 	err := c.cc.Invoke(ctx, "/grpc.testing.ReconnectService/Stop", in, out, opts...)
 	if err != nil {
@@ -898,8 +899,8 @@ func (c *reconnectServiceClient) Stop(ctx context.Context, in *Empty, opts ...gr
 // All implementations must embed UnimplementedReconnectServiceServer
 // for forward compatibility
 type ReconnectServiceServer interface {
-	Start(context.Context, *ReconnectParams) (*Empty, error)
-	Stop(context.Context, *Empty) (*ReconnectInfo, error)
+	Start(context.Context, *ReconnectParams) (*emptypb.Empty, error)
+	Stop(context.Context, *emptypb.Empty) (*ReconnectInfo, error)
 	mustEmbedUnimplementedReconnectServiceServer()
 }
 
@@ -907,10 +908,10 @@ type ReconnectServiceServer interface {
 type UnimplementedReconnectServiceServer struct {
 }
 
-func (UnimplementedReconnectServiceServer) Start(context.Context, *ReconnectParams) (*Empty, error) {
+func (UnimplementedReconnectServiceServer) Start(context.Context, *ReconnectParams) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Start not implemented")
 }
-func (UnimplementedReconnectServiceServer) Stop(context.Context, *Empty) (*ReconnectInfo, error) {
+func (UnimplementedReconnectServiceServer) Stop(context.Context, *emptypb.Empty) (*ReconnectInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Stop not implemented")
 }
 func (UnimplementedReconnectServiceServer) mustEmbedUnimplementedReconnectServiceServer() {}
@@ -945,7 +946,7 @@ func _ReconnectService_Start_Handler(srv interface{}, ctx context.Context, dec f
 }
 
 func _ReconnectService_Stop_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -957,7 +958,7 @@ func _ReconnectService_Stop_Handler(srv interface{}, ctx context.Context, dec fu
 		FullMethod: "/grpc.testing.ReconnectService/Stop",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReconnectServiceServer).Stop(ctx, req.(*Empty))
+		return srv.(ReconnectServiceServer).Stop(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -1113,8 +1114,8 @@ var LoadBalancerStatsService_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type XdsUpdateHealthServiceClient interface {
-	SetServing(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
-	SetNotServing(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error)
+	SetServing(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	SetNotServing(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type xdsUpdateHealthServiceClient struct {
@@ -1125,8 +1126,8 @@ func NewXdsUpdateHealthServiceClient(cc grpc.ClientConnInterface) XdsUpdateHealt
 	return &xdsUpdateHealthServiceClient{cc}
 }
 
-func (c *xdsUpdateHealthServiceClient) SetServing(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *xdsUpdateHealthServiceClient) SetServing(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/grpc.testing.XdsUpdateHealthService/SetServing", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1134,8 +1135,8 @@ func (c *xdsUpdateHealthServiceClient) SetServing(ctx context.Context, in *Empty
 	return out, nil
 }
 
-func (c *xdsUpdateHealthServiceClient) SetNotServing(ctx context.Context, in *Empty, opts ...grpc.CallOption) (*Empty, error) {
-	out := new(Empty)
+func (c *xdsUpdateHealthServiceClient) SetNotServing(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/grpc.testing.XdsUpdateHealthService/SetNotServing", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -1147,8 +1148,8 @@ func (c *xdsUpdateHealthServiceClient) SetNotServing(ctx context.Context, in *Em
 // All implementations must embed UnimplementedXdsUpdateHealthServiceServer
 // for forward compatibility
 type XdsUpdateHealthServiceServer interface {
-	SetServing(context.Context, *Empty) (*Empty, error)
-	SetNotServing(context.Context, *Empty) (*Empty, error)
+	SetServing(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	SetNotServing(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	mustEmbedUnimplementedXdsUpdateHealthServiceServer()
 }
 
@@ -1156,10 +1157,10 @@ type XdsUpdateHealthServiceServer interface {
 type UnimplementedXdsUpdateHealthServiceServer struct {
 }
 
-func (UnimplementedXdsUpdateHealthServiceServer) SetServing(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedXdsUpdateHealthServiceServer) SetServing(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetServing not implemented")
 }
-func (UnimplementedXdsUpdateHealthServiceServer) SetNotServing(context.Context, *Empty) (*Empty, error) {
+func (UnimplementedXdsUpdateHealthServiceServer) SetNotServing(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SetNotServing not implemented")
 }
 func (UnimplementedXdsUpdateHealthServiceServer) mustEmbedUnimplementedXdsUpdateHealthServiceServer() {
@@ -1177,7 +1178,7 @@ func RegisterXdsUpdateHealthServiceServer(s grpc.ServiceRegistrar, srv XdsUpdate
 }
 
 func _XdsUpdateHealthService_SetServing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1189,13 +1190,13 @@ func _XdsUpdateHealthService_SetServing_Handler(srv interface{}, ctx context.Con
 		FullMethod: "/grpc.testing.XdsUpdateHealthService/SetServing",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(XdsUpdateHealthServiceServer).SetServing(ctx, req.(*Empty))
+		return srv.(XdsUpdateHealthServiceServer).SetServing(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _XdsUpdateHealthService_SetNotServing_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Empty)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -1207,7 +1208,7 @@ func _XdsUpdateHealthService_SetNotServing_Handler(srv interface{}, ctx context.
 		FullMethod: "/grpc.testing.XdsUpdateHealthService/SetNotServing",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(XdsUpdateHealthServiceServer).SetNotServing(ctx, req.(*Empty))
+		return srv.(XdsUpdateHealthServiceServer).SetNotServing(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }

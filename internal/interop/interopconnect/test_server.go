@@ -25,6 +25,7 @@ import (
 	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // NewTestServiceHandler returns a new TestServiceHandler.
@@ -46,8 +47,8 @@ func (s *testServer) CacheableUnaryCall(ctx context.Context, request *connect.Re
 	return response, err
 }
 
-func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[testpb.Empty]) (*connect.Response[testpb.Empty], error) {
-	return connect.NewResponse(new(testpb.Empty)), nil
+func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return connect.NewResponse(new(emptypb.Empty)), nil
 }
 
 func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {

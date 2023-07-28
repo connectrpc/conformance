@@ -1,25 +1,8 @@
 import * as jspb from 'google-protobuf'
 
 import * as google_protobuf_any_pb from 'google-protobuf/google/protobuf/any_pb';
+import * as google_protobuf_wrappers_pb from 'google-protobuf/google/protobuf/wrappers_pb';
 
-
-export class BoolValue extends jspb.Message {
-  getValue(): boolean;
-  setValue(value: boolean): BoolValue;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): BoolValue.AsObject;
-  static toObject(includeInstance: boolean, msg: BoolValue): BoolValue.AsObject;
-  static serializeBinaryToWriter(message: BoolValue, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): BoolValue;
-  static deserializeBinaryFromReader(message: BoolValue, reader: jspb.BinaryReader): BoolValue;
-}
-
-export namespace BoolValue {
-  export type AsObject = {
-    value: boolean,
-  }
-}
 
 export class Payload extends jspb.Message {
   getType(): PayloadType;
@@ -85,8 +68,8 @@ export class SimpleRequest extends jspb.Message {
   getFillOauthScope(): boolean;
   setFillOauthScope(value: boolean): SimpleRequest;
 
-  getResponseCompressed(): BoolValue | undefined;
-  setResponseCompressed(value?: BoolValue): SimpleRequest;
+  getResponseCompressed(): google_protobuf_wrappers_pb.BoolValue | undefined;
+  setResponseCompressed(value?: google_protobuf_wrappers_pb.BoolValue): SimpleRequest;
   hasResponseCompressed(): boolean;
   clearResponseCompressed(): SimpleRequest;
 
@@ -95,8 +78,8 @@ export class SimpleRequest extends jspb.Message {
   hasResponseStatus(): boolean;
   clearResponseStatus(): SimpleRequest;
 
-  getExpectCompressed(): BoolValue | undefined;
-  setExpectCompressed(value?: BoolValue): SimpleRequest;
+  getExpectCompressed(): google_protobuf_wrappers_pb.BoolValue | undefined;
+  setExpectCompressed(value?: google_protobuf_wrappers_pb.BoolValue): SimpleRequest;
   hasExpectCompressed(): boolean;
   clearExpectCompressed(): SimpleRequest;
 
@@ -121,9 +104,9 @@ export namespace SimpleRequest {
     payload?: Payload.AsObject,
     fillUsername: boolean,
     fillOauthScope: boolean,
-    responseCompressed?: BoolValue.AsObject,
+    responseCompressed?: google_protobuf_wrappers_pb.BoolValue.AsObject,
     responseStatus?: EchoStatus.AsObject,
-    expectCompressed?: BoolValue.AsObject,
+    expectCompressed?: google_protobuf_wrappers_pb.BoolValue.AsObject,
     fillServerId: boolean,
     fillGrpclbRouteType: boolean,
   }
@@ -175,8 +158,8 @@ export class StreamingInputCallRequest extends jspb.Message {
   hasPayload(): boolean;
   clearPayload(): StreamingInputCallRequest;
 
-  getExpectCompressed(): BoolValue | undefined;
-  setExpectCompressed(value?: BoolValue): StreamingInputCallRequest;
+  getExpectCompressed(): google_protobuf_wrappers_pb.BoolValue | undefined;
+  setExpectCompressed(value?: google_protobuf_wrappers_pb.BoolValue): StreamingInputCallRequest;
   hasExpectCompressed(): boolean;
   clearExpectCompressed(): StreamingInputCallRequest;
 
@@ -191,7 +174,7 @@ export class StreamingInputCallRequest extends jspb.Message {
 export namespace StreamingInputCallRequest {
   export type AsObject = {
     payload?: Payload.AsObject,
-    expectCompressed?: BoolValue.AsObject,
+    expectCompressed?: google_protobuf_wrappers_pb.BoolValue.AsObject,
   }
 }
 
@@ -220,8 +203,8 @@ export class ResponseParameters extends jspb.Message {
   getIntervalUs(): number;
   setIntervalUs(value: number): ResponseParameters;
 
-  getCompressed(): BoolValue | undefined;
-  setCompressed(value?: BoolValue): ResponseParameters;
+  getCompressed(): google_protobuf_wrappers_pb.BoolValue | undefined;
+  setCompressed(value?: google_protobuf_wrappers_pb.BoolValue): ResponseParameters;
   hasCompressed(): boolean;
   clearCompressed(): ResponseParameters;
 
@@ -237,7 +220,7 @@ export namespace ResponseParameters {
   export type AsObject = {
     size: number,
     intervalUs: number,
-    compressed?: BoolValue.AsObject,
+    compressed?: google_protobuf_wrappers_pb.BoolValue.AsObject,
   }
 }
 

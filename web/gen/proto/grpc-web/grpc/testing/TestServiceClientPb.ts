@@ -17,8 +17,8 @@
 
 import * as grpcWeb from 'grpc-web';
 
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
 import * as grpc_testing_messages_pb from '../../grpc/testing/messages_pb';
-import * as grpc_testing_empty_pb from '../../grpc/testing/empty_pb';
 
 
 export class TestServiceClient {
@@ -43,29 +43,29 @@ export class TestServiceClient {
   methodDescriptorEmptyCall = new grpcWeb.MethodDescriptor(
     '/grpc.testing.TestService/EmptyCall',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   emptyCall(
-    request: grpc_testing_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_empty_pb.Empty>;
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   emptyCall(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty>;
+               response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   emptyCall(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void) {
+               response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
@@ -259,29 +259,29 @@ export class TestServiceClient {
   methodDescriptorUnimplementedCall = new grpcWeb.MethodDescriptor(
     '/grpc.testing.TestService/UnimplementedCall',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   unimplementedCall(
-    request: grpc_testing_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_empty_pb.Empty>;
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   unimplementedCall(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty>;
+               response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   unimplementedCall(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void) {
+               response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
@@ -302,17 +302,17 @@ export class TestServiceClient {
   methodDescriptorUnimplementedStreamingOutputCall = new grpcWeb.MethodDescriptor(
     '/grpc.testing.TestService/UnimplementedStreamingOutputCall',
     grpcWeb.MethodType.SERVER_STREAMING,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   unimplementedStreamingOutputCall(
-    request: grpc_testing_empty_pb.Empty,
-    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty> {
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty> {
     return this.client_.serverStreaming(
       this.hostname_ +
         '/grpc.testing.TestService/UnimplementedStreamingOutputCall',
@@ -345,29 +345,29 @@ export class UnimplementedServiceClient {
   methodDescriptorUnimplementedCall = new grpcWeb.MethodDescriptor(
     '/grpc.testing.UnimplementedService/UnimplementedCall',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   unimplementedCall(
-    request: grpc_testing_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_empty_pb.Empty>;
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   unimplementedCall(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty>;
+               response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   unimplementedCall(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void) {
+               response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
@@ -388,17 +388,17 @@ export class UnimplementedServiceClient {
   methodDescriptorUnimplementedStreamingOutputCall = new grpcWeb.MethodDescriptor(
     '/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall',
     grpcWeb.MethodType.SERVER_STREAMING,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   unimplementedStreamingOutputCall(
-    request: grpc_testing_empty_pb.Empty,
-    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty> {
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty> {
     return this.client_.serverStreaming(
       this.hostname_ +
         '/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall',
@@ -432,28 +432,28 @@ export class ReconnectServiceClient {
     '/grpc.testing.ReconnectService/Start',
     grpcWeb.MethodType.UNARY,
     grpc_testing_messages_pb.ReconnectParams,
-    grpc_testing_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
     (request: grpc_testing_messages_pb.ReconnectParams) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   start(
     request: grpc_testing_messages_pb.ReconnectParams,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_empty_pb.Empty>;
+    metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   start(
     request: grpc_testing_messages_pb.ReconnectParams,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty>;
+               response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   start(
     request: grpc_testing_messages_pb.ReconnectParams,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void) {
+               response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
@@ -474,26 +474,26 @@ export class ReconnectServiceClient {
   methodDescriptorStop = new grpcWeb.MethodDescriptor(
     '/grpc.testing.ReconnectService/Stop',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
     grpc_testing_messages_pb.ReconnectInfo,
-    (request: grpc_testing_empty_pb.Empty) => {
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
     grpc_testing_messages_pb.ReconnectInfo.deserializeBinary
   );
 
   stop(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.ReconnectInfo>;
 
   stop(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
                response: grpc_testing_messages_pb.ReconnectInfo) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.ReconnectInfo>;
 
   stop(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
                response: grpc_testing_messages_pb.ReconnectInfo) => void) {
@@ -645,29 +645,29 @@ export class XdsUpdateHealthServiceClient {
   methodDescriptorSetServing = new grpcWeb.MethodDescriptor(
     '/grpc.testing.XdsUpdateHealthService/SetServing',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   setServing(
-    request: grpc_testing_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_empty_pb.Empty>;
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   setServing(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty>;
+               response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   setServing(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void) {
+               response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
@@ -688,29 +688,29 @@ export class XdsUpdateHealthServiceClient {
   methodDescriptorSetNotServing = new grpcWeb.MethodDescriptor(
     '/grpc.testing.XdsUpdateHealthService/SetNotServing',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_empty_pb.Empty,
-    grpc_testing_empty_pb.Empty,
-    (request: grpc_testing_empty_pb.Empty) => {
+    google_protobuf_empty_pb.Empty,
+    google_protobuf_empty_pb.Empty,
+    (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_empty_pb.Empty.deserializeBinary
+    google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   setNotServing(
-    request: grpc_testing_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_empty_pb.Empty>;
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   setNotServing(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<grpc_testing_empty_pb.Empty>;
+               response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   setNotServing(
-    request: grpc_testing_empty_pb.Empty,
+    request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_empty_pb.Empty) => void) {
+               response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +

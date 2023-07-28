@@ -32,6 +32,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -71,10 +72,10 @@ func clientNewPayload(t crosstesting.TB, size int) (*testpb.Payload, error) {
 func DoEmptyUnaryCall(t crosstesting.TB, client connectpb.TestServiceClient) {
 	reply, err := client.EmptyCall(
 		context.Background(),
-		connect.NewRequest(&testpb.Empty{}),
+		connect.NewRequest(&emptypb.Empty{}),
 	)
 	require.NoError(t, err)
-	assert.True(t, proto.Equal(&testpb.Empty{}, reply.Msg))
+	assert.True(t, proto.Equal(&emptypb.Empty{}, reply.Msg))
 	t.Successf("successful unary call")
 }
 
@@ -618,14 +619,14 @@ func DoSpecialStatusMessage(t crosstesting.TB, client connectpb.TestServiceClien
 
 // DoUnimplementedMethod attempts to call an unimplemented method.
 func DoUnimplementedMethod(t crosstesting.TB, client connectpb.TestServiceClient) {
-	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
 	t.Successf("successful unimplemented method")
 }
 
 // DoUnimplementedServerStreamingMethod performs a server streaming RPC that is unimplemented.
 func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client connectpb.TestServiceClient) {
-	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	require.NoError(t, err)
 	stream.Receive()
 	err = stream.Err()
@@ -637,14 +638,14 @@ func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client connectpb.Te
 
 // DoUnimplementedService attempts to call a method from an unimplemented service.
 func DoUnimplementedService(t crosstesting.TB, client connectpb.UnimplementedServiceClient) {
-	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
 	t.Successf("successful unimplemented service")
 }
 
 // DoUnimplementedServerStreamingService performs a server streaming RPC from an unimplemented service.
 func DoUnimplementedServerStreamingService(t crosstesting.TB, client connectpb.UnimplementedServiceClient) {
-	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&testpb.Empty{}))
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	require.NoError(t, err)
 	stream.Receive()
 	err = stream.Err()
@@ -736,7 +737,7 @@ func DoFailServerStreamingAfterResponse(t crosstesting.TB, client connectpb.Test
 func DoUnresolvableHost(t crosstesting.TB, client connectpb.TestServiceClient) {
 	reply, err := client.EmptyCall(
 		context.Background(),
-		connect.NewRequest(&testpb.Empty{}),
+		connect.NewRequest(&emptypb.Empty{}),
 	)
 	assert.Nil(t, reply)
 	assert.Error(t, err)
