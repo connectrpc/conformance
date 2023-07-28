@@ -27,3 +27,7 @@ plugins:
     opt:
       - import_style=typescript
       - mode=grpcweb
+  - plugin: buf.build/grpc/cpp:v1.56.2
+    out: cc/gen
+  - plugin: buf.build/protocolbuffers/cpp
+    out: cc/gen
