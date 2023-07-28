@@ -14,6 +14,18 @@
 
 package(default_visibility = ["//cc:__subpackages__"])
 
+cc_test(
+    name = "grpc_client_test",
+    srcs = ["grpc_client_test.cc"],
+    env = {"PORT": "8081"},
+    deps = [
+        "//cc:gen-connectrpc-conformance",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_googleapis//google/rpc:status_cc_proto",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "gen-connectrpc-conformance",
     srcs = glob(["gen/connectrpc/conformance/*.cc"]),
