@@ -42,7 +42,7 @@ import (
 	"io"
 	"time"
 
-	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -52,29 +52,29 @@ import (
 )
 
 // NewTestServer creates a test server for test service.
-func NewTestServer() testpb.TestServiceServer {
+func NewTestServer() conformance.TestServiceServer {
 	return &testServer{}
 }
 
 type testServer struct {
-	testpb.UnimplementedTestServiceServer
+	conformance.UnimplementedTestServiceServer
 }
 
 func (s *testServer) EmptyCall(ctx context.Context, in *emptypb.Empty) (*emptypb.Empty, error) {
 	return new(emptypb.Empty), nil
 }
 
-func serverNewPayload(payloadType testpb.PayloadType, size int32) (*testpb.Payload, error) {
+func serverNewPayload(payloadType conformance.PayloadType, size int32) (*conformance.Payload, error) {
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
 	switch payloadType {
-	case testpb.PayloadType_COMPRESSABLE:
+	case conformance.PayloadType_COMPRESSABLE:
 	default:
 		return nil, fmt.Errorf("unsupported payload type: %d", payloadType)
 	}
-	return &testpb.Payload{
+	return &conformance.Payload{
 		Type: payloadType,
 		Body: body,
 	}, nil
@@ -89,7 +89,7 @@ func createMetadataPairs(metadataKey string, metadata []string) []string {
 	return metadataPairs
 }
 
-func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+func (s *testServer) UnaryCall(ctx context.Context, req *conformance.SimpleRequest) (*conformance.SimpleResponse, error) {
 	responseStatus := req.GetResponseStatus()
 	var header, trailer metadata.MD
 	if data, ok := metadata.FromIncomingContext(ctx); ok {
@@ -120,17 +120,17 @@ func (s *testServer) UnaryCall(ctx context.Context, req *testpb.SimpleRequest) (
 	if err != nil {
 		return nil, err
 	}
-	return &testpb.SimpleResponse{
+	return &conformance.SimpleResponse{
 		Payload: pl,
 	}, nil
 }
 
-func (s *testServer) CacheableUnaryCall(ctx context.Context, request *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+func (s *testServer) CacheableUnaryCall(ctx context.Context, request *conformance.SimpleRequest) (*conformance.SimpleResponse, error) {
 	return s.UnaryCall(ctx, request)
 }
 
 // FailUnaryCall is an additional RPC added for cross tests.
-func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest) (*testpb.SimpleResponse, error) {
+func (s *testServer) FailUnaryCall(ctx context.Context, in *conformance.SimpleRequest) (*conformance.SimpleResponse, error) {
 	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
 	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
 	if err != nil {
@@ -139,7 +139,7 @@ func (s *testServer) FailUnaryCall(ctx context.Context, in *testpb.SimpleRequest
 	return nil, errStatus.Err()
 }
 
-func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_StreamingOutputCallServer) error {
+func (s *testServer) StreamingOutputCall(args *conformance.StreamingOutputCallRequest, stream conformance.TestService_StreamingOutputCallServer) error {
 	responseStatus := args.GetResponseStatus()
 	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
@@ -178,7 +178,7 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 		if err != nil {
 			return err
 		}
-		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+		if err := stream.Send(&conformance.StreamingOutputCallResponse{
 			Payload: pl,
 		}); err != nil {
 			return err
@@ -190,7 +190,7 @@ func (s *testServer) StreamingOutputCall(args *testpb.StreamingOutputCallRequest
 	return nil
 }
 
-func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallRequest, stream testpb.TestService_FailStreamingOutputCallServer) error {
+func (s *testServer) FailStreamingOutputCall(args *conformance.StreamingOutputCallRequest, stream conformance.TestService_FailStreamingOutputCallServer) error {
 	cs := args.GetResponseParameters()
 	for _, responseParameter := range cs {
 		if us := responseParameter.GetIntervalUs(); us > 0 {
@@ -206,7 +206,7 @@ func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallReq
 		if err != nil {
 			return err
 		}
-		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+		if err := stream.Send(&conformance.StreamingOutputCallResponse{
 			Payload: pl,
 		}); err != nil {
 			return err
@@ -220,12 +220,12 @@ func (s *testServer) FailStreamingOutputCall(args *testpb.StreamingOutputCallReq
 	return errStatus.Err()
 }
 
-func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInputCallServer) error {
+func (s *testServer) StreamingInputCall(stream conformance.TestService_StreamingInputCallServer) error {
 	var sum int
 	for {
 		req, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
-			return stream.SendAndClose(&testpb.StreamingInputCallResponse{
+			return stream.SendAndClose(&conformance.StreamingInputCallResponse{
 				AggregatedPayloadSize: int32(sum),
 			})
 		}
@@ -240,7 +240,7 @@ func (s *testServer) StreamingInputCall(stream testpb.TestService_StreamingInput
 	}
 }
 
-func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServer) error {
+func (s *testServer) FullDuplexCall(stream conformance.TestService_FullDuplexCallServer) error {
 	if data, ok := metadata.FromIncomingContext(stream.Context()); ok {
 		if leadingMetadata, ok := data[leadingMetadataKey]; ok {
 			var metadataPairs []string
@@ -288,7 +288,7 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 			if err != nil {
 				return err
 			}
-			if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			if err := stream.Send(&conformance.StreamingOutputCallResponse{
 				Payload: pl,
 			}); err != nil {
 				return err
@@ -297,8 +297,8 @@ func (s *testServer) FullDuplexCall(stream testpb.TestService_FullDuplexCallServ
 	}
 }
 
-func (s *testServer) HalfDuplexCall(stream testpb.TestService_HalfDuplexCallServer) error {
-	var msgBuf []*testpb.StreamingOutputCallRequest
+func (s *testServer) HalfDuplexCall(stream conformance.TestService_HalfDuplexCallServer) error {
+	var msgBuf []*conformance.StreamingOutputCallRequest
 	for {
 		if err := stream.Context().Err(); err != nil {
 			return err
@@ -323,7 +323,7 @@ func (s *testServer) HalfDuplexCall(stream testpb.TestService_HalfDuplexCallServ
 			if err != nil {
 				return err
 			}
-			if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			if err := stream.Send(&conformance.StreamingOutputCallResponse{
 				Payload: pl,
 			}); err != nil {
 				return err

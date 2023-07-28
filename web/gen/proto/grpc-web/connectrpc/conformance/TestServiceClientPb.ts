@@ -1,5 +1,5 @@
 /**
- * @fileoverview gRPC-Web generated client stub for grpc.testing
+ * @fileoverview gRPC-Web generated client stub for connectrpc.conformance
  * @enhanceable
  * @public
  */
@@ -8,7 +8,7 @@
 // versions:
 // 	protoc-gen-grpc-web v1.4.2
 // 	protoc              v0.0.0
-// source: grpc/testing/test.proto
+// source: connectrpc/conformance/test.proto
 
 
 /* eslint-disable */
@@ -17,8 +17,8 @@
 
 import * as grpcWeb from 'grpc-web';
 
+import * as connectrpc_conformance_messages_pb from '../../connectrpc/conformance/messages_pb';
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
-import * as grpc_testing_messages_pb from '../../grpc/testing/messages_pb';
 
 
 export class TestServiceClient {
@@ -41,7 +41,7 @@ export class TestServiceClient {
   }
 
   methodDescriptorEmptyCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/EmptyCall',
+    '/connectrpc.conformance.TestService/EmptyCall',
     grpcWeb.MethodType.UNARY,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -69,7 +69,7 @@ export class TestServiceClient {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.TestService/EmptyCall',
+          '/connectrpc.conformance.TestService/EmptyCall',
         request,
         metadata || {},
         this.methodDescriptorEmptyCall,
@@ -77,42 +77,42 @@ export class TestServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.TestService/EmptyCall',
+      '/connectrpc.conformance.TestService/EmptyCall',
     request,
     metadata || {},
     this.methodDescriptorEmptyCall);
   }
 
   methodDescriptorUnaryCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/UnaryCall',
+    '/connectrpc.conformance.TestService/UnaryCall',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.SimpleRequest,
-    grpc_testing_messages_pb.SimpleResponse,
-    (request: grpc_testing_messages_pb.SimpleRequest) => {
+    connectrpc_conformance_messages_pb.SimpleRequest,
+    connectrpc_conformance_messages_pb.SimpleResponse,
+    (request: connectrpc_conformance_messages_pb.SimpleRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.SimpleResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.SimpleResponse.deserializeBinary
   );
 
   unaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.SimpleResponse>;
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.SimpleResponse>;
 
   unaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.SimpleResponse>;
+               response: connectrpc_conformance_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.SimpleResponse>;
 
   unaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.SimpleResponse) => void) {
+               response: connectrpc_conformance_messages_pb.SimpleResponse) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.TestService/UnaryCall',
+          '/connectrpc.conformance.TestService/UnaryCall',
         request,
         metadata || {},
         this.methodDescriptorUnaryCall,
@@ -120,42 +120,42 @@ export class TestServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.TestService/UnaryCall',
+      '/connectrpc.conformance.TestService/UnaryCall',
     request,
     metadata || {},
     this.methodDescriptorUnaryCall);
   }
 
   methodDescriptorFailUnaryCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/FailUnaryCall',
+    '/connectrpc.conformance.TestService/FailUnaryCall',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.SimpleRequest,
-    grpc_testing_messages_pb.SimpleResponse,
-    (request: grpc_testing_messages_pb.SimpleRequest) => {
+    connectrpc_conformance_messages_pb.SimpleRequest,
+    connectrpc_conformance_messages_pb.SimpleResponse,
+    (request: connectrpc_conformance_messages_pb.SimpleRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.SimpleResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.SimpleResponse.deserializeBinary
   );
 
   failUnaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.SimpleResponse>;
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.SimpleResponse>;
 
   failUnaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.SimpleResponse>;
+               response: connectrpc_conformance_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.SimpleResponse>;
 
   failUnaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.SimpleResponse) => void) {
+               response: connectrpc_conformance_messages_pb.SimpleResponse) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.TestService/FailUnaryCall',
+          '/connectrpc.conformance.TestService/FailUnaryCall',
         request,
         metadata || {},
         this.methodDescriptorFailUnaryCall,
@@ -163,42 +163,42 @@ export class TestServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.TestService/FailUnaryCall',
+      '/connectrpc.conformance.TestService/FailUnaryCall',
     request,
     metadata || {},
     this.methodDescriptorFailUnaryCall);
   }
 
   methodDescriptorCacheableUnaryCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/CacheableUnaryCall',
+    '/connectrpc.conformance.TestService/CacheableUnaryCall',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.SimpleRequest,
-    grpc_testing_messages_pb.SimpleResponse,
-    (request: grpc_testing_messages_pb.SimpleRequest) => {
+    connectrpc_conformance_messages_pb.SimpleRequest,
+    connectrpc_conformance_messages_pb.SimpleResponse,
+    (request: connectrpc_conformance_messages_pb.SimpleRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.SimpleResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.SimpleResponse.deserializeBinary
   );
 
   cacheableUnaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.SimpleResponse>;
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.SimpleResponse>;
 
   cacheableUnaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.SimpleResponse>;
+               response: connectrpc_conformance_messages_pb.SimpleResponse) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.SimpleResponse>;
 
   cacheableUnaryCall(
-    request: grpc_testing_messages_pb.SimpleRequest,
+    request: connectrpc_conformance_messages_pb.SimpleRequest,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.SimpleResponse) => void) {
+               response: connectrpc_conformance_messages_pb.SimpleResponse) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.TestService/CacheableUnaryCall',
+          '/connectrpc.conformance.TestService/CacheableUnaryCall',
         request,
         metadata || {},
         this.methodDescriptorCacheableUnaryCall,
@@ -206,58 +206,58 @@ export class TestServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.TestService/CacheableUnaryCall',
+      '/connectrpc.conformance.TestService/CacheableUnaryCall',
     request,
     metadata || {},
     this.methodDescriptorCacheableUnaryCall);
   }
 
   methodDescriptorStreamingOutputCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/StreamingOutputCall',
+    '/connectrpc.conformance.TestService/StreamingOutputCall',
     grpcWeb.MethodType.SERVER_STREAMING,
-    grpc_testing_messages_pb.StreamingOutputCallRequest,
-    grpc_testing_messages_pb.StreamingOutputCallResponse,
-    (request: grpc_testing_messages_pb.StreamingOutputCallRequest) => {
+    connectrpc_conformance_messages_pb.StreamingOutputCallRequest,
+    connectrpc_conformance_messages_pb.StreamingOutputCallResponse,
+    (request: connectrpc_conformance_messages_pb.StreamingOutputCallRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.StreamingOutputCallResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.StreamingOutputCallResponse.deserializeBinary
   );
 
   streamingOutputCall(
-    request: grpc_testing_messages_pb.StreamingOutputCallRequest,
-    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.StreamingOutputCallResponse> {
+    request: connectrpc_conformance_messages_pb.StreamingOutputCallRequest,
+    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.StreamingOutputCallResponse> {
     return this.client_.serverStreaming(
       this.hostname_ +
-        '/grpc.testing.TestService/StreamingOutputCall',
+        '/connectrpc.conformance.TestService/StreamingOutputCall',
       request,
       metadata || {},
       this.methodDescriptorStreamingOutputCall);
   }
 
   methodDescriptorFailStreamingOutputCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/FailStreamingOutputCall',
+    '/connectrpc.conformance.TestService/FailStreamingOutputCall',
     grpcWeb.MethodType.SERVER_STREAMING,
-    grpc_testing_messages_pb.StreamingOutputCallRequest,
-    grpc_testing_messages_pb.StreamingOutputCallResponse,
-    (request: grpc_testing_messages_pb.StreamingOutputCallRequest) => {
+    connectrpc_conformance_messages_pb.StreamingOutputCallRequest,
+    connectrpc_conformance_messages_pb.StreamingOutputCallResponse,
+    (request: connectrpc_conformance_messages_pb.StreamingOutputCallRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.StreamingOutputCallResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.StreamingOutputCallResponse.deserializeBinary
   );
 
   failStreamingOutputCall(
-    request: grpc_testing_messages_pb.StreamingOutputCallRequest,
-    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.StreamingOutputCallResponse> {
+    request: connectrpc_conformance_messages_pb.StreamingOutputCallRequest,
+    metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.StreamingOutputCallResponse> {
     return this.client_.serverStreaming(
       this.hostname_ +
-        '/grpc.testing.TestService/FailStreamingOutputCall',
+        '/connectrpc.conformance.TestService/FailStreamingOutputCall',
       request,
       metadata || {},
       this.methodDescriptorFailStreamingOutputCall);
   }
 
   methodDescriptorUnimplementedCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/UnimplementedCall',
+    '/connectrpc.conformance.TestService/UnimplementedCall',
     grpcWeb.MethodType.UNARY,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -285,7 +285,7 @@ export class TestServiceClient {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.TestService/UnimplementedCall',
+          '/connectrpc.conformance.TestService/UnimplementedCall',
         request,
         metadata || {},
         this.methodDescriptorUnimplementedCall,
@@ -293,14 +293,14 @@ export class TestServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.TestService/UnimplementedCall',
+      '/connectrpc.conformance.TestService/UnimplementedCall',
     request,
     metadata || {},
     this.methodDescriptorUnimplementedCall);
   }
 
   methodDescriptorUnimplementedStreamingOutputCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.TestService/UnimplementedStreamingOutputCall',
+    '/connectrpc.conformance.TestService/UnimplementedStreamingOutputCall',
     grpcWeb.MethodType.SERVER_STREAMING,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -315,7 +315,7 @@ export class TestServiceClient {
     metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty> {
     return this.client_.serverStreaming(
       this.hostname_ +
-        '/grpc.testing.TestService/UnimplementedStreamingOutputCall',
+        '/connectrpc.conformance.TestService/UnimplementedStreamingOutputCall',
       request,
       metadata || {},
       this.methodDescriptorUnimplementedStreamingOutputCall);
@@ -343,7 +343,7 @@ export class UnimplementedServiceClient {
   }
 
   methodDescriptorUnimplementedCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.UnimplementedService/UnimplementedCall',
+    '/connectrpc.conformance.UnimplementedService/UnimplementedCall',
     grpcWeb.MethodType.UNARY,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -371,7 +371,7 @@ export class UnimplementedServiceClient {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.UnimplementedService/UnimplementedCall',
+          '/connectrpc.conformance.UnimplementedService/UnimplementedCall',
         request,
         metadata || {},
         this.methodDescriptorUnimplementedCall,
@@ -379,14 +379,14 @@ export class UnimplementedServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.UnimplementedService/UnimplementedCall',
+      '/connectrpc.conformance.UnimplementedService/UnimplementedCall',
     request,
     metadata || {},
     this.methodDescriptorUnimplementedCall);
   }
 
   methodDescriptorUnimplementedStreamingOutputCall = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall',
+    '/connectrpc.conformance.UnimplementedService/UnimplementedStreamingOutputCall',
     grpcWeb.MethodType.SERVER_STREAMING,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -401,7 +401,7 @@ export class UnimplementedServiceClient {
     metadata?: grpcWeb.Metadata): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty> {
     return this.client_.serverStreaming(
       this.hostname_ +
-        '/grpc.testing.UnimplementedService/UnimplementedStreamingOutputCall',
+        '/connectrpc.conformance.UnimplementedService/UnimplementedStreamingOutputCall',
       request,
       metadata || {},
       this.methodDescriptorUnimplementedStreamingOutputCall);
@@ -429,35 +429,35 @@ export class ReconnectServiceClient {
   }
 
   methodDescriptorStart = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.ReconnectService/Start',
+    '/connectrpc.conformance.ReconnectService/Start',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.ReconnectParams,
+    connectrpc_conformance_messages_pb.ReconnectParams,
     google_protobuf_empty_pb.Empty,
-    (request: grpc_testing_messages_pb.ReconnectParams) => {
+    (request: connectrpc_conformance_messages_pb.ReconnectParams) => {
       return request.serializeBinary();
     },
     google_protobuf_empty_pb.Empty.deserializeBinary
   );
 
   start(
-    request: grpc_testing_messages_pb.ReconnectParams,
+    request: connectrpc_conformance_messages_pb.ReconnectParams,
     metadata: grpcWeb.Metadata | null): Promise<google_protobuf_empty_pb.Empty>;
 
   start(
-    request: grpc_testing_messages_pb.ReconnectParams,
+    request: connectrpc_conformance_messages_pb.ReconnectParams,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
                response: google_protobuf_empty_pb.Empty) => void): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
   start(
-    request: grpc_testing_messages_pb.ReconnectParams,
+    request: connectrpc_conformance_messages_pb.ReconnectParams,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
                response: google_protobuf_empty_pb.Empty) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.ReconnectService/Start',
+          '/connectrpc.conformance.ReconnectService/Start',
         request,
         metadata || {},
         this.methodDescriptorStart,
@@ -465,42 +465,42 @@ export class ReconnectServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.ReconnectService/Start',
+      '/connectrpc.conformance.ReconnectService/Start',
     request,
     metadata || {},
     this.methodDescriptorStart);
   }
 
   methodDescriptorStop = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.ReconnectService/Stop',
+    '/connectrpc.conformance.ReconnectService/Stop',
     grpcWeb.MethodType.UNARY,
     google_protobuf_empty_pb.Empty,
-    grpc_testing_messages_pb.ReconnectInfo,
+    connectrpc_conformance_messages_pb.ReconnectInfo,
     (request: google_protobuf_empty_pb.Empty) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.ReconnectInfo.deserializeBinary
+    connectrpc_conformance_messages_pb.ReconnectInfo.deserializeBinary
   );
 
   stop(
     request: google_protobuf_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.ReconnectInfo>;
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.ReconnectInfo>;
 
   stop(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.ReconnectInfo) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.ReconnectInfo>;
+               response: connectrpc_conformance_messages_pb.ReconnectInfo) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.ReconnectInfo>;
 
   stop(
     request: google_protobuf_empty_pb.Empty,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.ReconnectInfo) => void) {
+               response: connectrpc_conformance_messages_pb.ReconnectInfo) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.ReconnectService/Stop',
+          '/connectrpc.conformance.ReconnectService/Stop',
         request,
         metadata || {},
         this.methodDescriptorStop,
@@ -508,7 +508,7 @@ export class ReconnectServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.ReconnectService/Stop',
+      '/connectrpc.conformance.ReconnectService/Stop',
     request,
     metadata || {},
     this.methodDescriptorStop);
@@ -536,35 +536,35 @@ export class LoadBalancerStatsServiceClient {
   }
 
   methodDescriptorGetClientStats = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.LoadBalancerStatsService/GetClientStats',
+    '/connectrpc.conformance.LoadBalancerStatsService/GetClientStats',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.LoadBalancerStatsRequest,
-    grpc_testing_messages_pb.LoadBalancerStatsResponse,
-    (request: grpc_testing_messages_pb.LoadBalancerStatsRequest) => {
+    connectrpc_conformance_messages_pb.LoadBalancerStatsRequest,
+    connectrpc_conformance_messages_pb.LoadBalancerStatsResponse,
+    (request: connectrpc_conformance_messages_pb.LoadBalancerStatsRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.LoadBalancerStatsResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.LoadBalancerStatsResponse.deserializeBinary
   );
 
   getClientStats(
-    request: grpc_testing_messages_pb.LoadBalancerStatsRequest,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.LoadBalancerStatsResponse>;
+    request: connectrpc_conformance_messages_pb.LoadBalancerStatsRequest,
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.LoadBalancerStatsResponse>;
 
   getClientStats(
-    request: grpc_testing_messages_pb.LoadBalancerStatsRequest,
+    request: connectrpc_conformance_messages_pb.LoadBalancerStatsRequest,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.LoadBalancerStatsResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.LoadBalancerStatsResponse>;
+               response: connectrpc_conformance_messages_pb.LoadBalancerStatsResponse) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.LoadBalancerStatsResponse>;
 
   getClientStats(
-    request: grpc_testing_messages_pb.LoadBalancerStatsRequest,
+    request: connectrpc_conformance_messages_pb.LoadBalancerStatsRequest,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.LoadBalancerStatsResponse) => void) {
+               response: connectrpc_conformance_messages_pb.LoadBalancerStatsResponse) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.LoadBalancerStatsService/GetClientStats',
+          '/connectrpc.conformance.LoadBalancerStatsService/GetClientStats',
         request,
         metadata || {},
         this.methodDescriptorGetClientStats,
@@ -572,42 +572,42 @@ export class LoadBalancerStatsServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.LoadBalancerStatsService/GetClientStats',
+      '/connectrpc.conformance.LoadBalancerStatsService/GetClientStats',
     request,
     metadata || {},
     this.methodDescriptorGetClientStats);
   }
 
   methodDescriptorGetClientAccumulatedStats = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
+    '/connectrpc.conformance.LoadBalancerStatsService/GetClientAccumulatedStats',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.LoadBalancerAccumulatedStatsRequest,
-    grpc_testing_messages_pb.LoadBalancerAccumulatedStatsResponse,
-    (request: grpc_testing_messages_pb.LoadBalancerAccumulatedStatsRequest) => {
+    connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsRequest,
+    connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsResponse,
+    (request: connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.LoadBalancerAccumulatedStatsResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsResponse.deserializeBinary
   );
 
   getClientAccumulatedStats(
-    request: grpc_testing_messages_pb.LoadBalancerAccumulatedStatsRequest,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.LoadBalancerAccumulatedStatsResponse>;
+    request: connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsRequest,
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsResponse>;
 
   getClientAccumulatedStats(
-    request: grpc_testing_messages_pb.LoadBalancerAccumulatedStatsRequest,
+    request: connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsRequest,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.LoadBalancerAccumulatedStatsResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.LoadBalancerAccumulatedStatsResponse>;
+               response: connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsResponse) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsResponse>;
 
   getClientAccumulatedStats(
-    request: grpc_testing_messages_pb.LoadBalancerAccumulatedStatsRequest,
+    request: connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsRequest,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.LoadBalancerAccumulatedStatsResponse) => void) {
+               response: connectrpc_conformance_messages_pb.LoadBalancerAccumulatedStatsResponse) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
+          '/connectrpc.conformance.LoadBalancerStatsService/GetClientAccumulatedStats',
         request,
         metadata || {},
         this.methodDescriptorGetClientAccumulatedStats,
@@ -615,7 +615,7 @@ export class LoadBalancerStatsServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
+      '/connectrpc.conformance.LoadBalancerStatsService/GetClientAccumulatedStats',
     request,
     metadata || {},
     this.methodDescriptorGetClientAccumulatedStats);
@@ -643,7 +643,7 @@ export class XdsUpdateHealthServiceClient {
   }
 
   methodDescriptorSetServing = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.XdsUpdateHealthService/SetServing',
+    '/connectrpc.conformance.XdsUpdateHealthService/SetServing',
     grpcWeb.MethodType.UNARY,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -671,7 +671,7 @@ export class XdsUpdateHealthServiceClient {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.XdsUpdateHealthService/SetServing',
+          '/connectrpc.conformance.XdsUpdateHealthService/SetServing',
         request,
         metadata || {},
         this.methodDescriptorSetServing,
@@ -679,14 +679,14 @@ export class XdsUpdateHealthServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.XdsUpdateHealthService/SetServing',
+      '/connectrpc.conformance.XdsUpdateHealthService/SetServing',
     request,
     metadata || {},
     this.methodDescriptorSetServing);
   }
 
   methodDescriptorSetNotServing = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.XdsUpdateHealthService/SetNotServing',
+    '/connectrpc.conformance.XdsUpdateHealthService/SetNotServing',
     grpcWeb.MethodType.UNARY,
     google_protobuf_empty_pb.Empty,
     google_protobuf_empty_pb.Empty,
@@ -714,7 +714,7 @@ export class XdsUpdateHealthServiceClient {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.XdsUpdateHealthService/SetNotServing',
+          '/connectrpc.conformance.XdsUpdateHealthService/SetNotServing',
         request,
         metadata || {},
         this.methodDescriptorSetNotServing,
@@ -722,7 +722,7 @@ export class XdsUpdateHealthServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.XdsUpdateHealthService/SetNotServing',
+      '/connectrpc.conformance.XdsUpdateHealthService/SetNotServing',
     request,
     metadata || {},
     this.methodDescriptorSetNotServing);
@@ -750,35 +750,35 @@ export class XdsUpdateClientConfigureServiceClient {
   }
 
   methodDescriptorConfigure = new grpcWeb.MethodDescriptor(
-    '/grpc.testing.XdsUpdateClientConfigureService/Configure',
+    '/connectrpc.conformance.XdsUpdateClientConfigureService/Configure',
     grpcWeb.MethodType.UNARY,
-    grpc_testing_messages_pb.ClientConfigureRequest,
-    grpc_testing_messages_pb.ClientConfigureResponse,
-    (request: grpc_testing_messages_pb.ClientConfigureRequest) => {
+    connectrpc_conformance_messages_pb.ClientConfigureRequest,
+    connectrpc_conformance_messages_pb.ClientConfigureResponse,
+    (request: connectrpc_conformance_messages_pb.ClientConfigureRequest) => {
       return request.serializeBinary();
     },
-    grpc_testing_messages_pb.ClientConfigureResponse.deserializeBinary
+    connectrpc_conformance_messages_pb.ClientConfigureResponse.deserializeBinary
   );
 
   configure(
-    request: grpc_testing_messages_pb.ClientConfigureRequest,
-    metadata: grpcWeb.Metadata | null): Promise<grpc_testing_messages_pb.ClientConfigureResponse>;
+    request: connectrpc_conformance_messages_pb.ClientConfigureRequest,
+    metadata: grpcWeb.Metadata | null): Promise<connectrpc_conformance_messages_pb.ClientConfigureResponse>;
 
   configure(
-    request: grpc_testing_messages_pb.ClientConfigureRequest,
+    request: connectrpc_conformance_messages_pb.ClientConfigureRequest,
     metadata: grpcWeb.Metadata | null,
     callback: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.ClientConfigureResponse) => void): grpcWeb.ClientReadableStream<grpc_testing_messages_pb.ClientConfigureResponse>;
+               response: connectrpc_conformance_messages_pb.ClientConfigureResponse) => void): grpcWeb.ClientReadableStream<connectrpc_conformance_messages_pb.ClientConfigureResponse>;
 
   configure(
-    request: grpc_testing_messages_pb.ClientConfigureRequest,
+    request: connectrpc_conformance_messages_pb.ClientConfigureRequest,
     metadata: grpcWeb.Metadata | null,
     callback?: (err: grpcWeb.RpcError,
-               response: grpc_testing_messages_pb.ClientConfigureResponse) => void) {
+               response: connectrpc_conformance_messages_pb.ClientConfigureResponse) => void) {
     if (callback !== undefined) {
       return this.client_.rpcCall(
         this.hostname_ +
-          '/grpc.testing.XdsUpdateClientConfigureService/Configure',
+          '/connectrpc.conformance.XdsUpdateClientConfigureService/Configure',
         request,
         metadata || {},
         this.methodDescriptorConfigure,
@@ -786,7 +786,7 @@ export class XdsUpdateClientConfigureServiceClient {
     }
     return this.client_.unaryCall(
     this.hostname_ +
-      '/grpc.testing.XdsUpdateClientConfigureService/Configure',
+      '/connectrpc.conformance.XdsUpdateClientConfigureService/Configure',
     request,
     metadata || {},
     this.methodDescriptorConfigure);

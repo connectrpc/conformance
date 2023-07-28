@@ -27,7 +27,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
+	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connectrpc/conformance/conformanceconnect"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
 	"github.com/quic-go/quic-go/http3"
@@ -101,7 +101,7 @@ func bind(cmd *cobra.Command, flagset *flags) error {
 
 func run(flags *flags) {
 	mux := http.NewServeMux()
-	mux.Handle(testingconnect.NewTestServiceHandler(
+	mux.Handle(conformanceconnect.NewTestServiceHandler(
 		interopconnect.NewTestServiceHandler(),
 	))
 	corsHandler := cors.New(cors.Options{

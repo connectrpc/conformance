@@ -14,13 +14,13 @@
 
 package interop
 
-import testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+import "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
 
 // NonASCIIErrMsg is a non-ASCII error message.
 const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
 
 // ErrorDetail is an error detail to be included in an error.
-var ErrorDetail = &testpb.ErrorDetail{ //nolint:gochecknoglobals
+var ErrorDetail = &conformance.ErrorDetail{ //nolint:gochecknoglobals
 	Reason: NonASCIIErrMsg,
 	Domain: "connect-crosstest",
 }

@@ -27,16 +27,16 @@ import type {
 import {
   UnimplementedService,
   TestService,
-} from "../gen/proto/connect-web/grpc/testing/test_connect.js";
+} from "../gen/proto/connect-web/connectrpc/conformance/test_connect.js";
 import type {
   SimpleRequest,
   StreamingInputCallRequest,
   StreamingOutputCallRequest,
-} from "../gen/proto/connect-web/grpc/testing/messages_pb.js";
+} from "../gen/proto/connect-web/connectrpc/conformance/messages_pb.js";
 import {
   EchoStatus,
   ResponseParameters,
-} from "../gen/proto/connect-web/grpc/testing/messages_pb.js";
+} from "../gen/proto/connect-web/connectrpc/conformance/messages_pb.js";
 import { interop } from "./interop.js";
 
 export default (router: ConnectRouter) => {
