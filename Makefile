@@ -53,6 +53,7 @@ lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
 
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/protoc-gen-go-grpc $(BIN)/license-header ## Regenerate code and licenses
+	rm -rf cc/gen
 	rm -rf internal/gen
 	rm -rf web/gen
 	PATH=$(abspath $(BIN)) $(BIN)/buf generate
@@ -131,12 +132,12 @@ dockercomposeclean:
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
-	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.11.0
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/cmd/buf@v1.24.0
 
 $(BIN)/license-header: Makefile
 	@mkdir -p $(@D)
 	GOBIN=$(abspath $(@D)) $(GO) install \
-		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.11.0
+		  github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.24.0
 
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
