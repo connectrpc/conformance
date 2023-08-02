@@ -1,0 +1,29 @@
+proto_library(
+    name = "messages",
+    srcs = ["messages.proto"],
+    strip_import_prefix = "/proto",
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+proto_library(
+    name = "test",
+    srcs = ["test.proto"],
+    strip_import_prefix = "/proto",
+    deps = [
+        ":messages",
+        "@com_google_protobuf//:empty_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "messages_cc_proto",
+    deps = [":messages"],
+)
+
+cc_proto_library(
+    name = "test_cc_proto",
+    deps = [":test"],
+)
