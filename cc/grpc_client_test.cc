@@ -55,7 +55,9 @@ class GrpcClientTest : public ::testing::Test {
   static void SetUpTestSuite() {
     // Get the port from the env
     std::string port = getEnvStr("PORT");
-    ASSERT_FALSE(port.empty()) << "PORT env var must be set";
+    if (port.empty()) {
+      port = "8081";
+    }
     // Get the host from the env
     std::string host = getEnvStr("HOST", "127.0.0.1");
     // Get the insecure cert from the env
