@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_connectrpc_2fconformance_2fmessages_2eproto__INCLUDED
-#define GRPC_connectrpc_2fconformance_2fmessages_2eproto__INCLUDED
+#ifndef GRPC_connectrpc_2fconformance_2fv1_2fmessages_2eproto__INCLUDED
+#define GRPC_connectrpc_2fconformance_2fv1_2fmessages_2eproto__INCLUDED
 
-#include "connectrpc/conformance/messages.pb.h"
+#include "connectrpc/conformance/v1/messages.pb.h"
 
 #include <functional>
 #include <grpcpp/generic/async_generic_service.h>
@@ -38,9 +38,11 @@
 
 namespace connectrpc {
 namespace conformance {
+namespace v1 {
 
+}  // namespace v1
 }  // namespace conformance
 }  // namespace connectrpc
 
 
-#endif  // GRPC_connectrpc_2fconformance_2fmessages_2eproto__INCLUDED
+#endif  // GRPC_connectrpc_2fconformance_2fv1_2fmessages_2eproto__INCLUDED

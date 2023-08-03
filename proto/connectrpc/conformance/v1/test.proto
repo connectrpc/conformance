@@ -45,9 +45,9 @@
 
 syntax = "proto3";
 
-package connectrpc.conformance;
+package connectrpc.conformance.v1;
 
-import "connectrpc/conformance/messages.proto";
+import "connectrpc/conformance/v1/messages.proto";
 import "google/protobuf/empty.proto";
 
 // A simple service to test the various types of RPCs and experiment with

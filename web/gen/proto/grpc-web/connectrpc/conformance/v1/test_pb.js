@@ -1,4 +1,4 @@
-// source: connectrpc/conformance/test.proto
+// source: connectrpc/conformance/v1/test.proto
 /**
  * @fileoverview
  * @enhanceable
@@ -21,7 +21,7 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
-var connectrpc_conformance_messages_pb = require('../../connectrpc/conformance/messages_pb.js');
-goog.object.extend(proto, connectrpc_conformance_messages_pb);
+var connectrpc_conformance_v1_messages_pb = require('../../../connectrpc/conformance/v1/messages_pb.js');
+goog.object.extend(proto, connectrpc_conformance_v1_messages_pb);
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);

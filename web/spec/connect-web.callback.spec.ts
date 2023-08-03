@@ -25,17 +25,17 @@ import {
   createConnectTransport,
   createGrpcWebTransport,
 } from "@bufbuild/connect-web";
-import {
-  TestService,
-  UnimplementedService,
-} from "../gen/proto/connect-web/connectrpc/conformance/test_connect";
+import { Empty } from "@bufbuild/protobuf";
 import {
   ErrorDetail,
   SimpleRequest,
   StreamingOutputCallRequest,
   StreamingOutputCallResponse,
-} from "../gen/proto/connect-web/connectrpc/conformance/messages_pb";
-import { Empty } from "@bufbuild/protobuf";
+} from "../gen/proto/connect-web/connectrpc/conformance/v1/messages_pb";
+import {
+  TestService,
+  UnimplementedService,
+} from "../gen/proto/connect-web/connectrpc/conformance/v1/test_connect";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any

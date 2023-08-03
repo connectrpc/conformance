@@ -16,7 +16,7 @@ import {
   ErrorDetail,
   Payload,
   PayloadType,
-} from "../gen/proto/connect-web/connectrpc/conformance/messages_pb.js";
+} from "../gen/proto/connect-web/connectrpc/conformance/v1/messages_pb.js";
 import { cors as connectCors } from "@bufbuild/connect";
 
 export const interop = {
