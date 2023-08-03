@@ -12,23 +12,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-workspace(name = "com_github_bufbuild_protovalidate")
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-
-http_archive(
-    name = "com_github_grpc_grpc",
-    sha256 = "931f07db9d48cff6a6007c1033ba6d691fe655bea2765444bc1ad974dfc840aa",
-    strip_prefix = "grpc-1.56.2",
-    urls = [
-        "https://github.com/grpc/grpc/archive/v1.56.2.tar.gz",
+proto_library(
+    name = "messages",
+    srcs = ["messages.proto"],
+    strip_import_prefix = "/proto",
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:wrappers_proto",
     ],
 )
 
-load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+proto_library(
+    name = "test",
+    srcs = ["test.proto"],
+    strip_import_prefix = "/proto",
+    deps = [
+        ":messages",
+        "@com_google_protobuf//:empty_proto",
+    ],
+)
 
-grpc_deps()
+cc_proto_library(
+    name = "messages_cc_proto",
+    deps = [":messages"],
+)
 
-load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-
-grpc_extra_deps()
+cc_proto_library(
+    name = "test_cc_proto",
+    deps = [":test"],
+)
