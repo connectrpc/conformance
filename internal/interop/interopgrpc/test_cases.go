@@ -44,7 +44,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance"
+	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

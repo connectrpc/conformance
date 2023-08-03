@@ -19,8 +19,8 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/clock.h"
-#include "connectrpc/conformance/test.grpc.pb.h"
-#include "connectrpc/conformance/test.pb.h"
+#include "connectrpc/conformance/v1/test.grpc.pb.h"
+#include "connectrpc/conformance/v1/test.pb.h"
 #include "gmock/gmock.h"
 #include "google/rpc/status.pb.h"
 #include "grpcpp/channel.h"
@@ -32,6 +32,18 @@
 
 namespace connectrpc::conformance {
 namespace {
+using v1::ErrorDetail;
+using v1::Payload;
+using v1::PayloadType;
+using v1::SimpleRequest;
+using v1::SimpleResponse;
+using v1::StreamingInputCallRequest;
+using v1::StreamingInputCallResponse;
+using v1::StreamingOutputCallRequest;
+using v1::StreamingOutputCallResponse;
+using v1::TestService;
+using v1::UnimplementedService;
+
 constexpr int kEightBytes = 8;
 
 constexpr int kSixteenBytes = 16;

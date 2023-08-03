@@ -27,8 +27,8 @@ cc_test(
 
 cc_library(
     name = "gen-connectrpc-conformance",
-    srcs = glob(["gen/connectrpc/conformance/*.cc"]),
-    hdrs = glob(["gen/connectrpc/conformance/*.h"]),
+    srcs = glob(["gen/connectrpc/conformance/**/*.cc"]),
+    hdrs = glob(["gen/connectrpc/conformance/**/*.h"]),
     includes = ["gen"],
     deps = [
         "@com_github_grpc_grpc//:grpc++",

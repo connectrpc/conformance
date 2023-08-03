@@ -19,10 +19,13 @@
  *
  */
 
+import { Message } from "google-protobuf";
+import { Any } from "google-protobuf/google/protobuf/any_pb";
+import { Empty } from "google-protobuf/google/protobuf/empty_pb";
 import {
   TestServiceClient,
   UnimplementedServiceClient,
-} from "../gen/proto/grpc-web/connectrpc/conformance/TestServiceClientPb";
+} from "../gen/proto/grpc-web/connectrpc/conformance/v1/TestServiceClientPb";
 import {
   EchoStatus,
   ErrorDetail,
@@ -32,11 +35,8 @@ import {
   SimpleRequest,
   StreamingOutputCallRequest,
   StreamingOutputCallResponse,
-} from "../gen/proto/grpc-web/connectrpc/conformance/messages_pb";
+} from "../gen/proto/grpc-web/connectrpc/conformance/v1/messages_pb";
 import caseless = require("caseless");
-import { Message } from "google-protobuf";
-import { Any } from "google-protobuf/google/protobuf/any_pb";
-import { Empty } from "google-protobuf/google/protobuf/empty_pb";
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 // eslint-disable-next-line no-underscore-dangle, @typescript-eslint/no-explicit-any

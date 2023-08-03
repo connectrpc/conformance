@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_connectrpc_2fconformance_2ftest_2eproto__INCLUDED
-#define GRPC_connectrpc_2fconformance_2ftest_2eproto__INCLUDED
+#ifndef GRPC_connectrpc_2fconformance_2fv1_2ftest_2eproto__INCLUDED
+#define GRPC_connectrpc_2fconformance_2fv1_2ftest_2eproto__INCLUDED
 
-#include "connectrpc/conformance/test.pb.h"
+#include "connectrpc/conformance/v1/test.pb.h"
 
 #include <functional>
 #include <grpcpp/generic/async_generic_service.h>
@@ -38,13 +38,14 @@
 
 namespace connectrpc {
 namespace conformance {
+namespace v1 {
 
 // A simple service to test the various types of RPCs and experiment with
 // performance with various types of payload.
 class TestService final {
  public:
   static constexpr char const* service_full_name() {
-    return "connectrpc.conformance.TestService";
+    return "connectrpc.conformance.v1.TestService";
   }
   class StubInterface {
    public:
@@ -58,89 +59,89 @@ class TestService final {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(PrepareAsyncEmptyCallRaw(context, request, cq));
     }
     // One request followed by one response.
-    virtual ::grpc::Status UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::connectrpc::conformance::SimpleResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>> AsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>>(AsyncUnaryCallRaw(context, request, cq));
+    virtual ::grpc::Status UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::connectrpc::conformance::v1::SimpleResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>> AsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>>(AsyncUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>> PrepareAsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>>(PrepareAsyncUnaryCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>> PrepareAsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>>(PrepareAsyncUnaryCallRaw(context, request, cq));
     }
     // One request followed by one response. This RPC always fails.
-    virtual ::grpc::Status FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::connectrpc::conformance::SimpleResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>> AsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>>(AsyncFailUnaryCallRaw(context, request, cq));
+    virtual ::grpc::Status FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::connectrpc::conformance::v1::SimpleResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>> AsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>>(AsyncFailUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>> PrepareAsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>>(PrepareAsyncFailUnaryCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>> PrepareAsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>>(PrepareAsyncFailUnaryCallRaw(context, request, cq));
     }
     // One request followed by one response. Response has cache control
     // headers set such that a caching HTTP proxy (such as GFE) can
     // satisfy subsequent requests.
-    virtual ::grpc::Status CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::connectrpc::conformance::SimpleResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>> AsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>>(AsyncCacheableUnaryCallRaw(context, request, cq));
+    virtual ::grpc::Status CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::connectrpc::conformance::v1::SimpleResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>> AsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>>(AsyncCacheableUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>> PrepareAsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>>(PrepareAsyncCacheableUnaryCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>> PrepareAsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>>(PrepareAsyncCacheableUnaryCallRaw(context, request, cq));
     }
     // One request followed by a sequence of responses (streamed download).
     // The server returns the payload with client desired type and sizes.
-    std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>> StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) {
-      return std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>>(StreamingOutputCallRaw(context, request));
+    std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) {
+      return std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(StreamingOutputCallRaw(context, request));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncStreamingOutputCallRaw(context, request, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncStreamingOutputCallRaw(context, request, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncStreamingOutputCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncStreamingOutputCallRaw(context, request, cq));
     }
     // One request followed by a sequence of responses (streamed download).
     // The server returns the payload with client desired type and sizes.
     // This RPC always responds with an error status.
-    std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>> FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) {
-      return std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>>(FailStreamingOutputCallRaw(context, request));
+    std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) {
+      return std::unique_ptr< ::grpc::ClientReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(FailStreamingOutputCallRaw(context, request));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncFailStreamingOutputCallRaw(context, request, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncFailStreamingOutputCallRaw(context, request, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncFailStreamingOutputCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncFailStreamingOutputCallRaw(context, request, cq));
     }
     // A sequence of requests followed by one response (streamed upload).
     // The server returns the aggregated size of client payload as the result.
-    std::unique_ptr< ::grpc::ClientWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>> StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response) {
-      return std::unique_ptr< ::grpc::ClientWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>>(StreamingInputCallRaw(context, response));
+    std::unique_ptr< ::grpc::ClientWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>> StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response) {
+      return std::unique_ptr< ::grpc::ClientWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>>(StreamingInputCallRaw(context, response));
     }
-    std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>> AsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>>(AsyncStreamingInputCallRaw(context, response, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>> AsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>>(AsyncStreamingInputCallRaw(context, response, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>> PrepareAsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>>(PrepareAsyncStreamingInputCallRaw(context, response, cq));
+    std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>> PrepareAsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>>(PrepareAsyncStreamingInputCallRaw(context, response, cq));
     }
     // A sequence of requests with each request served by the server immediately.
     // As one request could lead to multiple responses, this interface
     // demonstrates the idea of full duplexing.
-    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> FullDuplexCall(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(FullDuplexCallRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> FullDuplexCall(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(FullDuplexCallRaw(context));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncFullDuplexCallRaw(context, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncFullDuplexCallRaw(context, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncFullDuplexCallRaw(context, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncFullDuplexCallRaw(context, cq));
     }
     // A sequence of requests followed by a sequence of responses.
     // The server buffers all the client requests and then serves them in order. A
     // stream of responses are returned to the client when the server starts with
     // first request.
-    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> HalfDuplexCall(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(HalfDuplexCallRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> HalfDuplexCall(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(HalfDuplexCallRaw(context));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncHalfDuplexCallRaw(context, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncHalfDuplexCallRaw(context, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncHalfDuplexCallRaw(context, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncHalfDuplexCallRaw(context, cq));
     }
     // The test server will not implement this method. It will be used
     // to test the behavior when clients call unimplemented methods.
@@ -169,35 +170,35 @@ class TestService final {
       virtual void EmptyCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) = 0;
       virtual void EmptyCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // One request followed by one response.
-      virtual void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // One request followed by one response. This RPC always fails.
-      virtual void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // One request followed by one response. Response has cache control
       // headers set such that a caching HTTP proxy (such as GFE) can
       // satisfy subsequent requests.
-      virtual void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // One request followed by a sequence of responses (streamed download).
       // The server returns the payload with client desired type and sizes.
-      virtual void StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::StreamingOutputCallResponse>* reactor) = 0;
+      virtual void StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) = 0;
       // One request followed by a sequence of responses (streamed download).
       // The server returns the payload with client desired type and sizes.
       // This RPC always responds with an error status.
-      virtual void FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::StreamingOutputCallResponse>* reactor) = 0;
+      virtual void FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) = 0;
       // A sequence of requests followed by one response (streamed upload).
       // The server returns the aggregated size of client payload as the result.
-      virtual void StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::ClientWriteReactor< ::connectrpc::conformance::StreamingInputCallRequest>* reactor) = 0;
+      virtual void StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::ClientWriteReactor< ::connectrpc::conformance::v1::StreamingInputCallRequest>* reactor) = 0;
       // A sequence of requests with each request served by the server immediately.
       // As one request could lead to multiple responses, this interface
       // demonstrates the idea of full duplexing.
-      virtual void FullDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::StreamingOutputCallRequest,::connectrpc::conformance::StreamingOutputCallResponse>* reactor) = 0;
+      virtual void FullDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::v1::StreamingOutputCallRequest,::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) = 0;
       // A sequence of requests followed by a sequence of responses.
       // The server buffers all the client requests and then serves them in order. A
       // stream of responses are returned to the client when the server starts with
       // first request.
-      virtual void HalfDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::StreamingOutputCallRequest,::connectrpc::conformance::StreamingOutputCallResponse>* reactor) = 0;
+      virtual void HalfDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::v1::StreamingOutputCallRequest,::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) = 0;
       // The test server will not implement this method. It will be used
       // to test the behavior when clients call unimplemented methods.
       virtual void UnimplementedCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) = 0;
@@ -212,27 +213,27 @@ class TestService final {
    private:
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* AsyncEmptyCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* PrepareAsyncEmptyCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>* AsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>* PrepareAsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>* AsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>* PrepareAsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>* AsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::SimpleResponse>* PrepareAsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>* StreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) = 0;
-    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>* FailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) = 0;
-    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>* StreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response) = 0;
-    virtual ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>* AsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::StreamingInputCallRequest>* PrepareAsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* FullDuplexCallRaw(::grpc::ClientContext* context) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* HalfDuplexCallRaw(::grpc::ClientContext* context) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
-    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>* AsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>* PrepareAsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>* AsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>* PrepareAsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>* AsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::SimpleResponse>* PrepareAsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* StreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) = 0;
+    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* FailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) = 0;
+    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderInterface< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>* StreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response) = 0;
+    virtual ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>* AsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncWriterInterface< ::connectrpc::conformance::v1::StreamingInputCallRequest>* PrepareAsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* FullDuplexCallRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* HalfDuplexCallRaw(::grpc::ClientContext* context) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) = 0;
+    virtual ::grpc::ClientAsyncReaderWriterInterface< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* AsyncUnimplementedCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* PrepareAsyncUnimplementedCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
     virtual ::grpc::ClientReaderInterface< ::google::protobuf::Empty>* UnimplementedStreamingOutputCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request) = 0;
@@ -249,71 +250,71 @@ class TestService final {
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> PrepareAsyncEmptyCall(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(PrepareAsyncEmptyCallRaw(context, request, cq));
     }
-    ::grpc::Status UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::connectrpc::conformance::SimpleResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>> AsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>>(AsyncUnaryCallRaw(context, request, cq));
+    ::grpc::Status UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::connectrpc::conformance::v1::SimpleResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>> AsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>>(AsyncUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>> PrepareAsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>>(PrepareAsyncUnaryCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>> PrepareAsyncUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>>(PrepareAsyncUnaryCallRaw(context, request, cq));
     }
-    ::grpc::Status FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::connectrpc::conformance::SimpleResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>> AsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>>(AsyncFailUnaryCallRaw(context, request, cq));
+    ::grpc::Status FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::connectrpc::conformance::v1::SimpleResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>> AsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>>(AsyncFailUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>> PrepareAsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>>(PrepareAsyncFailUnaryCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>> PrepareAsyncFailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>>(PrepareAsyncFailUnaryCallRaw(context, request, cq));
     }
-    ::grpc::Status CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::connectrpc::conformance::SimpleResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>> AsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>>(AsyncCacheableUnaryCallRaw(context, request, cq));
+    ::grpc::Status CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::connectrpc::conformance::v1::SimpleResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>> AsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>>(AsyncCacheableUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>> PrepareAsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>>(PrepareAsyncCacheableUnaryCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>> PrepareAsyncCacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>>(PrepareAsyncCacheableUnaryCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::StreamingOutputCallResponse>> StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) {
-      return std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::StreamingOutputCallResponse>>(StreamingOutputCallRaw(context, request));
+    std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) {
+      return std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(StreamingOutputCallRaw(context, request));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncStreamingOutputCallRaw(context, request, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncStreamingOutputCallRaw(context, request, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncStreamingOutputCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncStreamingOutputCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::StreamingOutputCallResponse>> FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) {
-      return std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::StreamingOutputCallResponse>>(FailStreamingOutputCallRaw(context, request));
+    std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) {
+      return std::unique_ptr< ::grpc::ClientReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(FailStreamingOutputCallRaw(context, request));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncFailStreamingOutputCallRaw(context, request, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncFailStreamingOutputCallRaw(context, request, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncFailStreamingOutputCallRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncFailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncFailStreamingOutputCallRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientWriter< ::connectrpc::conformance::StreamingInputCallRequest>> StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response) {
-      return std::unique_ptr< ::grpc::ClientWriter< ::connectrpc::conformance::StreamingInputCallRequest>>(StreamingInputCallRaw(context, response));
+    std::unique_ptr< ::grpc::ClientWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>> StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response) {
+      return std::unique_ptr< ::grpc::ClientWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>>(StreamingInputCallRaw(context, response));
     }
-    std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::StreamingInputCallRequest>> AsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::StreamingInputCallRequest>>(AsyncStreamingInputCallRaw(context, response, cq, tag));
+    std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>> AsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>>(AsyncStreamingInputCallRaw(context, response, cq, tag));
     }
-    std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::StreamingInputCallRequest>> PrepareAsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::StreamingInputCallRequest>>(PrepareAsyncStreamingInputCallRaw(context, response, cq));
+    std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>> PrepareAsyncStreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>>(PrepareAsyncStreamingInputCallRaw(context, response, cq));
     }
-    std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> FullDuplexCall(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(FullDuplexCallRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> FullDuplexCall(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(FullDuplexCallRaw(context));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncFullDuplexCallRaw(context, cq, tag));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncFullDuplexCallRaw(context, cq, tag));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncFullDuplexCallRaw(context, cq));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncFullDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncFullDuplexCallRaw(context, cq));
     }
-    std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> HalfDuplexCall(::grpc::ClientContext* context) {
-      return std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(HalfDuplexCallRaw(context));
+    std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> HalfDuplexCall(::grpc::ClientContext* context) {
+      return std::unique_ptr< ::grpc::ClientReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(HalfDuplexCallRaw(context));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> AsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(AsyncHalfDuplexCallRaw(context, cq, tag));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> AsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(AsyncHalfDuplexCallRaw(context, cq, tag));
     }
-    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>> PrepareAsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>>(PrepareAsyncHalfDuplexCallRaw(context, cq));
+    std::unique_ptr<  ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>> PrepareAsyncHalfDuplexCall(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>>(PrepareAsyncHalfDuplexCallRaw(context, cq));
     }
     ::grpc::Status UnimplementedCall(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::google::protobuf::Empty* response) override;
     std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> AsyncUnimplementedCall(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
@@ -336,17 +337,17 @@ class TestService final {
      public:
       void EmptyCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) override;
       void EmptyCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, std::function<void(::grpc::Status)>) override;
-      void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, std::function<void(::grpc::Status)>) override;
-      void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, std::function<void(::grpc::Status)>) override;
-      void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::StreamingOutputCallResponse>* reactor) override;
-      void FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::StreamingOutputCallResponse>* reactor) override;
-      void StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::ClientWriteReactor< ::connectrpc::conformance::StreamingInputCallRequest>* reactor) override;
-      void FullDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::StreamingOutputCallRequest,::connectrpc::conformance::StreamingOutputCallResponse>* reactor) override;
-      void HalfDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::StreamingOutputCallRequest,::connectrpc::conformance::StreamingOutputCallResponse>* reactor) override;
+      void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, std::function<void(::grpc::Status)>) override;
+      void UnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, std::function<void(::grpc::Status)>) override;
+      void FailUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, std::function<void(::grpc::Status)>) override;
+      void CacheableUnaryCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void StreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) override;
+      void FailStreamingOutputCall(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ClientReadReactor< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) override;
+      void StreamingInputCall(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::ClientWriteReactor< ::connectrpc::conformance::v1::StreamingInputCallRequest>* reactor) override;
+      void FullDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::v1::StreamingOutputCallRequest,::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) override;
+      void HalfDuplexCall(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::connectrpc::conformance::v1::StreamingOutputCallRequest,::connectrpc::conformance::v1::StreamingOutputCallResponse>* reactor) override;
       void UnimplementedCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) override;
       void UnimplementedCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
       void UnimplementedStreamingOutputCall(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::grpc::ClientReadReactor< ::google::protobuf::Empty>* reactor) override;
@@ -363,27 +364,27 @@ class TestService final {
     class async async_stub_{this};
     ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* AsyncEmptyCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PrepareAsyncEmptyCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>* AsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>* PrepareAsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>* AsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>* PrepareAsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>* AsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::SimpleResponse>* PrepareAsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientReader< ::connectrpc::conformance::StreamingOutputCallResponse>* StreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) override;
-    ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientReader< ::connectrpc::conformance::StreamingOutputCallResponse>* FailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request) override;
-    ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncReader< ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientWriter< ::connectrpc::conformance::StreamingInputCallRequest>* StreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response) override;
-    ::grpc::ClientAsyncWriter< ::connectrpc::conformance::StreamingInputCallRequest>* AsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncWriter< ::connectrpc::conformance::StreamingInputCallRequest>* PrepareAsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* FullDuplexCallRaw(::grpc::ClientContext* context) override;
-    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* HalfDuplexCallRaw(::grpc::ClientContext* context) override;
-    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* AsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
-    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* PrepareAsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>* AsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>* PrepareAsyncUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>* AsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>* PrepareAsyncFailUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>* AsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::SimpleResponse>* PrepareAsyncCacheableUnaryCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::SimpleRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* StreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) override;
+    ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* FailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request) override;
+    ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReader< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncFailStreamingOutputCallRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>* StreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response) override;
+    ::grpc::ClientAsyncWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>* AsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncWriter< ::connectrpc::conformance::v1::StreamingInputCallRequest>* PrepareAsyncStreamingInputCallRaw(::grpc::ClientContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* FullDuplexCallRaw(::grpc::ClientContext* context) override;
+    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncFullDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* HalfDuplexCallRaw(::grpc::ClientContext* context) override;
+    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* AsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq, void* tag) override;
+    ::grpc::ClientAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* PrepareAsyncHalfDuplexCallRaw(::grpc::ClientContext* context, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* AsyncUnimplementedCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PrepareAsyncUnimplementedCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
     ::grpc::ClientReader< ::google::protobuf::Empty>* UnimplementedStreamingOutputCallRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request) override;
@@ -410,32 +411,32 @@ class TestService final {
     // One empty request followed by one empty response.
     virtual ::grpc::Status EmptyCall(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response);
     // One request followed by one response.
-    virtual ::grpc::Status UnaryCall(::grpc::ServerContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response);
+    virtual ::grpc::Status UnaryCall(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response);
     // One request followed by one response. This RPC always fails.
-    virtual ::grpc::Status FailUnaryCall(::grpc::ServerContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response);
+    virtual ::grpc::Status FailUnaryCall(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response);
     // One request followed by one response. Response has cache control
     // headers set such that a caching HTTP proxy (such as GFE) can
     // satisfy subsequent requests.
-    virtual ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response);
+    virtual ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response);
     // One request followed by a sequence of responses (streamed download).
     // The server returns the payload with client desired type and sizes.
-    virtual ::grpc::Status StreamingOutputCall(::grpc::ServerContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* writer);
+    virtual ::grpc::Status StreamingOutputCall(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* writer);
     // One request followed by a sequence of responses (streamed download).
     // The server returns the payload with client desired type and sizes.
     // This RPC always responds with an error status.
-    virtual ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* writer);
+    virtual ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* writer);
     // A sequence of requests followed by one response (streamed upload).
     // The server returns the aggregated size of client payload as the result.
-    virtual ::grpc::Status StreamingInputCall(::grpc::ServerContext* context, ::grpc::ServerReader< ::connectrpc::conformance::StreamingInputCallRequest>* reader, ::connectrpc::conformance::StreamingInputCallResponse* response);
+    virtual ::grpc::Status StreamingInputCall(::grpc::ServerContext* context, ::grpc::ServerReader< ::connectrpc::conformance::v1::StreamingInputCallRequest>* reader, ::connectrpc::conformance::v1::StreamingInputCallResponse* response);
     // A sequence of requests with each request served by the server immediately.
     // As one request could lead to multiple responses, this interface
     // demonstrates the idea of full duplexing.
-    virtual ::grpc::Status FullDuplexCall(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* stream);
+    virtual ::grpc::Status FullDuplexCall(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* stream);
     // A sequence of requests followed by a sequence of responses.
     // The server buffers all the client requests and then serves them in order. A
     // stream of responses are returned to the client when the server starts with
     // first request.
-    virtual ::grpc::Status HalfDuplexCall(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* stream);
+    virtual ::grpc::Status HalfDuplexCall(::grpc::ServerContext* context, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* stream);
     // The test server will not implement this method. It will be used
     // to test the behavior when clients call unimplemented methods.
     virtual ::grpc::Status UnimplementedCall(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::google::protobuf::Empty* response);
@@ -475,11 +476,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestUnaryCall(::grpc::ServerContext* context, ::connectrpc::conformance::SimpleRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::SimpleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestUnaryCall(::grpc::ServerContext* context, ::connectrpc::conformance::v1::SimpleRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::SimpleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -495,11 +496,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestFailUnaryCall(::grpc::ServerContext* context, ::connectrpc::conformance::SimpleRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::SimpleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestFailUnaryCall(::grpc::ServerContext* context, ::connectrpc::conformance::v1::SimpleRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::SimpleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(2, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -515,11 +516,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestCacheableUnaryCall(::grpc::ServerContext* context, ::connectrpc::conformance::SimpleRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::SimpleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestCacheableUnaryCall(::grpc::ServerContext* context, ::connectrpc::conformance::v1::SimpleRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::SimpleResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(3, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -535,11 +536,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestStreamingOutputCall(::grpc::ServerContext* context, ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ServerAsyncWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestStreamingOutputCall(::grpc::ServerContext* context, ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ServerAsyncWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncServerStreaming(4, context, request, writer, new_call_cq, notification_cq, tag);
     }
   };
@@ -555,11 +556,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestFailStreamingOutputCall(::grpc::ServerContext* context, ::connectrpc::conformance::StreamingOutputCallRequest* request, ::grpc::ServerAsyncWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestFailStreamingOutputCall(::grpc::ServerContext* context, ::connectrpc::conformance::v1::StreamingOutputCallRequest* request, ::grpc::ServerAsyncWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* writer, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncServerStreaming(5, context, request, writer, new_call_cq, notification_cq, tag);
     }
   };
@@ -575,11 +576,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::StreamingInputCallResponse* /*response*/) override {
+    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::v1::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::v1::StreamingInputCallResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestStreamingInputCall(::grpc::ServerContext* context, ::grpc::ServerAsyncReader< ::connectrpc::conformance::StreamingInputCallResponse, ::connectrpc::conformance::StreamingInputCallRequest>* reader, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestStreamingInputCall(::grpc::ServerContext* context, ::grpc::ServerAsyncReader< ::connectrpc::conformance::v1::StreamingInputCallResponse, ::connectrpc::conformance::v1::StreamingInputCallRequest>* reader, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncClientStreaming(6, context, reader, new_call_cq, notification_cq, tag);
     }
   };
@@ -595,11 +596,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestFullDuplexCall(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestFullDuplexCall(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncBidiStreaming(7, context, stream, new_call_cq, notification_cq, tag);
     }
   };
@@ -615,11 +616,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestHalfDuplexCall(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestHalfDuplexCall(::grpc::ServerContext* context, ::grpc::ServerAsyncReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* stream, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncBidiStreaming(8, context, stream, new_call_cq, notification_cq, tag);
     }
   };
@@ -698,25 +699,25 @@ class TestService final {
    public:
     WithCallbackMethod_UnaryCall() {
       ::grpc::Service::MarkMethodCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response) { return this->UnaryCall(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response) { return this->UnaryCall(context, request, response); }));}
     void SetMessageAllocatorFor_UnaryCall(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_UnaryCall() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* UnaryCall(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_FailUnaryCall : public BaseClass {
@@ -725,25 +726,25 @@ class TestService final {
    public:
     WithCallbackMethod_FailUnaryCall() {
       ::grpc::Service::MarkMethodCallback(2,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response) { return this->FailUnaryCall(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response) { return this->FailUnaryCall(context, request, response); }));}
     void SetMessageAllocatorFor_FailUnaryCall(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(2);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_FailUnaryCall() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* FailUnaryCall(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_CacheableUnaryCall : public BaseClass {
@@ -752,25 +753,25 @@ class TestService final {
    public:
     WithCallbackMethod_CacheableUnaryCall() {
       ::grpc::Service::MarkMethodCallback(3,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::SimpleRequest* request, ::connectrpc::conformance::SimpleResponse* response) { return this->CacheableUnaryCall(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::SimpleRequest* request, ::connectrpc::conformance::v1::SimpleResponse* response) { return this->CacheableUnaryCall(context, request, response); }));}
     void SetMessageAllocatorFor_CacheableUnaryCall(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(3);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_CacheableUnaryCall() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* CacheableUnaryCall(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_StreamingOutputCall : public BaseClass {
@@ -779,20 +780,20 @@ class TestService final {
    public:
     WithCallbackMethod_StreamingOutputCall() {
       ::grpc::Service::MarkMethodCallback(4,
-          new ::grpc::internal::CallbackServerStreamingHandler< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>(
+          new ::grpc::internal::CallbackServerStreamingHandler< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request) { return this->StreamingOutputCall(context, request); }));
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request) { return this->StreamingOutputCall(context, request); }));
     }
     ~WithCallbackMethod_StreamingOutputCall() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerWriteReactor< ::connectrpc::conformance::StreamingOutputCallResponse>* StreamingOutputCall(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/)  { return nullptr; }
+    virtual ::grpc::ServerWriteReactor< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* StreamingOutputCall(
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_FailStreamingOutputCall : public BaseClass {
@@ -801,20 +802,20 @@ class TestService final {
    public:
     WithCallbackMethod_FailStreamingOutputCall() {
       ::grpc::Service::MarkMethodCallback(5,
-          new ::grpc::internal::CallbackServerStreamingHandler< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>(
+          new ::grpc::internal::CallbackServerStreamingHandler< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::StreamingOutputCallRequest* request) { return this->FailStreamingOutputCall(context, request); }));
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* request) { return this->FailStreamingOutputCall(context, request); }));
     }
     ~WithCallbackMethod_FailStreamingOutputCall() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerWriteReactor< ::connectrpc::conformance::StreamingOutputCallResponse>* FailStreamingOutputCall(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/)  { return nullptr; }
+    virtual ::grpc::ServerWriteReactor< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* FailStreamingOutputCall(
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_StreamingInputCall : public BaseClass {
@@ -823,20 +824,20 @@ class TestService final {
    public:
     WithCallbackMethod_StreamingInputCall() {
       ::grpc::Service::MarkMethodCallback(6,
-          new ::grpc::internal::CallbackClientStreamingHandler< ::connectrpc::conformance::StreamingInputCallRequest, ::connectrpc::conformance::StreamingInputCallResponse>(
+          new ::grpc::internal::CallbackClientStreamingHandler< ::connectrpc::conformance::v1::StreamingInputCallRequest, ::connectrpc::conformance::v1::StreamingInputCallResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, ::connectrpc::conformance::StreamingInputCallResponse* response) { return this->StreamingInputCall(context, response); }));
+                   ::grpc::CallbackServerContext* context, ::connectrpc::conformance::v1::StreamingInputCallResponse* response) { return this->StreamingInputCall(context, response); }));
     }
     ~WithCallbackMethod_StreamingInputCall() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::StreamingInputCallResponse* /*response*/) override {
+    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::v1::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::v1::StreamingInputCallResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerReadReactor< ::connectrpc::conformance::StreamingInputCallRequest>* StreamingInputCall(
-      ::grpc::CallbackServerContext* /*context*/, ::connectrpc::conformance::StreamingInputCallResponse* /*response*/)  { return nullptr; }
+    virtual ::grpc::ServerReadReactor< ::connectrpc::conformance::v1::StreamingInputCallRequest>* StreamingInputCall(
+      ::grpc::CallbackServerContext* /*context*/, ::connectrpc::conformance::v1::StreamingInputCallResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_FullDuplexCall : public BaseClass {
@@ -845,7 +846,7 @@ class TestService final {
    public:
     WithCallbackMethod_FullDuplexCall() {
       ::grpc::Service::MarkMethodCallback(7,
-          new ::grpc::internal::CallbackBidiHandler< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>(
+          new ::grpc::internal::CallbackBidiHandler< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>(
             [this](
                    ::grpc::CallbackServerContext* context) { return this->FullDuplexCall(context); }));
     }
@@ -853,11 +854,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerBidiReactor< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* FullDuplexCall(
+    virtual ::grpc::ServerBidiReactor< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* FullDuplexCall(
       ::grpc::CallbackServerContext* /*context*/)
       { return nullptr; }
   };
@@ -868,7 +869,7 @@ class TestService final {
    public:
     WithCallbackMethod_HalfDuplexCall() {
       ::grpc::Service::MarkMethodCallback(8,
-          new ::grpc::internal::CallbackBidiHandler< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>(
+          new ::grpc::internal::CallbackBidiHandler< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>(
             [this](
                    ::grpc::CallbackServerContext* context) { return this->HalfDuplexCall(context); }));
     }
@@ -876,11 +877,11 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    virtual ::grpc::ServerBidiReactor< ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* HalfDuplexCall(
+    virtual ::grpc::ServerBidiReactor< ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* HalfDuplexCall(
       ::grpc::CallbackServerContext* /*context*/)
       { return nullptr; }
   };
@@ -964,7 +965,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -981,7 +982,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -998,7 +999,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1015,7 +1016,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1032,7 +1033,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1049,7 +1050,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::StreamingInputCallResponse* /*response*/) override {
+    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::v1::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::v1::StreamingInputCallResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1066,7 +1067,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1083,7 +1084,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1154,7 +1155,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1174,7 +1175,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1194,7 +1195,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1214,7 +1215,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1234,7 +1235,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1254,7 +1255,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::StreamingInputCallResponse* /*response*/) override {
+    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::v1::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::v1::StreamingInputCallResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1274,7 +1275,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1294,7 +1295,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1379,7 +1380,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1401,7 +1402,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1423,7 +1424,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1445,7 +1446,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1467,7 +1468,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1489,7 +1490,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::StreamingInputCallResponse* /*response*/) override {
+    ::grpc::Status StreamingInputCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReader< ::connectrpc::conformance::v1::StreamingInputCallRequest>* /*reader*/, ::connectrpc::conformance::v1::StreamingInputCallResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1511,7 +1512,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status FullDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1534,7 +1535,7 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::StreamingOutputCallResponse, ::connectrpc::conformance::StreamingOutputCallRequest>* /*stream*/)  override {
+    ::grpc::Status HalfDuplexCall(::grpc::ServerContext* /*context*/, ::grpc::ServerReaderWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse, ::connectrpc::conformance::v1::StreamingOutputCallRequest>* /*stream*/)  override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -1621,10 +1622,10 @@ class TestService final {
     WithStreamedUnaryMethod_UnaryCall() {
       ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>(
+          ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>* streamer) {
+                     ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>* streamer) {
                        return this->StreamedUnaryCall(context,
                          streamer);
                   }));
@@ -1633,12 +1634,12 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status UnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedUnaryCall(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::SimpleRequest,::connectrpc::conformance::SimpleResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedUnaryCall(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::SimpleRequest,::connectrpc::conformance::v1::SimpleResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_FailUnaryCall : public BaseClass {
@@ -1648,10 +1649,10 @@ class TestService final {
     WithStreamedUnaryMethod_FailUnaryCall() {
       ::grpc::Service::MarkMethodStreamed(2,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>(
+          ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>* streamer) {
+                     ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>* streamer) {
                        return this->StreamedFailUnaryCall(context,
                          streamer);
                   }));
@@ -1660,12 +1661,12 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status FailUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedFailUnaryCall(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::SimpleRequest,::connectrpc::conformance::SimpleResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedFailUnaryCall(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::SimpleRequest,::connectrpc::conformance::v1::SimpleResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_CacheableUnaryCall : public BaseClass {
@@ -1675,10 +1676,10 @@ class TestService final {
     WithStreamedUnaryMethod_CacheableUnaryCall() {
       ::grpc::Service::MarkMethodStreamed(3,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>(
+          ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::SimpleRequest, ::connectrpc::conformance::SimpleResponse>* streamer) {
+                     ::connectrpc::conformance::v1::SimpleRequest, ::connectrpc::conformance::v1::SimpleResponse>* streamer) {
                        return this->StreamedCacheableUnaryCall(context,
                          streamer);
                   }));
@@ -1687,12 +1688,12 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::SimpleRequest* /*request*/, ::connectrpc::conformance::SimpleResponse* /*response*/) override {
+    ::grpc::Status CacheableUnaryCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::SimpleRequest* /*request*/, ::connectrpc::conformance::v1::SimpleResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedCacheableUnaryCall(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::SimpleRequest,::connectrpc::conformance::SimpleResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedCacheableUnaryCall(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::SimpleRequest,::connectrpc::conformance::v1::SimpleResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_UnimplementedCall : public BaseClass {
@@ -1730,10 +1731,10 @@ class TestService final {
     WithSplitStreamingMethod_StreamingOutputCall() {
       ::grpc::Service::MarkMethodStreamed(4,
         new ::grpc::internal::SplitServerStreamingHandler<
-          ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>(
+          ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerSplitStreamer<
-                     ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* streamer) {
+                     ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* streamer) {
                        return this->StreamedStreamingOutputCall(context,
                          streamer);
                   }));
@@ -1742,12 +1743,12 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status StreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with split streamed
-    virtual ::grpc::Status StreamedStreamingOutputCall(::grpc::ServerContext* context, ::grpc::ServerSplitStreamer< ::connectrpc::conformance::StreamingOutputCallRequest,::connectrpc::conformance::StreamingOutputCallResponse>* server_split_streamer) = 0;
+    virtual ::grpc::Status StreamedStreamingOutputCall(::grpc::ServerContext* context, ::grpc::ServerSplitStreamer< ::connectrpc::conformance::v1::StreamingOutputCallRequest,::connectrpc::conformance::v1::StreamingOutputCallResponse>* server_split_streamer) = 0;
   };
   template <class BaseClass>
   class WithSplitStreamingMethod_FailStreamingOutputCall : public BaseClass {
@@ -1757,10 +1758,10 @@ class TestService final {
     WithSplitStreamingMethod_FailStreamingOutputCall() {
       ::grpc::Service::MarkMethodStreamed(5,
         new ::grpc::internal::SplitServerStreamingHandler<
-          ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>(
+          ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerSplitStreamer<
-                     ::connectrpc::conformance::StreamingOutputCallRequest, ::connectrpc::conformance::StreamingOutputCallResponse>* streamer) {
+                     ::connectrpc::conformance::v1::StreamingOutputCallRequest, ::connectrpc::conformance::v1::StreamingOutputCallResponse>* streamer) {
                        return this->StreamedFailStreamingOutputCall(context,
                          streamer);
                   }));
@@ -1769,12 +1770,12 @@ class TestService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::StreamingOutputCallResponse>* /*writer*/) override {
+    ::grpc::Status FailStreamingOutputCall(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::StreamingOutputCallRequest* /*request*/, ::grpc::ServerWriter< ::connectrpc::conformance::v1::StreamingOutputCallResponse>* /*writer*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with split streamed
-    virtual ::grpc::Status StreamedFailStreamingOutputCall(::grpc::ServerContext* context, ::grpc::ServerSplitStreamer< ::connectrpc::conformance::StreamingOutputCallRequest,::connectrpc::conformance::StreamingOutputCallResponse>* server_split_streamer) = 0;
+    virtual ::grpc::Status StreamedFailStreamingOutputCall(::grpc::ServerContext* context, ::grpc::ServerSplitStreamer< ::connectrpc::conformance::v1::StreamingOutputCallRequest,::connectrpc::conformance::v1::StreamingOutputCallResponse>* server_split_streamer) = 0;
   };
   template <class BaseClass>
   class WithSplitStreamingMethod_UnimplementedStreamingOutputCall : public BaseClass {
@@ -1812,7 +1813,7 @@ class TestService final {
 class UnimplementedService final {
  public:
   static constexpr char const* service_full_name() {
-    return "connectrpc.conformance.UnimplementedService";
+    return "connectrpc.conformance.v1.UnimplementedService";
   }
   class StubInterface {
    public:
@@ -2182,66 +2183,66 @@ class UnimplementedService final {
 class ReconnectService final {
  public:
   static constexpr char const* service_full_name() {
-    return "connectrpc.conformance.ReconnectService";
+    return "connectrpc.conformance.v1.ReconnectService";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
-    virtual ::grpc::Status Start(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::google::protobuf::Empty* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> AsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
+    virtual ::grpc::Status Start(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::google::protobuf::Empty* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> AsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(AsyncStartRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> PrepareAsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>> PrepareAsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>>(PrepareAsyncStartRaw(context, request, cq));
     }
-    virtual ::grpc::Status Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::connectrpc::conformance::ReconnectInfo* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ReconnectInfo>> AsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ReconnectInfo>>(AsyncStopRaw(context, request, cq));
+    virtual ::grpc::Status Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::connectrpc::conformance::v1::ReconnectInfo* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ReconnectInfo>> AsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ReconnectInfo>>(AsyncStopRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ReconnectInfo>> PrepareAsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ReconnectInfo>>(PrepareAsyncStopRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ReconnectInfo>> PrepareAsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ReconnectInfo>>(PrepareAsyncStopRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
-      virtual void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
-      virtual void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::ReconnectInfo* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::ReconnectInfo* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::v1::ReconnectInfo* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::v1::ReconnectInfo* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* AsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* PrepareAsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ReconnectInfo>* AsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ReconnectInfo>* PrepareAsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* AsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::google::protobuf::Empty>* PrepareAsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ReconnectInfo>* AsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ReconnectInfo>* PrepareAsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status Start(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::google::protobuf::Empty* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> AsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
+    ::grpc::Status Start(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::google::protobuf::Empty* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> AsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(AsyncStartRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> PrepareAsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>> PrepareAsyncStart(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) {
       return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>>(PrepareAsyncStartRaw(context, request, cq));
     }
-    ::grpc::Status Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::connectrpc::conformance::ReconnectInfo* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ReconnectInfo>> AsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ReconnectInfo>>(AsyncStopRaw(context, request, cq));
+    ::grpc::Status Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::connectrpc::conformance::v1::ReconnectInfo* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ReconnectInfo>> AsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ReconnectInfo>>(AsyncStopRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ReconnectInfo>> PrepareAsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ReconnectInfo>>(PrepareAsyncStopRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ReconnectInfo>> PrepareAsyncStop(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ReconnectInfo>>(PrepareAsyncStopRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) override;
-      void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::ReconnectInfo* response, std::function<void(::grpc::Status)>) override;
-      void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::ReconnectInfo* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams* request, ::google::protobuf::Empty* response, std::function<void(::grpc::Status)>) override;
+      void Start(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams* request, ::google::protobuf::Empty* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::v1::ReconnectInfo* response, std::function<void(::grpc::Status)>) override;
+      void Stop(::grpc::ClientContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::v1::ReconnectInfo* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -2253,10 +2254,10 @@ class ReconnectService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* AsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PrepareAsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ReconnectParams& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ReconnectInfo>* AsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ReconnectInfo>* PrepareAsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* AsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::google::protobuf::Empty>* PrepareAsyncStartRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ReconnectParams& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ReconnectInfo>* AsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ReconnectInfo>* PrepareAsyncStopRaw(::grpc::ClientContext* context, const ::google::protobuf::Empty& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_Start_;
     const ::grpc::internal::RpcMethod rpcmethod_Stop_;
   };
@@ -2266,8 +2267,8 @@ class ReconnectService final {
    public:
     Service();
     virtual ~Service();
-    virtual ::grpc::Status Start(::grpc::ServerContext* context, const ::connectrpc::conformance::ReconnectParams* request, ::google::protobuf::Empty* response);
-    virtual ::grpc::Status Stop(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::ReconnectInfo* response);
+    virtual ::grpc::Status Start(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::ReconnectParams* request, ::google::protobuf::Empty* response);
+    virtual ::grpc::Status Stop(::grpc::ServerContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::v1::ReconnectInfo* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_Start : public BaseClass {
@@ -2281,11 +2282,11 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestStart(::grpc::ServerContext* context, ::connectrpc::conformance::ReconnectParams* request, ::grpc::ServerAsyncResponseWriter< ::google::protobuf::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestStart(::grpc::ServerContext* context, ::connectrpc::conformance::v1::ReconnectParams* request, ::grpc::ServerAsyncResponseWriter< ::google::protobuf::Empty>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -2301,11 +2302,11 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/) override {
+    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestStop(::grpc::ServerContext* context, ::google::protobuf::Empty* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::ReconnectInfo>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestStop(::grpc::ServerContext* context, ::google::protobuf::Empty* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::ReconnectInfo>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -2317,25 +2318,25 @@ class ReconnectService final {
    public:
     WithCallbackMethod_Start() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::ReconnectParams, ::google::protobuf::Empty>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::ReconnectParams, ::google::protobuf::Empty>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::ReconnectParams* request, ::google::protobuf::Empty* response) { return this->Start(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::ReconnectParams* request, ::google::protobuf::Empty* response) { return this->Start(context, request, response); }));}
     void SetMessageAllocatorFor_Start(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::ReconnectParams, ::google::protobuf::Empty>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::ReconnectParams, ::google::protobuf::Empty>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::ReconnectParams, ::google::protobuf::Empty>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::ReconnectParams, ::google::protobuf::Empty>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_Start() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Start(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_Stop : public BaseClass {
@@ -2344,25 +2345,25 @@ class ReconnectService final {
    public:
     WithCallbackMethod_Stop() {
       ::grpc::Service::MarkMethodCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::google::protobuf::Empty, ::connectrpc::conformance::ReconnectInfo>(
+          new ::grpc::internal::CallbackUnaryHandler< ::google::protobuf::Empty, ::connectrpc::conformance::v1::ReconnectInfo>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::ReconnectInfo* response) { return this->Stop(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::google::protobuf::Empty* request, ::connectrpc::conformance::v1::ReconnectInfo* response) { return this->Stop(context, request, response); }));}
     void SetMessageAllocatorFor_Stop(
-        ::grpc::MessageAllocator< ::google::protobuf::Empty, ::connectrpc::conformance::ReconnectInfo>* allocator) {
+        ::grpc::MessageAllocator< ::google::protobuf::Empty, ::connectrpc::conformance::v1::ReconnectInfo>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::google::protobuf::Empty, ::connectrpc::conformance::ReconnectInfo>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::google::protobuf::Empty, ::connectrpc::conformance::v1::ReconnectInfo>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_Stop() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/) override {
+    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Stop(
-      ::grpc::CallbackServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/)  { return nullptr; }
   };
   typedef WithCallbackMethod_Start<WithCallbackMethod_Stop<Service > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
@@ -2378,7 +2379,7 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2395,7 +2396,7 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/) override {
+    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2412,7 +2413,7 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2432,7 +2433,7 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/) override {
+    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2455,7 +2456,7 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2477,7 +2478,7 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/) override {
+    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2492,10 +2493,10 @@ class ReconnectService final {
     WithStreamedUnaryMethod_Start() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::ReconnectParams, ::google::protobuf::Empty>(
+          ::connectrpc::conformance::v1::ReconnectParams, ::google::protobuf::Empty>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::ReconnectParams, ::google::protobuf::Empty>* streamer) {
+                     ::connectrpc::conformance::v1::ReconnectParams, ::google::protobuf::Empty>* streamer) {
                        return this->StreamedStart(context,
                          streamer);
                   }));
@@ -2504,12 +2505,12 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
+    ::grpc::Status Start(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ReconnectParams* /*request*/, ::google::protobuf::Empty* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedStart(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::ReconnectParams,::google::protobuf::Empty>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedStart(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::ReconnectParams,::google::protobuf::Empty>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_Stop : public BaseClass {
@@ -2519,10 +2520,10 @@ class ReconnectService final {
     WithStreamedUnaryMethod_Stop() {
       ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::google::protobuf::Empty, ::connectrpc::conformance::ReconnectInfo>(
+          ::google::protobuf::Empty, ::connectrpc::conformance::v1::ReconnectInfo>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::google::protobuf::Empty, ::connectrpc::conformance::ReconnectInfo>* streamer) {
+                     ::google::protobuf::Empty, ::connectrpc::conformance::v1::ReconnectInfo>* streamer) {
                        return this->StreamedStop(context,
                          streamer);
                   }));
@@ -2531,12 +2532,12 @@ class ReconnectService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::ReconnectInfo* /*response*/) override {
+    ::grpc::Status Stop(::grpc::ServerContext* /*context*/, const ::google::protobuf::Empty* /*request*/, ::connectrpc::conformance::v1::ReconnectInfo* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedStop(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::google::protobuf::Empty,::connectrpc::conformance::ReconnectInfo>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedStop(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::google::protobuf::Empty,::connectrpc::conformance::v1::ReconnectInfo>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_Start<WithStreamedUnaryMethod_Stop<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
@@ -2547,70 +2548,70 @@ class ReconnectService final {
 class LoadBalancerStatsService final {
  public:
   static constexpr char const* service_full_name() {
-    return "connectrpc.conformance.LoadBalancerStatsService";
+    return "connectrpc.conformance.v1.LoadBalancerStatsService";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
     // Gets the backend distribution for RPCs sent by a test client.
-    virtual ::grpc::Status GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::connectrpc::conformance::LoadBalancerStatsResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerStatsResponse>> AsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerStatsResponse>>(AsyncGetClientStatsRaw(context, request, cq));
+    virtual ::grpc::Status GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>> AsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>>(AsyncGetClientStatsRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerStatsResponse>> PrepareAsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerStatsResponse>>(PrepareAsyncGetClientStatsRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>> PrepareAsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>>(PrepareAsyncGetClientStatsRaw(context, request, cq));
     }
     // Gets the accumulated stats for RPCs sent by a test client.
-    virtual ::grpc::Status GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>> AsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>>(AsyncGetClientAccumulatedStatsRaw(context, request, cq));
+    virtual ::grpc::Status GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>> AsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>>(AsyncGetClientAccumulatedStatsRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>> PrepareAsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>>(PrepareAsyncGetClientAccumulatedStatsRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>> PrepareAsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>>(PrepareAsyncGetClientAccumulatedStatsRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
       // Gets the backend distribution for RPCs sent by a test client.
-      virtual void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::connectrpc::conformance::LoadBalancerStatsResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::connectrpc::conformance::LoadBalancerStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
       // Gets the accumulated stats for RPCs sent by a test client.
-      virtual void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerStatsResponse>* AsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerStatsResponse>* PrepareAsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* AsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* PrepareAsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* AsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* PrepareAsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* AsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* PrepareAsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::connectrpc::conformance::LoadBalancerStatsResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerStatsResponse>> AsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerStatsResponse>>(AsyncGetClientStatsRaw(context, request, cq));
+    ::grpc::Status GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>> AsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>>(AsyncGetClientStatsRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerStatsResponse>> PrepareAsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerStatsResponse>>(PrepareAsyncGetClientStatsRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>> PrepareAsyncGetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>>(PrepareAsyncGetClientStatsRaw(context, request, cq));
     }
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>> AsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>>(AsyncGetClientAccumulatedStatsRaw(context, request, cq));
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>> AsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>>(AsyncGetClientAccumulatedStatsRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>> PrepareAsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>>(PrepareAsyncGetClientAccumulatedStatsRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>> PrepareAsyncGetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>>(PrepareAsyncGetClientAccumulatedStatsRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::connectrpc::conformance::LoadBalancerStatsResponse* response, std::function<void(::grpc::Status)>) override;
-      void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::connectrpc::conformance::LoadBalancerStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
-      void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response, std::function<void(::grpc::Status)>) override;
-      void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetClientStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response, std::function<void(::grpc::Status)>) override;
+      void GetClientAccumulatedStats(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -2622,10 +2623,10 @@ class LoadBalancerStatsService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerStatsResponse>* AsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerStatsResponse>* PrepareAsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* AsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* PrepareAsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* AsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* PrepareAsyncGetClientStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* AsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* PrepareAsyncGetClientAccumulatedStatsRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_GetClientStats_;
     const ::grpc::internal::RpcMethod rpcmethod_GetClientAccumulatedStats_;
   };
@@ -2636,9 +2637,9 @@ class LoadBalancerStatsService final {
     Service();
     virtual ~Service();
     // Gets the backend distribution for RPCs sent by a test client.
-    virtual ::grpc::Status GetClientStats(::grpc::ServerContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::connectrpc::conformance::LoadBalancerStatsResponse* response);
+    virtual ::grpc::Status GetClientStats(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response);
     // Gets the accumulated stats for RPCs sent by a test client.
-    virtual ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response);
+    virtual ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_GetClientStats : public BaseClass {
@@ -2652,11 +2653,11 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetClientStats(::grpc::ServerContext* context, ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::LoadBalancerStatsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestGetClientStats(::grpc::ServerContext* context, ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -2672,11 +2673,11 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestGetClientAccumulatedStats(::grpc::ServerContext* context, ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestGetClientAccumulatedStats(::grpc::ServerContext* context, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(1, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -2688,25 +2689,25 @@ class LoadBalancerStatsService final {
    public:
     WithCallbackMethod_GetClientStats() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::LoadBalancerStatsRequest, ::connectrpc::conformance::LoadBalancerStatsResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::LoadBalancerStatsRequest, ::connectrpc::conformance::v1::LoadBalancerStatsResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::LoadBalancerStatsRequest* request, ::connectrpc::conformance::LoadBalancerStatsResponse* response) { return this->GetClientStats(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* response) { return this->GetClientStats(context, request, response); }));}
     void SetMessageAllocatorFor_GetClientStats(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::LoadBalancerStatsRequest, ::connectrpc::conformance::LoadBalancerStatsResponse>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::LoadBalancerStatsRequest, ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::LoadBalancerStatsRequest, ::connectrpc::conformance::LoadBalancerStatsResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::LoadBalancerStatsRequest, ::connectrpc::conformance::v1::LoadBalancerStatsResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_GetClientStats() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* GetClientStats(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/)  { return nullptr; }
   };
   template <class BaseClass>
   class WithCallbackMethod_GetClientAccumulatedStats : public BaseClass {
@@ -2715,25 +2716,25 @@ class LoadBalancerStatsService final {
    public:
     WithCallbackMethod_GetClientAccumulatedStats() {
       ::grpc::Service::MarkMethodCallback(1,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* response) { return this->GetClientAccumulatedStats(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* request, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* response) { return this->GetClientAccumulatedStats(context, request, response); }));}
     void SetMessageAllocatorFor_GetClientAccumulatedStats(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(1);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_GetClientAccumulatedStats() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* GetClientAccumulatedStats(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/)  { return nullptr; }
   };
   typedef WithCallbackMethod_GetClientStats<WithCallbackMethod_GetClientAccumulatedStats<Service > > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
@@ -2749,7 +2750,7 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2766,7 +2767,7 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2783,7 +2784,7 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2803,7 +2804,7 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2826,7 +2827,7 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2848,7 +2849,7 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -2863,10 +2864,10 @@ class LoadBalancerStatsService final {
     WithStreamedUnaryMethod_GetClientStats() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::LoadBalancerStatsRequest, ::connectrpc::conformance::LoadBalancerStatsResponse>(
+          ::connectrpc::conformance::v1::LoadBalancerStatsRequest, ::connectrpc::conformance::v1::LoadBalancerStatsResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::LoadBalancerStatsRequest, ::connectrpc::conformance::LoadBalancerStatsResponse>* streamer) {
+                     ::connectrpc::conformance::v1::LoadBalancerStatsRequest, ::connectrpc::conformance::v1::LoadBalancerStatsResponse>* streamer) {
                        return this->StreamedGetClientStats(context,
                          streamer);
                   }));
@@ -2875,12 +2876,12 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedGetClientStats(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::LoadBalancerStatsRequest,::connectrpc::conformance::LoadBalancerStatsResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedGetClientStats(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::LoadBalancerStatsRequest,::connectrpc::conformance::v1::LoadBalancerStatsResponse>* server_unary_streamer) = 0;
   };
   template <class BaseClass>
   class WithStreamedUnaryMethod_GetClientAccumulatedStats : public BaseClass {
@@ -2890,10 +2891,10 @@ class LoadBalancerStatsService final {
     WithStreamedUnaryMethod_GetClientAccumulatedStats() {
       ::grpc::Service::MarkMethodStreamed(1,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>(
+          ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* streamer) {
+                     ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* streamer) {
                        return this->StreamedGetClientAccumulatedStats(context,
                          streamer);
                   }));
@@ -2902,12 +2903,12 @@ class LoadBalancerStatsService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
+    ::grpc::Status GetClientAccumulatedStats(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest* /*request*/, ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedGetClientAccumulatedStats(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::LoadBalancerAccumulatedStatsRequest,::connectrpc::conformance::LoadBalancerAccumulatedStatsResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedGetClientAccumulatedStats(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsRequest,::connectrpc::conformance::v1::LoadBalancerAccumulatedStatsResponse>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_GetClientStats<WithStreamedUnaryMethod_GetClientAccumulatedStats<Service > > StreamedUnaryService;
   typedef Service SplitStreamedService;
@@ -2918,7 +2919,7 @@ class LoadBalancerStatsService final {
 class XdsUpdateHealthService final {
  public:
   static constexpr char const* service_full_name() {
-    return "connectrpc.conformance.XdsUpdateHealthService";
+    return "connectrpc.conformance.v1.XdsUpdateHealthService";
   }
   class StubInterface {
    public:
@@ -3283,48 +3284,48 @@ class XdsUpdateHealthService final {
 class XdsUpdateClientConfigureService final {
  public:
   static constexpr char const* service_full_name() {
-    return "connectrpc.conformance.XdsUpdateClientConfigureService";
+    return "connectrpc.conformance.v1.XdsUpdateClientConfigureService";
   }
   class StubInterface {
    public:
     virtual ~StubInterface() {}
     // Update the tes client's configuration.
-    virtual ::grpc::Status Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::connectrpc::conformance::ClientConfigureResponse* response) = 0;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ClientConfigureResponse>> AsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ClientConfigureResponse>>(AsyncConfigureRaw(context, request, cq));
+    virtual ::grpc::Status Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::connectrpc::conformance::v1::ClientConfigureResponse* response) = 0;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ClientConfigureResponse>> AsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ClientConfigureResponse>>(AsyncConfigureRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ClientConfigureResponse>> PrepareAsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ClientConfigureResponse>>(PrepareAsyncConfigureRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ClientConfigureResponse>> PrepareAsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ClientConfigureResponse>>(PrepareAsyncConfigureRaw(context, request, cq));
     }
     class async_interface {
      public:
       virtual ~async_interface() {}
       // Update the tes client's configuration.
-      virtual void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest* request, ::connectrpc::conformance::ClientConfigureResponse* response, std::function<void(::grpc::Status)>) = 0;
-      virtual void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest* request, ::connectrpc::conformance::ClientConfigureResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
+      virtual void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::connectrpc::conformance::v1::ClientConfigureResponse* response, std::function<void(::grpc::Status)>) = 0;
+      virtual void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::connectrpc::conformance::v1::ClientConfigureResponse* response, ::grpc::ClientUnaryReactor* reactor) = 0;
     };
     typedef class async_interface experimental_async_interface;
     virtual class async_interface* async() { return nullptr; }
     class async_interface* experimental_async() { return async(); }
    private:
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ClientConfigureResponse>* AsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) = 0;
-    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::ClientConfigureResponse>* PrepareAsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ClientConfigureResponse>* AsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) = 0;
+    virtual ::grpc::ClientAsyncResponseReaderInterface< ::connectrpc::conformance::v1::ClientConfigureResponse>* PrepareAsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) = 0;
   };
   class Stub final : public StubInterface {
    public:
     Stub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
-    ::grpc::Status Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::connectrpc::conformance::ClientConfigureResponse* response) override;
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ClientConfigureResponse>> AsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ClientConfigureResponse>>(AsyncConfigureRaw(context, request, cq));
+    ::grpc::Status Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::connectrpc::conformance::v1::ClientConfigureResponse* response) override;
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ClientConfigureResponse>> AsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ClientConfigureResponse>>(AsyncConfigureRaw(context, request, cq));
     }
-    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ClientConfigureResponse>> PrepareAsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
-      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ClientConfigureResponse>>(PrepareAsyncConfigureRaw(context, request, cq));
+    std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ClientConfigureResponse>> PrepareAsyncConfigure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) {
+      return std::unique_ptr< ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ClientConfigureResponse>>(PrepareAsyncConfigureRaw(context, request, cq));
     }
     class async final :
       public StubInterface::async_interface {
      public:
-      void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest* request, ::connectrpc::conformance::ClientConfigureResponse* response, std::function<void(::grpc::Status)>) override;
-      void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest* request, ::connectrpc::conformance::ClientConfigureResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
+      void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::connectrpc::conformance::v1::ClientConfigureResponse* response, std::function<void(::grpc::Status)>) override;
+      void Configure(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::connectrpc::conformance::v1::ClientConfigureResponse* response, ::grpc::ClientUnaryReactor* reactor) override;
      private:
       friend class Stub;
       explicit async(Stub* stub): stub_(stub) { }
@@ -3336,8 +3337,8 @@ class XdsUpdateClientConfigureService final {
    private:
     std::shared_ptr< ::grpc::ChannelInterface> channel_;
     class async async_stub_{this};
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ClientConfigureResponse>* AsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) override;
-    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::ClientConfigureResponse>* PrepareAsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ClientConfigureResponse>* AsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) override;
+    ::grpc::ClientAsyncResponseReader< ::connectrpc::conformance::v1::ClientConfigureResponse>* PrepareAsyncConfigureRaw(::grpc::ClientContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest& request, ::grpc::CompletionQueue* cq) override;
     const ::grpc::internal::RpcMethod rpcmethod_Configure_;
   };
   static std::unique_ptr<Stub> NewStub(const std::shared_ptr< ::grpc::ChannelInterface>& channel, const ::grpc::StubOptions& options = ::grpc::StubOptions());
@@ -3347,7 +3348,7 @@ class XdsUpdateClientConfigureService final {
     Service();
     virtual ~Service();
     // Update the tes client's configuration.
-    virtual ::grpc::Status Configure(::grpc::ServerContext* context, const ::connectrpc::conformance::ClientConfigureRequest* request, ::connectrpc::conformance::ClientConfigureResponse* response);
+    virtual ::grpc::Status Configure(::grpc::ServerContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::connectrpc::conformance::v1::ClientConfigureResponse* response);
   };
   template <class BaseClass>
   class WithAsyncMethod_Configure : public BaseClass {
@@ -3361,11 +3362,11 @@ class XdsUpdateClientConfigureService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/) override {
+    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
-    void RequestConfigure(::grpc::ServerContext* context, ::connectrpc::conformance::ClientConfigureRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::ClientConfigureResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
+    void RequestConfigure(::grpc::ServerContext* context, ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::grpc::ServerAsyncResponseWriter< ::connectrpc::conformance::v1::ClientConfigureResponse>* response, ::grpc::CompletionQueue* new_call_cq, ::grpc::ServerCompletionQueue* notification_cq, void *tag) {
       ::grpc::Service::RequestAsyncUnary(0, context, request, response, new_call_cq, notification_cq, tag);
     }
   };
@@ -3377,25 +3378,25 @@ class XdsUpdateClientConfigureService final {
    public:
     WithCallbackMethod_Configure() {
       ::grpc::Service::MarkMethodCallback(0,
-          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::ClientConfigureRequest, ::connectrpc::conformance::ClientConfigureResponse>(
+          new ::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::ClientConfigureRequest, ::connectrpc::conformance::v1::ClientConfigureResponse>(
             [this](
-                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::ClientConfigureRequest* request, ::connectrpc::conformance::ClientConfigureResponse* response) { return this->Configure(context, request, response); }));}
+                   ::grpc::CallbackServerContext* context, const ::connectrpc::conformance::v1::ClientConfigureRequest* request, ::connectrpc::conformance::v1::ClientConfigureResponse* response) { return this->Configure(context, request, response); }));}
     void SetMessageAllocatorFor_Configure(
-        ::grpc::MessageAllocator< ::connectrpc::conformance::ClientConfigureRequest, ::connectrpc::conformance::ClientConfigureResponse>* allocator) {
+        ::grpc::MessageAllocator< ::connectrpc::conformance::v1::ClientConfigureRequest, ::connectrpc::conformance::v1::ClientConfigureResponse>* allocator) {
       ::grpc::internal::MethodHandler* const handler = ::grpc::Service::GetHandler(0);
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::ClientConfigureRequest, ::connectrpc::conformance::ClientConfigureResponse>*>(handler)
+      static_cast<::grpc::internal::CallbackUnaryHandler< ::connectrpc::conformance::v1::ClientConfigureRequest, ::connectrpc::conformance::v1::ClientConfigureResponse>*>(handler)
               ->SetMessageAllocator(allocator);
     }
     ~WithCallbackMethod_Configure() override {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/) override {
+    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::ServerUnaryReactor* Configure(
-      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/)  { return nullptr; }
+      ::grpc::CallbackServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/)  { return nullptr; }
   };
   typedef WithCallbackMethod_Configure<Service > CallbackService;
   typedef CallbackService ExperimentalCallbackService;
@@ -3411,7 +3412,7 @@ class XdsUpdateClientConfigureService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/) override {
+    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -3428,7 +3429,7 @@ class XdsUpdateClientConfigureService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/) override {
+    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -3451,7 +3452,7 @@ class XdsUpdateClientConfigureService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable synchronous version of this method
-    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/) override {
+    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
@@ -3466,10 +3467,10 @@ class XdsUpdateClientConfigureService final {
     WithStreamedUnaryMethod_Configure() {
       ::grpc::Service::MarkMethodStreamed(0,
         new ::grpc::internal::StreamedUnaryHandler<
-          ::connectrpc::conformance::ClientConfigureRequest, ::connectrpc::conformance::ClientConfigureResponse>(
+          ::connectrpc::conformance::v1::ClientConfigureRequest, ::connectrpc::conformance::v1::ClientConfigureResponse>(
             [this](::grpc::ServerContext* context,
                    ::grpc::ServerUnaryStreamer<
-                     ::connectrpc::conformance::ClientConfigureRequest, ::connectrpc::conformance::ClientConfigureResponse>* streamer) {
+                     ::connectrpc::conformance::v1::ClientConfigureRequest, ::connectrpc::conformance::v1::ClientConfigureResponse>* streamer) {
                        return this->StreamedConfigure(context,
                          streamer);
                   }));
@@ -3478,20 +3479,21 @@ class XdsUpdateClientConfigureService final {
       BaseClassMustBeDerivedFromService(this);
     }
     // disable regular version of this method
-    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::ClientConfigureResponse* /*response*/) override {
+    ::grpc::Status Configure(::grpc::ServerContext* /*context*/, const ::connectrpc::conformance::v1::ClientConfigureRequest* /*request*/, ::connectrpc::conformance::v1::ClientConfigureResponse* /*response*/) override {
       abort();
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     // replace default version of method with streamed unary
-    virtual ::grpc::Status StreamedConfigure(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::ClientConfigureRequest,::connectrpc::conformance::ClientConfigureResponse>* server_unary_streamer) = 0;
+    virtual ::grpc::Status StreamedConfigure(::grpc::ServerContext* context, ::grpc::ServerUnaryStreamer< ::connectrpc::conformance::v1::ClientConfigureRequest,::connectrpc::conformance::v1::ClientConfigureResponse>* server_unary_streamer) = 0;
   };
   typedef WithStreamedUnaryMethod_Configure<Service > StreamedUnaryService;
   typedef Service SplitStreamedService;
   typedef WithStreamedUnaryMethod_Configure<Service > StreamedService;
 };
 
+}  // namespace v1
 }  // namespace conformance
 }  // namespace connectrpc
 
 
-#endif  // GRPC_connectrpc_2fconformance_2ftest_2eproto__INCLUDED
+#endif  // GRPC_connectrpc_2fconformance_2fv1_2ftest_2eproto__INCLUDED
