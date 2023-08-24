@@ -381,7 +381,7 @@ services:
       context: .
       dockerfile: Dockerfile.cc
       args:
-        PORT: 8080
+        PORT: 8081
         HOST: server-connect
         CERT_FILE: cert/client.crt
         KEY_FILE: cert/client.key
