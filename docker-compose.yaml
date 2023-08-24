@@ -366,17 +366,17 @@ services:
     depends_on:
       server-connect-node-fastify:
         condition: service_healthy
-  client-cc-grpc-to-server-connect-go-h1:
+  client-cc-grpc-to-server-connect-go-h2-no-tls:
     build:
       context: .
       dockerfile: Dockerfile.cc
       args:
-        PORT: 8080
+        PORT: 8081
         HOST: server-connect
     entrypoint: bazel test //cc:grpc_client_test
     depends_on:
       - server-connect
-  client-cc-grpc-to-server-connect-go-h2:
+  client-cc-grpc-to-server-connect-go-h2-with-tls:
     build:
       context: .
       dockerfile: Dockerfile.cc

@@ -123,8 +123,8 @@ dockercomposetestweb: dockercomposeclean
 
 .PHONY: dockercomposetestcc
 dockercomposetestcc: dockercomposeclean
-	docker-compose run client-cc-grpc-to-server-connect-go-h1
-	docker-compose run client-cc-grpc-to-server-connect-go-h2
+	docker-compose run client-cc-grpc-to-server-connect-go-h2-no-tls
+	docker-compose run client-cc-grpc-to-server-connect-go-h2-with-tls
 	$(MAKE) dockercomposeclean
 
 .PHONY: dockercomposetest
