@@ -57,8 +57,8 @@ type captureTrailersAtEOF struct {
 	trailers *Trailers
 }
 
-func (c *captureTrailersAtEOF) Read(p []byte) (n int, err error) {
-	n, err = c.r.Read(p)
+func (c *captureTrailersAtEOF) Read(p []byte) (int, error) {
+	n, err := c.r.Read(p)
 	if errors.Is(err, io.EOF) {
 		meta := c.resp.Trailer
 		c.trailers.val.Store(&meta)
