@@ -21,7 +21,7 @@ linters-settings:
       ignore-decls:
       - i int
       - t *console.TB
-      - t conformance.TB
+      - t conformancetesting.TB
       - t testing.TB
       - ok bool
 linters:

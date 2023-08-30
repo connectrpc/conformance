@@ -19,9 +19,9 @@
 package conformancev1connect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	v1 "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
@@ -33,7 +33,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion1_7_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// TestServiceName is the fully-qualified name of the TestService service.
@@ -120,40 +120,40 @@ const (
 // TestServiceClient is a client for the connectrpc.conformance.v1.TestService service.
 type TestServiceClient interface {
 	// One empty request followed by one empty response.
-	EmptyCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	EmptyCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	// One request followed by one response.
-	UnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error)
+	UnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error)
 	// One request followed by one response. This RPC always fails.
-	FailUnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error)
+	FailUnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
 	// satisfy subsequent requests.
-	CacheableUnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error)
+	CacheableUnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	StreamingOutputCall(context.Context, *connect_go.Request[v1.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[v1.StreamingOutputCallResponse], error)
+	StreamingOutputCall(context.Context, *connect.Request[v1.StreamingOutputCallRequest]) (*connect.ServerStreamForClient[v1.StreamingOutputCallResponse], error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	// This RPC always responds with an error status.
-	FailStreamingOutputCall(context.Context, *connect_go.Request[v1.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[v1.StreamingOutputCallResponse], error)
+	FailStreamingOutputCall(context.Context, *connect.Request[v1.StreamingOutputCallRequest]) (*connect.ServerStreamForClient[v1.StreamingOutputCallResponse], error)
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
-	StreamingInputCall(context.Context) *connect_go.ClientStreamForClient[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse]
+	StreamingInputCall(context.Context) *connect.ClientStreamForClient[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse]
 	// A sequence of requests with each request served by the server immediately.
 	// As one request could lead to multiple responses, this interface
 	// demonstrates the idea of full duplexing.
-	FullDuplexCall(context.Context) *connect_go.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
+	FullDuplexCall(context.Context) *connect.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
 	// A sequence of requests followed by a sequence of responses.
 	// The server buffers all the client requests and then serves them in order. A
 	// stream of responses are returned to the client when the server starts with
 	// first request.
-	HalfDuplexCall(context.Context) *connect_go.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
+	HalfDuplexCall(context.Context) *connect.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
-	UnimplementedCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	UnimplementedCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented streaming output methods.
-	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.ServerStreamForClient[emptypb.Empty], error)
+	UnimplementedStreamingOutputCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.ServerStreamForClient[emptypb.Empty], error)
 }
 
 // NewTestServiceClient constructs a client for the connectrpc.conformance.v1.TestService service.
@@ -163,61 +163,61 @@ type TestServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) TestServiceClient {
+func NewTestServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) TestServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &testServiceClient{
-		emptyCall: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		emptyCall: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+TestServiceEmptyCallProcedure,
 			opts...,
 		),
-		unaryCall: connect_go.NewClient[v1.SimpleRequest, v1.SimpleResponse](
+		unaryCall: connect.NewClient[v1.SimpleRequest, v1.SimpleResponse](
 			httpClient,
 			baseURL+TestServiceUnaryCallProcedure,
 			opts...,
 		),
-		failUnaryCall: connect_go.NewClient[v1.SimpleRequest, v1.SimpleResponse](
+		failUnaryCall: connect.NewClient[v1.SimpleRequest, v1.SimpleResponse](
 			httpClient,
 			baseURL+TestServiceFailUnaryCallProcedure,
 			opts...,
 		),
-		cacheableUnaryCall: connect_go.NewClient[v1.SimpleRequest, v1.SimpleResponse](
+		cacheableUnaryCall: connect.NewClient[v1.SimpleRequest, v1.SimpleResponse](
 			httpClient,
 			baseURL+TestServiceCacheableUnaryCallProcedure,
-			connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-			connect_go.WithClientOptions(opts...),
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
 		),
-		streamingOutputCall: connect_go.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
+		streamingOutputCall: connect.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
 			httpClient,
 			baseURL+TestServiceStreamingOutputCallProcedure,
 			opts...,
 		),
-		failStreamingOutputCall: connect_go.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
+		failStreamingOutputCall: connect.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
 			httpClient,
 			baseURL+TestServiceFailStreamingOutputCallProcedure,
 			opts...,
 		),
-		streamingInputCall: connect_go.NewClient[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse](
+		streamingInputCall: connect.NewClient[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse](
 			httpClient,
 			baseURL+TestServiceStreamingInputCallProcedure,
 			opts...,
 		),
-		fullDuplexCall: connect_go.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
+		fullDuplexCall: connect.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
 			httpClient,
 			baseURL+TestServiceFullDuplexCallProcedure,
 			opts...,
 		),
-		halfDuplexCall: connect_go.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
+		halfDuplexCall: connect.NewClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse](
 			httpClient,
 			baseURL+TestServiceHalfDuplexCallProcedure,
 			opts...,
 		),
-		unimplementedCall: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		unimplementedCall: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+TestServiceUnimplementedCallProcedure,
 			opts...,
 		),
-		unimplementedStreamingOutputCall: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		unimplementedStreamingOutputCall: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+TestServiceUnimplementedStreamingOutputCallProcedure,
 			opts...,
@@ -227,112 +227,112 @@ func NewTestServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts
 
 // testServiceClient implements TestServiceClient.
 type testServiceClient struct {
-	emptyCall                        *connect_go.Client[emptypb.Empty, emptypb.Empty]
-	unaryCall                        *connect_go.Client[v1.SimpleRequest, v1.SimpleResponse]
-	failUnaryCall                    *connect_go.Client[v1.SimpleRequest, v1.SimpleResponse]
-	cacheableUnaryCall               *connect_go.Client[v1.SimpleRequest, v1.SimpleResponse]
-	streamingOutputCall              *connect_go.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
-	failStreamingOutputCall          *connect_go.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
-	streamingInputCall               *connect_go.Client[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse]
-	fullDuplexCall                   *connect_go.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
-	halfDuplexCall                   *connect_go.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
-	unimplementedCall                *connect_go.Client[emptypb.Empty, emptypb.Empty]
-	unimplementedStreamingOutputCall *connect_go.Client[emptypb.Empty, emptypb.Empty]
+	emptyCall                        *connect.Client[emptypb.Empty, emptypb.Empty]
+	unaryCall                        *connect.Client[v1.SimpleRequest, v1.SimpleResponse]
+	failUnaryCall                    *connect.Client[v1.SimpleRequest, v1.SimpleResponse]
+	cacheableUnaryCall               *connect.Client[v1.SimpleRequest, v1.SimpleResponse]
+	streamingOutputCall              *connect.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
+	failStreamingOutputCall          *connect.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
+	streamingInputCall               *connect.Client[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse]
+	fullDuplexCall                   *connect.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
+	halfDuplexCall                   *connect.Client[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]
+	unimplementedCall                *connect.Client[emptypb.Empty, emptypb.Empty]
+	unimplementedStreamingOutputCall *connect.Client[emptypb.Empty, emptypb.Empty]
 }
 
 // EmptyCall calls connectrpc.conformance.v1.TestService.EmptyCall.
-func (c *testServiceClient) EmptyCall(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *testServiceClient) EmptyCall(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.emptyCall.CallUnary(ctx, req)
 }
 
 // UnaryCall calls connectrpc.conformance.v1.TestService.UnaryCall.
-func (c *testServiceClient) UnaryCall(ctx context.Context, req *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error) {
+func (c *testServiceClient) UnaryCall(ctx context.Context, req *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error) {
 	return c.unaryCall.CallUnary(ctx, req)
 }
 
 // FailUnaryCall calls connectrpc.conformance.v1.TestService.FailUnaryCall.
-func (c *testServiceClient) FailUnaryCall(ctx context.Context, req *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error) {
+func (c *testServiceClient) FailUnaryCall(ctx context.Context, req *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error) {
 	return c.failUnaryCall.CallUnary(ctx, req)
 }
 
 // CacheableUnaryCall calls connectrpc.conformance.v1.TestService.CacheableUnaryCall.
-func (c *testServiceClient) CacheableUnaryCall(ctx context.Context, req *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error) {
+func (c *testServiceClient) CacheableUnaryCall(ctx context.Context, req *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error) {
 	return c.cacheableUnaryCall.CallUnary(ctx, req)
 }
 
 // StreamingOutputCall calls connectrpc.conformance.v1.TestService.StreamingOutputCall.
-func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect_go.Request[v1.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[v1.StreamingOutputCallResponse], error) {
+func (c *testServiceClient) StreamingOutputCall(ctx context.Context, req *connect.Request[v1.StreamingOutputCallRequest]) (*connect.ServerStreamForClient[v1.StreamingOutputCallResponse], error) {
 	return c.streamingOutputCall.CallServerStream(ctx, req)
 }
 
 // FailStreamingOutputCall calls connectrpc.conformance.v1.TestService.FailStreamingOutputCall.
-func (c *testServiceClient) FailStreamingOutputCall(ctx context.Context, req *connect_go.Request[v1.StreamingOutputCallRequest]) (*connect_go.ServerStreamForClient[v1.StreamingOutputCallResponse], error) {
+func (c *testServiceClient) FailStreamingOutputCall(ctx context.Context, req *connect.Request[v1.StreamingOutputCallRequest]) (*connect.ServerStreamForClient[v1.StreamingOutputCallResponse], error) {
 	return c.failStreamingOutputCall.CallServerStream(ctx, req)
 }
 
 // StreamingInputCall calls connectrpc.conformance.v1.TestService.StreamingInputCall.
-func (c *testServiceClient) StreamingInputCall(ctx context.Context) *connect_go.ClientStreamForClient[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse] {
+func (c *testServiceClient) StreamingInputCall(ctx context.Context) *connect.ClientStreamForClient[v1.StreamingInputCallRequest, v1.StreamingInputCallResponse] {
 	return c.streamingInputCall.CallClientStream(ctx)
 }
 
 // FullDuplexCall calls connectrpc.conformance.v1.TestService.FullDuplexCall.
-func (c *testServiceClient) FullDuplexCall(ctx context.Context) *connect_go.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse] {
+func (c *testServiceClient) FullDuplexCall(ctx context.Context) *connect.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse] {
 	return c.fullDuplexCall.CallBidiStream(ctx)
 }
 
 // HalfDuplexCall calls connectrpc.conformance.v1.TestService.HalfDuplexCall.
-func (c *testServiceClient) HalfDuplexCall(ctx context.Context) *connect_go.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse] {
+func (c *testServiceClient) HalfDuplexCall(ctx context.Context) *connect.BidiStreamForClient[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse] {
 	return c.halfDuplexCall.CallBidiStream(ctx)
 }
 
 // UnimplementedCall calls connectrpc.conformance.v1.TestService.UnimplementedCall.
-func (c *testServiceClient) UnimplementedCall(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *testServiceClient) UnimplementedCall(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.unimplementedCall.CallUnary(ctx, req)
 }
 
 // UnimplementedStreamingOutputCall calls
 // connectrpc.conformance.v1.TestService.UnimplementedStreamingOutputCall.
-func (c *testServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.ServerStreamForClient[emptypb.Empty], error) {
+func (c *testServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.ServerStreamForClient[emptypb.Empty], error) {
 	return c.unimplementedStreamingOutputCall.CallServerStream(ctx, req)
 }
 
 // TestServiceHandler is an implementation of the connectrpc.conformance.v1.TestService service.
 type TestServiceHandler interface {
 	// One empty request followed by one empty response.
-	EmptyCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	EmptyCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	// One request followed by one response.
-	UnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error)
+	UnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error)
 	// One request followed by one response. This RPC always fails.
-	FailUnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error)
+	FailUnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error)
 	// One request followed by one response. Response has cache control
 	// headers set such that a caching HTTP proxy (such as GFE) can
 	// satisfy subsequent requests.
-	CacheableUnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error)
+	CacheableUnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error)
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
-	StreamingOutputCall(context.Context, *connect_go.Request[v1.StreamingOutputCallRequest], *connect_go.ServerStream[v1.StreamingOutputCallResponse]) error
+	StreamingOutputCall(context.Context, *connect.Request[v1.StreamingOutputCallRequest], *connect.ServerStream[v1.StreamingOutputCallResponse]) error
 	// One request followed by a sequence of responses (streamed download).
 	// The server returns the payload with client desired type and sizes.
 	// This RPC always responds with an error status.
-	FailStreamingOutputCall(context.Context, *connect_go.Request[v1.StreamingOutputCallRequest], *connect_go.ServerStream[v1.StreamingOutputCallResponse]) error
+	FailStreamingOutputCall(context.Context, *connect.Request[v1.StreamingOutputCallRequest], *connect.ServerStream[v1.StreamingOutputCallResponse]) error
 	// A sequence of requests followed by one response (streamed upload).
 	// The server returns the aggregated size of client payload as the result.
-	StreamingInputCall(context.Context, *connect_go.ClientStream[v1.StreamingInputCallRequest]) (*connect_go.Response[v1.StreamingInputCallResponse], error)
+	StreamingInputCall(context.Context, *connect.ClientStream[v1.StreamingInputCallRequest]) (*connect.Response[v1.StreamingInputCallResponse], error)
 	// A sequence of requests with each request served by the server immediately.
 	// As one request could lead to multiple responses, this interface
 	// demonstrates the idea of full duplexing.
-	FullDuplexCall(context.Context, *connect_go.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error
+	FullDuplexCall(context.Context, *connect.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error
 	// A sequence of requests followed by a sequence of responses.
 	// The server buffers all the client requests and then serves them in order. A
 	// stream of responses are returned to the client when the server starts with
 	// first request.
-	HalfDuplexCall(context.Context, *connect_go.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error
+	HalfDuplexCall(context.Context, *connect.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented methods.
-	UnimplementedCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	UnimplementedCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	// The test server will not implement this method. It will be used
 	// to test the behavior when clients call unimplemented streaming output methods.
-	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[emptypb.Empty], *connect_go.ServerStream[emptypb.Empty]) error
+	UnimplementedStreamingOutputCall(context.Context, *connect.Request[emptypb.Empty], *connect.ServerStream[emptypb.Empty]) error
 }
 
 // NewTestServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -340,59 +340,59 @@ type TestServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	testServiceEmptyCallHandler := connect_go.NewUnaryHandler(
+func NewTestServiceHandler(svc TestServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	testServiceEmptyCallHandler := connect.NewUnaryHandler(
 		TestServiceEmptyCallProcedure,
 		svc.EmptyCall,
 		opts...,
 	)
-	testServiceUnaryCallHandler := connect_go.NewUnaryHandler(
+	testServiceUnaryCallHandler := connect.NewUnaryHandler(
 		TestServiceUnaryCallProcedure,
 		svc.UnaryCall,
 		opts...,
 	)
-	testServiceFailUnaryCallHandler := connect_go.NewUnaryHandler(
+	testServiceFailUnaryCallHandler := connect.NewUnaryHandler(
 		TestServiceFailUnaryCallProcedure,
 		svc.FailUnaryCall,
 		opts...,
 	)
-	testServiceCacheableUnaryCallHandler := connect_go.NewUnaryHandler(
+	testServiceCacheableUnaryCallHandler := connect.NewUnaryHandler(
 		TestServiceCacheableUnaryCallProcedure,
 		svc.CacheableUnaryCall,
-		connect_go.WithIdempotency(connect_go.IdempotencyNoSideEffects),
-		connect_go.WithHandlerOptions(opts...),
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
 	)
-	testServiceStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
+	testServiceStreamingOutputCallHandler := connect.NewServerStreamHandler(
 		TestServiceStreamingOutputCallProcedure,
 		svc.StreamingOutputCall,
 		opts...,
 	)
-	testServiceFailStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
+	testServiceFailStreamingOutputCallHandler := connect.NewServerStreamHandler(
 		TestServiceFailStreamingOutputCallProcedure,
 		svc.FailStreamingOutputCall,
 		opts...,
 	)
-	testServiceStreamingInputCallHandler := connect_go.NewClientStreamHandler(
+	testServiceStreamingInputCallHandler := connect.NewClientStreamHandler(
 		TestServiceStreamingInputCallProcedure,
 		svc.StreamingInputCall,
 		opts...,
 	)
-	testServiceFullDuplexCallHandler := connect_go.NewBidiStreamHandler(
+	testServiceFullDuplexCallHandler := connect.NewBidiStreamHandler(
 		TestServiceFullDuplexCallProcedure,
 		svc.FullDuplexCall,
 		opts...,
 	)
-	testServiceHalfDuplexCallHandler := connect_go.NewBidiStreamHandler(
+	testServiceHalfDuplexCallHandler := connect.NewBidiStreamHandler(
 		TestServiceHalfDuplexCallProcedure,
 		svc.HalfDuplexCall,
 		opts...,
 	)
-	testServiceUnimplementedCallHandler := connect_go.NewUnaryHandler(
+	testServiceUnimplementedCallHandler := connect.NewUnaryHandler(
 		TestServiceUnimplementedCallProcedure,
 		svc.UnimplementedCall,
 		opts...,
 	)
-	testServiceUnimplementedStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
+	testServiceUnimplementedStreamingOutputCallHandler := connect.NewServerStreamHandler(
 		TestServiceUnimplementedStreamingOutputCallProcedure,
 		svc.UnimplementedStreamingOutputCall,
 		opts...,
@@ -430,57 +430,57 @@ func NewTestServiceHandler(svc TestServiceHandler, opts ...connect_go.HandlerOpt
 // UnimplementedTestServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedTestServiceHandler struct{}
 
-func (UnimplementedTestServiceHandler) EmptyCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.EmptyCall is not implemented"))
+func (UnimplementedTestServiceHandler) EmptyCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.EmptyCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) UnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.UnaryCall is not implemented"))
+func (UnimplementedTestServiceHandler) UnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.UnaryCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) FailUnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.FailUnaryCall is not implemented"))
+func (UnimplementedTestServiceHandler) FailUnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.FailUnaryCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) CacheableUnaryCall(context.Context, *connect_go.Request[v1.SimpleRequest]) (*connect_go.Response[v1.SimpleResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.CacheableUnaryCall is not implemented"))
+func (UnimplementedTestServiceHandler) CacheableUnaryCall(context.Context, *connect.Request[v1.SimpleRequest]) (*connect.Response[v1.SimpleResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.CacheableUnaryCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) StreamingOutputCall(context.Context, *connect_go.Request[v1.StreamingOutputCallRequest], *connect_go.ServerStream[v1.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.StreamingOutputCall is not implemented"))
+func (UnimplementedTestServiceHandler) StreamingOutputCall(context.Context, *connect.Request[v1.StreamingOutputCallRequest], *connect.ServerStream[v1.StreamingOutputCallResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.StreamingOutputCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) FailStreamingOutputCall(context.Context, *connect_go.Request[v1.StreamingOutputCallRequest], *connect_go.ServerStream[v1.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.FailStreamingOutputCall is not implemented"))
+func (UnimplementedTestServiceHandler) FailStreamingOutputCall(context.Context, *connect.Request[v1.StreamingOutputCallRequest], *connect.ServerStream[v1.StreamingOutputCallResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.FailStreamingOutputCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) StreamingInputCall(context.Context, *connect_go.ClientStream[v1.StreamingInputCallRequest]) (*connect_go.Response[v1.StreamingInputCallResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.StreamingInputCall is not implemented"))
+func (UnimplementedTestServiceHandler) StreamingInputCall(context.Context, *connect.ClientStream[v1.StreamingInputCallRequest]) (*connect.Response[v1.StreamingInputCallResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.StreamingInputCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) FullDuplexCall(context.Context, *connect_go.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.FullDuplexCall is not implemented"))
+func (UnimplementedTestServiceHandler) FullDuplexCall(context.Context, *connect.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.FullDuplexCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) HalfDuplexCall(context.Context, *connect_go.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.HalfDuplexCall is not implemented"))
+func (UnimplementedTestServiceHandler) HalfDuplexCall(context.Context, *connect.BidiStream[v1.StreamingOutputCallRequest, v1.StreamingOutputCallResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.HalfDuplexCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) UnimplementedCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.UnimplementedCall is not implemented"))
+func (UnimplementedTestServiceHandler) UnimplementedCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.UnimplementedCall is not implemented"))
 }
 
-func (UnimplementedTestServiceHandler) UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[emptypb.Empty], *connect_go.ServerStream[emptypb.Empty]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.UnimplementedStreamingOutputCall is not implemented"))
+func (UnimplementedTestServiceHandler) UnimplementedStreamingOutputCall(context.Context, *connect.Request[emptypb.Empty], *connect.ServerStream[emptypb.Empty]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.TestService.UnimplementedStreamingOutputCall is not implemented"))
 }
 
 // UnimplementedServiceClient is a client for the connectrpc.conformance.v1.UnimplementedService
 // service.
 type UnimplementedServiceClient interface {
 	// A call that no server should implement
-	UnimplementedCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	UnimplementedCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	// A call that no server should implement
-	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.ServerStreamForClient[emptypb.Empty], error)
+	UnimplementedStreamingOutputCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.ServerStreamForClient[emptypb.Empty], error)
 }
 
 // NewUnimplementedServiceClient constructs a client for the
@@ -491,15 +491,15 @@ type UnimplementedServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) UnimplementedServiceClient {
+func NewUnimplementedServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) UnimplementedServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &unimplementedServiceClient{
-		unimplementedCall: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		unimplementedCall: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+UnimplementedServiceUnimplementedCallProcedure,
 			opts...,
 		),
-		unimplementedStreamingOutputCall: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		unimplementedStreamingOutputCall: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+UnimplementedServiceUnimplementedStreamingOutputCallProcedure,
 			opts...,
@@ -509,18 +509,18 @@ func NewUnimplementedServiceClient(httpClient connect_go.HTTPClient, baseURL str
 
 // unimplementedServiceClient implements UnimplementedServiceClient.
 type unimplementedServiceClient struct {
-	unimplementedCall                *connect_go.Client[emptypb.Empty, emptypb.Empty]
-	unimplementedStreamingOutputCall *connect_go.Client[emptypb.Empty, emptypb.Empty]
+	unimplementedCall                *connect.Client[emptypb.Empty, emptypb.Empty]
+	unimplementedStreamingOutputCall *connect.Client[emptypb.Empty, emptypb.Empty]
 }
 
 // UnimplementedCall calls connectrpc.conformance.v1.UnimplementedService.UnimplementedCall.
-func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *unimplementedServiceClient) UnimplementedCall(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.unimplementedCall.CallUnary(ctx, req)
 }
 
 // UnimplementedStreamingOutputCall calls
 // connectrpc.conformance.v1.UnimplementedService.UnimplementedStreamingOutputCall.
-func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.ServerStreamForClient[emptypb.Empty], error) {
+func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.ServerStreamForClient[emptypb.Empty], error) {
 	return c.unimplementedStreamingOutputCall.CallServerStream(ctx, req)
 }
 
@@ -528,9 +528,9 @@ func (c *unimplementedServiceClient) UnimplementedStreamingOutputCall(ctx contex
 // connectrpc.conformance.v1.UnimplementedService service.
 type UnimplementedServiceHandler interface {
 	// A call that no server should implement
-	UnimplementedCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	UnimplementedCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	// A call that no server should implement
-	UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[emptypb.Empty], *connect_go.ServerStream[emptypb.Empty]) error
+	UnimplementedStreamingOutputCall(context.Context, *connect.Request[emptypb.Empty], *connect.ServerStream[emptypb.Empty]) error
 }
 
 // NewUnimplementedServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -538,13 +538,13 @@ type UnimplementedServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	unimplementedServiceUnimplementedCallHandler := connect_go.NewUnaryHandler(
+func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	unimplementedServiceUnimplementedCallHandler := connect.NewUnaryHandler(
 		UnimplementedServiceUnimplementedCallProcedure,
 		svc.UnimplementedCall,
 		opts...,
 	)
-	unimplementedServiceUnimplementedStreamingOutputCallHandler := connect_go.NewServerStreamHandler(
+	unimplementedServiceUnimplementedStreamingOutputCallHandler := connect.NewServerStreamHandler(
 		UnimplementedServiceUnimplementedStreamingOutputCallProcedure,
 		svc.UnimplementedStreamingOutputCall,
 		opts...,
@@ -564,18 +564,18 @@ func NewUnimplementedServiceHandler(svc UnimplementedServiceHandler, opts ...con
 // UnimplementedUnimplementedServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedUnimplementedServiceHandler struct{}
 
-func (UnimplementedUnimplementedServiceHandler) UnimplementedCall(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.UnimplementedService.UnimplementedCall is not implemented"))
+func (UnimplementedUnimplementedServiceHandler) UnimplementedCall(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.UnimplementedService.UnimplementedCall is not implemented"))
 }
 
-func (UnimplementedUnimplementedServiceHandler) UnimplementedStreamingOutputCall(context.Context, *connect_go.Request[emptypb.Empty], *connect_go.ServerStream[emptypb.Empty]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.UnimplementedService.UnimplementedStreamingOutputCall is not implemented"))
+func (UnimplementedUnimplementedServiceHandler) UnimplementedStreamingOutputCall(context.Context, *connect.Request[emptypb.Empty], *connect.ServerStream[emptypb.Empty]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.UnimplementedService.UnimplementedStreamingOutputCall is not implemented"))
 }
 
 // ReconnectServiceClient is a client for the connectrpc.conformance.v1.ReconnectService service.
 type ReconnectServiceClient interface {
-	Start(context.Context, *connect_go.Request[v1.ReconnectParams]) (*connect_go.Response[emptypb.Empty], error)
-	Stop(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[v1.ReconnectInfo], error)
+	Start(context.Context, *connect.Request[v1.ReconnectParams]) (*connect.Response[emptypb.Empty], error)
+	Stop(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.ReconnectInfo], error)
 }
 
 // NewReconnectServiceClient constructs a client for the connectrpc.conformance.v1.ReconnectService
@@ -585,15 +585,15 @@ type ReconnectServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewReconnectServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ReconnectServiceClient {
+func NewReconnectServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ReconnectServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &reconnectServiceClient{
-		start: connect_go.NewClient[v1.ReconnectParams, emptypb.Empty](
+		start: connect.NewClient[v1.ReconnectParams, emptypb.Empty](
 			httpClient,
 			baseURL+ReconnectServiceStartProcedure,
 			opts...,
 		),
-		stop: connect_go.NewClient[emptypb.Empty, v1.ReconnectInfo](
+		stop: connect.NewClient[emptypb.Empty, v1.ReconnectInfo](
 			httpClient,
 			baseURL+ReconnectServiceStopProcedure,
 			opts...,
@@ -603,25 +603,25 @@ func NewReconnectServiceClient(httpClient connect_go.HTTPClient, baseURL string,
 
 // reconnectServiceClient implements ReconnectServiceClient.
 type reconnectServiceClient struct {
-	start *connect_go.Client[v1.ReconnectParams, emptypb.Empty]
-	stop  *connect_go.Client[emptypb.Empty, v1.ReconnectInfo]
+	start *connect.Client[v1.ReconnectParams, emptypb.Empty]
+	stop  *connect.Client[emptypb.Empty, v1.ReconnectInfo]
 }
 
 // Start calls connectrpc.conformance.v1.ReconnectService.Start.
-func (c *reconnectServiceClient) Start(ctx context.Context, req *connect_go.Request[v1.ReconnectParams]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *reconnectServiceClient) Start(ctx context.Context, req *connect.Request[v1.ReconnectParams]) (*connect.Response[emptypb.Empty], error) {
 	return c.start.CallUnary(ctx, req)
 }
 
 // Stop calls connectrpc.conformance.v1.ReconnectService.Stop.
-func (c *reconnectServiceClient) Stop(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[v1.ReconnectInfo], error) {
+func (c *reconnectServiceClient) Stop(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.ReconnectInfo], error) {
 	return c.stop.CallUnary(ctx, req)
 }
 
 // ReconnectServiceHandler is an implementation of the connectrpc.conformance.v1.ReconnectService
 // service.
 type ReconnectServiceHandler interface {
-	Start(context.Context, *connect_go.Request[v1.ReconnectParams]) (*connect_go.Response[emptypb.Empty], error)
-	Stop(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[v1.ReconnectInfo], error)
+	Start(context.Context, *connect.Request[v1.ReconnectParams]) (*connect.Response[emptypb.Empty], error)
+	Stop(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.ReconnectInfo], error)
 }
 
 // NewReconnectServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -629,13 +629,13 @@ type ReconnectServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	reconnectServiceStartHandler := connect_go.NewUnaryHandler(
+func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	reconnectServiceStartHandler := connect.NewUnaryHandler(
 		ReconnectServiceStartProcedure,
 		svc.Start,
 		opts...,
 	)
-	reconnectServiceStopHandler := connect_go.NewUnaryHandler(
+	reconnectServiceStopHandler := connect.NewUnaryHandler(
 		ReconnectServiceStopProcedure,
 		svc.Stop,
 		opts...,
@@ -655,21 +655,21 @@ func NewReconnectServiceHandler(svc ReconnectServiceHandler, opts ...connect_go.
 // UnimplementedReconnectServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedReconnectServiceHandler struct{}
 
-func (UnimplementedReconnectServiceHandler) Start(context.Context, *connect_go.Request[v1.ReconnectParams]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.ReconnectService.Start is not implemented"))
+func (UnimplementedReconnectServiceHandler) Start(context.Context, *connect.Request[v1.ReconnectParams]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.ReconnectService.Start is not implemented"))
 }
 
-func (UnimplementedReconnectServiceHandler) Stop(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[v1.ReconnectInfo], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.ReconnectService.Stop is not implemented"))
+func (UnimplementedReconnectServiceHandler) Stop(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.ReconnectInfo], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.ReconnectService.Stop is not implemented"))
 }
 
 // LoadBalancerStatsServiceClient is a client for the
 // connectrpc.conformance.v1.LoadBalancerStatsService service.
 type LoadBalancerStatsServiceClient interface {
 	// Gets the backend distribution for RPCs sent by a test client.
-	GetClientStats(context.Context, *connect_go.Request[v1.LoadBalancerStatsRequest]) (*connect_go.Response[v1.LoadBalancerStatsResponse], error)
+	GetClientStats(context.Context, *connect.Request[v1.LoadBalancerStatsRequest]) (*connect.Response[v1.LoadBalancerStatsResponse], error)
 	// Gets the accumulated stats for RPCs sent by a test client.
-	GetClientAccumulatedStats(context.Context, *connect_go.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect_go.Response[v1.LoadBalancerAccumulatedStatsResponse], error)
+	GetClientAccumulatedStats(context.Context, *connect.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect.Response[v1.LoadBalancerAccumulatedStatsResponse], error)
 }
 
 // NewLoadBalancerStatsServiceClient constructs a client for the
@@ -680,15 +680,15 @@ type LoadBalancerStatsServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewLoadBalancerStatsServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) LoadBalancerStatsServiceClient {
+func NewLoadBalancerStatsServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) LoadBalancerStatsServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &loadBalancerStatsServiceClient{
-		getClientStats: connect_go.NewClient[v1.LoadBalancerStatsRequest, v1.LoadBalancerStatsResponse](
+		getClientStats: connect.NewClient[v1.LoadBalancerStatsRequest, v1.LoadBalancerStatsResponse](
 			httpClient,
 			baseURL+LoadBalancerStatsServiceGetClientStatsProcedure,
 			opts...,
 		),
-		getClientAccumulatedStats: connect_go.NewClient[v1.LoadBalancerAccumulatedStatsRequest, v1.LoadBalancerAccumulatedStatsResponse](
+		getClientAccumulatedStats: connect.NewClient[v1.LoadBalancerAccumulatedStatsRequest, v1.LoadBalancerAccumulatedStatsResponse](
 			httpClient,
 			baseURL+LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure,
 			opts...,
@@ -698,18 +698,18 @@ func NewLoadBalancerStatsServiceClient(httpClient connect_go.HTTPClient, baseURL
 
 // loadBalancerStatsServiceClient implements LoadBalancerStatsServiceClient.
 type loadBalancerStatsServiceClient struct {
-	getClientStats            *connect_go.Client[v1.LoadBalancerStatsRequest, v1.LoadBalancerStatsResponse]
-	getClientAccumulatedStats *connect_go.Client[v1.LoadBalancerAccumulatedStatsRequest, v1.LoadBalancerAccumulatedStatsResponse]
+	getClientStats            *connect.Client[v1.LoadBalancerStatsRequest, v1.LoadBalancerStatsResponse]
+	getClientAccumulatedStats *connect.Client[v1.LoadBalancerAccumulatedStatsRequest, v1.LoadBalancerAccumulatedStatsResponse]
 }
 
 // GetClientStats calls connectrpc.conformance.v1.LoadBalancerStatsService.GetClientStats.
-func (c *loadBalancerStatsServiceClient) GetClientStats(ctx context.Context, req *connect_go.Request[v1.LoadBalancerStatsRequest]) (*connect_go.Response[v1.LoadBalancerStatsResponse], error) {
+func (c *loadBalancerStatsServiceClient) GetClientStats(ctx context.Context, req *connect.Request[v1.LoadBalancerStatsRequest]) (*connect.Response[v1.LoadBalancerStatsResponse], error) {
 	return c.getClientStats.CallUnary(ctx, req)
 }
 
 // GetClientAccumulatedStats calls
 // connectrpc.conformance.v1.LoadBalancerStatsService.GetClientAccumulatedStats.
-func (c *loadBalancerStatsServiceClient) GetClientAccumulatedStats(ctx context.Context, req *connect_go.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect_go.Response[v1.LoadBalancerAccumulatedStatsResponse], error) {
+func (c *loadBalancerStatsServiceClient) GetClientAccumulatedStats(ctx context.Context, req *connect.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect.Response[v1.LoadBalancerAccumulatedStatsResponse], error) {
 	return c.getClientAccumulatedStats.CallUnary(ctx, req)
 }
 
@@ -717,9 +717,9 @@ func (c *loadBalancerStatsServiceClient) GetClientAccumulatedStats(ctx context.C
 // connectrpc.conformance.v1.LoadBalancerStatsService service.
 type LoadBalancerStatsServiceHandler interface {
 	// Gets the backend distribution for RPCs sent by a test client.
-	GetClientStats(context.Context, *connect_go.Request[v1.LoadBalancerStatsRequest]) (*connect_go.Response[v1.LoadBalancerStatsResponse], error)
+	GetClientStats(context.Context, *connect.Request[v1.LoadBalancerStatsRequest]) (*connect.Response[v1.LoadBalancerStatsResponse], error)
 	// Gets the accumulated stats for RPCs sent by a test client.
-	GetClientAccumulatedStats(context.Context, *connect_go.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect_go.Response[v1.LoadBalancerAccumulatedStatsResponse], error)
+	GetClientAccumulatedStats(context.Context, *connect.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect.Response[v1.LoadBalancerAccumulatedStatsResponse], error)
 }
 
 // NewLoadBalancerStatsServiceHandler builds an HTTP handler from the service implementation. It
@@ -727,13 +727,13 @@ type LoadBalancerStatsServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	loadBalancerStatsServiceGetClientStatsHandler := connect_go.NewUnaryHandler(
+func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	loadBalancerStatsServiceGetClientStatsHandler := connect.NewUnaryHandler(
 		LoadBalancerStatsServiceGetClientStatsProcedure,
 		svc.GetClientStats,
 		opts...,
 	)
-	loadBalancerStatsServiceGetClientAccumulatedStatsHandler := connect_go.NewUnaryHandler(
+	loadBalancerStatsServiceGetClientAccumulatedStatsHandler := connect.NewUnaryHandler(
 		LoadBalancerStatsServiceGetClientAccumulatedStatsProcedure,
 		svc.GetClientAccumulatedStats,
 		opts...,
@@ -753,19 +753,19 @@ func NewLoadBalancerStatsServiceHandler(svc LoadBalancerStatsServiceHandler, opt
 // UnimplementedLoadBalancerStatsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedLoadBalancerStatsServiceHandler struct{}
 
-func (UnimplementedLoadBalancerStatsServiceHandler) GetClientStats(context.Context, *connect_go.Request[v1.LoadBalancerStatsRequest]) (*connect_go.Response[v1.LoadBalancerStatsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.LoadBalancerStatsService.GetClientStats is not implemented"))
+func (UnimplementedLoadBalancerStatsServiceHandler) GetClientStats(context.Context, *connect.Request[v1.LoadBalancerStatsRequest]) (*connect.Response[v1.LoadBalancerStatsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.LoadBalancerStatsService.GetClientStats is not implemented"))
 }
 
-func (UnimplementedLoadBalancerStatsServiceHandler) GetClientAccumulatedStats(context.Context, *connect_go.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect_go.Response[v1.LoadBalancerAccumulatedStatsResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.LoadBalancerStatsService.GetClientAccumulatedStats is not implemented"))
+func (UnimplementedLoadBalancerStatsServiceHandler) GetClientAccumulatedStats(context.Context, *connect.Request[v1.LoadBalancerAccumulatedStatsRequest]) (*connect.Response[v1.LoadBalancerAccumulatedStatsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.LoadBalancerStatsService.GetClientAccumulatedStats is not implemented"))
 }
 
 // XdsUpdateHealthServiceClient is a client for the connectrpc.conformance.v1.XdsUpdateHealthService
 // service.
 type XdsUpdateHealthServiceClient interface {
-	SetServing(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
-	SetNotServing(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	SetServing(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
+	SetNotServing(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewXdsUpdateHealthServiceClient constructs a client for the
@@ -776,15 +776,15 @@ type XdsUpdateHealthServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewXdsUpdateHealthServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) XdsUpdateHealthServiceClient {
+func NewXdsUpdateHealthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) XdsUpdateHealthServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &xdsUpdateHealthServiceClient{
-		setServing: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		setServing: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+XdsUpdateHealthServiceSetServingProcedure,
 			opts...,
 		),
-		setNotServing: connect_go.NewClient[emptypb.Empty, emptypb.Empty](
+		setNotServing: connect.NewClient[emptypb.Empty, emptypb.Empty](
 			httpClient,
 			baseURL+XdsUpdateHealthServiceSetNotServingProcedure,
 			opts...,
@@ -794,25 +794,25 @@ func NewXdsUpdateHealthServiceClient(httpClient connect_go.HTTPClient, baseURL s
 
 // xdsUpdateHealthServiceClient implements XdsUpdateHealthServiceClient.
 type xdsUpdateHealthServiceClient struct {
-	setServing    *connect_go.Client[emptypb.Empty, emptypb.Empty]
-	setNotServing *connect_go.Client[emptypb.Empty, emptypb.Empty]
+	setServing    *connect.Client[emptypb.Empty, emptypb.Empty]
+	setNotServing *connect.Client[emptypb.Empty, emptypb.Empty]
 }
 
 // SetServing calls connectrpc.conformance.v1.XdsUpdateHealthService.SetServing.
-func (c *xdsUpdateHealthServiceClient) SetServing(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *xdsUpdateHealthServiceClient) SetServing(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.setServing.CallUnary(ctx, req)
 }
 
 // SetNotServing calls connectrpc.conformance.v1.XdsUpdateHealthService.SetNotServing.
-func (c *xdsUpdateHealthServiceClient) SetNotServing(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *xdsUpdateHealthServiceClient) SetNotServing(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return c.setNotServing.CallUnary(ctx, req)
 }
 
 // XdsUpdateHealthServiceHandler is an implementation of the
 // connectrpc.conformance.v1.XdsUpdateHealthService service.
 type XdsUpdateHealthServiceHandler interface {
-	SetServing(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
-	SetNotServing(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error)
+	SetServing(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
+	SetNotServing(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewXdsUpdateHealthServiceHandler builds an HTTP handler from the service implementation. It
@@ -820,13 +820,13 @@ type XdsUpdateHealthServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	xdsUpdateHealthServiceSetServingHandler := connect_go.NewUnaryHandler(
+func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	xdsUpdateHealthServiceSetServingHandler := connect.NewUnaryHandler(
 		XdsUpdateHealthServiceSetServingProcedure,
 		svc.SetServing,
 		opts...,
 	)
-	xdsUpdateHealthServiceSetNotServingHandler := connect_go.NewUnaryHandler(
+	xdsUpdateHealthServiceSetNotServingHandler := connect.NewUnaryHandler(
 		XdsUpdateHealthServiceSetNotServingProcedure,
 		svc.SetNotServing,
 		opts...,
@@ -846,19 +846,19 @@ func NewXdsUpdateHealthServiceHandler(svc XdsUpdateHealthServiceHandler, opts ..
 // UnimplementedXdsUpdateHealthServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedXdsUpdateHealthServiceHandler struct{}
 
-func (UnimplementedXdsUpdateHealthServiceHandler) SetServing(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.XdsUpdateHealthService.SetServing is not implemented"))
+func (UnimplementedXdsUpdateHealthServiceHandler) SetServing(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.XdsUpdateHealthService.SetServing is not implemented"))
 }
 
-func (UnimplementedXdsUpdateHealthServiceHandler) SetNotServing(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.XdsUpdateHealthService.SetNotServing is not implemented"))
+func (UnimplementedXdsUpdateHealthServiceHandler) SetNotServing(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.XdsUpdateHealthService.SetNotServing is not implemented"))
 }
 
 // XdsUpdateClientConfigureServiceClient is a client for the
 // connectrpc.conformance.v1.XdsUpdateClientConfigureService service.
 type XdsUpdateClientConfigureServiceClient interface {
 	// Update the tes client's configuration.
-	Configure(context.Context, *connect_go.Request[v1.ClientConfigureRequest]) (*connect_go.Response[v1.ClientConfigureResponse], error)
+	Configure(context.Context, *connect.Request[v1.ClientConfigureRequest]) (*connect.Response[v1.ClientConfigureResponse], error)
 }
 
 // NewXdsUpdateClientConfigureServiceClient constructs a client for the
@@ -869,10 +869,10 @@ type XdsUpdateClientConfigureServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewXdsUpdateClientConfigureServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) XdsUpdateClientConfigureServiceClient {
+func NewXdsUpdateClientConfigureServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) XdsUpdateClientConfigureServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &xdsUpdateClientConfigureServiceClient{
-		configure: connect_go.NewClient[v1.ClientConfigureRequest, v1.ClientConfigureResponse](
+		configure: connect.NewClient[v1.ClientConfigureRequest, v1.ClientConfigureResponse](
 			httpClient,
 			baseURL+XdsUpdateClientConfigureServiceConfigureProcedure,
 			opts...,
@@ -882,11 +882,11 @@ func NewXdsUpdateClientConfigureServiceClient(httpClient connect_go.HTTPClient, 
 
 // xdsUpdateClientConfigureServiceClient implements XdsUpdateClientConfigureServiceClient.
 type xdsUpdateClientConfigureServiceClient struct {
-	configure *connect_go.Client[v1.ClientConfigureRequest, v1.ClientConfigureResponse]
+	configure *connect.Client[v1.ClientConfigureRequest, v1.ClientConfigureResponse]
 }
 
 // Configure calls connectrpc.conformance.v1.XdsUpdateClientConfigureService.Configure.
-func (c *xdsUpdateClientConfigureServiceClient) Configure(ctx context.Context, req *connect_go.Request[v1.ClientConfigureRequest]) (*connect_go.Response[v1.ClientConfigureResponse], error) {
+func (c *xdsUpdateClientConfigureServiceClient) Configure(ctx context.Context, req *connect.Request[v1.ClientConfigureRequest]) (*connect.Response[v1.ClientConfigureResponse], error) {
 	return c.configure.CallUnary(ctx, req)
 }
 
@@ -894,7 +894,7 @@ func (c *xdsUpdateClientConfigureServiceClient) Configure(ctx context.Context, r
 // connectrpc.conformance.v1.XdsUpdateClientConfigureService service.
 type XdsUpdateClientConfigureServiceHandler interface {
 	// Update the tes client's configuration.
-	Configure(context.Context, *connect_go.Request[v1.ClientConfigureRequest]) (*connect_go.Response[v1.ClientConfigureResponse], error)
+	Configure(context.Context, *connect.Request[v1.ClientConfigureRequest]) (*connect.Response[v1.ClientConfigureResponse], error)
 }
 
 // NewXdsUpdateClientConfigureServiceHandler builds an HTTP handler from the service implementation.
@@ -902,8 +902,8 @@ type XdsUpdateClientConfigureServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	xdsUpdateClientConfigureServiceConfigureHandler := connect_go.NewUnaryHandler(
+func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	xdsUpdateClientConfigureServiceConfigureHandler := connect.NewUnaryHandler(
 		XdsUpdateClientConfigureServiceConfigureProcedure,
 		svc.Configure,
 		opts...,
@@ -921,6 +921,6 @@ func NewXdsUpdateClientConfigureServiceHandler(svc XdsUpdateClientConfigureServi
 // UnimplementedXdsUpdateClientConfigureServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedXdsUpdateClientConfigureServiceHandler struct{}
 
-func (UnimplementedXdsUpdateClientConfigureServiceHandler) Configure(context.Context, *connect_go.Request[v1.ClientConfigureRequest]) (*connect_go.Response[v1.ClientConfigureResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1.XdsUpdateClientConfigureService.Configure is not implemented"))
+func (UnimplementedXdsUpdateClientConfigureServiceHandler) Configure(context.Context, *connect.Request[v1.ClientConfigureRequest]) (*connect.Response[v1.ClientConfigureResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.XdsUpdateClientConfigureService.Configure is not implemented"))
 }

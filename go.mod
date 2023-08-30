@@ -1,6 +1,6 @@
 module github.com/connectrpc/conformance
 
-go 1.18
+go 1.20
 
 require (
 	connectrpc.com/connect v1.11.1 // indirect

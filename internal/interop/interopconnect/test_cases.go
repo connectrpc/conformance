@@ -23,7 +23,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/connect"
 	"github.com/connectrpc/conformance/internal/conformancetesting"
 	conformanceconnect "github.com/connectrpc/conformance/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
 	conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
