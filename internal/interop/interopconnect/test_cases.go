@@ -296,6 +296,8 @@ func validateMetadata(
 	t crosstesting.TB,
 	header http.Header,
 	trailer http.Header,
+	wireTrailer http.Header,
+	usesTrailers bool,
 	expectedStringHeaders map[string][]string,
 	expectedBinaryHeaders map[string][][]byte,
 ) {
@@ -340,10 +342,26 @@ func validateMetadata(
 			assert.True(t, ok)
 		}
 	}
+	// trailer should be a super-set of wireTrailer
+	for key, wireValues := range wireTrailer {
+		values := trailer.Values(key)
+		for _, wireValue := range wireValues {
+			assert.Contains(t, values, wireValue)
+		}
+	}
+	// if usesTrailers is false, then wireTrailer should contain NONE of the expected trailer metadata
+	for key := range expectedBinaryHeaders {
+		wireValues := wireTrailer.Values(key)
+		if usesTrailers {
+			assert.NotEmpty(t, wireValues, key)
+		} else {
+			assert.Empty(t, wireTrailer, key)
+		}
+	}
 }
 
 // DoCustomMetadataUnary checks that metadata is echoed back to the client with unary call.
-func DoCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataUnaryTest(
 		t,
 		client,
@@ -353,11 +371,12 @@ func DoCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServ
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue)},
 		},
+		usesTrailers,
 	)
 	t.Successf("successful custom metadata unary")
 }
 
-func DoCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataServerStreamingTest(
 		t,
 		client,
@@ -367,12 +386,13 @@ func DoCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnec
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue)},
 		},
+		usesTrailers,
 	)
 	t.Successf("successful custom metadata server streaming")
 }
 
 // DoCustomMetadataFullDuplex checks that metadata is echoed back to the client with full duplex call.
-func DoCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataFullDuplexTest(
 		t,
 		client,
@@ -382,13 +402,14 @@ func DoCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.Tes
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue)},
 		},
+		usesTrailers,
 	)
 	t.Successf("successful custom metadata full duplex")
 }
 
 // DoDuplicatedCustomMetadataUnary adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client with unary call.
-func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataUnaryTest(
 		t,
 		client,
@@ -398,11 +419,12 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client conformanceconnec
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
 		},
+		usesTrailers,
 	)
 	t.Successf("successful duplicated custom metadata unary")
 }
 
-func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataServerStreamingTest(
 		t,
 		client,
@@ -412,13 +434,14 @@ func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client conform
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
 		},
+		usesTrailers,
 	)
 	t.Successf("successful duplicated custom metadata server streaming")
 }
 
 // DoDuplicatedCustomMetadataFullDuplex adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client with full duplex call.
-func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataFullDuplexTest(
 		t,
 		client,
@@ -428,6 +451,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client conformancec
 		map[string][][]byte{
 			trailingMetadataKey: {[]byte(trailingMetadataValue), []byte(trailingMetadataValue + "\x0a")},
 		},
+		usesTrailers,
 	)
 	t.Successf("successful duplicated custom metadata full duplex")
 }
@@ -437,6 +461,7 @@ func customMetadataUnaryTest(
 	client conformanceconnect.TestServiceClient,
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
+	usesTrailers bool,
 ) {
 	// Testing with UnaryCall.
 	payload, err := clientNewPayload(t, 1)
@@ -446,7 +471,7 @@ func customMetadataUnaryTest(
 		ResponseSize: int32(1),
 		Payload:      payload,
 	}
-	ctx := context.Background()
+	ctx, wireTrailers := CaptureTrailers(context.Background())
 	connectReq := connect.NewRequest(req)
 	for key, values := range customMetadataString {
 		for _, value := range values {
@@ -465,7 +490,7 @@ func customMetadataUnaryTest(
 	require.NoError(t, err)
 	assert.Equal(t, reply.Msg.GetPayload().GetType(), conformance.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.Msg.GetPayload().GetBody()), 1)
-	validateMetadata(t, reply.Header(), reply.Trailer(), customMetadataString, customMetadataBinary)
+	validateMetadata(t, reply.Header(), reply.Trailer(), wireTrailers.Get(), usesTrailers, customMetadataString, customMetadataBinary)
 }
 
 func customMetadataServerStreamingTest(
@@ -473,6 +498,7 @@ func customMetadataServerStreamingTest(
 	client conformanceconnect.TestServiceClient,
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
+	usesTrailers bool,
 ) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
@@ -496,13 +522,14 @@ func customMetadataServerStreamingTest(
 			req.Header().Add(key, connect.EncodeBinaryHeader(value))
 		}
 	}
-	stream, err := client.StreamingOutputCall(context.Background(), req)
+	ctx, wireTrailers := CaptureTrailers(context.Background())
+	stream, err := client.StreamingOutputCall(ctx, req)
 	require.NoError(t, err)
 	for stream.Receive() {
 		require.NoError(t, stream.Err())
 	}
 	assert.NoError(t, stream.Close())
-	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
+	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), wireTrailers.Get(), usesTrailers, customMetadataString, customMetadataBinary)
 }
 
 func customMetadataFullDuplexTest(
@@ -510,10 +537,11 @@ func customMetadataFullDuplexTest(
 	client conformanceconnect.TestServiceClient,
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
+	usesTrailers bool,
 ) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
-	ctx := context.Background()
+	ctx, wireTrailers := CaptureTrailers(context.Background())
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
 	respParam := []*conformance.ResponseParameters{
@@ -543,7 +571,7 @@ func customMetadataFullDuplexTest(
 	_, err = stream.Receive()
 	assert.True(t, errors.Is(err, io.EOF))
 	require.NoError(t, stream.CloseResponse())
-	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), customMetadataString, customMetadataBinary)
+	validateMetadata(t, stream.ResponseHeader(), stream.ResponseTrailer(), wireTrailers.Get(), usesTrailers, customMetadataString, customMetadataBinary)
 }
 
 // DoStatusCodeAndMessageUnary checks that the status code is propagated back to the client with unary call.
