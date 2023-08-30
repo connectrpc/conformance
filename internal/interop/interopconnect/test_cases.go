@@ -23,11 +23,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
-	conformanceconnect "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
-	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
+	"github.com/connectrpc/conformance/internal/conformance"
+	conformanceconnect "github.com/connectrpc/conformance/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
+	conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"github.com/connectrpc/conformance/internal/interop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
@@ -56,7 +56,7 @@ var (
 )
 
 // clientNewPayload returns a payload of the given size.
-func clientNewPayload(t crosstesting.TB, size int) (*conformance.Payload, error) {
+func clientNewPayload(t conformance.TB, size int) (*conformance.Payload, error) {
 	t.Helper()
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
@@ -69,7 +69,7 @@ func clientNewPayload(t crosstesting.TB, size int) (*conformance.Payload, error)
 }
 
 // DoEmptyUnaryCall performs a unary RPC with empty request and response messages.
-func DoEmptyUnaryCall(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoEmptyUnaryCall(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	reply, err := client.EmptyCall(
 		context.Background(),
 		connect.NewRequest(&emptypb.Empty{}),
@@ -80,7 +80,7 @@ func DoEmptyUnaryCall(t crosstesting.TB, client conformanceconnect.TestServiceCl
 }
 
 // DoCacheableUnaryCall performs an idempotent unary RPC with empty request and response messages.
-func DoCacheableUnaryCall(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoCacheableUnaryCall(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	req := &conformance.SimpleRequest{
@@ -104,7 +104,7 @@ func DoCacheableUnaryCall(t crosstesting.TB, client conformanceconnect.TestServi
 }
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
-func DoLargeUnaryCall(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoLargeUnaryCall(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	pl, err := clientNewPayload(t, largeReqSize)
 	require.NoError(t, err)
 	req := &conformance.SimpleRequest{
@@ -120,7 +120,7 @@ func DoLargeUnaryCall(t crosstesting.TB, client conformanceconnect.TestServiceCl
 }
 
 // DoClientStreaming performs a client streaming RPC.
-func DoClientStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoClientStreaming(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	stream := client.StreamingInputCall(context.Background())
 	var sum int
 	for _, size := range reqSizes {
@@ -139,7 +139,7 @@ func DoClientStreaming(t crosstesting.TB, client conformanceconnect.TestServiceC
 }
 
 // DoServerStreaming performs a server streaming RPC.
-func DoServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoServerStreaming(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	respParam := make([]*conformance.ResponseParameters, len(respSizes))
 	for i, s := range respSizes {
 		respParam[i] = &conformance.ResponseParameters{
@@ -168,7 +168,7 @@ func DoServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceC
 }
 
 // DoPingPong performs ping-pong style bi-directional streaming RPC.
-func DoPingPong(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoPingPong(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	stream := client.FullDuplexCall(context.Background())
 	assert.NotNil(t, stream)
 	var index int
@@ -200,7 +200,7 @@ func DoPingPong(t crosstesting.TB, client conformanceconnect.TestServiceClient) 
 }
 
 // DoEmptyStream sets up a bi-directional streaming with zero message.
-func DoEmptyStream(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoEmptyStream(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	stream := client.FullDuplexCall(context.Background())
 	assert.NotNil(t, stream)
 	require.NoError(t, stream.CloseRequest())
@@ -212,7 +212,7 @@ func DoEmptyStream(t crosstesting.TB, client conformanceconnect.TestServiceClien
 }
 
 // DoTimeoutOnSleepingServer performs an RPC on a sleep server which causes RPC timeout.
-func DoTimeoutOnSleepingServer(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoTimeoutOnSleepingServer(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	stream := client.FullDuplexCall(ctx)
@@ -248,7 +248,7 @@ var testMetadata = metadata.MD{ //nolint:gochecknoglobals // We do want to make 
 }
 
 // DoCancelAfterBegin cancels the RPC after metadata has been sent but before payloads are sent.
-func DoCancelAfterBegin(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoCancelAfterBegin(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	// TODO(doria): don't use grpc metadata library here...?
 	ctx, cancel := context.WithCancel(metadata.NewOutgoingContext(context.Background(), testMetadata))
 	stream := client.StreamingInputCall(ctx)
@@ -260,7 +260,7 @@ func DoCancelAfterBegin(t crosstesting.TB, client conformanceconnect.TestService
 }
 
 // DoCancelAfterFirstResponse cancels the RPC after receiving the first message from the server.
-func DoCancelAfterFirstResponse(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoCancelAfterFirstResponse(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	ctx, cancel := context.WithCancel(context.Background())
 	stream := client.FullDuplexCall(ctx)
 	assert.NotNil(t, stream)
@@ -293,7 +293,7 @@ const (
 )
 
 func validateMetadata(
-	t crosstesting.TB,
+	t conformance.TB,
 	header http.Header,
 	trailer http.Header,
 	wireTrailer http.Header,
@@ -361,7 +361,7 @@ func validateMetadata(
 }
 
 // DoCustomMetadataUnary checks that metadata is echoed back to the client with unary call.
-func DoCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
+func DoCustomMetadataUnary(t conformance.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataUnaryTest(
 		t,
 		client,
@@ -376,7 +376,7 @@ func DoCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServ
 	t.Successf("successful custom metadata unary")
 }
 
-func DoCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
+func DoCustomMetadataServerStreaming(t conformance.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataServerStreamingTest(
 		t,
 		client,
@@ -392,7 +392,7 @@ func DoCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnec
 }
 
 // DoCustomMetadataFullDuplex checks that metadata is echoed back to the client with full duplex call.
-func DoCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
+func DoCustomMetadataFullDuplex(t conformance.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataFullDuplexTest(
 		t,
 		client,
@@ -409,7 +409,7 @@ func DoCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.Tes
 
 // DoDuplicatedCustomMetadataUnary adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client with unary call.
-func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
+func DoDuplicatedCustomMetadataUnary(t conformance.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataUnaryTest(
 		t,
 		client,
@@ -424,7 +424,7 @@ func DoDuplicatedCustomMetadataUnary(t crosstesting.TB, client conformanceconnec
 	t.Successf("successful duplicated custom metadata unary")
 }
 
-func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
+func DoDuplicatedCustomMetadataServerStreaming(t conformance.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataServerStreamingTest(
 		t,
 		client,
@@ -441,7 +441,7 @@ func DoDuplicatedCustomMetadataServerStreaming(t crosstesting.TB, client conform
 
 // DoDuplicatedCustomMetadataFullDuplex adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client with full duplex call.
-func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
+func DoDuplicatedCustomMetadataFullDuplex(t conformance.TB, client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	customMetadataFullDuplexTest(
 		t,
 		client,
@@ -457,7 +457,7 @@ func DoDuplicatedCustomMetadataFullDuplex(t crosstesting.TB, client conformancec
 }
 
 func customMetadataUnaryTest(
-	t crosstesting.TB,
+	t conformance.TB,
 	client conformanceconnect.TestServiceClient,
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
@@ -494,7 +494,7 @@ func customMetadataUnaryTest(
 }
 
 func customMetadataServerStreamingTest(
-	t crosstesting.TB,
+	t conformance.TB,
 	client conformanceconnect.TestServiceClient,
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
@@ -533,7 +533,7 @@ func customMetadataServerStreamingTest(
 }
 
 func customMetadataFullDuplexTest(
-	t crosstesting.TB,
+	t conformance.TB,
 	client conformanceconnect.TestServiceClient,
 	customMetadataString map[string][]string,
 	customMetadataBinary map[string][][]byte,
@@ -575,7 +575,7 @@ func customMetadataFullDuplexTest(
 }
 
 // DoStatusCodeAndMessageUnary checks that the status code is propagated back to the client with unary call.
-func DoStatusCodeAndMessageUnary(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoStatusCodeAndMessageUnary(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	code := int32(connect.CodeUnknown)
 	msg := "test status message"
 	expectedErr := connect.NewError(
@@ -598,7 +598,7 @@ func DoStatusCodeAndMessageUnary(t crosstesting.TB, client conformanceconnect.Te
 }
 
 // DoStatusCodeAndMessageFullDuplex checks that the status code is propagated back to the client with full duplex call.
-func DoStatusCodeAndMessageFullDuplex(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoStatusCodeAndMessageFullDuplex(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	code := int32(connect.CodeUnknown)
 	msg := "test status message"
 	expectedErr := connect.NewError(
@@ -626,7 +626,7 @@ func DoStatusCodeAndMessageFullDuplex(t crosstesting.TB, client conformanceconne
 
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
 // in status message.
-func DoSpecialStatusMessage(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoSpecialStatusMessage(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	code := int32(connect.CodeUnknown)
 	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
 	expectedErr := connect.NewError(connect.CodeUnknown, errors.New(msg)) //nolint:stylecheck // we do want to test the behaviour for error string that end with a newline
@@ -646,14 +646,14 @@ func DoSpecialStatusMessage(t crosstesting.TB, client conformanceconnect.TestSer
 }
 
 // DoUnimplementedMethod attempts to call an unimplemented method.
-func DoUnimplementedMethod(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoUnimplementedMethod(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
 	t.Successf("successful unimplemented method")
 }
 
 // DoUnimplementedServerStreamingMethod performs a server streaming RPC that is unimplemented.
-func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoUnimplementedServerStreamingMethod(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	require.NoError(t, err)
 	stream.Receive()
@@ -665,14 +665,14 @@ func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client conformancec
 }
 
 // DoUnimplementedService attempts to call a method from an unimplemented service.
-func DoUnimplementedService(t crosstesting.TB, client conformanceconnect.UnimplementedServiceClient) {
+func DoUnimplementedService(t conformance.TB, client conformanceconnect.UnimplementedServiceClient) {
 	_, err := client.UnimplementedCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	assert.Equal(t, connect.CodeOf(err), connect.CodeUnimplemented)
 	t.Successf("successful unimplemented service")
 }
 
 // DoUnimplementedServerStreamingService performs a server streaming RPC from an unimplemented service.
-func DoUnimplementedServerStreamingService(t crosstesting.TB, client conformanceconnect.UnimplementedServiceClient) {
+func DoUnimplementedServerStreamingService(t conformance.TB, client conformanceconnect.UnimplementedServiceClient) {
 	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), connect.NewRequest(&emptypb.Empty{}))
 	require.NoError(t, err)
 	stream.Receive()
@@ -684,7 +684,7 @@ func DoUnimplementedServerStreamingService(t crosstesting.TB, client conformance
 }
 
 // DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.
-func DoFailWithNonASCIIError(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoFailWithNonASCIIError(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	reply, err := client.FailUnaryCall(
 		context.Background(),
 		connect.NewRequest(
@@ -707,7 +707,7 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client conformanceconnect.TestSe
 }
 
 // DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
-func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoFailServerStreamingWithNonASCIIError(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	req := &conformance.StreamingOutputCallRequest{
 		ResponseType: conformance.PayloadType_COMPRESSABLE,
 	}
@@ -728,7 +728,7 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client conformanc
 	t.Successf("successful fail server streaming with non-ASCII error")
 }
 
-func DoFailServerStreamingAfterResponse(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoFailServerStreamingAfterResponse(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	respParam := make([]*conformance.ResponseParameters, len(respSizes))
 	for i, s := range respSizes {
 		respParam[i] = &conformance.ResponseParameters{
@@ -762,7 +762,7 @@ func DoFailServerStreamingAfterResponse(t crosstesting.TB, client conformancecon
 }
 
 // DoUnresolvableHost attempts to call a method to an unresolvable host.
-func DoUnresolvableHost(t crosstesting.TB, client conformanceconnect.TestServiceClient) {
+func DoUnresolvableHost(t conformance.TB, client conformanceconnect.TestServiceClient) {
 	reply, err := client.EmptyCall(
 		context.Background(),
 		connect.NewRequest(&emptypb.Empty{}),

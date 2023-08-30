@@ -1,9 +1,8 @@
-module github.com/bufbuild/connect-crosstest
+module github.com/connectrpc/conformance
 
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v1.10.0
 	github.com/quic-go/quic-go v0.37.4
 	github.com/rs/cors v1.9.0
 	github.com/spf13/cobra v1.7.0
@@ -14,6 +13,7 @@ require (
 )
 
 require (
+	connectrpc.com/connect v1.11.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/golang/mock v1.6.0 // indirect

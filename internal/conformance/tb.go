@@ -12,24 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package crosstesting
+package conformance
 
 import "testing"
 
-// TB is a testing interface that connect-crosstest depends on. It is trimmed down
-// from the standard library testing.TB interface and adds a Successf method.
-type TB interface {
-	Helper()
-	Errorf(string, ...any)
-	Fatalf(string, ...any)
-	Successf(string, ...any)
-	FailNow()
+type tb struct {
+	t *testing.T
 }
 
-// NewTB returns a new TB.
-func NewTB(t *testing.T) TB {
-	t.Helper()
-	return &tb{
-		t: t,
+func (t *tb) Helper() {
+	t.t.Helper()
+}
+
+func (t *tb) Errorf(format string, args ...any) {
+	t.t.Errorf(format, args...)
+}
+
+func (t *tb) Fatalf(format string, args ...any) {
+	t.t.Fatalf(format, args...)
+}
+
+func (t *tb) Successf(format string, args ...any) {
+	// Only log a success message if no instances of `t.Errorf` was ever called.
+	if t.t.Failed() {
+		t.FailNow()
 	}
+	t.t.Logf(format, args...)
+}
+
+func (t *tb) FailNow() {
+	t.t.FailNow()
 }

@@ -20,11 +20,11 @@ import {
   decodeBinaryHeader,
   encodeBinaryHeader,
   Transport,
-} from "@bufbuild/connect";
+} from "@connectrpc/connect";
 import {
   createConnectTransport,
   createGrpcWebTransport,
-} from "@bufbuild/connect-web";
+} from "@connectrpc/connect-web";
 import { Empty } from "@bufbuild/protobuf";
 import {
   ErrorDetail,
@@ -360,7 +360,7 @@ describe("connect_web_callback_client", function () {
   it("fail_unary", function (done) {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
-      domain: "connect-crosstest",
+      domain: "connect-conformance",
     });
     client.failUnaryCall({}, (err: ConnectError | undefined) => {
       expect(err).toBeInstanceOf(ConnectError);
@@ -375,7 +375,7 @@ describe("connect_web_callback_client", function () {
   it("fail_server_streaming", function (done) {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
-      domain: "connect-crosstest",
+      domain: "connect-conformance",
     });
     client.failStreamingOutputCall(
       {},
@@ -401,7 +401,7 @@ describe("connect_web_callback_client", function () {
   it("fail_server_streaming_after_response", function (done) {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
-      domain: "connect-crosstest",
+      domain: "connect-conformance",
     });
     const sizes = [31415, 9, 2653, 58979];
     const responseParams = sizes.map((size, index) => {

@@ -1,11 +1,11 @@
-# connect-crosstest
+# connect-conformance
 
-[![License](https://img.shields.io/github/license/bufbuild/connect-crosstest?color=blue)][license]
-[![CI](https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
-[![crosstest-go](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-go.yaml/badge.svg?branch=main)][github-action-go]
-[![crosstest-web](https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-web.yaml/badge.svg?branch=main)][github-action-web]
+[![License](https://img.shields.io/github/license/connectrpc/conformance?color=blue)][license]
+[![CI](https://github.com/connectrpc/conformance/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
+[![conformance-go](https://github.com/connectrpc/conformance/actions/workflows/conformance-go.yaml/badge.svg?branch=main)][github-action-go]
+[![conformance-web](https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml/badge.svg?branch=main)][github-action-web]
 
-`connect-crosstest` runs a suite of cross-compatibility tests using every combination of the
+`connect-conformance` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
 
 ### Servers
@@ -17,10 +17,10 @@ following clients and servers:
 
 - [connect-go][connect-go] (connect protocol, gRPC protocol and gRPC-web protocol)
 - [grpc-go][grpc-go]
-- [connect-web][connect-web] (connect protocol and gRPC-web protocol)
+- [connect-es][connect-es] (connect protocol and gRPC-web protocol)
 - [grpc-web][grpc-web]
 
-The test suite is run daily against the latest commits of [connect-go][connect-go], [connect-web][connect-web] 
+The test suite is run daily against the latest commits of [connect-go][connect-go], [connect-es][connect-es]
 and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
 
 For more on Connect, see the [announcement blog post][blog], the documentation
@@ -33,7 +33,7 @@ The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-int
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
 a range of expected behaviours and functionality for gRPC and Connect.
 
-| Test Case                                | `connect-go`, `grpc-go` | `connect-web`, `grpc-web` |
+| Test Case                                | `connect-go`, `grpc-go` | `connect-es`, `grpc-web` |
 |------------------------------------------|-------------------------|---------------------------|
 | `empty_unary`                            | ✓                       | ✓                         |
 | `cacheable_unary`                        | ✓                       | ✓                         |
@@ -132,8 +132,8 @@ and a non-ASCII message with error details.
 RPC: `FailStreamingOutputCall`
 
 Client calls `FailStreamingOutputCall`, and asks for four response messages. The server
-responds with the messages, the status `RESOURCE_EXHAUSTED` and a non-ASCII message, and 
-error details. The client verifies that four response messages and the error status with 
+responds with the messages, the status `RESOURCE_EXHAUSTED` and a non-ASCII message, and
+error details. The client verifies that four response messages and the error status with
 code, message, and details was received.
 
 #### cancel_after_begin
@@ -166,7 +166,7 @@ and expects the same metadata to be attached to the response. Client calls `Stre
 with a request with a custom header and custom binary trailer and expects the same metadata
 to be attached to the response when stream is closed. Client calls `FullDuplexCall`
 with a request with a custom header and custom binary trailer and expects the same metadata
-to be attached to the response when stream is closed. The `web` flows only test the unary and 
+to be attached to the response when stream is closed. The `web` flows only test the unary and
 server streaming RPC.
 
 #### duplicated_custom_metadata
@@ -230,8 +230,8 @@ Client calls an unresolvable host and expects an error with the status `UNAVAILA
 
 ### Github Actions
 
-There are Github Actions workflows for [go][github-action-go] and [web][github-action-web] configured for running the daily crosstest against 
-the latest commits of [connect-go][connect-go], [connect-web][connect-web] and [protobuf-es][protobuf-es].
+There are Github Actions workflows for [go][github-action-go] and [web][github-action-web] configured for running the daily conformance suite against
+the latest commits of [connect-go][connect-go], [connect-es][connect-es] and [protobuf-es][protobuf-es].
 
 ### Locally
 
@@ -244,30 +244,30 @@ You can run the tests using `make dockercomposetest`.
 
 ## Support and Versioning
 
-`connect-crosstest` works with:
+`connect-conformance` works with:
 
 * The most recent release of Go.
 
-Unlike Connect's Go implementation, `connect-crosstest` has no exported APIs
+Unlike Connect's Go implementation, `connect-conformance` has no exported APIs
 and makes no backward compatibility guarantees. We'd like to release it as an
 interoperability testing toolkit eventually, but don't have a concrete timeline
 in mind.
 
 [Getting Started]: https://connect.build/go/getting-started
 [blog]: https://buf.build/blog/connect-a-better-grpc
-[ci]: https://github.com/bufbuild/connect-crosstest/actions/workflows/ci.yaml
-[connect-go]: https://github.com/bufbuild/connect-go
-[connect-web]: https://github.com/bufbuild/connect-web
-[demo]: https://github.com/bufbuild/connect-demo
+[ci]: https://github.com/connectrpc/conformance/actions/workflows/ci.yaml
+[connect-go]: https://github.com/connectrpc/connect-go
+[connect-es]: https://github.com/connectrpc/connect-es
+[demo]: https://github.com/connectrpc/examples-go
 [docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
 [docs]: https://connect.build
-[github-action-go]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-go.yaml
-[github-action-web]: https://github.com/bufbuild/connect-crosstest/actions/workflows/crosstest-web.yaml
+[github-action-go]: https://github.com/connectrpc/conformance/actions/workflows/conformance-go.yaml
+[github-action-web]: https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [grpc-go]: https://github.com/grpc/grpc-go
 [grpc-interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
 [grpc-web-interop]: https://github.com/grpc/grpc-web/blob/master/doc/interop-test-descriptions.md
 [grpc-web]: https://github.com/grpc/grpc-web
-[license]: https://github.com/bufbuild/connect-crosstest/blob/main/LICENSE
+[license]: https://github.com/connectrpc/conformance/blob/main/LICENSE
 [protobuf-es]: https://github.com/bufbuild/protobuf-es
-[test.proto]: https://github.com/bufbuild/connect-crosstest/blob/main/internal/proto/grpc/testing/test.proto
+[test.proto]: https://github.com/connectrpc/conformance/blob/main/internal/proto/grpc/testing/test.proto

@@ -17,7 +17,7 @@ import {
   Payload,
   PayloadType,
 } from "../gen/proto/connect-web/connectrpc/conformance/v1/messages_pb.js";
-import { cors as connectCors } from "@bufbuild/connect";
+import { cors as connectCors } from "@connectrpc/connect";
 
 export const interop = {
   /**
@@ -30,7 +30,7 @@ export const interop = {
    */
   errorDetail: new ErrorDetail({
     reason: "soirée 🎉",
-    domain: "connect-crosstest",
+    domain: "connect-conformance",
   }),
 
   leadingMetadataKey: "x-grpc-test-echo-initial",

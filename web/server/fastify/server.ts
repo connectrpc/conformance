@@ -14,7 +14,7 @@
 
 import { readFileSync } from "fs";
 import { fastify, FastifyHttpsOptions } from "fastify";
-import { fastifyConnectPlugin } from "@bufbuild/connect-fastify";
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify";
 import fastifyCors from "@fastify/cors";
 import routes from "../routes.js";
 import { interop } from "../interop.js";

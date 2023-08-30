@@ -2,7 +2,7 @@ version: v1
 managed:
   enabled: true
   go_package_prefix:
-    default: github.com/bufbuild/connect-crosstest/internal/gen/proto/go
+    default: github.com/connectrpc/conformance/internal/gen/proto/go
 plugins:
   - name: go
     out: internal/gen/proto/go
@@ -16,7 +16,7 @@ plugins:
   - plugin: buf.build/bufbuild/es:v1.2.1
     out: web/gen/proto/connect-web
     opt: target=ts
-  - plugin: buf.build/bufbuild/connect-es:v0.10.0
+  - plugin: buf.build/connectrpc/es:v0.13.2
     out: web/gen/proto/connect-web
     opt: target=ts
   - plugin: buf.build/protocolbuffers/js:v3.21.2

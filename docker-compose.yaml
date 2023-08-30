@@ -3,7 +3,7 @@ services:
   server-connect:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --h3port "8082" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
@@ -14,7 +14,7 @@ services:
   server-grpc:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/servergrpc --port "8083" --cert "cert/server-grpc.crt" --key "cert/server-grpc.key"
@@ -23,7 +23,7 @@ services:
   server-connect-node-fastify:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -50,7 +50,7 @@ services:
   client-connect-go-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-h1" --cert "cert/client.crt" --key "cert/client.key"
@@ -59,7 +59,7 @@ services:
   client-connect-go-to-server-connect-go-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-h2" --cert "cert/client.crt" --key "cert/client.key"
@@ -68,7 +68,7 @@ services:
   client-connect-go-to-server-connect-go-h3:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-h3" --cert "cert/client.crt" --key "cert/client.key"
@@ -77,7 +77,7 @@ services:
   client-connect-go-to-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8086' --implementation='connect-h1' --insecure
@@ -87,7 +87,7 @@ services:
   client-connect-go-to-server-connect-node-fastify-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='connect-h2' --insecure
@@ -97,7 +97,7 @@ services:
   client-connect-go-grpc-to-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8086' --implementation='connect-grpc-h1' --insecure
@@ -107,7 +107,7 @@ services:
   client-connect-go-grpc-to-server-connect-node-fastify-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='connect-grpc-h2' --insecure
@@ -117,7 +117,7 @@ services:
   client-connect-go-grpc-web-to-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8086' --implementation='connect-grpc-web-h1' --insecure
@@ -127,7 +127,7 @@ services:
   client-connect-go-grpc-web-to-server-connect-node-fastify-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='connect-grpc-web-h2' --insecure
@@ -137,7 +137,7 @@ services:
   client-grpc-go-to-server-connect-node-fastify:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host='server-connect-node-fastify' --port='8087' --implementation='grpc-go' --insecure
@@ -147,7 +147,7 @@ services:
   client-connect-go-grpc-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-h1" --cert "cert/client.crt" --key "cert/client.key"
@@ -156,7 +156,7 @@ services:
   client-connect-go-grpc-to-server-connect-go-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
@@ -165,7 +165,7 @@ services:
   client-connect-go-grpc-web-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8080" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
@@ -174,7 +174,7 @@ services:
   client-connect-go-grpc-web-to-server-connect-go-h2:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="connect-grpc-web-h2" --cert "cert/client.crt" --key "cert/client.key"
@@ -183,7 +183,7 @@ services:
   client-connect-go-grpc-web-to-server-connect-go-h3:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8082" --implementation="connect-grpc-web-h3" --cert "cert/client.crt" --key "cert/client.key"
@@ -192,7 +192,7 @@ services:
   client-connect-go-grpc-web-to-envoy-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="envoy" --port="9091" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
@@ -201,7 +201,7 @@ services:
   client-connect-go-grpc-web-to-envoy-server-grpc-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="envoy" --port="9092" --implementation="connect-grpc-web-h1" --cert "cert/client.crt" --key "cert/client.key"
@@ -210,7 +210,7 @@ services:
   client-connect-go-grpc-web-to-envoy-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="envoy" --port="9093" --implementation="connect-grpc-web-h1" --insecure
@@ -219,7 +219,7 @@ services:
   client-connect-go-grpc-to-server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="connect-grpc-h2" --cert "cert/client.crt" --key "cert/client.key"
@@ -228,7 +228,7 @@ services:
   client-grpc-go-to-server-connect-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-connect" --port="8081" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
@@ -237,7 +237,7 @@ services:
   client-grpc-go-to-server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestgo
+      dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/client --host="server-grpc" --port="8083" --implementation="grpc-go" --cert "cert/client.crt" --key "cert/client.key"
@@ -246,7 +246,7 @@ services:
   client-connect-web-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -256,7 +256,7 @@ services:
   client-connect-web-grpc-web-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -266,7 +266,7 @@ services:
   client-connect-web-grpc-web-to-envoy-server-connect-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -276,7 +276,7 @@ services:
   client-connect-web-grpc-web-to-envoy-server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -286,7 +286,7 @@ services:
   client-connect-web-grpc-web-to-envoy-server-connect-node-fastify:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -296,7 +296,7 @@ services:
   client-grpc-web-to-server-connect-go-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -306,7 +306,7 @@ services:
   client-grpc-web-to-envoy-server-connect-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -316,7 +316,7 @@ services:
   client-grpc-web-to-envoy-server-grpc-go:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -326,7 +326,7 @@ services:
   client-grpc-web-to-envoy-server-connect-node-fastify:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -336,7 +336,7 @@ services:
   client-connect-web-to-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -347,7 +347,7 @@ services:
   client-connect-web-grpc-web-to-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"
@@ -358,7 +358,7 @@ services:
   client-grpc-web-to-server-connect-node-fastify-h1:
     build:
       context: .
-      dockerfile: Dockerfile.crosstestweb
+      dockerfile: Dockerfile.conformanceweb
       args:
         TEST_PROTOBUF_ES_BRANCH: "${TEST_PROTOBUF_ES_BRANCH:-}"
         TEST_CONNECT_WEB_BRANCH: "${TEST_CONNECT_WEB_BRANCH:-}"

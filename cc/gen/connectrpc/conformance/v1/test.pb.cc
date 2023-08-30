@@ -25,13 +25,15 @@
 #include "google/protobuf/generated_message_reflection.h"
 #include "google/protobuf/reflection_ops.h"
 #include "google/protobuf/wire_format.h"
+#include "google/protobuf/generated_message_tctable_impl.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
 #include "google/protobuf/port_def.inc"
 PROTOBUF_PRAGMA_INIT_SEG
-namespace _pb = ::PROTOBUF_NAMESPACE_ID;
-namespace _pbi = ::PROTOBUF_NAMESPACE_ID::internal;
+namespace _pb = ::google::protobuf;
+namespace _pbi = ::google::protobuf::internal;
+namespace _fl = ::google::protobuf::internal::field_layout;
 namespace connectrpc {
 namespace conformance {
 namespace v1 {
@@ -104,14 +106,14 @@ const char descriptor_table_protodef_connectrpc_2fconformance_2fv1_2ftest_2eprot
     "entConfigureService\022r\n\tConfigure\0221.conne"
     "ctrpc.conformance.v1.ClientConfigureRequ"
     "est\0322.connectrpc.conformance.v1.ClientCo"
-    "nfigureResponseB\225\002\n\035com.connectrpc.confo"
-    "rmance.v1B\tTestProtoP\001Zcgithub.com/bufbu"
-    "ild/connect-crosstest/internal/gen/proto"
-    "/go/connectrpc/conformance/v1;conformanc"
-    "ev1\242\002\003CCX\252\002\031Connectrpc.Conformance.V1\312\002\031"
-    "Connectrpc\\Conformance\\V1\342\002%Connectrpc\\C"
-    "onformance\\V1\\GPBMetadata\352\002\033Connectrpc::"
-    "Conformance::V1b\006proto3"
+    "nfigureResponseB\221\002\n\035com.connectrpc.confo"
+    "rmance.v1B\tTestProtoP\001Z_github.com/conne"
+    "ctrpc/conformance/internal/gen/proto/go/"
+    "connectrpc/conformance/v1;conformancev1\242"
+    "\002\003CCX\252\002\031Connectrpc.Conformance.V1\312\002\031Conn"
+    "ectrpc\\Conformance\\V1\342\002%Connectrpc\\Confo"
+    "rmance\\V1\\GPBMetadata\352\002\033Connectrpc::Conf"
+    "ormance::V1b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2eproto_deps[2] =
     {
@@ -122,7 +124,7 @@ static ::absl::once_flag descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2
 const ::_pbi::DescriptorTable descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2eproto = {
     false,
     false,
-    2623,
+    2619,
     descriptor_table_protodef_connectrpc_2fconformance_2fv1_2ftest_2eproto,
     "connectrpc/conformance/v1/test.proto",
     &descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2eproto_once,
@@ -161,7 +163,9 @@ namespace v1 {
 }  // namespace v1
 }  // namespace conformance
 }  // namespace connectrpc
-PROTOBUF_NAMESPACE_OPEN
-PROTOBUF_NAMESPACE_CLOSE
+namespace google {
+namespace protobuf {
+}  // namespace protobuf
+}  // namespace google
 // @@protoc_insertion_point(global_scope)
 #include "google/protobuf/port_undef.inc"
