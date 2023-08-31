@@ -102,5 +102,5 @@ jobs:
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
           tags: |
-            bufbuild/conformance-web:latest
-            bufbuild/conformance-web:${{ github.sha }}
+            connectrpc/conformance-web:latest
+            connectrpc/conformance-web:${{ github.sha }}

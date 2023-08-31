@@ -253,6 +253,10 @@ and makes no backward compatibility guarantees. We'd like to release it as an
 interoperability testing toolkit eventually, but don't have a concrete timeline
 in mind.
 
+## Legal
+
+Offered under the [Apache 2 license][license].
+
 [Getting Started]: https://connect.build/go/getting-started
 [blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/connectrpc/conformance/actions/workflows/ci.yaml
