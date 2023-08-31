@@ -296,7 +296,6 @@ describe("connect_web_promise_client", function () {
   it("unimplemented_server_streaming_service", async function () {
     const badClient = createPromiseClient(UnimplementedService, transport);
     try {
-      await badClient.unimplementedStreamingOutputCall({});
       for await (const response of badClient.unimplementedStreamingOutputCall(
         {}
       )) {
