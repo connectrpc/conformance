@@ -1,0 +1,23 @@
+name: crosstest-cc
+on:
+  workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  crosstest-cc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+      - name: Setup Docker Buildx # Docker Buildkit required for docker-compose
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker
+          install: true
+      - name: Test C++ gRPC Client
+        run: make dockercomposetestcc # Make target includes clean-up
+        env:
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
