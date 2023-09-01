@@ -4,6 +4,7 @@
 [![CI](https://github.com/connectrpc/conformance/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
 [![conformance-go](https://github.com/connectrpc/conformance/actions/workflows/conformance-go.yaml/badge.svg?branch=main)][github-action-go]
 [![conformance-web](https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml/badge.svg?branch=main)][github-action-web]
+[![conformance-cc](https://github.com/connectrpc/conformance/actions/workflows/conformance-cc.yaml/badge.svg?branch=main)][github-action-cc]
 
 `connect-conformance` runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
@@ -233,6 +234,9 @@ Client calls an unresolvable host and expects an error with the status `UNAVAILA
 There are Github Actions workflows for [go][github-action-go] and [web][github-action-web] configured for running the daily conformance suite against
 the latest commits of [connect-go][connect-go], [connect-es][connect-es] and [protobuf-es][protobuf-es].
 
+In addition, there is a Github Action workflow for [C++][github-action-cc] which runs a gRPC C++ client against the
+conformance suite.
+
 ### Locally
 
 To run these locally tests, you'll need Docker. The test suite uses Docker Compose.
@@ -267,6 +271,7 @@ Offered under the [Apache 2 license][license].
 [docs]: https://connect.build
 [github-action-go]: https://github.com/connectrpc/conformance/actions/workflows/conformance-go.yaml
 [github-action-web]: https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml
+[github-action-cc]: https://github.com/connectrpc/conformance/actions/workflows/conformance-cc.yaml
 [go-support-policy]: https://golang.org/doc/devel/release#policy
 [grpc-go]: https://github.com/grpc/grpc-go
 [grpc-interop]: https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
