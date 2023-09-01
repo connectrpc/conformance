@@ -1,4 +1,4 @@
-module github.com/bufbuild/connect-crosstest
+module github.com/connectrpc/conformance
 
 go 1.18
 
