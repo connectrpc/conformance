@@ -204,6 +204,7 @@ func run(flags *flags) {
 	default:
 		log.Fatalf(`the --implementation or -i flag is invalid"`)
 	}
+	transport = &interopconnect.TrailerInterceptor{Transport: transport}
 	// create client options base on protocol of the implementation
 	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
 	switch flags.implementation {
@@ -240,26 +241,28 @@ func run(flags *flags) {
 	switch flags.implementation {
 	// We skipped those client and bidi streaming tests for http 1 test
 	case connectH1, connectGRPCH1, connectGRPCWebH1:
+		usesTrailers := flags.implementation == connectGRPCH1
 		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			testConnectUnary(client)
-			testConnectServerStreaming(client)
+			testConnectUnary(client, usesTrailers)
+			testConnectServerStreaming(client, usesTrailers)
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
-	case connectGRPCH2, connectH2, connectGRPCWebH2:
+	case connectH2, connectGRPCH2, connectGRPCWebH2:
+		usesTrailers := flags.implementation == connectGRPCH2
 		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			testConnectUnary(client)
-			testConnectServerStreaming(client)
+			testConnectUnary(client, usesTrailers)
+			testConnectServerStreaming(client, usesTrailers)
 			testConnectClientStreaming(client)
-			testConnectBidiStreaming(client)
+			testConnectBidiStreaming(client, usesTrailers)
 			interopconnect.DoTimeoutOnSleepingServer(console.NewTB(), client)
 		}
 		testConnectSpecialClients(unresolvableClient, unimplementedClient)
 	case connectH3:
 		for _, client := range []conformanceconnect.TestServiceClient{uncompressedClient, compressedClient} {
-			testConnectUnary(client)
-			testConnectServerStreaming(client)
+			testConnectUnary(client, false)
+			testConnectServerStreaming(client, false)
 			testConnectClientStreaming(client)
-			testConnectBidiStreaming(client)
+			testConnectBidiStreaming(client, false)
 			// skipped the DoTimeoutOnSleepingServer test as quic-go wrapped the context error,
 			// see https://github.com/quic-go/quic-go/blob/6fbc6d951a4005d7d9d086118e1572b9e8ff9851/http3/client.go#L276-L283
 		}
@@ -278,22 +281,22 @@ func run(flags *flags) {
 	}
 }
 
-func testConnectUnary(client conformanceconnect.TestServiceClient) {
+func testConnectUnary(client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	interopconnect.DoEmptyUnaryCall(console.NewTB(), client)
 	interopconnect.DoCacheableUnaryCall(console.NewTB(), client)
 	interopconnect.DoLargeUnaryCall(console.NewTB(), client)
-	interopconnect.DoCustomMetadataUnary(console.NewTB(), client)
-	interopconnect.DoDuplicatedCustomMetadataUnary(console.NewTB(), client)
+	interopconnect.DoCustomMetadataUnary(console.NewTB(), client, usesTrailers)
+	interopconnect.DoDuplicatedCustomMetadataUnary(console.NewTB(), client, usesTrailers)
 	interopconnect.DoStatusCodeAndMessageUnary(console.NewTB(), client)
 	interopconnect.DoSpecialStatusMessage(console.NewTB(), client)
 	interopconnect.DoUnimplementedMethod(console.NewTB(), client)
 	interopconnect.DoFailWithNonASCIIError(console.NewTB(), client)
 }
 
-func testConnectServerStreaming(client conformanceconnect.TestServiceClient) {
+func testConnectServerStreaming(client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	interopconnect.DoServerStreaming(console.NewTB(), client)
-	interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client)
-	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client)
+	interopconnect.DoCustomMetadataServerStreaming(console.NewTB(), client, usesTrailers)
+	interopconnect.DoDuplicatedCustomMetadataServerStreaming(console.NewTB(), client, usesTrailers)
 	interopconnect.DoUnimplementedServerStreamingMethod(console.NewTB(), client)
 	interopconnect.DoFailServerStreamingWithNonASCIIError(console.NewTB(), client)
 	interopconnect.DoFailServerStreamingAfterResponse(console.NewTB(), client)
@@ -304,12 +307,12 @@ func testConnectClientStreaming(client conformanceconnect.TestServiceClient) {
 	interopconnect.DoCancelAfterBegin(console.NewTB(), client)
 }
 
-func testConnectBidiStreaming(client conformanceconnect.TestServiceClient) {
+func testConnectBidiStreaming(client conformanceconnect.TestServiceClient, usesTrailers bool) {
 	interopconnect.DoPingPong(console.NewTB(), client)
 	interopconnect.DoEmptyStream(console.NewTB(), client)
 	interopconnect.DoCancelAfterFirstResponse(console.NewTB(), client)
-	interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client)
-	interopconnect.DoDuplicatedCustomMetadataFullDuplex(console.NewTB(), client)
+	interopconnect.DoCustomMetadataFullDuplex(console.NewTB(), client, usesTrailers)
+	interopconnect.DoDuplicatedCustomMetadataFullDuplex(console.NewTB(), client, usesTrailers)
 	interopconnect.DoStatusCodeAndMessageFullDuplex(console.NewTB(), client)
 }
 
