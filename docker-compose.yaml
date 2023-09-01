@@ -369,7 +369,7 @@ services:
   client-cc-grpc-to-server-connect-go-h2-no-tls:
     build:
       context: .
-      dockerfile: Dockerfile.cc
+      dockerfile: Dockerfile.crosstestcc
       args:
         PORT: 8081
         HOST: server-connect
@@ -379,7 +379,7 @@ services:
   client-cc-grpc-to-server-connect-go-h2-with-tls:
     build:
       context: .
-      dockerfile: Dockerfile.cc
+      dockerfile: Dockerfile.crosstestcc
       args:
         PORT: 8081
         HOST: server-connect
