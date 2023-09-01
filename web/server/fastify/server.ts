@@ -14,7 +14,7 @@
 
 import { readFileSync } from "fs";
 import { fastify, FastifyHttpsOptions } from "fastify";
-import { fastifyConnectPlugin } from "@bufbuild/connect-fastify";
+import { fastifyConnectPlugin } from "@connectrpc/connect-fastify";
 import fastifyCors from "@fastify/cors";
 import routes from "../routes.js";
 import { interop } from "../interop.js";
@@ -74,29 +74,28 @@ function createH1Server(opts: Options) {
   return fastify(serverOpts);
 }
 
-function createH2Server(opts: Options) {
-  if (!opts.insecure && opts.key && opts.cert) {
-    return fastify({
-      http2: true,
-      https: getTLSConfig(opts.key, opts.cert),
-    });
-  } else {
-    return fastify({
-      http2: true,
-    });
-  }
-}
-
 export async function start(opts: Options) {
   const h1Server = createH1Server(opts);
   await h1Server.register(fastifyCors, interop.corsOptions);
   await h1Server.register(fastifyConnectPlugin, { routes });
   await h1Server.listen({ host: HOST, port: opts.h1port });
 
-  const h2Server = createH2Server(opts);
-  await h2Server.register(fastifyCors, interop.corsOptions);
-  await h2Server.register(fastifyConnectPlugin, { routes });
-  await h2Server.listen({ host: HOST, port: opts.h2port });
+  if (!opts.insecure && opts.key && opts.cert) {
+    const h2Server = fastify({
+      http2: true,
+      https: getTLSConfig(opts.key, opts.cert),
+    });
+    await h2Server.register(fastifyCors, interop.corsOptions);
+    await h2Server.register(fastifyConnectPlugin, { routes });
+    await h2Server.listen({ host: HOST, port: opts.h2port });
+  } else {
+    const h2InsecureServer = fastify({
+      http2: true,
+    });
+    await h2InsecureServer.register(fastifyCors, interop.corsOptions);
+    await h2InsecureServer.register(fastifyConnectPlugin, { routes });
+    await h2InsecureServer.listen({ host: HOST, port: opts.h2port });
+  }
 
   const serverData = getServerMetadata(opts);
   console.log(serverData.toJsonString());
