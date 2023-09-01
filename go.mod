@@ -1,6 +1,21 @@
 module github.com/connectrpc/conformance
 
+<<<<<<< HEAD
 go 1.20
+=======
+go 1.18
+
+require (
+	github.com/bufbuild/connect-go v1.10.0
+	github.com/quic-go/quic-go v0.38.1
+	github.com/rs/cors v1.9.0
+	github.com/spf13/cobra v1.7.0
+	github.com/stretchr/testify v1.8.4
+	golang.org/x/net v0.14.0
+	google.golang.org/grpc v1.57.0
+	google.golang.org/protobuf v1.31.0
+)
+>>>>>>> main
 
 require (
 	connectrpc.com/connect v1.11.1 // indirect
@@ -14,10 +29,14 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
+<<<<<<< HEAD
 	github.com/quic-go/qtls-go1-20 v0.3.2 // indirect
 	github.com/quic-go/quic-go v0.37.4
 	github.com/rs/cors v1.9.0
 	github.com/spf13/cobra v1.7.0
+=======
+	github.com/quic-go/qtls-go1-20 v0.3.3 // indirect
+>>>>>>> main
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/crypto v0.12.0 // indirect

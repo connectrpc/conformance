@@ -15,7 +15,6 @@
 import {
   Code,
   ConnectError,
-  connectErrorDetails,
   createCallbackClient,
   decodeBinaryHeader,
   encodeBinaryHeader,
@@ -366,7 +365,7 @@ describe("connect_web_callback_client", function () {
       expect(err).toBeInstanceOf(ConnectError);
       expect(err?.code).toEqual(Code.ResourceExhausted);
       expect(err?.rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails(err as ConnectError, ErrorDetail);
+      const errDetails = (err as ConnectError).findDetails(ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
       done();
@@ -388,10 +387,7 @@ describe("connect_web_callback_client", function () {
         expect(err).toBeInstanceOf(ConnectError);
         expect(err?.code).toEqual(Code.ResourceExhausted);
         expect(err?.rawMessage).toEqual("soirée 🎉");
-        const errDetails = connectErrorDetails(
-          err as ConnectError,
-          ErrorDetail
-        );
+        const errDetails = (err as ConnectError).findDetails(ErrorDetail);
         expect(errDetails.length).toEqual(1);
         expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
         done();
@@ -425,10 +421,7 @@ describe("connect_web_callback_client", function () {
         expect(err).toBeInstanceOf(ConnectError);
         expect(err?.code).toEqual(Code.ResourceExhausted);
         expect(err?.rawMessage).toEqual("soirée 🎉");
-        const errDetails = connectErrorDetails(
-          err as ConnectError,
-          ErrorDetail
-        );
+        const errDetails = (err as ConnectError).findDetails(ErrorDetail);
         expect(errDetails.length).toEqual(1);
         expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
         done();
