@@ -2,6 +2,7 @@ FROM --platform=${BUILDPLATFORM} golang:alpine as builder
 
 WORKDIR /workspace
 
+ARG TARGETFS
 ARG TARGETOS
 ARG TARGETARCH
 ARG TEST_CONNECT_GO_BRANCH
