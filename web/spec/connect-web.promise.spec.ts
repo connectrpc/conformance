@@ -15,16 +15,15 @@
 import {
   Code,
   ConnectError,
-  connectErrorDetails,
   createPromiseClient,
   decodeBinaryHeader,
   encodeBinaryHeader,
   Transport,
-} from "@bufbuild/connect";
+} from "@connectrpc/connect";
 import {
   createConnectTransport,
   createGrpcWebTransport,
-} from "@bufbuild/connect-web";
+} from "@connectrpc/connect-web";
 import { Empty } from "@bufbuild/protobuf";
 import {
   ErrorDetail,
@@ -296,7 +295,6 @@ describe("connect_web_promise_client", function () {
   it("unimplemented_server_streaming_service", async function () {
     const badClient = createPromiseClient(UnimplementedService, transport);
     try {
-      await badClient.unimplementedStreamingOutputCall({});
       for await (const response of badClient.unimplementedStreamingOutputCall(
         {}
       )) {
@@ -321,7 +319,7 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails(e as ConnectError, ErrorDetail);
+      const errDetails = (e as ConnectError).findDetails(ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
@@ -341,7 +339,7 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails(e as ConnectError, ErrorDetail);
+      const errDetails = (e as ConnectError).findDetails(ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }
@@ -372,7 +370,7 @@ describe("connect_web_promise_client", function () {
       expect(e).toBeInstanceOf(ConnectError);
       expect((e as ConnectError).code).toEqual(Code.ResourceExhausted);
       expect((e as ConnectError).rawMessage).toEqual("soirée 🎉");
-      const errDetails = connectErrorDetails(e as ConnectError, ErrorDetail);
+      const errDetails = (e as ConnectError).findDetails(ErrorDetail);
       expect(errDetails.length).toEqual(1);
       expect(expectedErrorDetail.equals(errDetails[0])).toBeTrue();
     }

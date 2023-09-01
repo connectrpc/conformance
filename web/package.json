@@ -10,10 +10,10 @@
     "types-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@bufbuild/connect": "^0.11.0",
-    "@bufbuild/connect-fastify": "^0.11.0",
-    "@bufbuild/connect-node": "^0.11.0",
-    "@bufbuild/connect-web": "^0.11.0",
+    "@connectrpc/connect": "^0.13.2",
+    "@connectrpc/connect-fastify": "^0.13.2",
+    "@connectrpc/connect-node": "^0.13.2",
+    "@connectrpc/connect-web": "^0.13.2",
     "@bufbuild/protobuf": "^1.2.1",
     "@fastify/cors": "^8.3.0",
     "caseless": "^0.12.0",

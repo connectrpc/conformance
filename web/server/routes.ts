@@ -17,13 +17,13 @@ import type {
   ConnectRouter,
   HandlerContext,
   ServiceImpl,
-} from "@bufbuild/connect";
+} from "@connectrpc/connect";
 import {
   Code,
   ConnectError,
   decodeBinaryHeader,
   encodeBinaryHeader,
-} from "@bufbuild/connect";
+} from "@connectrpc/connect";
 import type {
   EchoStatus,
   ResponseParameters,
