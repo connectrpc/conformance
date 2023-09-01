@@ -21,22 +21,23 @@ import (
 	"io"
 	"time"
 
-	"github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/grpc/testing/testingconnect"
-	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	conformanceconnect "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
+	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/bufbuild/connect-go"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // NewTestServiceHandler returns a new TestServiceHandler.
-func NewTestServiceHandler() testingconnect.TestServiceHandler {
+func NewTestServiceHandler() conformanceconnect.TestServiceHandler {
 	return &testServer{}
 }
 
 type testServer struct {
-	testingconnect.UnimplementedTestServiceHandler
+	conformanceconnect.UnimplementedTestServiceHandler
 }
 
-func (s *testServer) CacheableUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
+func (s *testServer) CacheableUnaryCall(ctx context.Context, request *connect.Request[conformance.SimpleRequest]) (*connect.Response[conformance.SimpleResponse], error) {
 	response, err := s.UnaryCall(ctx, request)
 	if response != nil {
 		if request.Peer().Query.Has("message") {
@@ -46,11 +47,11 @@ func (s *testServer) CacheableUnaryCall(ctx context.Context, request *connect.Re
 	return response, err
 }
 
-func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[testpb.Empty]) (*connect.Response[testpb.Empty], error) {
-	return connect.NewResponse(new(testpb.Empty)), nil
+func (s *testServer) EmptyCall(ctx context.Context, request *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return connect.NewResponse(new(emptypb.Empty)), nil
 }
 
-func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
+func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[conformance.SimpleRequest]) (*connect.Response[conformance.SimpleResponse], error) {
 	if status := request.Msg.GetResponseStatus(); status != nil && status.Code != 0 {
 		return nil, connect.NewError(connect.Code(status.Code), errors.New(status.Message))
 	}
@@ -59,7 +60,7 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 		return nil, err
 	}
 	response := connect.NewResponse(
-		&testpb.SimpleResponse{
+		&conformance.SimpleResponse{
 			Payload: payload,
 		},
 	)
@@ -81,7 +82,7 @@ func (s *testServer) UnaryCall(ctx context.Context, request *connect.Request[tes
 	return response, nil
 }
 
-func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request[testpb.SimpleRequest]) (*connect.Response[testpb.SimpleResponse], error) {
+func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request[conformance.SimpleRequest]) (*connect.Response[conformance.SimpleResponse], error) {
 	err := connect.NewError(connect.CodeResourceExhausted, errors.New(interop.NonASCIIErrMsg))
 	detail, detailErr := connect.NewErrorDetail(interop.ErrorDetail)
 	if detailErr != nil {
@@ -91,7 +92,7 @@ func (s *testServer) FailUnaryCall(ctx context.Context, request *connect.Request
 	return nil, err
 }
 
-func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
+func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.Request[conformance.StreamingOutputCallRequest], stream *connect.ServerStream[conformance.StreamingOutputCallResponse]) error {
 	if leadingMetadata := request.Header().Values(leadingMetadataKey); len(leadingMetadata) != 0 {
 		for _, value := range leadingMetadata {
 			stream.ResponseHeader().Add(leadingMetadataKey, value)
@@ -120,7 +121,7 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 		if err != nil {
 			return err
 		}
-		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+		if err := stream.Send(&conformance.StreamingOutputCallResponse{
 			Payload: payload,
 		}); err != nil {
 			return err
@@ -132,7 +133,7 @@ func (s *testServer) StreamingOutputCall(ctx context.Context, request *connect.R
 	return nil
 }
 
-func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[testpb.StreamingOutputCallRequest], stream *connect.ServerStream[testpb.StreamingOutputCallResponse]) error {
+func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *connect.Request[conformance.StreamingOutputCallRequest], stream *connect.ServerStream[conformance.StreamingOutputCallResponse]) error {
 	for _, param := range request.Msg.GetResponseParameters() {
 		if us := param.GetIntervalUs(); us > 0 {
 			time.Sleep(time.Duration(us) * time.Microsecond)
@@ -147,7 +148,7 @@ func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *conne
 		if err != nil {
 			return err
 		}
-		if err := stream.Send(&testpb.StreamingOutputCallResponse{
+		if err := stream.Send(&conformance.StreamingOutputCallResponse{
 			Payload: payload,
 		}); err != nil {
 			return err
@@ -162,7 +163,7 @@ func (s *testServer) FailStreamingOutputCall(ctx context.Context, request *conne
 	return err
 }
 
-func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[testpb.StreamingInputCallRequest]) (*connect.Response[testpb.StreamingInputCallResponse], error) {
+func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.ClientStream[conformance.StreamingInputCallRequest]) (*connect.Response[conformance.StreamingInputCallResponse], error) {
 	var sum int
 	for stream.Receive() {
 		if err := ctx.Err(); err != nil {
@@ -175,13 +176,13 @@ func (s *testServer) StreamingInputCall(ctx context.Context, stream *connect.Cli
 		return nil, err
 	}
 	return connect.NewResponse(
-		&testpb.StreamingInputCallResponse{
+		&conformance.StreamingInputCallResponse{
 			AggregatedPayloadSize: int32(sum),
 		},
 	), nil
 }
 
-func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
+func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStream[conformance.StreamingOutputCallRequest, conformance.StreamingOutputCallResponse]) error {
 	if leadingMetadata := stream.RequestHeader().Values(leadingMetadataKey); len(leadingMetadata) != 0 {
 		for _, value := range leadingMetadata {
 			stream.ResponseHeader().Add(leadingMetadataKey, value)
@@ -220,7 +221,7 @@ func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStr
 			if err != nil {
 				return err
 			}
-			if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			if err := stream.Send(&conformance.StreamingOutputCallResponse{
 				Payload: payload,
 			}); err != nil {
 				return err
@@ -229,8 +230,8 @@ func (s *testServer) FullDuplexCall(ctx context.Context, stream *connect.BidiStr
 	}
 }
 
-func (s *testServer) HalfDuplexCall(ctx context.Context, stream *connect.BidiStream[testpb.StreamingOutputCallRequest, testpb.StreamingOutputCallResponse]) error {
-	var msgBuf []*testpb.StreamingOutputCallRequest
+func (s *testServer) HalfDuplexCall(ctx context.Context, stream *connect.BidiStream[conformance.StreamingOutputCallRequest, conformance.StreamingOutputCallResponse]) error {
+	var msgBuf []*conformance.StreamingOutputCallRequest
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -255,7 +256,7 @@ func (s *testServer) HalfDuplexCall(ctx context.Context, stream *connect.BidiStr
 			if err != nil {
 				return err
 			}
-			if err := stream.Send(&testpb.StreamingOutputCallResponse{
+			if err := stream.Send(&conformance.StreamingOutputCallResponse{
 				Payload: payload,
 			}); err != nil {
 				return err
@@ -265,17 +266,17 @@ func (s *testServer) HalfDuplexCall(ctx context.Context, stream *connect.BidiStr
 	return nil
 }
 
-func newServerPayload(payloadType testpb.PayloadType, size int32) (*testpb.Payload, error) {
+func newServerPayload(payloadType conformance.PayloadType, size int32) (*conformance.Payload, error) {
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
 	switch payloadType {
-	case testpb.PayloadType_COMPRESSABLE:
+	case conformance.PayloadType_COMPRESSABLE:
 	default:
 		return nil, fmt.Errorf("unsupported payload type: %d", payloadType)
 	}
-	return &testpb.Payload{
+	return &conformance.Payload{
 		Type: payloadType,
 		Body: body,
 	}, nil

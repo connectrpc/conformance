@@ -13,6 +13,11 @@
 // limitations under the License.
 
 // TODO(TCN-1771) keep in sync with `connect-web-test`'s `test-routes` until we share code between test packages
+import type {
+  ConnectRouter,
+  HandlerContext,
+  ServiceImpl,
+} from "@bufbuild/connect";
 import {
   Code,
   ConnectError,
@@ -20,23 +25,16 @@ import {
   encodeBinaryHeader,
 } from "@bufbuild/connect";
 import type {
-  ConnectRouter,
-  ServiceImpl,
-  HandlerContext,
-} from "@bufbuild/connect";
-import {
-  UnimplementedService,
-  TestService,
-} from "../gen/proto/connect-web/grpc/testing/test_connect.js";
-import type {
+  EchoStatus,
+  ResponseParameters,
   SimpleRequest,
   StreamingInputCallRequest,
   StreamingOutputCallRequest,
-} from "../gen/proto/connect-web/grpc/testing/messages_pb.js";
+} from "../gen/proto/connect-web/connectrpc/conformance/v1/messages_pb.js";
 import {
-  EchoStatus,
-  ResponseParameters,
-} from "../gen/proto/connect-web/grpc/testing/messages_pb.js";
+  TestService,
+  UnimplementedService,
+} from "../gen/proto/connect-web/connectrpc/conformance/v1/test_connect.js";
 import { interop } from "./interop.js";
 
 export default (router: ConnectRouter) => {

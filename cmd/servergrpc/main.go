@@ -22,7 +22,7 @@ import (
 	"net"
 	"os"
 
-	testrpc "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
 	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
 	"github.com/spf13/cobra"
@@ -99,7 +99,7 @@ func run(flagset *flags) {
 		log.Fatalf("failed to marshal server metadata: %v", err)
 	}
 	_, _ = fmt.Fprintln(os.Stdout, string(bytes))
-	testrpc.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
+	conformance.RegisterTestServiceServer(server, interopgrpc.NewTestServer())
 	_ = server.Serve(lis)
 	defer server.GracefulStop()
 }

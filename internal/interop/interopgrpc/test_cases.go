@@ -44,7 +44,7 @@ import (
 	"time"
 
 	"github.com/bufbuild/connect-crosstest/internal/crosstesting"
-	testpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/grpc/testing"
+	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/bufbuild/connect-crosstest/internal/interop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,6 +53,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -76,51 +77,51 @@ var (
 )
 
 // clientNewPayload returns a payload of the given size.
-func clientNewPayload(t crosstesting.TB, size int) (*testpb.Payload, error) {
+func clientNewPayload(t crosstesting.TB, size int) (*conformance.Payload, error) {
 	t.Helper()
 	if size < 0 {
 		return nil, fmt.Errorf("requested a response with invalid length %d", size)
 	}
 	body := make([]byte, size)
-	return &testpb.Payload{
-		Type: testpb.PayloadType_COMPRESSABLE,
+	return &conformance.Payload{
+		Type: conformance.PayloadType_COMPRESSABLE,
 		Body: body,
 	}, nil
 }
 
 // DoEmptyUnaryCall performs a unary RPC with empty request and response messages.
-func DoEmptyUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	reply, err := client.EmptyCall(context.Background(), &testpb.Empty{}, args...)
+func DoEmptyUnaryCall(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
+	reply, err := client.EmptyCall(context.Background(), &emptypb.Empty{}, args...)
 	require.NoError(t, err)
-	assert.True(t, proto.Equal(&testpb.Empty{}, reply))
+	assert.True(t, proto.Equal(&emptypb.Empty{}, reply))
 	t.Successf("successful unary call")
 }
 
 // DoLargeUnaryCall performs a unary RPC with large payload in the request and response.
-func DoLargeUnaryCall(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoLargeUnaryCall(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	pl, err := clientNewPayload(t, largeReqSize)
 	require.NoError(t, err)
-	req := &testpb.SimpleRequest{
-		ResponseType: testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.SimpleRequest{
+		ResponseType: conformance.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(largeRespSize),
 		Payload:      pl,
 	}
 	reply, err := client.UnaryCall(context.Background(), req, args...)
 	require.NoError(t, err)
-	assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
+	assert.Equal(t, reply.GetPayload().GetType(), conformance.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.GetPayload().GetBody()), largeRespSize)
 	t.Successf("successful large unary call")
 }
 
 // DoClientStreaming performs a client streaming RPC.
-func DoClientStreaming(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoClientStreaming(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	stream, err := client.StreamingInputCall(context.Background(), args...)
 	require.NoError(t, err)
 	var sum int
 	for _, size := range reqSizes {
 		pl, err := clientNewPayload(t, size)
 		require.NoError(t, err)
-		req := &testpb.StreamingInputCallRequest{
+		req := &conformance.StreamingInputCallRequest{
 			Payload: pl,
 		}
 		require.NoError(t, stream.Send(req))
@@ -133,15 +134,15 @@ func DoClientStreaming(t crosstesting.TB, client testpb.TestServiceClient, args 
 }
 
 // DoServerStreaming performs a server streaming RPC.
-func DoServerStreaming(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+func DoServerStreaming(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
+	respParam := make([]*conformance.ResponseParameters, len(respSizes))
 	for i, s := range respSizes {
-		respParam[i] = &testpb.ResponseParameters{
+		respParam[i] = &conformance.ResponseParameters{
 			Size: int32(s),
 		}
 	}
-	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.StreamingOutputCallRequest{
+		ResponseType:       conformance.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 	}
 	stream, err := client.StreamingOutputCall(context.Background(), req, args...)
@@ -155,7 +156,7 @@ func DoServerStreaming(t crosstesting.TB, client testpb.TestServiceClient, args 
 			rpcStatus = err
 			break
 		}
-		assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
+		assert.Equal(t, reply.GetPayload().GetType(), conformance.PayloadType_COMPRESSABLE)
 		assert.Equal(t, len(reply.GetPayload().GetBody()), respSizes[index])
 		index++
 		respCnt++
@@ -166,27 +167,27 @@ func DoServerStreaming(t crosstesting.TB, client testpb.TestServiceClient, args 
 }
 
 // DoPingPong performs ping-pong style bi-directional streaming RPC.
-func DoPingPong(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoPingPong(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	stream, err := client.FullDuplexCall(context.Background(), args...)
 	require.NoError(t, err)
 	var index int
 	for index < len(reqSizes) {
-		respParam := []*testpb.ResponseParameters{
+		respParam := []*conformance.ResponseParameters{
 			{
 				Size: int32(respSizes[index]),
 			},
 		}
 		pl, err := clientNewPayload(t, reqSizes[index])
 		require.NoError(t, err)
-		req := &testpb.StreamingOutputCallRequest{
-			ResponseType:       testpb.PayloadType_COMPRESSABLE,
+		req := &conformance.StreamingOutputCallRequest{
+			ResponseType:       conformance.PayloadType_COMPRESSABLE,
 			ResponseParameters: respParam,
 			Payload:            pl,
 		}
 		require.NoError(t, stream.Send(req))
 		reply, err := stream.Recv()
 		require.NoError(t, err)
-		assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
+		assert.Equal(t, reply.GetPayload().GetType(), conformance.PayloadType_COMPRESSABLE)
 		assert.Equal(t, len(reply.GetPayload().GetBody()), respSizes[index])
 		index++
 	}
@@ -197,7 +198,7 @@ func DoPingPong(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc
 }
 
 // DoEmptyStream sets up a bi-directional streaming with zero message.
-func DoEmptyStream(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoEmptyStream(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	stream, err := client.FullDuplexCall(context.Background(), args...)
 	require.NoError(t, err)
 	require.NoError(t, stream.CloseSend())
@@ -208,7 +209,7 @@ func DoEmptyStream(t crosstesting.TB, client testpb.TestServiceClient, args ...g
 }
 
 // DoTimeoutOnSleepingServer performs an RPC on a sleep server which causes RPC timeout.
-func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoTimeoutOnSleepingServer(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	stream, err := client.FullDuplexCall(ctx, args...)
@@ -222,8 +223,8 @@ func DoTimeoutOnSleepingServer(t crosstesting.TB, client testpb.TestServiceClien
 	require.NoError(t, err)
 	pl, err := clientNewPayload(t, 27182)
 	require.NoError(t, err)
-	req := &testpb.StreamingOutputCallRequest{
-		ResponseType: testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.StreamingOutputCallRequest{
+		ResponseType: conformance.PayloadType_COMPRESSABLE,
 		Payload:      pl,
 	}
 	err = stream.Send(req)
@@ -240,7 +241,7 @@ var testMetadata = metadata.MD{ //nolint:gochecknoglobals // We do want to make 
 }
 
 // DoCancelAfterBegin cancels the RPC after metadata has been sent but before payloads are sent.
-func DoCancelAfterBegin(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoCancelAfterBegin(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	ctx, cancel := context.WithCancel(metadata.NewOutgoingContext(context.Background(), testMetadata))
 	stream, err := client.StreamingInputCall(ctx, args...)
 	require.NoError(t, err)
@@ -251,19 +252,19 @@ func DoCancelAfterBegin(t crosstesting.TB, client testpb.TestServiceClient, args
 }
 
 // DoCancelAfterFirstResponse cancels the RPC after receiving the first message from the server.
-func DoCancelAfterFirstResponse(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoCancelAfterFirstResponse(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	ctx, cancel := context.WithCancel(context.Background())
 	stream, err := client.FullDuplexCall(ctx, args...)
 	require.NoError(t, err)
-	respParam := []*testpb.ResponseParameters{
+	respParam := []*conformance.ResponseParameters{
 		{
 			Size: 31415,
 		},
 	}
 	pl, err := clientNewPayload(t, 27182)
 	require.NoError(t, err)
-	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.StreamingOutputCallRequest{
+		ResponseType:       conformance.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 		Payload:            pl,
 	}
@@ -320,19 +321,19 @@ func validateMetadata(t crosstesting.TB, header, trailer, sent metadata.MD) {
 }
 
 // DoCustomMetadata checks that metadata is echoed back to the client.
-func DoCustomMetadata(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoCustomMetadata(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	customMetadataTest(t, client, customMetadata, args...)
 	t.Successf("successful custom metadata")
 }
 
 // DoDuplicateCustomMetadata adds duplicated metadata keys and checks that the metadata is echoed back
 // to the client.
-func DoDuplicatedCustomMetadata(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoDuplicatedCustomMetadata(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	customMetadataTest(t, client, duplicatedCustomMetadata, args...)
 	t.Successf("successful duplicated custom metadata")
 }
 
-func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+func customMetadataTest(t crosstesting.TB, client conformance.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	// Testing with UnaryCall.
 	customMetadataUnaryTest(t, client, customMetadata, args...)
 
@@ -343,11 +344,11 @@ func customMetadataTest(t crosstesting.TB, client testpb.TestServiceClient, cust
 	customMetadataFullDuplexTest(t, client, customMetadata, args...)
 }
 
-func customMetadataUnaryTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+func customMetadataUnaryTest(t crosstesting.TB, client conformance.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
-	req := &testpb.SimpleRequest{
-		ResponseType: testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.SimpleRequest{
+		ResponseType: conformance.PayloadType_COMPRESSABLE,
 		ResponseSize: int32(1),
 		Payload:      payload,
 	}
@@ -360,22 +361,22 @@ func customMetadataUnaryTest(t crosstesting.TB, client testpb.TestServiceClient,
 		args...,
 	)
 	require.NoError(t, err)
-	assert.Equal(t, reply.GetPayload().GetType(), testpb.PayloadType_COMPRESSABLE)
+	assert.Equal(t, reply.GetPayload().GetType(), conformance.PayloadType_COMPRESSABLE)
 	assert.Equal(t, len(reply.GetPayload().GetBody()), 1)
 	validateMetadata(t, header, trailer, customMetadata)
 }
 
-func customMetadataServerStreamingTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+func customMetadataServerStreamingTest(t crosstesting.TB, client conformance.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
-	respParam := []*testpb.ResponseParameters{
+	respParam := []*conformance.ResponseParameters{
 		{
 			Size: 1,
 		},
 	}
-	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.StreamingOutputCallRequest{
+		ResponseType:       conformance.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 		Payload:            payload,
 	}
@@ -392,19 +393,19 @@ func customMetadataServerStreamingTest(t crosstesting.TB, client testpb.TestServ
 	validateMetadata(t, streamHeader, streamTrailer, customMetadata)
 }
 
-func customMetadataFullDuplexTest(t crosstesting.TB, client testpb.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
+func customMetadataFullDuplexTest(t crosstesting.TB, client conformance.TestServiceClient, customMetadata metadata.MD, args ...grpc.CallOption) {
 	payload, err := clientNewPayload(t, 1)
 	require.NoError(t, err)
 	ctx := metadata.NewOutgoingContext(context.Background(), customMetadata)
 	stream, err := client.FullDuplexCall(ctx, args...)
 	require.NoError(t, err)
-	respParam := []*testpb.ResponseParameters{
+	respParam := []*conformance.ResponseParameters{
 		{
 			Size: 1,
 		},
 	}
-	streamReq := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+	streamReq := &conformance.StreamingOutputCallRequest{
+		ResponseType:       conformance.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 		Payload:            payload,
 	}
@@ -421,16 +422,16 @@ func customMetadataFullDuplexTest(t crosstesting.TB, client testpb.TestServiceCl
 }
 
 // DoStatusCodeAndMessage checks that the status code is propagated back to the client.
-func DoStatusCodeAndMessage(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoStatusCodeAndMessage(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	code := int32(codes.Unknown)
 	msg := "test status message"
 	expectedErr := status.Error(codes.Code(code), msg)
-	respStatus := &testpb.EchoStatus{
+	respStatus := &conformance.EchoStatus{
 		Code:    code,
 		Message: msg,
 	}
 	// Test UnaryCall.
-	req := &testpb.SimpleRequest{
+	req := &conformance.SimpleRequest{
 		ResponseStatus: respStatus,
 	}
 	_, err := client.UnaryCall(context.Background(), req, args...)
@@ -439,7 +440,7 @@ func DoStatusCodeAndMessage(t crosstesting.TB, client testpb.TestServiceClient, 
 	// Test FullDuplexCall.
 	stream, err := client.FullDuplexCall(context.Background(), args...)
 	require.NoError(t, err)
-	streamReq := &testpb.StreamingOutputCallRequest{
+	streamReq := &conformance.StreamingOutputCallRequest{
 		ResponseStatus: respStatus,
 	}
 	require.NoError(t, stream.Send(streamReq))
@@ -451,12 +452,12 @@ func DoStatusCodeAndMessage(t crosstesting.TB, client testpb.TestServiceClient, 
 
 // DoSpecialStatusMessage verifies Unicode and whitespace is correctly processed
 // in status message.
-func DoSpecialStatusMessage(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoSpecialStatusMessage(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	code := int32(codes.Unknown)
 	msg := "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
 	expectedErr := status.Error(codes.Code(code), msg)
-	req := &testpb.SimpleRequest{
-		ResponseStatus: &testpb.EchoStatus{
+	req := &conformance.SimpleRequest{
+		ResponseStatus: &conformance.EchoStatus{
 			Code:    code,
 			Message: msg,
 		},
@@ -479,8 +480,8 @@ func DoUnimplementedMethod(t crosstesting.TB, cc *grpc.ClientConn, args ...grpc.
 }
 
 // DoUnimplementedServerStreamingMethod performs a server streaming RPC that is unimplemented.
-func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &testpb.Empty{}, args...)
+func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &emptypb.Empty{}, args...)
 	require.NoError(t, err)
 	_, err = stream.Recv()
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
@@ -488,15 +489,15 @@ func DoUnimplementedServerStreamingMethod(t crosstesting.TB, client testpb.TestS
 }
 
 // DoUnimplementedService attempts to call a method from an unimplemented service.
-func DoUnimplementedService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
-	_, err := client.UnimplementedCall(context.Background(), &testpb.Empty{}, args...)
+func DoUnimplementedService(t crosstesting.TB, client conformance.UnimplementedServiceClient, args ...grpc.CallOption) {
+	_, err := client.UnimplementedCall(context.Background(), &emptypb.Empty{}, args...)
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
 	t.Successf("successful unimplemented service")
 }
 
 // DoUnimplementedServerStreamingService performs a server streaming RPC from an unimplemented service.
-func DoUnimplementedServerStreamingService(t crosstesting.TB, client testpb.UnimplementedServiceClient, args ...grpc.CallOption) {
-	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &testpb.Empty{}, args...)
+func DoUnimplementedServerStreamingService(t crosstesting.TB, client conformance.UnimplementedServiceClient, args ...grpc.CallOption) {
+	stream, err := client.UnimplementedStreamingOutputCall(context.Background(), &emptypb.Empty{}, args...)
 	require.NoError(t, err)
 	_, err = stream.Recv()
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
@@ -504,11 +505,11 @@ func DoUnimplementedServerStreamingService(t crosstesting.TB, client testpb.Unim
 }
 
 // DoFailWithNonASCIIError performs a unary RPC that always return a readable non-ASCII error.
-func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
+func DoFailWithNonASCIIError(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
 	reply, err := client.FailUnaryCall(
 		context.Background(),
-		&testpb.SimpleRequest{
-			ResponseType: testpb.PayloadType_COMPRESSABLE,
+		&conformance.SimpleRequest{
+			ResponseType: conformance.PayloadType_COMPRESSABLE,
 		},
 		args...,
 	)
@@ -521,16 +522,16 @@ func DoFailWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient,
 	errStatus, ok := status.FromError(err)
 	require.True(t, ok)
 	require.Len(t, errStatus.Details(), 1)
-	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	errorDetail, ok := errStatus.Details()[0].(*conformance.ErrorDetail)
 	require.True(t, ok)
 	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail call with non-ASCII error")
 }
 
 // DoFailServerStreamingWithNonASCIIError performs a server streaming RPC that always return a readable non-ASCII error.
-func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	req := &testpb.StreamingOutputCallRequest{
-		ResponseType: testpb.PayloadType_COMPRESSABLE,
+func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
+	req := &conformance.StreamingOutputCallRequest{
+		ResponseType: conformance.PayloadType_COMPRESSABLE,
 	}
 	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
 	require.NoError(t, err)
@@ -544,22 +545,22 @@ func DoFailServerStreamingWithNonASCIIError(t crosstesting.TB, client testpb.Tes
 	errStatus, ok := status.FromError(err)
 	require.True(t, ok)
 	require.Len(t, errStatus.Details(), 1)
-	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	errorDetail, ok := errStatus.Details()[0].(*conformance.ErrorDetail)
 	require.True(t, ok)
 	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail server streaming with non-ASCII error")
 }
 
 // DoFailServerStreamingAfterResponse performs a server streaming RPC that fails after responses have been sent from the server.
-func DoFailServerStreamingAfterResponse(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	respParam := make([]*testpb.ResponseParameters, len(respSizes))
+func DoFailServerStreamingAfterResponse(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
+	respParam := make([]*conformance.ResponseParameters, len(respSizes))
 	for i, s := range respSizes {
-		respParam[i] = &testpb.ResponseParameters{
+		respParam[i] = &conformance.ResponseParameters{
 			Size: int32(s),
 		}
 	}
-	req := &testpb.StreamingOutputCallRequest{
-		ResponseType:       testpb.PayloadType_COMPRESSABLE,
+	req := &conformance.StreamingOutputCallRequest{
+		ResponseType:       conformance.PayloadType_COMPRESSABLE,
 		ResponseParameters: respParam,
 	}
 	stream, err := client.FailStreamingOutputCall(context.Background(), req, args...)
@@ -580,15 +581,15 @@ func DoFailServerStreamingAfterResponse(t crosstesting.TB, client testpb.TestSer
 	errStatus, ok := status.FromError(err)
 	require.True(t, ok)
 	require.Len(t, errStatus.Details(), 1)
-	errorDetail, ok := errStatus.Details()[0].(*testpb.ErrorDetail)
+	errorDetail, ok := errStatus.Details()[0].(*conformance.ErrorDetail)
 	require.True(t, ok)
 	assert.True(t, proto.Equal(errorDetail, interop.ErrorDetail))
 	t.Successf("successful fail server streaming after response")
 }
 
 // DoUnresolvableHost attempts to call a method to an unresolvable host.
-func DoUnresolvableHost(t crosstesting.TB, client testpb.TestServiceClient, args ...grpc.CallOption) {
-	reply, err := client.EmptyCall(context.Background(), &testpb.Empty{}, args...)
+func DoUnresolvableHost(t crosstesting.TB, client conformance.TestServiceClient, args ...grpc.CallOption) {
+	reply, err := client.EmptyCall(context.Background(), &emptypb.Empty{}, args...)
 	assert.Nil(t, reply)
 	assert.Error(t, err)
 	assert.Equal(t, status.Code(err), codes.Unavailable)
