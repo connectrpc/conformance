@@ -37,7 +37,7 @@
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.48.0",
     "jasmine-spec-reporter": "^7.0.0",
-    "prettier": "^3.0.2",
+    "prettier": "^3.0.3",
     "typescript": "^5.1.6"
   }
 }
