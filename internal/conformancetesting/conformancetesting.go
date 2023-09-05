@@ -16,7 +16,7 @@ package conformancetesting
 
 import "testing"
 
-// TB is a testing interface that connect-conformance depends on. It is trimmed down
+// TB is a testing interface that the conformance suite depends on. It is trimmed down
 // from the standard library testing.TB interface and adds a Successf method.
 type TB interface {
 	Helper()

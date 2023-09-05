@@ -22,9 +22,9 @@ import (
 	"net"
 	"os"
 
-	conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	serverpb "github.com/connectrpc/conformance/internal/gen/proto/go/server/v1"
-	"github.com/connectrpc/conformance/internal/interop/interopgrpc"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	serverpb "connectrpc.com/conformance/internal/gen/proto/go/server/v1"
+	"connectrpc.com/conformance/internal/interop/interopgrpc"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"

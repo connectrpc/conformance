@@ -19,10 +19,10 @@
 package conformancev1connect
 
 import (
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	v1 "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"

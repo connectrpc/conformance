@@ -43,9 +43,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/connectrpc/conformance/internal/conformancetesting"
-	conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/connectrpc/conformance/internal/interop"
+	"connectrpc.com/conformance/internal/conformancetesting"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/interop"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"

@@ -1,4 +1,4 @@
-module github.com/connectrpc/conformance
+module connectrpc.com/conformance
 
 go 1.18
 

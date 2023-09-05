@@ -42,8 +42,8 @@ import (
 	"io"
 	"time"
 
-	conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/connectrpc/conformance/internal/interop"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/interop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"

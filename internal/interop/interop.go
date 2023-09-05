@@ -14,7 +14,7 @@
 
 package interop
 
-import conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+import conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 
 // NonASCIIErrMsg is a non-ASCII error message.
 const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII

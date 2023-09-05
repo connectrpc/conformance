@@ -1110,15 +1110,14 @@ const char descriptor_table_protodef_connectrpc_2fconformance_2fv1_2fmessages_2e
     "R\007details*\037\n\013PayloadType\022\020\n\014COMPRESSABLE"
     "\020\000*o\n\017GrpclbRouteType\022\035\n\031GRPCLB_ROUTE_TY"
     "PE_UNKNOWN\020\000\022\036\n\032GRPCLB_ROUTE_TYPE_FALLBA"
-    "CK\020\001\022\035\n\031GRPCLB_ROUTE_TYPE_BACKEND\020\002B\225\002\n\035"
+    "CK\020\001\022\035\n\031GRPCLB_ROUTE_TYPE_BACKEND\020\002B\216\002\n\035"
     "com.connectrpc.conformance.v1B\rMessagesP"
-    "rotoP\001Z_github.com/connectrpc/conformanc"
-    "e/internal/gen/proto/go/connectrpc/confo"
-    "rmance/v1;conformancev1\242\002\003CCX\252\002\031Connectr"
-    "pc.Conformance.V1\312\002\031Connectrpc\\Conforman"
-    "ce\\V1\342\002%Connectrpc\\Conformance\\V1\\GPBMet"
-    "adata\352\002\033Connectrpc::Conformance::V1b\006pro"
-    "to3"
+    "rotoP\001ZXconnectrpc.com/conformance/inter"
+    "nal/gen/proto/go/connectrpc/conformance/"
+    "v1;conformancev1\242\002\003CCX\252\002\031Connectrpc.Conf"
+    "ormance.V1\312\002\031Connectrpc\\Conformance\\V1\342\002"
+    "%Connectrpc\\Conformance\\V1\\GPBMetadata\352\002"
+    "\033Connectrpc::Conformance::V1b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_connectrpc_2fconformance_2fv1_2fmessages_2eproto_deps[2] =
     {
@@ -1129,7 +1128,7 @@ static ::absl::once_flag descriptor_table_connectrpc_2fconformance_2fv1_2fmessag
 const ::_pbi::DescriptorTable descriptor_table_connectrpc_2fconformance_2fv1_2fmessages_2eproto = {
     false,
     false,
-    5203,
+    5196,
     descriptor_table_protodef_connectrpc_2fconformance_2fv1_2fmessages_2eproto,
     "connectrpc/conformance/v1/messages.proto",
     &descriptor_table_connectrpc_2fconformance_2fv1_2fmessages_2eproto_once,

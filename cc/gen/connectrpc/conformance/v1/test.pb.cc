@@ -106,14 +106,14 @@ const char descriptor_table_protodef_connectrpc_2fconformance_2fv1_2ftest_2eprot
     "entConfigureService\022r\n\tConfigure\0221.conne"
     "ctrpc.conformance.v1.ClientConfigureRequ"
     "est\0322.connectrpc.conformance.v1.ClientCo"
-    "nfigureResponseB\221\002\n\035com.connectrpc.confo"
-    "rmance.v1B\tTestProtoP\001Z_github.com/conne"
-    "ctrpc/conformance/internal/gen/proto/go/"
-    "connectrpc/conformance/v1;conformancev1\242"
-    "\002\003CCX\252\002\031Connectrpc.Conformance.V1\312\002\031Conn"
-    "ectrpc\\Conformance\\V1\342\002%Connectrpc\\Confo"
-    "rmance\\V1\\GPBMetadata\352\002\033Connectrpc::Conf"
-    "ormance::V1b\006proto3"
+    "nfigureResponseB\212\002\n\035com.connectrpc.confo"
+    "rmance.v1B\tTestProtoP\001ZXconnectrpc.com/c"
+    "onformance/internal/gen/proto/go/connect"
+    "rpc/conformance/v1;conformancev1\242\002\003CCX\252\002"
+    "\031Connectrpc.Conformance.V1\312\002\031Connectrpc\\"
+    "Conformance\\V1\342\002%Connectrpc\\Conformance\\"
+    "V1\\GPBMetadata\352\002\033Connectrpc::Conformance"
+    "::V1b\006proto3"
 };
 static const ::_pbi::DescriptorTable* const descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2eproto_deps[2] =
     {
@@ -124,7 +124,7 @@ static ::absl::once_flag descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2
 const ::_pbi::DescriptorTable descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2eproto = {
     false,
     false,
-    2619,
+    2612,
     descriptor_table_protodef_connectrpc_2fconformance_2fv1_2ftest_2eproto,
     "connectrpc/conformance/v1/test.proto",
     &descriptor_table_connectrpc_2fconformance_2fv1_2ftest_2eproto_once,

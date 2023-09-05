@@ -21,10 +21,10 @@ import (
 	"io"
 	"time"
 
+	conformanceconnect "connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/interop"
 	"connectrpc.com/connect"
-	conformanceconnect "github.com/connectrpc/conformance/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
-	conformance "github.com/connectrpc/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/connectrpc/conformance/internal/interop"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
