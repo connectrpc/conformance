@@ -19,14 +19,14 @@
     "caseless": "^0.12.0",
     "commander": "^11.0.0",
     "esbuild": "0.16.17",
-    "glob": "^10.3.3",
+    "glob": "^10.3.4",
     "google-protobuf": "^3.21.2",
     "grpc-web": "^1.4.2",
     "karma": "^6.4.1",
     "karma-chrome-launcher": "^3.1.1",
     "karma-esbuild": "^2.2.5",
     "karma-jasmine": "^5.1.0",
-    "tsx": "3.12.7"
+    "tsx": "3.12.8"
   },
   "devDependencies": {
     "@types/caseless": "^0.12.2",
@@ -34,10 +34,10 @@
     "@types/jasmine": "^4.3.5",
     "@types/karma": "^6.3.3",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
+    "@typescript-eslint/parser": "^6.6.0",
     "eslint": "^8.48.0",
     "jasmine-spec-reporter": "^7.0.0",
-    "prettier": "^3.0.2",
+    "prettier": "^3.0.3",
     "typescript": "^5.1.6"
   }
 }
