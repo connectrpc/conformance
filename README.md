@@ -32,7 +32,7 @@ the [demo service][demo].
 
 The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
-a range of expected behaviours and functionality for gRPC and Connect.
+a range of expected behaviors and functionality for gRPC and Connect.
 
 | Test Case                                | `connect-go`, `grpc-go` | `connect-es`, `grpc-web` |
 |------------------------------------------|-------------------------|---------------------------|
