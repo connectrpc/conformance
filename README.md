@@ -1,4 +1,4 @@
-# connect-conformance
+# Conformance
 
 [![License](https://img.shields.io/github/license/connectrpc/conformance?color=blue)][license]
 [![CI](https://github.com/connectrpc/conformance/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
@@ -6,7 +6,7 @@
 [![conformance-web](https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml/badge.svg?branch=main)][github-action-web]
 [![conformance-cc](https://github.com/connectrpc/conformance/actions/workflows/conformance-cc.yaml/badge.svg?branch=main)][github-action-cc]
 
-`connect-conformance` runs a suite of cross-compatibility tests using every combination of the
+This repo runs a suite of cross-compatibility tests using every combination of the
 following clients and servers:
 
 ### Servers
@@ -248,11 +248,9 @@ You can run the tests using `make dockercomposetest`.
 
 ## Support and Versioning
 
-`connect-conformance` works with:
+This conformance suite works with the most recent release of Go.
 
-* The most recent release of Go.
-
-Unlike Connect's Go implementation, `connect-conformance` has no exported APIs
+Unlike Connect's Go implementation, the conformance suite has no exported APIs
 and makes no backward compatibility guarantees. We'd like to release it as an
 interoperability testing toolkit eventually, but don't have a concrete timeline
 in mind.
