@@ -1,7 +1,7 @@
 Contributing
 ============
 
-We'd love your help making `connect-conformance` more thorough!
+We'd love your help making `Conformance` more thorough!
 
 If you'd like to add new tests, please [open an issue][open-issue] describing
 your proposal &mdash; discussing API changes ahead of time makes pull request
