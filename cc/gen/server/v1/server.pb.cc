@@ -25,27 +25,24 @@
 #include "google/protobuf/generated_message_reflection.h"
 #include "google/protobuf/reflection_ops.h"
 #include "google/protobuf/wire_format.h"
-#include "google/protobuf/generated_message_tctable_impl.h"
 // @@protoc_insertion_point(includes)
 
 // Must be included last.
 #include "google/protobuf/port_def.inc"
 PROTOBUF_PRAGMA_INIT_SEG
-namespace _pb = ::google::protobuf;
-namespace _pbi = ::google::protobuf::internal;
-namespace _fl = ::google::protobuf::internal::field_layout;
+namespace _pb = ::PROTOBUF_NAMESPACE_ID;
+namespace _pbi = ::PROTOBUF_NAMESPACE_ID::internal;
 namespace server {
 namespace v1 {
-        template <typename>
-PROTOBUF_CONSTEXPR ServerMetadata::ServerMetadata(::_pbi::ConstantInitialized)
-    : _impl_{
-      /*decltype(_impl_.protocols_)*/ {},
-      /*decltype(_impl_.host_)*/ {
-          &::_pbi::fixed_address_empty_string,
-          ::_pbi::ConstantInitialized{},
-      },
-      /*decltype(_impl_._cached_size_)*/ {},
-    } {}
+template <typename>
+PROTOBUF_CONSTEXPR ServerMetadata::ServerMetadata(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.protocols_)*/{}
+  , /*decltype(_impl_.host_)*/ {
+    &::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized {}
+  }
+
+  , /*decltype(_impl_._cached_size_)*/{}} {}
 struct ServerMetadataDefaultTypeInternal {
   PROTOBUF_CONSTEXPR ServerMetadataDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~ServerMetadataDefaultTypeInternal() {}
@@ -56,17 +53,17 @@ struct ServerMetadataDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ServerMetadataDefaultTypeInternal _ServerMetadata_default_instance_;
-        template <typename>
-PROTOBUF_CONSTEXPR ProtocolSupport::ProtocolSupport(::_pbi::ConstantInitialized)
-    : _impl_{
-      /*decltype(_impl_.http_versions_)*/ {},
-      /*decltype(_impl_.port_)*/ {
-          &::_pbi::fixed_address_empty_string,
-          ::_pbi::ConstantInitialized{},
-      },
-      /*decltype(_impl_.protocol_)*/ 0,
-      /*decltype(_impl_._cached_size_)*/ {},
-    } {}
+template <typename>
+PROTOBUF_CONSTEXPR ProtocolSupport::ProtocolSupport(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.http_versions_)*/{}
+  , /*decltype(_impl_.port_)*/ {
+    &::_pbi::fixed_address_empty_string, ::_pbi::ConstantInitialized {}
+  }
+
+  , /*decltype(_impl_.protocol_)*/ 0
+
+  , /*decltype(_impl_._cached_size_)*/{}} {}
 struct ProtocolSupportDefaultTypeInternal {
   PROTOBUF_CONSTEXPR ProtocolSupportDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~ProtocolSupportDefaultTypeInternal() {}
@@ -77,13 +74,14 @@ struct ProtocolSupportDefaultTypeInternal {
 
 PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT
     PROTOBUF_ATTRIBUTE_INIT_PRIORITY1 ProtocolSupportDefaultTypeInternal _ProtocolSupport_default_instance_;
-        template <typename>
-PROTOBUF_CONSTEXPR HTTPVersion::HTTPVersion(::_pbi::ConstantInitialized)
-    : _impl_{
-      /*decltype(_impl_.major_)*/ 0,
-      /*decltype(_impl_.minor_)*/ 0,
-      /*decltype(_impl_._cached_size_)*/ {},
-    } {}
+template <typename>
+PROTOBUF_CONSTEXPR HTTPVersion::HTTPVersion(
+    ::_pbi::ConstantInitialized): _impl_{
+    /*decltype(_impl_.major_)*/ 0
+
+  , /*decltype(_impl_.minor_)*/ 0
+
+  , /*decltype(_impl_._cached_size_)*/{}} {}
 struct HTTPVersionDefaultTypeInternal {
   PROTOBUF_CONSTEXPR HTTPVersionDefaultTypeInternal() : _instance(::_pbi::ConstantInitialized{}) {}
   ~HTTPVersionDefaultTypeInternal() {}
@@ -137,9 +135,9 @@ const ::uint32_t TableStruct_server_2fv1_2fserver_2eproto::offsets[] PROTOBUF_SE
 
 static const ::_pbi::MigrationSchema
     schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-        {0, -1, -1, sizeof(::server::v1::ServerMetadata)},
-        {10, -1, -1, sizeof(::server::v1::ProtocolSupport)},
-        {21, -1, -1, sizeof(::server::v1::HTTPVersion)},
+        { 0, -1, -1, sizeof(::server::v1::ServerMetadata)},
+        { 10, -1, -1, sizeof(::server::v1::ProtocolSupport)},
+        { 21, -1, -1, sizeof(::server::v1::HTTPVersion)},
 };
 
 static const ::_pb::Message* const file_default_instances[] = {
@@ -202,8 +200,8 @@ PROTOBUF_ATTRIBUTE_INIT_PRIORITY2
 static ::_pbi::AddDescriptorsRunner dynamic_init_dummy_server_2fv1_2fserver_2eproto(&descriptor_table_server_2fv1_2fserver_2eproto);
 namespace server {
 namespace v1 {
-const ::google::protobuf::EnumDescriptor* Protocol_descriptor() {
-  ::google::protobuf::internal::AssignDescriptors(&descriptor_table_server_2fv1_2fserver_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Protocol_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_server_2fv1_2fserver_2eproto);
   return file_level_enum_descriptors_server_2fv1_2fserver_2eproto[0];
 }
 bool Protocol_IsValid(int value) {
@@ -222,21 +220,21 @@ class ServerMetadata::_Internal {
  public:
 };
 
-ServerMetadata::ServerMetadata(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
+ServerMetadata::ServerMetadata(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:server.v1.ServerMetadata)
 }
-ServerMetadata::ServerMetadata(const ServerMetadata& from) : ::google::protobuf::Message() {
-  ServerMetadata* const _this = this;
-  (void)_this;
+ServerMetadata::ServerMetadata(const ServerMetadata& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  ServerMetadata* const _this = this; (void)_this;
   new (&_impl_) Impl_{
-      decltype(_impl_.protocols_){from._impl_.protocols_},
-      decltype(_impl_.host_){},
-      /*decltype(_impl_._cached_size_)*/ {},
-  };
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
+      decltype(_impl_.protocols_){from._impl_.protocols_}
+    , decltype(_impl_.host_) {}
+
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   _impl_.host_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
         _impl_.host_.Set("", GetArenaForAllocation());
@@ -244,36 +242,43 @@ ServerMetadata::ServerMetadata(const ServerMetadata& from) : ::google::protobuf:
   if (!from._internal_host().empty()) {
     _this->_impl_.host_.Set(from._internal_host(), _this->GetArenaForAllocation());
   }
-
   // @@protoc_insertion_point(copy_constructor:server.v1.ServerMetadata)
 }
+
 inline void ServerMetadata::SharedCtor(::_pb::Arena* arena) {
   (void)arena;
   new (&_impl_) Impl_{
-      decltype(_impl_.protocols_){arena},
-      decltype(_impl_.host_){},
-      /*decltype(_impl_._cached_size_)*/ {},
+      decltype(_impl_.protocols_){arena}
+    , decltype(_impl_.host_) {}
+
+    , /*decltype(_impl_._cached_size_)*/{}
   };
   _impl_.host_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
         _impl_.host_.Set("", GetArenaForAllocation());
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 }
+
 ServerMetadata::~ServerMetadata() {
   // @@protoc_insertion_point(destructor:server.v1.ServerMetadata)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
   SharedDtor();
 }
+
 inline void ServerMetadata::SharedDtor() {
   ABSL_DCHECK(GetArenaForAllocation() == nullptr);
-  _impl_.protocols_.~RepeatedPtrField();
+  _internal_mutable_protocols()->~RepeatedPtrField();
   _impl_.host_.Destroy();
 }
+
 void ServerMetadata::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-PROTOBUF_NOINLINE void ServerMetadata::Clear() {
+void ServerMetadata::Clear() {
 // @@protoc_insertion_point(message_clear_start:server.v1.ServerMetadata)
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -281,82 +286,88 @@ PROTOBUF_NOINLINE void ServerMetadata::Clear() {
 
   _internal_mutable_protocols()->Clear();
   _impl_.host_.ClearToEmpty();
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* ServerMetadata::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+const char* ServerMetadata::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // string host = 1 [json_name = "host"];
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 10)) {
+          auto str = _internal_mutable_host();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "server.v1.ServerMetadata.host"));
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      // repeated .server.v1.ProtocolSupport protocols = 2 [json_name = "protocols"];
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 18)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_protocols(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
   return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
 }
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 1, 37, 2> ServerMetadata::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_ServerMetadata_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-  }, {{
-    // repeated .server.v1.ProtocolSupport protocols = 2 [json_name = "protocols"];
-    {::_pbi::TcParser::FastMtR1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(ServerMetadata, _impl_.protocols_)}},
-    // string host = 1 [json_name = "host"];
-    {::_pbi::TcParser::FastUS1,
-     {10, 63, 0, PROTOBUF_FIELD_OFFSET(ServerMetadata, _impl_.host_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // string host = 1 [json_name = "host"];
-    {PROTOBUF_FIELD_OFFSET(ServerMetadata, _impl_.host_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-    // repeated .server.v1.ProtocolSupport protocols = 2 [json_name = "protocols"];
-    {PROTOBUF_FIELD_OFFSET(ServerMetadata, _impl_.protocols_), 0, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::server::v1::ProtocolSupport>()},
-  }}, {{
-    "\30\4\0\0\0\0\0\0"
-    "server.v1.ServerMetadata"
-    "host"
-  }},
-};
 
 ::uint8_t* ServerMetadata::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:server.v1.ServerMetadata)
   ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
+  (void) cached_has_bits;
 
   // string host = 1 [json_name = "host"];
   if (!this->_internal_host().empty()) {
     const std::string& _s = this->_internal_host();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "server.v1.ServerMetadata.host");
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "server.v1.ServerMetadata.host");
     target = stream->WriteStringMaybeAliased(1, _s, target);
   }
 
   // repeated .server.v1.ProtocolSupport protocols = 2 [json_name = "protocols"];
   for (unsigned i = 0,
       n = static_cast<unsigned>(this->_internal_protocols_size()); i < n; i++) {
-    const auto& repfield = this->_internal_protocols().Get(i);
-    target = ::google::protobuf::internal::WireFormatLite::
+    const auto& repfield = this->_internal_protocols(i);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
         InternalWriteMessage(2, repfield, repfield.GetCachedSize(), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:server.v1.ServerMetadata)
   return target;
@@ -374,25 +385,26 @@ const ::_pbi::TcParseTable<1, 2, 1, 37, 2> ServerMetadata::_table_ = {
   total_size += 1UL * this->_internal_protocols_size();
   for (const auto& msg : this->_internal_protocols()) {
     total_size +=
-      ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
+
   // string host = 1 [json_name = "host"];
   if (!this->_internal_host().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+    total_size += 1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
                                     this->_internal_host());
   }
 
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::google::protobuf::Message::ClassData ServerMetadata::_class_data_ = {
-    ::google::protobuf::Message::CopyWithSourceCheck,
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ServerMetadata::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     ServerMetadata::MergeImpl
 };
-const ::google::protobuf::Message::ClassData*ServerMetadata::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ServerMetadata::GetClassData() const { return &_class_data_; }
 
 
-void ServerMetadata::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+void ServerMetadata::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
   auto* const _this = static_cast<ServerMetadata*>(&to_msg);
   auto& from = static_cast<const ServerMetadata&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:server.v1.ServerMetadata)
@@ -404,7 +416,7 @@ void ServerMetadata::MergeImpl(::google::protobuf::Message& to_msg, const ::goog
   if (!from._internal_host().empty()) {
     _this->_internal_set_host(from._internal_host());
   }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void ServerMetadata::CopyFrom(const ServerMetadata& from) {
@@ -414,7 +426,7 @@ void ServerMetadata::CopyFrom(const ServerMetadata& from) {
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool ServerMetadata::IsInitialized() const {
+bool ServerMetadata::IsInitialized() const {
   return true;
 }
 
@@ -423,12 +435,12 @@ void ServerMetadata::InternalSwap(ServerMetadata* other) {
   auto* lhs_arena = GetArenaForAllocation();
   auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _impl_.protocols_.InternalSwap(&other->_impl_.protocols_);
+  _internal_mutable_protocols()->InternalSwap(other->_internal_mutable_protocols());
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.host_, lhs_arena,
                                        &other->_impl_.host_, rhs_arena);
 }
 
-::google::protobuf::Metadata ServerMetadata::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ServerMetadata::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_server_2fv1_2fserver_2eproto_getter, &descriptor_table_server_2fv1_2fserver_2eproto_once,
       file_level_metadata_server_2fv1_2fserver_2eproto[0]);
@@ -439,22 +451,23 @@ class ProtocolSupport::_Internal {
  public:
 };
 
-ProtocolSupport::ProtocolSupport(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
+ProtocolSupport::ProtocolSupport(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:server.v1.ProtocolSupport)
 }
-ProtocolSupport::ProtocolSupport(const ProtocolSupport& from) : ::google::protobuf::Message() {
-  ProtocolSupport* const _this = this;
-  (void)_this;
+ProtocolSupport::ProtocolSupport(const ProtocolSupport& from)
+  : ::PROTOBUF_NAMESPACE_ID::Message() {
+  ProtocolSupport* const _this = this; (void)_this;
   new (&_impl_) Impl_{
-      decltype(_impl_.http_versions_){from._impl_.http_versions_},
-      decltype(_impl_.port_){},
-      decltype(_impl_.protocol_){},
-      /*decltype(_impl_._cached_size_)*/ {},
-  };
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
-      from._internal_metadata_);
+      decltype(_impl_.http_versions_){from._impl_.http_versions_}
+    , decltype(_impl_.port_) {}
+
+    , decltype(_impl_.protocol_) {}
+
+    , /*decltype(_impl_._cached_size_)*/{}};
+
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   _impl_.port_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
         _impl_.port_.Set("", GetArenaForAllocation());
@@ -463,37 +476,45 @@ ProtocolSupport::ProtocolSupport(const ProtocolSupport& from) : ::google::protob
     _this->_impl_.port_.Set(from._internal_port(), _this->GetArenaForAllocation());
   }
   _this->_impl_.protocol_ = from._impl_.protocol_;
-
   // @@protoc_insertion_point(copy_constructor:server.v1.ProtocolSupport)
 }
+
 inline void ProtocolSupport::SharedCtor(::_pb::Arena* arena) {
   (void)arena;
   new (&_impl_) Impl_{
-      decltype(_impl_.http_versions_){arena},
-      decltype(_impl_.port_){},
-      decltype(_impl_.protocol_){0},
-      /*decltype(_impl_._cached_size_)*/ {},
+      decltype(_impl_.http_versions_){arena}
+    , decltype(_impl_.port_) {}
+
+    , decltype(_impl_.protocol_) { 0 }
+
+    , /*decltype(_impl_._cached_size_)*/{}
   };
   _impl_.port_.InitDefault();
   #ifdef PROTOBUF_FORCE_COPY_DEFAULT_STRING
         _impl_.port_.Set("", GetArenaForAllocation());
   #endif  // PROTOBUF_FORCE_COPY_DEFAULT_STRING
 }
+
 ProtocolSupport::~ProtocolSupport() {
   // @@protoc_insertion_point(destructor:server.v1.ProtocolSupport)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
   SharedDtor();
 }
+
 inline void ProtocolSupport::SharedDtor() {
   ABSL_DCHECK(GetArenaForAllocation() == nullptr);
-  _impl_.http_versions_.~RepeatedPtrField();
+  _internal_mutable_http_versions()->~RepeatedPtrField();
   _impl_.port_.Destroy();
 }
+
 void ProtocolSupport::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-PROTOBUF_NOINLINE void ProtocolSupport::Clear() {
+void ProtocolSupport::Clear() {
 // @@protoc_insertion_point(message_clear_start:server.v1.ProtocolSupport)
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -502,68 +523,78 @@ PROTOBUF_NOINLINE void ProtocolSupport::Clear() {
   _internal_mutable_http_versions()->Clear();
   _impl_.port_.ClearToEmpty();
   _impl_.protocol_ = 0;
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* ProtocolSupport::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+const char* ProtocolSupport::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // .server.v1.Protocol protocol = 1 [json_name = "protocol"];
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
+          ::int32_t val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+          _internal_set_protocol(static_cast<::server::v1::Protocol>(val));
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      // repeated .server.v1.HTTPVersion http_versions = 2 [json_name = "httpVersions"];
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 18)) {
+          ptr -= 1;
+          do {
+            ptr += 1;
+            ptr = ctx->ParseMessage(_internal_add_http_versions(), ptr);
+            CHK_(ptr);
+            if (!ctx->DataAvailable(ptr)) break;
+          } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      // string port = 3 [json_name = "port"];
+      case 3:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 26)) {
+          auto str = _internal_mutable_port();
+          ptr = ::_pbi::InlineGreedyStringParser(str, ptr, ctx);
+          CHK_(ptr);
+          CHK_(::_pbi::VerifyUTF8(str, "server.v1.ProtocolSupport.port"));
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
   return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
 }
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<2, 3, 1, 38, 2> ProtocolSupport::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    3, 24,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967288,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    3,  // num_field_entries
-    1,  // num_aux_entries
-    offsetof(decltype(_table_), aux_entries),
-    &_ProtocolSupport_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-  }, {{
-    {::_pbi::TcParser::MiniParse, {}},
-    // .server.v1.Protocol protocol = 1 [json_name = "protocol"];
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(ProtocolSupport, _impl_.protocol_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(ProtocolSupport, _impl_.protocol_)}},
-    // repeated .server.v1.HTTPVersion http_versions = 2 [json_name = "httpVersions"];
-    {::_pbi::TcParser::FastMtR1,
-     {18, 63, 0, PROTOBUF_FIELD_OFFSET(ProtocolSupport, _impl_.http_versions_)}},
-    // string port = 3 [json_name = "port"];
-    {::_pbi::TcParser::FastUS1,
-     {26, 63, 0, PROTOBUF_FIELD_OFFSET(ProtocolSupport, _impl_.port_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // .server.v1.Protocol protocol = 1 [json_name = "protocol"];
-    {PROTOBUF_FIELD_OFFSET(ProtocolSupport, _impl_.protocol_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kOpenEnum)},
-    // repeated .server.v1.HTTPVersion http_versions = 2 [json_name = "httpVersions"];
-    {PROTOBUF_FIELD_OFFSET(ProtocolSupport, _impl_.http_versions_), 0, 0,
-    (0 | ::_fl::kFcRepeated | ::_fl::kMessage | ::_fl::kTvTable)},
-    // string port = 3 [json_name = "port"];
-    {PROTOBUF_FIELD_OFFSET(ProtocolSupport, _impl_.port_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kUtf8String | ::_fl::kRepAString)},
-  }}, {{
-    {::_pbi::TcParser::GetTable<::server::v1::HTTPVersion>()},
-  }}, {{
-    "\31\0\0\4\0\0\0\0"
-    "server.v1.ProtocolSupport"
-    "port"
-  }},
-};
 
 ::uint8_t* ProtocolSupport::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:server.v1.ProtocolSupport)
   ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
+  (void) cached_has_bits;
 
   // .server.v1.Protocol protocol = 1 [json_name = "protocol"];
   if (this->_internal_protocol() != 0) {
@@ -575,23 +606,22 @@ const ::_pbi::TcParseTable<2, 3, 1, 38, 2> ProtocolSupport::_table_ = {
   // repeated .server.v1.HTTPVersion http_versions = 2 [json_name = "httpVersions"];
   for (unsigned i = 0,
       n = static_cast<unsigned>(this->_internal_http_versions_size()); i < n; i++) {
-    const auto& repfield = this->_internal_http_versions().Get(i);
-    target = ::google::protobuf::internal::WireFormatLite::
+    const auto& repfield = this->_internal_http_versions(i);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
         InternalWriteMessage(2, repfield, repfield.GetCachedSize(), target, stream);
   }
 
   // string port = 3 [json_name = "port"];
   if (!this->_internal_port().empty()) {
     const std::string& _s = this->_internal_port();
-    ::google::protobuf::internal::WireFormatLite::VerifyUtf8String(
-        _s.data(), static_cast<int>(_s.length()), ::google::protobuf::internal::WireFormatLite::SERIALIZE, "server.v1.ProtocolSupport.port");
+    ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::VerifyUtf8String(
+        _s.data(), static_cast<int>(_s.length()), ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SERIALIZE, "server.v1.ProtocolSupport.port");
     target = stream->WriteStringMaybeAliased(3, _s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:server.v1.ProtocolSupport)
   return target;
@@ -609,11 +639,12 @@ const ::_pbi::TcParseTable<2, 3, 1, 38, 2> ProtocolSupport::_table_ = {
   total_size += 1UL * this->_internal_http_versions_size();
   for (const auto& msg : this->_internal_http_versions()) {
     total_size +=
-      ::google::protobuf::internal::WireFormatLite::MessageSize(msg);
+      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
+
   // string port = 3 [json_name = "port"];
   if (!this->_internal_port().empty()) {
-    total_size += 1 + ::google::protobuf::internal::WireFormatLite::StringSize(
+    total_size += 1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
                                     this->_internal_port());
   }
 
@@ -626,14 +657,14 @@ const ::_pbi::TcParseTable<2, 3, 1, 38, 2> ProtocolSupport::_table_ = {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::google::protobuf::Message::ClassData ProtocolSupport::_class_data_ = {
-    ::google::protobuf::Message::CopyWithSourceCheck,
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData ProtocolSupport::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     ProtocolSupport::MergeImpl
 };
-const ::google::protobuf::Message::ClassData*ProtocolSupport::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*ProtocolSupport::GetClassData() const { return &_class_data_; }
 
 
-void ProtocolSupport::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+void ProtocolSupport::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
   auto* const _this = static_cast<ProtocolSupport*>(&to_msg);
   auto& from = static_cast<const ProtocolSupport&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:server.v1.ProtocolSupport)
@@ -648,7 +679,7 @@ void ProtocolSupport::MergeImpl(::google::protobuf::Message& to_msg, const ::goo
   if (from._internal_protocol() != 0) {
     _this->_internal_set_protocol(from._internal_protocol());
   }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void ProtocolSupport::CopyFrom(const ProtocolSupport& from) {
@@ -658,7 +689,7 @@ void ProtocolSupport::CopyFrom(const ProtocolSupport& from) {
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool ProtocolSupport::IsInitialized() const {
+bool ProtocolSupport::IsInitialized() const {
   return true;
 }
 
@@ -667,13 +698,13 @@ void ProtocolSupport::InternalSwap(ProtocolSupport* other) {
   auto* lhs_arena = GetArenaForAllocation();
   auto* rhs_arena = other->GetArenaForAllocation();
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  _impl_.http_versions_.InternalSwap(&other->_impl_.http_versions_);
+  _internal_mutable_http_versions()->InternalSwap(other->_internal_mutable_http_versions());
   ::_pbi::ArenaStringPtr::InternalSwap(&_impl_.port_, lhs_arena,
                                        &other->_impl_.port_, rhs_arena);
   swap(_impl_.protocol_, other->_impl_.protocol_);
 }
 
-::google::protobuf::Metadata ProtocolSupport::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ProtocolSupport::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_server_2fv1_2fserver_2eproto_getter, &descriptor_table_server_2fv1_2fserver_2eproto_once,
       file_level_metadata_server_2fv1_2fserver_2eproto[1]);
@@ -684,38 +715,47 @@ class HTTPVersion::_Internal {
  public:
 };
 
-HTTPVersion::HTTPVersion(::google::protobuf::Arena* arena)
-    : ::google::protobuf::Message(arena) {
+HTTPVersion::HTTPVersion(::PROTOBUF_NAMESPACE_ID::Arena* arena)
+  : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor(arena);
   // @@protoc_insertion_point(arena_constructor:server.v1.HTTPVersion)
 }
 HTTPVersion::HTTPVersion(const HTTPVersion& from)
-    : ::google::protobuf::Message(), _impl_(from._impl_) {
-  _internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(
+  : ::PROTOBUF_NAMESPACE_ID::Message(), _impl_(from._impl_) {
+  _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(
       from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:server.v1.HTTPVersion)
 }
+
 inline void HTTPVersion::SharedCtor(::_pb::Arena* arena) {
   (void)arena;
   new (&_impl_) Impl_{
-      decltype(_impl_.major_){0},
-      decltype(_impl_.minor_){0},
-      /*decltype(_impl_._cached_size_)*/ {},
+      decltype(_impl_.major_) { 0 }
+
+    , decltype(_impl_.minor_) { 0 }
+
+    , /*decltype(_impl_._cached_size_)*/{}
   };
 }
+
 HTTPVersion::~HTTPVersion() {
   // @@protoc_insertion_point(destructor:server.v1.HTTPVersion)
-  _internal_metadata_.Delete<::google::protobuf::UnknownFieldSet>();
+  if (auto *arena = _internal_metadata_.DeleteReturnArena<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>()) {
+  (void)arena;
+    return;
+  }
   SharedDtor();
 }
+
 inline void HTTPVersion::SharedDtor() {
   ABSL_DCHECK(GetArenaForAllocation() == nullptr);
 }
+
 void HTTPVersion::SetCachedSize(int size) const {
   _impl_._cached_size_.Set(size);
 }
 
-PROTOBUF_NOINLINE void HTTPVersion::Clear() {
+void HTTPVersion::Clear() {
 // @@protoc_insertion_point(message_clear_start:server.v1.HTTPVersion)
   ::uint32_t cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
@@ -724,77 +764,79 @@ PROTOBUF_NOINLINE void HTTPVersion::Clear() {
   ::memset(&_impl_.major_, 0, static_cast<::size_t>(
       reinterpret_cast<char*>(&_impl_.minor_) -
       reinterpret_cast<char*>(&_impl_.major_)) + sizeof(_impl_.minor_));
-  _internal_metadata_.Clear<::google::protobuf::UnknownFieldSet>();
+  _internal_metadata_.Clear<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
 }
 
-const char* HTTPVersion::_InternalParse(
-    const char* ptr, ::_pbi::ParseContext* ctx) {
-  ptr = ::_pbi::TcParser::ParseLoop(this, ptr, ctx, &_table_.header);
+const char* HTTPVersion::_InternalParse(const char* ptr, ::_pbi::ParseContext* ctx) {
+#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+  while (!ctx->Done(&ptr)) {
+    ::uint32_t tag;
+    ptr = ::_pbi::ReadTag(ptr, &tag);
+    switch (tag >> 3) {
+      // int32 major = 1 [json_name = "major"];
+      case 1:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 8)) {
+          _impl_.major_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      // int32 minor = 2 [json_name = "minor"];
+      case 2:
+        if (PROTOBUF_PREDICT_TRUE(static_cast<::uint8_t>(tag) == 16)) {
+          _impl_.minor_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint32(&ptr);
+          CHK_(ptr);
+        } else {
+          goto handle_unusual;
+        }
+        continue;
+      default:
+        goto handle_unusual;
+    }  // switch
+  handle_unusual:
+    if ((tag == 0) || ((tag & 7) == 4)) {
+      CHK_(ptr);
+      ctx->SetLastTag(tag);
+      goto message_done;
+    }
+    ptr = UnknownFieldParse(
+        tag,
+        _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(),
+        ptr, ctx);
+    CHK_(ptr != nullptr);
+  }  // while
+message_done:
   return ptr;
+failure:
+  ptr = nullptr;
+  goto message_done;
+#undef CHK_
 }
-
-
-PROTOBUF_CONSTINIT PROTOBUF_ATTRIBUTE_INIT_PRIORITY1
-const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HTTPVersion::_table_ = {
-  {
-    0,  // no _has_bits_
-    0, // no _extensions_
-    2, 8,  // max_field_number, fast_idx_mask
-    offsetof(decltype(_table_), field_lookup_table),
-    4294967292,  // skipmap
-    offsetof(decltype(_table_), field_entries),
-    2,  // num_field_entries
-    0,  // num_aux_entries
-    offsetof(decltype(_table_), field_names),  // no aux_entries
-    &_HTTPVersion_default_instance_._instance,
-    ::_pbi::TcParser::GenericFallback,  // fallback
-  }, {{
-    // int32 minor = 2 [json_name = "minor"];
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(HTTPVersion, _impl_.minor_), 63>(),
-     {16, 63, 0, PROTOBUF_FIELD_OFFSET(HTTPVersion, _impl_.minor_)}},
-    // int32 major = 1 [json_name = "major"];
-    {::_pbi::TcParser::SingularVarintNoZag1<::uint32_t, offsetof(HTTPVersion, _impl_.major_), 63>(),
-     {8, 63, 0, PROTOBUF_FIELD_OFFSET(HTTPVersion, _impl_.major_)}},
-  }}, {{
-    65535, 65535
-  }}, {{
-    // int32 major = 1 [json_name = "major"];
-    {PROTOBUF_FIELD_OFFSET(HTTPVersion, _impl_.major_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
-    // int32 minor = 2 [json_name = "minor"];
-    {PROTOBUF_FIELD_OFFSET(HTTPVersion, _impl_.minor_), 0, 0,
-    (0 | ::_fl::kFcSingular | ::_fl::kInt32)},
-  }},
-  // no aux_entries
-  {{
-  }},
-};
 
 ::uint8_t* HTTPVersion::_InternalSerialize(
-    ::uint8_t* target,
-    ::google::protobuf::io::EpsCopyOutputStream* stream) const {
+    ::uint8_t* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:server.v1.HTTPVersion)
   ::uint32_t cached_has_bits = 0;
-  (void)cached_has_bits;
+  (void) cached_has_bits;
 
   // int32 major = 1 [json_name = "major"];
   if (this->_internal_major() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteInt32ToArrayWithField<1>(
-            stream, this->_internal_major(), target);
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(
+        1, this->_internal_major(), target);
   }
 
   // int32 minor = 2 [json_name = "minor"];
   if (this->_internal_minor() != 0) {
-    target = ::google::protobuf::internal::WireFormatLite::
-        WriteInt32ToArrayWithField<2>(
-            stream, this->_internal_minor(), target);
+    target = stream->EnsureSpace(target);
+    target = ::_pbi::WireFormatLite::WriteInt32ToArray(
+        2, this->_internal_minor(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target =
-        ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
-            _internal_metadata_.unknown_fields<::google::protobuf::UnknownFieldSet>(::google::protobuf::UnknownFieldSet::default_instance), target, stream);
+    target = ::_pbi::WireFormat::InternalSerializeUnknownFieldsToArray(
+        _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:server.v1.HTTPVersion)
   return target;
@@ -823,14 +865,14 @@ const ::_pbi::TcParseTable<1, 2, 0, 0, 2> HTTPVersion::_table_ = {
   return MaybeComputeUnknownFieldsSize(total_size, &_impl_._cached_size_);
 }
 
-const ::google::protobuf::Message::ClassData HTTPVersion::_class_data_ = {
-    ::google::protobuf::Message::CopyWithSourceCheck,
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData HTTPVersion::_class_data_ = {
+    ::PROTOBUF_NAMESPACE_ID::Message::CopyWithSourceCheck,
     HTTPVersion::MergeImpl
 };
-const ::google::protobuf::Message::ClassData*HTTPVersion::GetClassData() const { return &_class_data_; }
+const ::PROTOBUF_NAMESPACE_ID::Message::ClassData*HTTPVersion::GetClassData() const { return &_class_data_; }
 
 
-void HTTPVersion::MergeImpl(::google::protobuf::Message& to_msg, const ::google::protobuf::Message& from_msg) {
+void HTTPVersion::MergeImpl(::PROTOBUF_NAMESPACE_ID::Message& to_msg, const ::PROTOBUF_NAMESPACE_ID::Message& from_msg) {
   auto* const _this = static_cast<HTTPVersion*>(&to_msg);
   auto& from = static_cast<const HTTPVersion&>(from_msg);
   // @@protoc_insertion_point(class_specific_merge_from_start:server.v1.HTTPVersion)
@@ -844,7 +886,7 @@ void HTTPVersion::MergeImpl(::google::protobuf::Message& to_msg, const ::google:
   if (from._internal_minor() != 0) {
     _this->_internal_set_minor(from._internal_minor());
   }
-  _this->_internal_metadata_.MergeFrom<::google::protobuf::UnknownFieldSet>(from._internal_metadata_);
+  _this->_internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
 }
 
 void HTTPVersion::CopyFrom(const HTTPVersion& from) {
@@ -854,14 +896,14 @@ void HTTPVersion::CopyFrom(const HTTPVersion& from) {
   MergeFrom(from);
 }
 
-PROTOBUF_NOINLINE bool HTTPVersion::IsInitialized() const {
+bool HTTPVersion::IsInitialized() const {
   return true;
 }
 
 void HTTPVersion::InternalSwap(HTTPVersion* other) {
   using std::swap;
   _internal_metadata_.InternalSwap(&other->_internal_metadata_);
-  ::google::protobuf::internal::memswap<
+  ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(HTTPVersion, _impl_.minor_)
       + sizeof(HTTPVersion::_impl_.minor_)
       - PROTOBUF_FIELD_OFFSET(HTTPVersion, _impl_.major_)>(
@@ -869,7 +911,7 @@ void HTTPVersion::InternalSwap(HTTPVersion* other) {
           reinterpret_cast<char*>(&other->_impl_.major_));
 }
 
-::google::protobuf::Metadata HTTPVersion::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata HTTPVersion::GetMetadata() const {
   return ::_pbi::AssignDescriptors(
       &descriptor_table_server_2fv1_2fserver_2eproto_getter, &descriptor_table_server_2fv1_2fserver_2eproto_once,
       file_level_metadata_server_2fv1_2fserver_2eproto[2]);
@@ -877,9 +919,19 @@ void HTTPVersion::InternalSwap(HTTPVersion* other) {
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace v1
 }  // namespace server
-namespace google {
-namespace protobuf {
-}  // namespace protobuf
-}  // namespace google
+PROTOBUF_NAMESPACE_OPEN
+template<> PROTOBUF_NOINLINE ::server::v1::ServerMetadata*
+Arena::CreateMaybeMessage< ::server::v1::ServerMetadata >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::server::v1::ServerMetadata >(arena);
+}
+template<> PROTOBUF_NOINLINE ::server::v1::ProtocolSupport*
+Arena::CreateMaybeMessage< ::server::v1::ProtocolSupport >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::server::v1::ProtocolSupport >(arena);
+}
+template<> PROTOBUF_NOINLINE ::server::v1::HTTPVersion*
+Arena::CreateMaybeMessage< ::server::v1::HTTPVersion >(Arena* arena) {
+  return Arena::CreateMessageInternal< ::server::v1::HTTPVersion >(arena);
+}
+PROTOBUF_NAMESPACE_CLOSE
 // @@protoc_insertion_point(global_scope)
 #include "google/protobuf/port_undef.inc"
