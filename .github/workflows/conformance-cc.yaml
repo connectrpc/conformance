@@ -1,10 +1,10 @@
-name: crosstest-cc
+name: conformance-cc
 on:
   workflow_dispatch
 permissions:
   contents: read
 jobs:
-  crosstest-cc:
+  conformance-cc:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code

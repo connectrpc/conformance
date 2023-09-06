@@ -545,7 +545,7 @@ void checkNonAsciiError(const grpc::Status& result) {
   // status.details().at(0).UnpackTo(&error_details);
   error_details.ParseFromString(status.details().at(0).value());
   EXPECT_EQ(error_details.reason(), kNonAsciiError);
-  EXPECT_EQ(error_details.domain(), "connect-crosstest");
+  EXPECT_EQ(error_details.domain(), "connect-conformance");
 }
 
 // Performs a unary RPC that always return a readable non-ASCII error.

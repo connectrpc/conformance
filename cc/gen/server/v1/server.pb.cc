@@ -158,18 +158,17 @@ const char descriptor_table_protodef_server_2fv1_2fserver_2eproto[] PROTOBUF_SEC
     "t\"9\n\013HTTPVersion\022\024\n\005major\030\001 \001(\005R\005major\022\024"
     "\n\005minor\030\002 \001(\005R\005minor*N\n\010Protocol\022\030\n\024PROT"
     "OCOL_UNSPECIFIED\020\000\022\021\n\rPROTOCOL_GRPC\020\001\022\025\n"
-    "\021PROTOCOL_GRPC_WEB\020\002B\261\001\n\rcom.server.v1B\013"
-    "ServerProtoP\001ZNgithub.com/bufbuild/conne"
-    "ct-crosstest/internal/gen/proto/go/serve"
-    "r/v1;serverv1\242\002\003SXX\252\002\tServer.V1\312\002\tServer"
-    "\\V1\342\002\025Server\\V1\\GPBMetadata\352\002\nServer::V1"
-    "b\006proto3"
+    "\021PROTOCOL_GRPC_WEB\020\002B\246\001\n\rcom.server.v1B\013"
+    "ServerProtoP\001ZCconnectrpc.com/conformanc"
+    "e/internal/gen/proto/go/server/v1;server"
+    "v1\242\002\003SXX\252\002\tServer.V1\312\002\tServer\\V1\342\002\025Serve"
+    "r\\V1\\GPBMetadata\352\002\nServer::V1b\006proto3"
 };
 static ::absl::once_flag descriptor_table_server_2fv1_2fserver_2eproto_once;
 const ::_pbi::DescriptorTable descriptor_table_server_2fv1_2fserver_2eproto = {
     false,
     false,
-    608,
+    597,
     descriptor_table_protodef_server_2fv1_2fserver_2eproto,
     "server/v1/server.proto",
     &descriptor_table_server_2fv1_2fserver_2eproto_once,
