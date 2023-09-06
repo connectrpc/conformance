@@ -5,7 +5,7 @@ go 1.18
 require (
 	connectrpc.com/connect v1.11.1
 	github.com/quic-go/quic-go v0.38.1
-	github.com/rs/cors v1.9.0
+	github.com/rs/cors v1.10.0
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.15.0
