@@ -63,7 +63,7 @@ const testService: ServiceImpl<typeof TestService> = {
     return {
       payload: interop.makeServerPayload(
         request.responseType,
-        request.responseSize
+        request.responseSize,
       ),
     };
   },
@@ -83,7 +83,7 @@ const testService: ServiceImpl<typeof TestService> = {
 
   async *streamingOutputCall(
     request: StreamingOutputCallRequest,
-    context: HandlerContext
+    context: HandlerContext,
   ) {
     echoMetadata(context);
     for (const param of request.responseParameters) {
@@ -98,7 +98,7 @@ const testService: ServiceImpl<typeof TestService> = {
 
   async *failStreamingOutputCall(
     request: StreamingOutputCallRequest,
-    context: HandlerContext
+    context: HandlerContext,
   ) {
     echoMetadata(context);
     for (const param of request.responseParameters) {
@@ -115,7 +115,7 @@ const testService: ServiceImpl<typeof TestService> = {
 
   async streamingInputCall(
     requests: AsyncIterable<StreamingInputCallRequest>,
-    context: HandlerContext
+    context: HandlerContext,
   ) {
     echoMetadata(context);
     let total = 0;
@@ -129,7 +129,7 @@ const testService: ServiceImpl<typeof TestService> = {
 
   async *fullDuplexCall(
     requests: AsyncIterable<StreamingOutputCallRequest>,
-    context: HandlerContext
+    context: HandlerContext,
   ) {
     echoMetadata(context);
     for await (const req of requests) {
@@ -146,7 +146,7 @@ const testService: ServiceImpl<typeof TestService> = {
 
   async *halfDuplexCall(
     requests: AsyncIterable<StreamingOutputCallRequest>,
-    context: HandlerContext
+    context: HandlerContext,
   ) {
     echoMetadata(context);
     const buffer: StreamingOutputCallRequest[] = [];
@@ -167,16 +167,16 @@ const testService: ServiceImpl<typeof TestService> = {
 
   unimplementedCall(/*request*/) {
     throw new ConnectError(
-      "grpc.testing.TestService.UnimplementedCall is not implemented",
-      Code.Unimplemented
+      "connectrpc.conformance.v1.TestService.UnimplementedCall is not implemented",
+      Code.Unimplemented,
     );
   },
 
   // eslint-disable-next-line @typescript-eslint/require-await,require-yield
   async *unimplementedStreamingOutputCall(/*requests*/) {
     throw new ConnectError(
-      "grpc.testing.TestService.UnimplementedStreamingOutputCall is not implemented",
-      Code.Unimplemented
+      "connectrpc.conformance.v1.TestService.UnimplementedStreamingOutputCall is not implemented",
+      Code.Unimplemented,
     );
   },
 };
@@ -208,7 +208,7 @@ function echoMetadata(ctx: HandlerContext) {
       const decoded = decodeBinaryHeader(hdr);
       ctx.responseTrailer.append(
         interop.trailingMetadataKey,
-        encodeBinaryHeader(decoded)
+        encodeBinaryHeader(decoded),
       );
     });
   }

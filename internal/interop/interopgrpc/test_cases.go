@@ -473,7 +473,7 @@ func DoSpecialStatusMessage(t conformancetesting.TB, client conformance.TestServ
 // DoUnimplementedMethod attempts to call an unimplemented method.
 func DoUnimplementedMethod(t conformancetesting.TB, cc *grpc.ClientConn, args ...grpc.CallOption) {
 	var req, reply proto.Message
-	err := cc.Invoke(context.Background(), "/grpc.testing.TestService/UnimplementedCall", req, reply, args...)
+	err := cc.Invoke(context.Background(), "/connectrpc.conformance.v1.TestService/UnimplementedCall", req, reply, args...)
 	assert.Error(t, err)
 	assert.Equal(t, status.Code(err), codes.Unimplemented)
 	t.Successf("successful unimplemented method")
