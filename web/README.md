@@ -1,4 +1,4 @@
-web crosstests
+web conformance
 ===============
 
 The `web` test suite uses Jasmine and Karma to test `connect-web` and `grpc-web` against Connect

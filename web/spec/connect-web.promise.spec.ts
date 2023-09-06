@@ -311,7 +311,7 @@ describe("connect_web_promise_client", function () {
   it("fail_unary", async function () {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
-      domain: "connect-crosstest",
+      domain: "connect-conformance",
     });
     try {
       await client.failUnaryCall({});
@@ -327,7 +327,7 @@ describe("connect_web_promise_client", function () {
   it("fail_server_streaming", async function () {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
-      domain: "connect-crosstest",
+      domain: "connect-conformance",
     });
     try {
       for await (const response of client.failStreamingOutputCall({})) {
@@ -347,7 +347,7 @@ describe("connect_web_promise_client", function () {
   it("fail_server_streaming_after_response", async function () {
     const expectedErrorDetail = new ErrorDetail({
       reason: "soirée 🎉",
-      domain: "connect-crosstest",
+      domain: "connect-conformance",
     });
     const sizes = [31415, 9, 2653, 58979];
     const responseParams = sizes.map((size, index) => {

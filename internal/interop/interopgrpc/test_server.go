@@ -42,8 +42,8 @@ import (
 	"io"
 	"time"
 
-	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interop"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/interop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -129,7 +129,7 @@ func (s *testServer) CacheableUnaryCall(ctx context.Context, request *conformanc
 	return s.UnaryCall(ctx, request)
 }
 
-// FailUnaryCall is an additional RPC added for cross tests.
+// FailUnaryCall is an additional RPC added for conformance.
 func (s *testServer) FailUnaryCall(ctx context.Context, in *conformance.SimpleRequest) (*conformance.SimpleResponse, error) {
 	errStatus := status.New(codes.ResourceExhausted, interop.NonASCIIErrMsg)
 	errStatus, err := errStatus.WithDetails(interop.ErrorDetail)
