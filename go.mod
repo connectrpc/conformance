@@ -1,9 +1,9 @@
-module github.com/bufbuild/connect-crosstest
+module connectrpc.com/conformance
 
 go 1.18
 
 require (
-	github.com/bufbuild/connect-go v1.10.0
+	connectrpc.com/connect v1.11.1
 	github.com/quic-go/quic-go v0.38.1
 	github.com/rs/cors v1.9.0
 	github.com/spf13/cobra v1.7.0

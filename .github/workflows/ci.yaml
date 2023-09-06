@@ -31,8 +31,8 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ~/go/pkg/mod
-          key: ${{ runner.os }}-connect-crosstest-ci-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-connect-crosstest-ci-
+          key: ${{ runner.os }}-conformance-ci-${{ hashFiles('**/go.sum') }}
+          restore-keys: ${{ runner.os }}-conformance-ci-
       - name: Test
         run: make dockercomposetest # Make target includes clean-up
         env:
@@ -47,9 +47,9 @@ jobs:
       - ci
     # This job only runs when
     # 1. The previous ci job has completed successfully
-    # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/connect-crosstest
+    # 2. The repository is not a fork, i.e. it will only run on the official connectrpc/conformance
     # 3. The workflow run is triggered by push to main branch
-    if:  ${{ success() && github.repository == 'bufbuild/connect-crosstest' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    if:  ${{ success() && github.repository == 'connectrpc/conformance' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       # qemu is used when executing things like `apk` in the final build
       # stage which must execute on the target platform. We currently do
@@ -71,19 +71,19 @@ jobs:
       - name: docker-build-push
         uses: docker/build-push-action@v4
         with:
-          file: Dockerfile.crosstestgo
+          file: Dockerfile.conformancego
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
           tags: |
-            bufbuild/connect-crosstest:latest
-            bufbuild/connect-crosstest:${{ github.sha }}
+            connectrpc/conformance:latest
+            connectrpc/conformance:${{ github.sha }}
   docker-web:
     runs-on: ubuntu-latest
     needs:
       - ci
     # This job only runs when
     # 1. The previous ci job has completed successfully
-    # 2. The repository is not a fork, i.e. it will only run on the official bufbuild/connect-crosstest
+    # 2. The repository is not a fork, i.e. it will only run on the official connectrpc/conformance
     # 3. The workflow run is triggered by push to main branch
     if:  ${{ success() && github.repository == 'bufbuild/connect-crosstest' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
@@ -97,9 +97,9 @@ jobs:
       - name: docker-build-push-web
         uses: docker/build-push-action@v4
         with:
-          file: Dockerfile.crosstestweb
+          file: Dockerfile.conformanceweb
           platforms: ${{ steps.qemu.outputs.platforms }}
           push: true
           tags: |
-            bufbuild/connect-crosstest-web:latest
-            bufbuild/connect-crosstest-web:${{ github.sha }}
+            connectrpc/conformance-web:latest
+            connectrpc/conformance-web:${{ github.sha }}

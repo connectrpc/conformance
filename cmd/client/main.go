@@ -26,12 +26,12 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/bufbuild/connect-crosstest/internal/console"
-	conformanceconnect "github.com/bufbuild/connect-crosstest/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
-	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interop/interopconnect"
-	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
-	"github.com/bufbuild/connect-go"
+	"connectrpc.com/conformance/internal/console"
+	conformanceconnect "connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1/conformancev1connect"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/interop/interopconnect"
+	"connectrpc.com/conformance/internal/interop/interopgrpc"
+	"connectrpc.com/connect"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/spf13/cobra"
 	"golang.org/x/net/http2"
@@ -360,7 +360,7 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 	if err != nil {
 		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
-	caCert, err := os.ReadFile("cert/CrosstestCA.crt")
+	caCert, err := os.ReadFile("cert/ConformanceCA.crt")
 	if err != nil {
 		log.Fatalf("Error opening cert file")
 	}

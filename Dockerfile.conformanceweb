@@ -25,7 +25,7 @@ RUN local_npm_packages="" && \
         local_npm_packages="${local_npm_packages} ../protobuf-es/packages/protobuf/"; \
     fi && \
     if [ ! -z "${TEST_CONNECT_WEB_BRANCH}" ]; then \
-        git clone --branch "${TEST_CONNECT_WEB_BRANCH}" --depth 1 https://github.com/bufbuild/connect-es.git ../connect-web && \
+        git clone --branch "${TEST_CONNECT_WEB_BRANCH}" --depth 1 https://github.com/connectrpc/connect-es.git ../connect-web && \
         cd ../connect-web && make build && cd - \
         local_npm_packages="${local_npm_packages} ../connect-web/packages/connect-web/"; \
     fi && \

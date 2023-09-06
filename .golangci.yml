@@ -6,7 +6,7 @@ linters-settings:
   exhaustruct:
     include:
       # No zero values for param structs.
-      - 'github\.com/bufbuild/connect-crosstest\..*[pP]arams'
+      - 'github\.com/connectrpc/conformance\..*[pP]arams'
   forbidigo:
     forbid:
       - '^fmt\.Print'
@@ -21,7 +21,7 @@ linters-settings:
       ignore-decls:
       - i int
       - t *console.TB
-      - t crosstesting.TB
+      - t conformancetesting.TB
       - t testing.TB
       - ok bool
 linters:
