@@ -277,4 +277,4 @@ Offered under the [Apache 2 license][license].
 [grpc-web]: https://github.com/grpc/grpc-web
 [license]: https://github.com/connectrpc/conformance/blob/main/LICENSE
 [protobuf-es]: https://github.com/bufbuild/protobuf-es
-[test.proto]: https://github.com/connectrpc/conformance/blob/main/internal/proto/grpc/testing/test.proto
+[test.proto]: https://github.com/connectrpc/conformance/blob/main/internal/proto/connectrpc/conformance/v1/test.proto
