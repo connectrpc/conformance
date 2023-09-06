@@ -14,7 +14,7 @@
 
 package interop
 
-import conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
+import conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 
 // NonASCIIErrMsg is a non-ASCII error message.
 const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
@@ -22,5 +22,5 @@ const NonASCIIErrMsg = "soirée 🎉" // readable non-ASCII
 // ErrorDetail is an error detail to be included in an error.
 var ErrorDetail = &conformance.ErrorDetail{ //nolint:gochecknoglobals
 	Reason: NonASCIIErrMsg,
-	Domain: "connect-crosstest",
+	Domain: "connect-conformance",
 }

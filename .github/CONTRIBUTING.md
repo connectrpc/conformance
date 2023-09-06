@@ -1,7 +1,7 @@
 Contributing
 ============
 
-We'd love your help making `connect-crosstest` more thorough!
+We'd love your help making `conformance` more thorough!
 
 If you'd like to add new tests, please [open an issue][open-issue] describing
 your proposal &mdash; discussing API changes ahead of time makes pull request
@@ -20,11 +20,11 @@ enabled][docker-compose-v2].
 [Fork][fork], then clone the repository:
 
 ```
-mkdir -p $GOPATH/src/github.com/bufbuild
-cd $GOPATH/src/github.com/bufbuild
-git clone git@github.com:your_github_username/connect-crosstest.git
-cd connect-crosstest
-git remote add upstream https://github.com/bufbuild/connect-crosstest.git
+mkdir -p $GOPATH/src/connectrpc.com
+cd $GOPATH/src/connectrpc.com
+git clone git@github.com:your_github_username/conformance.git
+cd conformance
+git remote add upstream https://github.com/connectrpc/conformance.git
 git fetch upstream
 ```
 
@@ -40,7 +40,7 @@ make
 Start by creating a new branch for your changes:
 
 ```
-cd $GOPATH/src/github.com/bufbuild/connect-crosstest
+cd $GOPATH/src/connectrpc.com/conformance
 git checkout main
 git fetch upstream
 git rebase upstream/main
@@ -69,7 +69,7 @@ We're much more likely to approve your changes if you:
 * Write a [good commit message][commit-message].
 * Maintain backward compatibility.
 
-[fork]: https://github.com/bufbuild/connect-crosstest/fork
-[open-issue]: https://github.com/bufbuild/connect-crosstest/issues/new
+[fork]: https://github.com/connectrpc/conformance/fork
+[open-issue]: https://github.com/connectrpc/conformance/issues/new
 [commit-message]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
 [docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1

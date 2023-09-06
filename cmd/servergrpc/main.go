@@ -22,9 +22,9 @@ import (
 	"net"
 	"os"
 
-	conformance "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/connectrpc/conformance/v1"
-	serverpb "github.com/bufbuild/connect-crosstest/internal/gen/proto/go/server/v1"
-	"github.com/bufbuild/connect-crosstest/internal/interop/interopgrpc"
+	conformance "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	serverpb "connectrpc.com/conformance/internal/gen/proto/go/server/v1"
+	"connectrpc.com/conformance/internal/interop/interopgrpc"
 	"github.com/spf13/cobra"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -109,7 +109,7 @@ func newTLSConfig(certFile, keyFile string) *tls.Config {
 	if err != nil {
 		log.Fatalf("Error creating x509 keypair from client cert file %s and client key file %s", certFile, keyFile)
 	}
-	caCert, err := os.ReadFile("cert/CrosstestCA.crt")
+	caCert, err := os.ReadFile("cert/ConformanceCA.crt")
 	if err != nil {
 		log.Fatalf("Error opening cert file")
 	}

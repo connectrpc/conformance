@@ -364,7 +364,7 @@ describe("grpc_web", function () {
   it("fail_unary", function (done) {
     const expectedErrorDetail = new ErrorDetail();
     expectedErrorDetail.setReason("soirée 🎉");
-    expectedErrorDetail.setDomain("connect-crosstest");
+    expectedErrorDetail.setDomain("connect-conformance");
     client.failUnaryCall(new SimpleRequest(), null, (err) => {
       expect(err).toBeDefined();
       expect("code" in err).toBeTrue();
@@ -386,7 +386,7 @@ describe("grpc_web", function () {
   it("fail_server_streaming", function (done) {
     const expectedErrorDetail = new ErrorDetail();
     expectedErrorDetail.setReason("soirée 🎉");
-    expectedErrorDetail.setDomain("connect-crosstest");
+    expectedErrorDetail.setDomain("connect-conformance");
 
     const req = new StreamingOutputCallRequest();
 
@@ -414,7 +414,7 @@ describe("grpc_web", function () {
   it("fail_server_streaming_after_response", function (done) {
     const expectedErrorDetail = new ErrorDetail();
     expectedErrorDetail.setReason("soirée 🎉");
-    expectedErrorDetail.setDomain("connect-crosstest");
+    expectedErrorDetail.setDomain("connect-conformance");
 
     const sizes = [31415, 9, 2653, 58979];
 
