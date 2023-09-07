@@ -25,7 +25,7 @@ The test suite is run daily against the latest commits of [connect-go][connect-g
 and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
 
 For more on Connect, see the [announcement blog post][blog], the documentation
-on [connect.build][docs] (especially the [Getting Started] guide for Go), or
+on [connectrpc.com][docs] (especially the [Getting Started] guide for Go), or
 the [demo service][demo].
 
 ## Test Suite
@@ -259,14 +259,14 @@ in mind.
 
 Offered under the [Apache 2 license][license].
 
-[Getting Started]: https://connect.build/go/getting-started
+[Getting Started]: https://connectrpc.com/go/getting-started
 [blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/connectrpc/conformance/actions/workflows/ci.yaml
 [connect-go]: https://github.com/connectrpc/connect-go
 [connect-es]: https://github.com/connectrpc/connect-es
 [demo]: https://github.com/connectrpc/examples-go
 [docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
-[docs]: https://connect.build
+[docs]: https://connectrpc.com
 [github-action-go]: https://github.com/connectrpc/conformance/actions/workflows/conformance-go.yaml
 [github-action-web]: https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml
 [github-action-cc]: https://github.com/connectrpc/conformance/actions/workflows/conformance-cc.yaml
