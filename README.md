@@ -11,15 +11,16 @@ following clients and servers:
 
 ### Servers
 
-- Connect, using [Connect's Go implementation][connect-go]
-- gRPC, using [grpc-go][grpc-go]
+- [connect-go][connect-go] (Connect protocol, gRPC protocol, and gRPC-web protocol)
+- [connect-es][connect-es] (Connect for Node.js serving Connect protocol, gRPC protocol, and gRPC-web protocol)
+- [grpc-go][grpc-go]
 
 ### Clients
 
-- [connect-go][connect-go] (connect protocol, gRPC protocol and gRPC-web protocol)
+- [connect-go][connect-go] (Connect protocol, gRPC protocol and gRPC-web protocol)
+- [connect-es][connect-es] (Connect for Web using Connect protocol and gRPC-web protocol)
 - [grpc-go][grpc-go]
-- [connect-es][connect-es] (connect protocol and gRPC-web protocol)
-- [grpc-web][grpc-web]
+- [grpc-web][gRPC-web]
 
 The test suite is run daily against the latest commits of [connect-go][connect-go], [connect-es][connect-es]
 and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
@@ -30,7 +31,7 @@ the [demo service][demo].
 
 ## Test Suite
 
-The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop
+The test suite is a superset of [gRPC][grpc-interop] and [gRPC-web][grpc-web-interop] interop
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
 a range of expected behaviors and functionality for gRPC and Connect.
 
@@ -259,7 +260,7 @@ in mind.
 
 Offered under the [Apache 2 license][license].
 
-[Getting Started]: https://connectrpc.com/go/getting-started
+[Getting Started]: https://connectrpc.com/docs/go/getting-started
 [blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/connectrpc/conformance/actions/workflows/ci.yaml
 [connect-go]: https://github.com/connectrpc/connect-go
