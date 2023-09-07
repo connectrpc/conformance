@@ -238,9 +238,9 @@ the latest commits of [connect-go][connect-go], [connect-es][connect-es] and [pr
 In addition, there is a Github Action workflow for [C++][github-action-cc] which runs a gRPC C++ client against the
 conformance suite.
 
-### Locally
+### Running the tests
 
-To run these locally tests, you'll need Docker. The test suite uses Docker Compose.
+To run these tests locally, you'll need Docker. The test suite uses Docker Compose.
 Please note, that if you are running the tests on MacOS, you'll need to [enable Docker
 Compose V2][docker-compose-v2]. In short, Docker Desktop -> Preferences -> General -> Use Docker
 Compose V2, then click Apply & Restart.
