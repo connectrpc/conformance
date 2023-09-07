@@ -11,26 +11,27 @@ following clients and servers:
 
 ### Servers
 
-- Connect, using [Connect's Go implementation][connect-go]
-- gRPC, using [grpc-go][grpc-go]
+- [connect-go][connect-go] (Connect protocol, gRPC protocol, and gRPC-web protocol)
+- [connect-es][connect-es] (Connect for Node.js serving Connect protocol, gRPC protocol, and gRPC-web protocol)
+- [grpc-go][grpc-go]
 
 ### Clients
 
-- [connect-go][connect-go] (connect protocol, gRPC protocol and gRPC-web protocol)
+- [connect-go][connect-go] (Connect protocol, gRPC protocol and gRPC-web protocol)
+- [connect-es][connect-es] (Connect for Web using Connect protocol and gRPC-web protocol)
 - [grpc-go][grpc-go]
-- [connect-es][connect-es] (connect protocol and gRPC-web protocol)
-- [grpc-web][grpc-web]
+- [grpc-web][gRPC-web]
 
 The test suite is run daily against the latest commits of [connect-go][connect-go], [connect-es][connect-es]
 and [protobuf-es][protobuf-es] to ensure that we are continuously testing for compatibility.
 
 For more on Connect, see the [announcement blog post][blog], the documentation
-on [connect.build][docs] (especially the [Getting Started] guide for Go), or
+on [connectrpc.com][docs] (especially the [Getting Started] guide for Go), or
 the [demo service][demo].
 
 ## Test Suite
 
-The test suite is a superset of [gRPC][grpc-interop] and [grpc-web][grpc-web-interop] interop
+The test suite is a superset of [gRPC][grpc-interop] and [gRPC-web][grpc-web-interop] interop
 tests. Clients and servers use the [gRPC interop Protobuf definitions][test.proto] and cover
 a range of expected behaviors and functionality for gRPC and Connect.
 
@@ -237,9 +238,9 @@ the latest commits of [connect-go][connect-go], [connect-es][connect-es] and [pr
 In addition, there is a Github Action workflow for [C++][github-action-cc] which runs a gRPC C++ client against the
 conformance suite.
 
-### Locally
+### Running the tests
 
-To run these locally tests, you'll need Docker. The test suite uses Docker Compose.
+To run these tests locally, you'll need Docker. The test suite uses Docker Compose.
 Please note, that if you are running the tests on MacOS, you'll need to [enable Docker
 Compose V2][docker-compose-v2]. In short, Docker Desktop -> Preferences -> General -> Use Docker
 Compose V2, then click Apply & Restart.
@@ -259,14 +260,14 @@ in mind.
 
 Offered under the [Apache 2 license][license].
 
-[Getting Started]: https://connect.build/go/getting-started
+[Getting Started]: https://connectrpc.com/docs/go/getting-started
 [blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/connectrpc/conformance/actions/workflows/ci.yaml
 [connect-go]: https://github.com/connectrpc/connect-go
 [connect-es]: https://github.com/connectrpc/connect-es
 [demo]: https://github.com/connectrpc/examples-go
 [docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
-[docs]: https://connect.build
+[docs]: https://connectrpc.com
 [github-action-go]: https://github.com/connectrpc/conformance/actions/workflows/conformance-go.yaml
 [github-action-web]: https://github.com/connectrpc/conformance/actions/workflows/conformance-web.yaml
 [github-action-cc]: https://github.com/connectrpc/conformance/actions/workflows/conformance-cc.yaml
@@ -277,4 +278,4 @@ Offered under the [Apache 2 license][license].
 [grpc-web]: https://github.com/grpc/grpc-web
 [license]: https://github.com/connectrpc/conformance/blob/main/LICENSE
 [protobuf-es]: https://github.com/bufbuild/protobuf-es
-[test.proto]: https://github.com/connectrpc/conformance/blob/main/internal/proto/grpc/testing/test.proto
+[test.proto]: https://github.com/connectrpc/conformance/blob/main/proto/connectrpc/conformance/v1/test.proto

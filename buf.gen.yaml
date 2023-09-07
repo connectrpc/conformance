@@ -29,5 +29,5 @@ plugins:
       - mode=grpcweb
   - plugin: buf.build/grpc/cpp:v1.56.2
     out: cc/gen
-  - plugin: buf.build/protocolbuffers/cpp
+  - plugin: buf.build/protocolbuffers/cpp:v23.4
     out: cc/gen
