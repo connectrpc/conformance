@@ -23,6 +23,7 @@ cc_test(
         "@com_google_googleapis//google/rpc:status_cc_proto",
         "@com_google_googletest//:gtest_main",
     ],
+    data = ["//cert:client_certs"],
 )
 
 cc_library(
