@@ -21,7 +21,7 @@ services:
       dockerfile: Dockerfile.conformancego
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
-    entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --h3port "8082" --insecure
+    entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --insecure
     ports:
       - "8080:8080"
       - "8081:8081"
