@@ -388,7 +388,7 @@ services:
       args:
         PORT: 8081
         HOST: server-connect-insecure
-    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect-insecure --action_env=PORT=8081 --action_env=GRPC_DNS_RESOLVER=native
+    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect-insecure --action_env=PORT=8081
     depends_on:
       - server-connect-insecure
   client-cc-grpc-to-server-connect-go-h2-with-tls:
