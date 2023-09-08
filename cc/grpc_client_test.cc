@@ -68,13 +68,15 @@ class GrpcClientTest : public ::testing::Test {
     // Get the port from the env
     std::string port = getEnvStr("PORT");
     if (port.empty()) {
-      port = "8081";
+      port = "3001";
     }
     // Get the host from the env
     std::string host = getEnvStr("HOST", "127.0.0.1");
     // Get the insecure cert from the env
     std::string certFile = getEnvStr("CERT_FILE");
     std::string keyFile = getEnvStr("KEY_FILE");
+
+    std::cout << certFile;
     if (!certFile.empty() || !keyFile.empty()) {
       channel = grpc::CreateChannel(
           host + ":" + port,
