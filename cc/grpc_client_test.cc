@@ -97,8 +97,8 @@ class GrpcClientTest : public ::testing::Test {
       channel = grpc::CreateChannel(
           host + ":" + port,
           grpc::SslCredentials(grpc::SslCredentialsOptions{
-              .pem_cert_chain = certBuffer.str(),
               .pem_private_key = keyBuffer.str(),
+              .pem_cert_chain = certBuffer.str(),
           }));
     } else {
       channel = grpc::CreateChannel(host + ":" + port, grpc::InsecureChannelCredentials());
