@@ -93,7 +93,7 @@ class GrpcClientTest : public ::testing::Test {
       channel = grpc::CreateChannel(
           uri,
           grpc::SslCredentials(grpc::SslCredentialsOptions{
-              .pem_root_certs = certFile.str(),
+              .pem_root_certs = certBuffer.str(),
               .pem_private_key = keyBuffer.str(),
           }));
     } else {
