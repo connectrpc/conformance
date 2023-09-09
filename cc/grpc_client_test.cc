@@ -73,35 +73,32 @@ class GrpcClientTest : public ::testing::Test {
     }
     // Get the host from the env
     std::string host = getEnvStr("HOST", "127.0.0.1");
+    std::string uri = host + ":" + port;
+    std::cout << "Connecting to " << uri;
 
-    std::cout << "Connect to host " << host << "and port " << port;
-    // Get the insecure cert from the env
+    // Check the env variables to see if certs were specified
     std::string certFile = getEnvStr("CERT_FILE");
     std::string keyFile = getEnvStr("KEY_FILE");
 
-
     if (!certFile.empty() && !keyFile.empty()) {
-      std::cout << "Reading certs";
+      std::cout << "Creating secure channel";
       std::ifstream c(certFile);
       std::ifstream k(keyFile);
+
       std::stringstream certBuffer;
       std::stringstream keyBuffer;
 
       certBuffer << c.rdbuf();
       keyBuffer << k.rdbuf();
-      std::cout << "Cert Buffer is \n";
-      std::cout << certBuffer.str();
-      std::cout << "Key Buffer is \n";
-      std::cout << keyBuffer.str();
-      std::cout << "Fini";
       channel = grpc::CreateChannel(
-          host + ":" + port,
+          uri,
           grpc::SslCredentials(grpc::SslCredentialsOptions{
+              .pem_root_certs = certFile.str(),
               .pem_private_key = keyBuffer.str(),
-              .pem_cert_chain = certBuffer.str(),
           }));
     } else {
-      channel = grpc::CreateChannel(host + ":" + port, grpc::InsecureChannelCredentials());
+      std::cout << "Creating insecure channel";
+      channel = grpc::CreateChannel(uri, grpc::InsecureChannelCredentials());
     }
     stub = TestService::NewStub(channel);
   }

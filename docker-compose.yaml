@@ -7,10 +7,6 @@ services:
       args:
         TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
     entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --h3port "8082" --cert "cert/server-connect.crt" --key "cert/server-connect.key"
-    healthcheck:
-      test: [ "CMD", "nc", "-z", "localhost", "8081" ]
-      interval: 3s
-      timeout: 10s
     ports:
       - "8080:8080"
       - "8081:8081"
@@ -385,9 +381,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.conformancecc
-      args:
-        PORT: 8081
-        HOST: server-connect-insecure
     entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect-insecure --action_env=PORT=8081
     depends_on:
       - server-connect-insecure
@@ -395,11 +388,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.conformancecc
-      args:
-        PORT: 8081
-        HOST: server-connect
-        CERT_FILE: cert/client.crt
-        KEY_FILE: cert/client.key
-    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect  --action_env=PORT=8081 --action_env=CERT_FILE=cert/client.crt --action_env=KEY_FILE=cert/client.key --action_env=GRPC_DNS_RESOLVER=native
+    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect  --action_env=PORT=8081 --action_env=CERT_FILE=cert/client.crt --action_env=KEY_FILE=cert/client.key
     depends_on:
       - server-connect
