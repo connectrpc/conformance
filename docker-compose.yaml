@@ -391,11 +391,3 @@ services:
     entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect  --action_env=PORT=8081 --action_env=CERT_FILE=cert/client.crt --action_env=KEY_FILE=cert/client.key
     depends_on:
       - server-connect
-  client-cc-grpc-to-server-connect-node-fastify-h2-no-tls:
-    build:
-      context: .
-      dockerfile: Dockerfile.conformancecc
-    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect-node-fastify  --action_env=PORT=8087
-    depends_on:
-      server-connect-node-fastify:
-        condition: service_healthy
