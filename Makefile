@@ -124,6 +124,7 @@ dockercomposetestweb: dockercomposeclean
 .PHONY: dockercomposetestcc
 dockercomposetestcc: dockercomposeclean
 	docker-compose run client-cc-grpc-to-server-connect-go-h2-no-tls
+	docker-compose run client-cc-grpc-to-server-connect-node-fastify-h2-no-tls
 	@# TLS does not seem to be working with current certs
 	@# docker-compose run client-cc-grpc-to-server-connect-go-h2-with-tls
 	$(MAKE) dockercomposeclean
