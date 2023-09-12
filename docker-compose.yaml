@@ -11,6 +11,17 @@ services:
       - "8080:8080"
       - "8081:8081"
       - "8082:8082"
+  server-connect-insecure:
+    build:
+      context: .
+      dockerfile: Dockerfile.conformancego
+      args:
+        TEST_CONNECT_GO_BRANCH: "${TEST_CONNECT_GO_BRANCH:-}"
+    entrypoint: /usr/local/bin/serverconnect --h1port "8080" --h2port "8081" --insecure
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+      - "8082:8082"
   server-grpc:
     build:
       context: .
@@ -370,21 +381,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.conformancecc
-      args:
-        PORT: 8081
-        HOST: server-connect
-    entrypoint: bazel test //cc:grpc_client_test
+    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect-insecure --action_env=PORT=8081
     depends_on:
-      - server-connect
+      - server-connect-insecure
   client-cc-grpc-to-server-connect-go-h2-with-tls:
     build:
       context: .
       dockerfile: Dockerfile.conformancecc
-      args:
-        PORT: 8081
-        HOST: server-connect
-        CERT_FILE: cert/client.crt
-        KEY_FILE: cert/client.key
-    entrypoint: bazel test //cc:grpc_client_test
+    entrypoint: bazel test //cc:grpc_client_test --test_output=errors --action_env=HOST=server-connect  --action_env=PORT=8081 --action_env=CERT_FILE=cert/client.crt --action_env=KEY_FILE=cert/client.key
     depends_on:
       - server-connect
