@@ -7,7 +7,7 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-print-directory
 BIN := .tmp/bin
-COPYRIGHT_YEARS := 2022
+COPYRIGHT_YEARS := 2022-2023
 LICENSE_IGNORE := -e proto/grpc -e internal/interopgrpc -e web/spec/grpc-web.spec.ts -e web/server/fastify/program.ts
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
@@ -68,7 +68,7 @@ generate: $(BIN)/buf $(BIN)/protoc-gen-go $(BIN)/protoc-gen-connect-go $(BIN)/pr
 		<(git ls-files --deleted | sort -u) | \
 		xargs $(BIN)/license-header \
 			--license-type apache \
-			--copyright-holder "Buf Technologies, Inc." \
+			--copyright-holder "The Connect Authors" \
 			--year-range "$(COPYRIGHT_YEARS)"
 
 .PHONY: upgrade
