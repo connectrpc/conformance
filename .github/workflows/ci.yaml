@@ -69,7 +69,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: docker-build-push
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           file: Dockerfile.conformancego
           platforms: ${{ steps.qemu.outputs.platforms }}
@@ -95,7 +95,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
       - name: docker-build-push-web
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           file: Dockerfile.conformanceweb
           platforms: ${{ steps.qemu.outputs.platforms }}
