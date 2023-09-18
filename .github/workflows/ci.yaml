@@ -23,7 +23,7 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
       - name: Setup Docker Buildx # Docker Buildkit required for docker-compose
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
         with:
           driver: docker
           install: true
@@ -62,7 +62,7 @@ jobs:
           # alpine image doesn't support linux/riscv64
           platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
       - name: setup-docker-buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: login-docker
         uses: docker/login-action@v2
         with:
@@ -88,7 +88,7 @@ jobs:
     if:  ${{ success() && github.repository == 'connectrpc/conformance' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     steps:
       - name: setup-docker-buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: login-docker
         uses: docker/login-action@v2
         with:
