@@ -1,0 +1,8 @@
+v1/.tmp/
+v1/bazel-*
+v1/*.pprof
+v1/*.svg
+v1/cover.out
+v1/node_modules
+v1/web/node_modules
+v1/web/coverage
