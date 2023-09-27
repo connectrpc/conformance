@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package connectrpc.conformance.v1alpha1;
+
+import "connectrpc/conformance/v1alpha1/client_compat.proto";
+import "connectrpc/conformance/v1alpha1/config.proto";
+
+message TestSuite {
+  string name = 1;
+  // If non-empty, the protocols to which this suite applies. If empty,
+  // this suite applies to all protocols.
+  repeated Protocol relevant_protocols = 2;
+  // If non-empty, the HTTP versions to which this suite applies. If empty,
+  // this suite applies to all HTTP versions.
+  repeated HTTPVersion relevant_http_versions = 3;
+  repeated TestCase test_cases = 4;
+}
+
+message TestCase {
+  ClientCompatRequest request = 1;
+  ClientResponseResult expected_response = 2;
+}

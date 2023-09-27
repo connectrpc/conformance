@@ -1,0 +1,34 @@
+FROM node:20-alpine
+
+WORKDIR /workspace
+
+ARG TEST_PROTOBUF_ES_BRANCH
+ARG TEST_CONNECT_WEB_BRANCH
+ENV CHROME_BIN /usr/bin/chromium-browser
+RUN apk add --update --no-cache \
+    chromium \
+    git \
+    make \
+    bash
+COPY web/package.json web/package-lock.json /workspace/
+COPY web/tsconfig.json web/karma.conf.js /workspace/
+COPY web/gen /workspace/gen
+COPY web/spec /workspace/spec
+COPY web/server /workspace/server
+COPY cert /workspace/cert
+RUN npm install
+RUN local_npm_packages="" && \
+    if [ ! -z "${TEST_PROTOBUF_ES_BRANCH}" ]; then \
+        git clone --branch "${TEST_PROTOBUF_ES_BRANCH}" --depth 1 https://github.com/bufbuild/protobuf-es.git ../protobuf-es && \
+        npm --prefix ../protobuf-es install && \
+        npm --prefix ../protobuf-es -w @bufbuild/protobuf run build && \
+        local_npm_packages="${local_npm_packages} ../protobuf-es/packages/protobuf/"; \
+    fi && \
+    if [ ! -z "${TEST_CONNECT_WEB_BRANCH}" ]; then \
+        git clone --branch "${TEST_CONNECT_WEB_BRANCH}" --depth 1 https://github.com/connectrpc/connect-es.git ../connect-web && \
+        cd ../connect-web && make build && cd - \
+        local_npm_packages="${local_npm_packages} ../connect-web/packages/connect-web/"; \
+    fi && \
+    if [ ! -z "${local_npm_packages}" ]; then \
+        npm link ${local_npm_packages}; \
+    fi

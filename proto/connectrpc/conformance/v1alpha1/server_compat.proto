@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package connectrpc.conformance.v1alpha1;
+
+import "connectrpc/conformance/v1alpha1/config.proto";
+
+// Describes one configuration for an RPC server. The server is
+// expected to expose the connectrpc.conformance.v1alpha1.ConformanceService
+// RPC service. The configuration does not include a port. The
+// process should pick an available port, which is typically
+// done by using port zero (0) when creating a network listener
+// so that the OS selects an available ephemeral port.
+//
+// These properties are read from stdin. Once the server is
+// listening, details about the server, in the form of a
+// ServerCompatResponse, are written to stdout.
+//
+// Each test process is expected to start only one RPC server.
+// When testing multiple configurations, multiple test processes
+// will be started, each with different properties.
+message ServerCompatRequest {
+  Protocol protocol = 1;
+  HTTPVersion http_version = 2;
+  // if true, generate a self-signed cert and include it in the
+  // ServerCompatResponse along with the actual port
+  bool use_tls = 4;
+}
+
+// The outcome of one ServerCompatRequest.
+message ServerCompatResponse {
+  oneof result {
+    ServerListeningResult listening = 1;
+    ServerErrorResult error = 2;
+  }
+}
+
+message ServerListeningResult {
+  string host = 1;
+  string port = 2;
+  // The server's PEM-encoded certificate, so the
+  // client can verify it when connecting via TLS.
+  bytes  pem_cert = 3;
+}
+
+// The server doesn't support the requested protocol, or had a runtime error
+// while starting up.
+message ServerErrorResult {
+  string message = 1;
+}

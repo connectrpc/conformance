@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package connectrpc.conformance.v1alpha1;
+
+import "connectrpc/conformance/v1alpha1/config.proto";
+import "connectrpc/conformance/v1alpha1/service.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+
+// Describes one call the client should make. The client reads
+// these from stdin and, for each one, invokes an RPC as directed
+// and writes the results (in the form of a ClientCompatResponse
+// message) to stdout.
+message ClientCompatRequest {
+  string test_name = 1;
+  HTTPVersion http_version = 2;
+  Protocol protocol = 3;
+  Codec codec = 4;
+  Compression compression = 5;
+  string host = 6;
+  uint32 port = 7;
+  // If non-empty, the server is using TLS. The bytes are the
+  // server's PEM-encoded certificate, which the client should
+  // verify and trust.
+  bytes server_tls_cert = 8;
+  string service = 9;
+  string method = 10;
+  StreamType stream_type = 11;
+  repeated Header request_headers = 12;
+  // There will be exactly one for unary and server-stream methods.
+  // For client- and bidi-stream methods, all entries will have the
+  // same type URL (which matches the request type of the method).
+  repeated google.protobuf.Any request_messages = 13;
+  optional uint32 timeout_millis = 14;
+  // wait this many milliseconds before sending a request message
+  uint32 wait_before_each_request_message = 15;
+  // if true, wait for response before sending next request (only applicable to bidi endpoints)
+  bool wait_for_each_request = 16;
+}
+
+// The outcome of one ClientCompatRequest.
+message ClientCompatResponse {
+  string test_name = 1;
+  oneof result {
+    ClientResponseResult response = 2;
+    ClientErrorResult error = 3;
+  }
+}
+
+// The result of a ClientCompatRequest, which may or may bot be successful.
+message ClientResponseResult {
+  repeated Header response_headers = 1;
+  repeated ConformancePayload response_messages = 2;
+  Error error = 3;
+  // In case the client cannot decode Any from JSON, it should instead return the received JSON
+  repeated google.protobuf.Struct error_details_raw = 7;
+  repeated Header response_trailers = 4;
+}
+
+// The client is not able to fulfill the ClientCompatRequest. This may be due
+// to a runtime error, or because the requested protocol is not supported.
+message ClientErrorResult {
+  string message = 1;
+}

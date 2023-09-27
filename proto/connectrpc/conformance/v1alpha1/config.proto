@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package connectrpc.conformance.v1alpha1;
+
+// Config defines the configuration for running conformance tests.
+// This enumerates all of the "flavors" of the test suite to run.
+message Config {
+  Features features = 1;
+  repeated ConfigCase include_cases = 2;
+  repeated ConfigCase exclude_cases = 3;
+}
+
+message Features {
+  repeated HTTPVersion versions = 1;
+  repeated Protocol protocols = 2;
+  repeated Codec codecs = 3;
+  repeated Compression compression_algorithms = 4;
+  bool supports_h2c = 5;
+  bool supports_tls = 6;
+  bool supports_trailers = 7;
+  bool supports_connect_get = 8;
+  bool requires_connect_version_header = 9;
+  // If non-empty, the set of stream types that are supported. This is
+  // usually for clients, since some client environments may not be
+  // able to support certain kinds of streaming operations, especially
+  // bidirectional streams.
+  repeated StreamType stream_types = 10;
+}
+
+message ConfigCase {
+  HTTPVersion version = 1;
+  Protocol protocol = 2;
+  Codec codec = 3;
+  Compression compression = 4;
+  bool use_tls = 5;
+  repeated StreamType stream_types = 6;
+}
+
+enum HTTPVersion {
+  HTTP_VERSION_UNSPECIFIED = 0;
+  HTTP_VERSION_1 = 1;
+  HTTP_VERSION_2 = 2;
+  HTTP_VERSION_3 = 3;
+}
+
+enum Protocol {
+  PROTOCOL_UNSPECIFIED = 0;
+  PROTOCOL_CONNECT = 1;
+  PROTOCOL_GRPC = 2;
+  PROTOCOL_GRPC_WEB = 3;
+  // TODO: Support add'l protocols:
+  //PROTOCOL_GRPC_WEB_TEXT = 4;
+  //PROTOCOL_REST_TRANSCODING = 5;
+}
+
+enum Codec {
+  CODEC_UNSPECIFIED = 0;
+  CODEC_PROTO = 1;
+  CODEC_JSON = 2;
+  CODEC_TEXT = 3;
+}
+
+enum Compression {
+  COMPRESSION_UNSPECIFIED = 0;
+  COMPRESSION_IDENTITY = 1;
+  COMPRESSION_GZIP = 2;
+  COMPRESSION_BR = 3;
+  COMPRESSION_ZSTD = 4;
+  COMPRESSION_DEFLATE = 5;
+  COMPRESSION_SNAPPY = 6;
+}
+
+enum StreamType {
+  STREAM_TYPE_UNSPECIFIED = 0;
+  STREAM_TYPE_UNARY = 1;
+  STREAM_TYPE_CLIENT_STREAM = 2;
+  STREAM_TYPE_SERVER_STREAM = 3;
+  STREAM_TYPE_BIDI_STREAM = 4;
+}
