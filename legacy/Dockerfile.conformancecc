@@ -1,7 +1,0 @@
-FROM --platform=arm64 gcr.io/bazel-public/bazel
-
-WORKDIR /workspace
-COPY WORKSPACE.bazel .bazelrc /workspace/
-COPY cc /workspace/cc
-COPY proto /workspace/proto
-COPY cert /workspace/cert

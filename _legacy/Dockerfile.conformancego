@@ -1,0 +1,29 @@
+FROM --platform=${BUILDPLATFORM} golang:alpine as builder
+
+WORKDIR /workspace
+
+ARG TARGETOS
+ARG TARGETARCH
+ARG TEST_CONNECT_GO_BRANCH
+COPY go.mod go.sum /workspace/
+COPY cmd /workspace/cmd
+COPY internal /workspace/internal
+COPY proto /workspace/proto
+COPY cert /workspace/cert
+RUN if [ ! -z "$TEST_CONNECT_GO_BRANCH" ]; then go get connectrpc.com/connect@$TEST_CONNECT_GO_BRANCH; fi
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -o /go/bin/client ./cmd/client
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -o /go/bin/serverconnect ./cmd/serverconnect
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} \
+    go build -o /go/bin/servergrpc ./cmd/servergrpc
+
+FROM --platform=${TARGETPLATFORM} alpine
+
+COPY --from=builder /go/bin/client /usr/local/bin/client
+COPY --from=builder /go/bin/serverconnect /usr/local/bin/serverconnect
+COPY --from=builder /go/bin/servergrpc /usr/local/bin/servergrpc
+COPY --from=builder /workspace/cert /cert

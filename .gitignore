@@ -1,8 +1,8 @@
-legacy/.tmp/
-legacy/bazel-*
-legacy/*.pprof
-legacy/*.svg
-legacy/cover.out
-legacy/node_modules
-legacy/web/node_modules
-legacy/web/coverage
+_legacy/.tmp/
+_legacy/bazel-*
+_legacy/*.pprof
+_legacy/*.svg
+_legacy/cover.out
+_legacy/node_modules
+_legacy/web/node_modules
+_legacy/web/coverage

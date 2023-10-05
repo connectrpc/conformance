@@ -4,9 +4,9 @@ managed:
   go_package_prefix:
     default: connectrpc.com/conformance/internal/gen/proto/go
 plugins:
-  - name: go
+  - plugin: go
     out: internal/gen/proto/go
     opt: paths=source_relative
-  - name: connect-go
+  - plugin: buf.build/connectrpc/go
     out: internal/gen/proto/connect
     opt: paths=source_relative

@@ -6,9 +6,9 @@ package conformancev1alpha1connect
 
 import (
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	http "net/http"
 	strings "strings"
 )
@@ -18,11 +18,33 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// ConformanceServiceName is the fully-qualified name of the ConformanceService service.
 	ConformanceServiceName = "connectrpc.conformance.v1alpha1.ConformanceService"
+)
+
+// These constants are the fully-qualified names of the RPCs defined in this package. They're
+// exposed at runtime as Spec.Procedure and as the final two segments of the HTTP route.
+//
+// Note that these are different from the fully-qualified method names used by
+// google.golang.org/protobuf/reflect/protoreflect. To convert from these constants to
+// reflection-formatted method names, remove the leading slash and convert the remaining slash to a
+// period.
+const (
+	// ConformanceServiceUnaryProcedure is the fully-qualified name of the ConformanceService's Unary
+	// RPC.
+	ConformanceServiceUnaryProcedure = "/connectrpc.conformance.v1alpha1.ConformanceService/Unary"
+	// ConformanceServiceServerStreamProcedure is the fully-qualified name of the ConformanceService's
+	// ServerStream RPC.
+	ConformanceServiceServerStreamProcedure = "/connectrpc.conformance.v1alpha1.ConformanceService/ServerStream"
+	// ConformanceServiceClientStreamProcedure is the fully-qualified name of the ConformanceService's
+	// ClientStream RPC.
+	ConformanceServiceClientStreamProcedure = "/connectrpc.conformance.v1alpha1.ConformanceService/ClientStream"
+	// ConformanceServiceBidiStreamProcedure is the fully-qualified name of the ConformanceService's
+	// BidiStream RPC.
+	ConformanceServiceBidiStreamProcedure = "/connectrpc.conformance.v1alpha1.ConformanceService/BidiStream"
 )
 
 // ConformanceServiceClient is a client for the connectrpc.conformance.v1alpha1.ConformanceService
@@ -34,7 +56,7 @@ type ConformanceServiceClient interface {
 	// Response message data is specified as bytes. The service should echo back
 	// request properties in the ConformancePayload and then include the message
 	// data in the data field.
-	Unary(context.Context, *connect_go.Request[v1alpha1.UnaryRequest]) (*connect_go.Response[v1alpha1.ConformancePayload], error)
+	Unary(context.Context, *connect.Request[v1alpha1.UnaryRequest]) (*connect.Response[v1alpha1.ConformancePayload], error)
 	// A server-streaming operation. The request indicates the response headers,
 	// response messages, trailers, and an optional error to send back. The
 	// response data should be sent in the order indicated, and the server should
@@ -44,7 +66,7 @@ type ConformanceServiceClient interface {
 	// request properties in the first ConformancePayload, and then include the
 	// message data in the data field. Subsequent messages after the first one
 	// should contain only the data field.
-	ServerStream(context.Context, *connect_go.Request[v1alpha1.ServerStreamRequest]) (*connect_go.ServerStreamForClient[v1alpha1.ConformancePayload], error)
+	ServerStream(context.Context, *connect.Request[v1alpha1.ServerStreamRequest]) (*connect.ServerStreamForClient[v1alpha1.ConformancePayload], error)
 	// A client-streaming operation. The first request indicates the response
 	// headers and trailers and also indicates either a response message or an
 	// error to send back.
@@ -56,7 +78,7 @@ type ConformanceServiceClient interface {
 	//
 	// If the input stream is empty, the server's response will include no data,
 	// only the request properties (headers, timeout).
-	ClientStream(context.Context) *connect_go.ClientStreamForClient[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload]
+	ClientStream(context.Context) *connect.ClientStreamForClient[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload]
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
 	// The response data should be sent in the order indicated, and the server
@@ -78,7 +100,7 @@ type ConformanceServiceClient interface {
 	// If the input stream is empty, the server should send a single response
 	// message that includes no data and only the request properties (headers,
 	// timeout).
-	BidiStream(context.Context) *connect_go.BidiStreamForClient[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]
+	BidiStream(context.Context) *connect.BidiStreamForClient[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]
 }
 
 // NewConformanceServiceClient constructs a client for the
@@ -89,27 +111,27 @@ type ConformanceServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewConformanceServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) ConformanceServiceClient {
+func NewConformanceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConformanceServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &conformanceServiceClient{
-		unary: connect_go.NewClient[v1alpha1.UnaryRequest, v1alpha1.ConformancePayload](
+		unary: connect.NewClient[v1alpha1.UnaryRequest, v1alpha1.ConformancePayload](
 			httpClient,
-			baseURL+"/connectrpc.conformance.v1alpha1.ConformanceService/Unary",
+			baseURL+ConformanceServiceUnaryProcedure,
 			opts...,
 		),
-		serverStream: connect_go.NewClient[v1alpha1.ServerStreamRequest, v1alpha1.ConformancePayload](
+		serverStream: connect.NewClient[v1alpha1.ServerStreamRequest, v1alpha1.ConformancePayload](
 			httpClient,
-			baseURL+"/connectrpc.conformance.v1alpha1.ConformanceService/ServerStream",
+			baseURL+ConformanceServiceServerStreamProcedure,
 			opts...,
 		),
-		clientStream: connect_go.NewClient[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload](
+		clientStream: connect.NewClient[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload](
 			httpClient,
-			baseURL+"/connectrpc.conformance.v1alpha1.ConformanceService/ClientStream",
+			baseURL+ConformanceServiceClientStreamProcedure,
 			opts...,
 		),
-		bidiStream: connect_go.NewClient[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload](
+		bidiStream: connect.NewClient[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload](
 			httpClient,
-			baseURL+"/connectrpc.conformance.v1alpha1.ConformanceService/BidiStream",
+			baseURL+ConformanceServiceBidiStreamProcedure,
 			opts...,
 		),
 	}
@@ -117,29 +139,29 @@ func NewConformanceServiceClient(httpClient connect_go.HTTPClient, baseURL strin
 
 // conformanceServiceClient implements ConformanceServiceClient.
 type conformanceServiceClient struct {
-	unary        *connect_go.Client[v1alpha1.UnaryRequest, v1alpha1.ConformancePayload]
-	serverStream *connect_go.Client[v1alpha1.ServerStreamRequest, v1alpha1.ConformancePayload]
-	clientStream *connect_go.Client[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload]
-	bidiStream   *connect_go.Client[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]
+	unary        *connect.Client[v1alpha1.UnaryRequest, v1alpha1.ConformancePayload]
+	serverStream *connect.Client[v1alpha1.ServerStreamRequest, v1alpha1.ConformancePayload]
+	clientStream *connect.Client[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload]
+	bidiStream   *connect.Client[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]
 }
 
 // Unary calls connectrpc.conformance.v1alpha1.ConformanceService.Unary.
-func (c *conformanceServiceClient) Unary(ctx context.Context, req *connect_go.Request[v1alpha1.UnaryRequest]) (*connect_go.Response[v1alpha1.ConformancePayload], error) {
+func (c *conformanceServiceClient) Unary(ctx context.Context, req *connect.Request[v1alpha1.UnaryRequest]) (*connect.Response[v1alpha1.ConformancePayload], error) {
 	return c.unary.CallUnary(ctx, req)
 }
 
 // ServerStream calls connectrpc.conformance.v1alpha1.ConformanceService.ServerStream.
-func (c *conformanceServiceClient) ServerStream(ctx context.Context, req *connect_go.Request[v1alpha1.ServerStreamRequest]) (*connect_go.ServerStreamForClient[v1alpha1.ConformancePayload], error) {
+func (c *conformanceServiceClient) ServerStream(ctx context.Context, req *connect.Request[v1alpha1.ServerStreamRequest]) (*connect.ServerStreamForClient[v1alpha1.ConformancePayload], error) {
 	return c.serverStream.CallServerStream(ctx, req)
 }
 
 // ClientStream calls connectrpc.conformance.v1alpha1.ConformanceService.ClientStream.
-func (c *conformanceServiceClient) ClientStream(ctx context.Context) *connect_go.ClientStreamForClient[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload] {
+func (c *conformanceServiceClient) ClientStream(ctx context.Context) *connect.ClientStreamForClient[v1alpha1.ClientStreamRequest, v1alpha1.ConformancePayload] {
 	return c.clientStream.CallClientStream(ctx)
 }
 
 // BidiStream calls connectrpc.conformance.v1alpha1.ConformanceService.BidiStream.
-func (c *conformanceServiceClient) BidiStream(ctx context.Context) *connect_go.BidiStreamForClient[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload] {
+func (c *conformanceServiceClient) BidiStream(ctx context.Context) *connect.BidiStreamForClient[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload] {
 	return c.bidiStream.CallBidiStream(ctx)
 }
 
@@ -152,7 +174,7 @@ type ConformanceServiceHandler interface {
 	// Response message data is specified as bytes. The service should echo back
 	// request properties in the ConformancePayload and then include the message
 	// data in the data field.
-	Unary(context.Context, *connect_go.Request[v1alpha1.UnaryRequest]) (*connect_go.Response[v1alpha1.ConformancePayload], error)
+	Unary(context.Context, *connect.Request[v1alpha1.UnaryRequest]) (*connect.Response[v1alpha1.ConformancePayload], error)
 	// A server-streaming operation. The request indicates the response headers,
 	// response messages, trailers, and an optional error to send back. The
 	// response data should be sent in the order indicated, and the server should
@@ -162,7 +184,7 @@ type ConformanceServiceHandler interface {
 	// request properties in the first ConformancePayload, and then include the
 	// message data in the data field. Subsequent messages after the first one
 	// should contain only the data field.
-	ServerStream(context.Context, *connect_go.Request[v1alpha1.ServerStreamRequest], *connect_go.ServerStream[v1alpha1.ConformancePayload]) error
+	ServerStream(context.Context, *connect.Request[v1alpha1.ServerStreamRequest], *connect.ServerStream[v1alpha1.ConformancePayload]) error
 	// A client-streaming operation. The first request indicates the response
 	// headers and trailers and also indicates either a response message or an
 	// error to send back.
@@ -174,7 +196,7 @@ type ConformanceServiceHandler interface {
 	//
 	// If the input stream is empty, the server's response will include no data,
 	// only the request properties (headers, timeout).
-	ClientStream(context.Context, *connect_go.ClientStream[v1alpha1.ClientStreamRequest]) (*connect_go.Response[v1alpha1.ConformancePayload], error)
+	ClientStream(context.Context, *connect.ClientStream[v1alpha1.ClientStreamRequest]) (*connect.Response[v1alpha1.ConformancePayload], error)
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
 	// The response data should be sent in the order indicated, and the server
@@ -196,7 +218,7 @@ type ConformanceServiceHandler interface {
 	// If the input stream is empty, the server should send a single response
 	// message that includes no data and only the request properties (headers,
 	// timeout).
-	BidiStream(context.Context, *connect_go.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]) error
+	BidiStream(context.Context, *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]) error
 }
 
 // NewConformanceServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -204,46 +226,58 @@ type ConformanceServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	mux := http.NewServeMux()
-	mux.Handle("/connectrpc.conformance.v1alpha1.ConformanceService/Unary", connect_go.NewUnaryHandler(
-		"/connectrpc.conformance.v1alpha1.ConformanceService/Unary",
+func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	conformanceServiceUnaryHandler := connect.NewUnaryHandler(
+		ConformanceServiceUnaryProcedure,
 		svc.Unary,
 		opts...,
-	))
-	mux.Handle("/connectrpc.conformance.v1alpha1.ConformanceService/ServerStream", connect_go.NewServerStreamHandler(
-		"/connectrpc.conformance.v1alpha1.ConformanceService/ServerStream",
+	)
+	conformanceServiceServerStreamHandler := connect.NewServerStreamHandler(
+		ConformanceServiceServerStreamProcedure,
 		svc.ServerStream,
 		opts...,
-	))
-	mux.Handle("/connectrpc.conformance.v1alpha1.ConformanceService/ClientStream", connect_go.NewClientStreamHandler(
-		"/connectrpc.conformance.v1alpha1.ConformanceService/ClientStream",
+	)
+	conformanceServiceClientStreamHandler := connect.NewClientStreamHandler(
+		ConformanceServiceClientStreamProcedure,
 		svc.ClientStream,
 		opts...,
-	))
-	mux.Handle("/connectrpc.conformance.v1alpha1.ConformanceService/BidiStream", connect_go.NewBidiStreamHandler(
-		"/connectrpc.conformance.v1alpha1.ConformanceService/BidiStream",
+	)
+	conformanceServiceBidiStreamHandler := connect.NewBidiStreamHandler(
+		ConformanceServiceBidiStreamProcedure,
 		svc.BidiStream,
 		opts...,
-	))
-	return "/connectrpc.conformance.v1alpha1.ConformanceService/", mux
+	)
+	return "/connectrpc.conformance.v1alpha1.ConformanceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ConformanceServiceUnaryProcedure:
+			conformanceServiceUnaryHandler.ServeHTTP(w, r)
+		case ConformanceServiceServerStreamProcedure:
+			conformanceServiceServerStreamHandler.ServeHTTP(w, r)
+		case ConformanceServiceClientStreamProcedure:
+			conformanceServiceClientStreamHandler.ServeHTTP(w, r)
+		case ConformanceServiceBidiStreamProcedure:
+			conformanceServiceBidiStreamHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
 }
 
 // UnimplementedConformanceServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedConformanceServiceHandler struct{}
 
-func (UnimplementedConformanceServiceHandler) Unary(context.Context, *connect_go.Request[v1alpha1.UnaryRequest]) (*connect_go.Response[v1alpha1.ConformancePayload], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.Unary is not implemented"))
+func (UnimplementedConformanceServiceHandler) Unary(context.Context, *connect.Request[v1alpha1.UnaryRequest]) (*connect.Response[v1alpha1.ConformancePayload], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.Unary is not implemented"))
 }
 
-func (UnimplementedConformanceServiceHandler) ServerStream(context.Context, *connect_go.Request[v1alpha1.ServerStreamRequest], *connect_go.ServerStream[v1alpha1.ConformancePayload]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.ServerStream is not implemented"))
+func (UnimplementedConformanceServiceHandler) ServerStream(context.Context, *connect.Request[v1alpha1.ServerStreamRequest], *connect.ServerStream[v1alpha1.ConformancePayload]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.ServerStream is not implemented"))
 }
 
-func (UnimplementedConformanceServiceHandler) ClientStream(context.Context, *connect_go.ClientStream[v1alpha1.ClientStreamRequest]) (*connect_go.Response[v1alpha1.ConformancePayload], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.ClientStream is not implemented"))
+func (UnimplementedConformanceServiceHandler) ClientStream(context.Context, *connect.ClientStream[v1alpha1.ClientStreamRequest]) (*connect.Response[v1alpha1.ConformancePayload], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.ClientStream is not implemented"))
 }
 
-func (UnimplementedConformanceServiceHandler) BidiStream(context.Context, *connect_go.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.BidiStream is not implemented"))
+func (UnimplementedConformanceServiceHandler) BidiStream(context.Context, *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.BidiStream is not implemented"))
 }
