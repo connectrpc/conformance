@@ -101,11 +101,14 @@ a payload size of 250 KiB, 8 bytes, 1 KiB, and 32 KiB, and no errors.
 
 RPC: `FullDuplexCall`
 
-Client calls `FullDuplexCall` exactly 4 times with a request with a payload of 250 KiB
-and receives a response with a payload of 500 KiB, a request with a payload of 8 bytes
-and receives a response with a payload of 16 bytes, a request with a payload of 1 KiB
-and receives a response with a payload of 2 KiB, and a request with a payload of 32 KiB
-and receives a response with a payload of 64 kiB. Client asserts that payload sizes
+Client sends exactly 4 requests over a `FullDuplexCall` stream:
+
+- A request with a payload of 250 KiB, expecting a response with a payload of 500 KiB
+- A request with a payload of 8 bytes, expecting a response with a payload of 16 bytes
+- A request with a payload of 1 KiB, expecting a response with a payload of 2 KiB
+- A request with a payload of 32 KiB, expecting a response with a payload of 64 KiB
+
+Client asserts that payload sizes
 are in order and then closes the stream. No errors are expected.
 
 #### empty_stream
