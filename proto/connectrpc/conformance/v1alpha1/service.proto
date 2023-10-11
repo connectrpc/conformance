@@ -97,7 +97,7 @@ message ServerStreamRequest {
 
 message ClientStreamRequest {
   // Tells the server how to reply at the end; required in the first message
-  // in the stream. Should not be present in subsequent messages.
+  // in the stream. Should be ignored in all subsequent messages
   UnaryRequest response_definition = 1;
 
   // Additional data for subsequent messages in the stream.
@@ -106,16 +106,18 @@ message ClientStreamRequest {
 
 message BidiStreamRequest {
   // Tells the server how to reply; required in the first message
-  // in the stream. Should not be present in subsequent messages.
+  // in the stream. Should be ignored in all subsequent messages
+  // in the stream.
   ServerStreamRequest response_definition = 1;
   // Tells the server to wait for each request before sending a
   // response, to effectively interleave the stream so messages
   // always are sent in request->response pairs. If false, then
-  // the response stream will be sent immediately with the only
-  // delays between messages being a optional fixed milliseconds
-  // in the above field. This field is only present in the first
-  // message in the stream and should not appear in subsequent
-  // messages.
+  // the response stream will be sent once all request messages
+  // are finished sending with the only delays between messages
+  // being an optional fixed milliseconds defined in the response
+  // definition.
+  // This field is only relevant in the first message in the stream
+  // and should be ignored in subsequent messages.
   bool wait_for_each_request = 2;
 
   // Additional data for subsequent messages in the stream.
@@ -137,9 +139,9 @@ message ConformancePayload {
 }
 
 message Error {
-  int32 code = 3;
-  string message = 4;
-  repeated google.protobuf.Any details = 5;
+  int32 code = 1;
+  string message = 2;
+  repeated google.protobuf.Any details = 3;
 }
 
 // A tuple of name and values (ASCII) for a header or trailer entry.
