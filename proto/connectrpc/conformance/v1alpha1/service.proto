@@ -16,7 +16,10 @@ service ConformanceService {
   // Response message data is specified as bytes. The service should echo back
   // request properties in the ConformancePayload and then include the message
   // data in the data field.
-  rpc Unary(UnaryRequest) returns (ConformancePayload);
+  //
+  // Servers should allow the response definition to be unset in the request and
+  // if it is, set no response headers or trailers and send back an empty response.
+  rpc Unary(UnaryRequest) returns (UnaryResponse);
   // A server-streaming operation. The request indicates the response headers,
   // response messages, trailers, and an optional error to send back. The
   // response data should be sent in the order indicated, and the server should
@@ -26,7 +29,11 @@ service ConformanceService {
   // request properties in the first ConformancePayload, and then include the
   // message data in the data field. Subsequent messages after the first one
   // should contain only the data field.
-  rpc ServerStream(ServerStreamRequest) returns (stream ConformancePayload);
+  //
+  // Servers should allow the response definition to be unset in the request and
+  // if so, all responses should contain no response headers or trailers and
+  // contain empty response data.
+  rpc ServerStream(ServerStreamRequest) returns (stream ServerStreamResponse);
   // A client-streaming operation. The first request indicates the response
   // headers and trailers and also indicates either a response message or an
   // error to send back.
@@ -38,15 +45,21 @@ service ConformanceService {
   //
   // If the input stream is empty, the server's response will include no data,
   // only the request properties (headers, timeout).
-  rpc ClientStream(stream ClientStreamRequest) returns (ConformancePayload);
+  //
+  // Servers should only read the response definition from the first message in
+  // the stream and should ignore any definition set in subsequent messages.
+
+  // Servers should allow the response definition to be unset in the request and
+  // if it is, set no response headers or trailers and send back empty response data.
+  rpc ClientStream(stream ClientStreamRequest) returns (ClientStreamResponse);
   // A bidirectional-streaming operation. The first request indicates the response
   // headers, response messages, trailers, and an optional error to send back.
   // The response data should be sent in the order indicated, and the server
   // should wait between sending response messages as indicated. If the
-  // wait_for_each request field is true, the handler should read one request
+  // full_duplex field is true, the handler should read one request
   // and then send back one response, and then alternate, reading another
-  // request and then sending back another response, etc. If the wait duration
-  // is specified, the server should wait that long in between sending each
+  // request and then sending back another response, etc. If the response_delay_ms
+  // duration is specified, the server should wait that long in between sending each
   // response message. If both are specified, the server should wait the given
   // duration after reading the request before sending the corresponding
   // response.
@@ -60,66 +73,103 @@ service ConformanceService {
   // If the input stream is empty, the server should send a single response
   // message that includes no data and only the request properties (headers,
   // timeout).
-  rpc BidiStream(stream BidiStreamRequest) returns (stream ConformancePayload);
+  rpc BidiStream(stream BidiStreamRequest) returns (stream BidiStreamResponse);
 }
 
-message UnaryRequest {
-  // response headers to send
+// A definition of a response to be sent from a single-response endpoint.
+// Can be used to define a response for unary or client-streaming calls.
+message UnaryResponseDefinition {
+  // Response headers to send
   repeated Header response_headers = 1;
 
   oneof response {
-    // response message to send
+    // Response message to send
     bytes response_data = 2;
-    // error to raise instead of response message
+    // Error to raise instead of response message
     Error error = 3;
   }
 
-  // response trailers to send - together with the error if present
+  // Response trailers to send - together with the error if present
   repeated Header response_trailers = 4;
 }
 
-message ServerStreamRequest {
-  // response headers to send
+// A definition of responses to be sent from a streaming endpoint.
+// Can be used to define responses for server-streaming or bidi-streaming calls.
+message StreamResponseDefinition {
+  // Response headers to send
   repeated Header response_headers = 1;
 
-  // response messages to send
+  // Response messages to send
   repeated bytes response_data = 2;
 
-  // wait this many milliseconds before sending each response message
-  uint32 wait_before_each_message_millis = 3;
+  // Wait this many milliseconds before sending each response message
+  uint32 response_delay_ms = 3;
 
-  // optional error to raise, but only after sending the response messages
+  // Optional error to raise, but only after sending the response messages
   Error error = 4;
 
-  // response trailers to send - together with the error if present
+  // Response trailers to send - together with the error if present
   repeated Header response_trailers = 5;
 }
 
+message UnaryRequest {
+  // The response definition which should be returned in the conformance payload
+  UnaryResponseDefinition response_definition = 1;
+}
+
+message UnaryResponse {
+  // The conformance payload to respond with.
+  ConformancePayload payload = 1;
+}
+
+message ServerStreamRequest {
+  // The response definition which should be returned in the conformance payload.
+  StreamResponseDefinition response_definition = 1;
+}
+
+message ServerStreamResponse {
+  // The conformance payload to respond with
+  ConformancePayload payload = 1;
+}
+
 message ClientStreamRequest {
-  // Tells the server how to reply at the end; required in the first message
-  // in the stream. Should not be present in subsequent messages.
-  UnaryRequest response_definition = 1;
+  // Tells the server how to reply once all client messages are
+  // complete. Required in the first message in the stream, but
+  // should be ignored in subsequent messages.
+  UnaryResponseDefinition response_definition = 1;
 
   // Additional data for subsequent messages in the stream.
   bytes extra = 2;
 }
 
+message ClientStreamResponse {
+  // The conformance payload to respond with
+  ConformancePayload payload = 1;
+}
+
 message BidiStreamRequest {
   // Tells the server how to reply; required in the first message
-  // in the stream. Should not be present in subsequent messages.
-  ServerStreamRequest response_definition = 1;
-  // Tells the server to wait for each request before sending a
-  // response, to effectively interleave the stream so messages
-  // always are sent in request->response pairs. If false, then
-  // the response stream will be sent immediately with the only
-  // delays between messages being a optional fixed milliseconds
-  // in the above field. This field is only present in the first
-  // message in the stream and should not appear in subsequent
-  // messages.
-  bool wait_for_each_request = 2;
+  // in the stream. Should be ignored in subsequent messages.
+  StreamResponseDefinition response_definition = 1;
+  // Tells the server whether it should wait for each request
+  // before sending a response.
+  // If true, it indicates the server should effectively interleave the
+  // stream so messages are sent in request->response pairs.
+  // If false, then the response stream will be sent once all request messages
+  // are finished sending with the only delays between messages
+  // being the optional fixed milliseconds defined in the response
+  // definition.
+  // This field is only relevant in the first message in the stream
+  // and should be ignored in subsequent messages.
+  bool full_duplex = 2;
 
   // Additional data for subsequent messages in the stream.
-  bytes extra = 3;
+  bytes request_data = 3;
+}
+
+message BidiStreamResponse {
+  // The conformance payload to respond with
+  ConformancePayload payload = 1;
 }
 
 message ConformancePayload {
@@ -131,15 +181,22 @@ message ConformancePayload {
     // The server echos back the request headers it observed here.
     repeated Header request_headers = 1;
     // The timeout observed that was included in the request.
-    optional uint32 timeout_millis = 2;
+    optional uint32 timeout_ms = 2;
+    // The server should echo back all requests received.
+    // For unary and server-streaming requests, this should always contain a single request
+    // For client-streaming and half-duplex bidi-streaming, this should contain
+    // all client requests in the order received and be present in each response.
+    // For full-duplex bidirectional-streaming, this should contain all requests in the order
+    // they were received since the last sent response.
     repeated google.protobuf.Any requests = 3;
   }
 }
 
+// An error definition used for specifying a desired error response
 message Error {
-  int32 code = 3;
-  string message = 4;
-  repeated google.protobuf.Any details = 5;
+  int32 code = 1;
+  string message = 2;
+  repeated google.protobuf.Any details = 3;
 }
 
 // A tuple of name and values (ASCII) for a header or trailer entry.
