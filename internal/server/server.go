@@ -25,6 +25,8 @@ import (
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
+	"go.starlark.net/lib/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // ConformanceRequest is a general interface for all conformance requests (UnaryRequest, ServerStreamRequest, etc.)
@@ -45,6 +47,8 @@ func (s *conformanceServer) Unary(
 	req *connect.Request[v1alpha1.UnaryRequest],
 ) (*connect.Response[v1alpha1.ConformancePayload], error) {
 
+	msgAsAny, err := anypb.New(req.Msg)
+
 	return buildUnaryResponse(req.Msg, req.Header())
 }
 
@@ -54,28 +58,38 @@ func (s *conformanceServer) ClientStream(
 ) (*connect.Response[v1alpha1.ConformancePayload], error) {
 	var responseDefinition *v1alpha1.UnaryRequest
 	firstRecv := true
+	var requests []*anypb.Any
 	for stream.Receive() {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
+		msg := stream.Msg()
 		// If this is the first message received on the stream, save off the total responses we need to send
 		// plus whether this should be full or half duplex
 		if firstRecv {
-			if stream.Msg().ResponseDefinition == nil {
+			if msg.ResponseDefinition == nil {
 				return nil, connect.NewError(
 					connect.CodeInvalidArgument,
 					errors.New("a response definition must be provided in the first message on a client stream"),
 				)
 			}
-			responseDefinition = stream.Msg().ResponseDefinition
+			responseDefinition = msg.ResponseDefinition
 			firstRecv = false
 		}
+		msgAsAny, err := anypb.New(msg)
+		if err != nil {
+			return nil, connect.NewError(
+				connect.CodeInternal,
+				fmt.Errorf("unable to convert request message: %w", err),
+			)
+		}
+		requests = append(requests, msgAsAny)
 	}
 	if err := stream.Err(); err != nil {
 		return nil, err
 	}
 
-	return buildUnaryResponse(responseDefinition, stream.RequestHeader())
+	return buildUnaryResponse(responseDefinition, stream.RequestHeader(), requests)
 }
 
 func (s *conformanceServer) ServerStream(
@@ -206,6 +220,7 @@ func sendBidi(
 func buildConformancePayload(
 	msg ConformanceRequest,
 	headers http.Header,
+	requests []*anypb.Any,
 ) *connect.Response[v1alpha1.ConformancePayload] {
 	res := connect.NewResponse(&v1alpha1.ConformancePayload{})
 
@@ -231,8 +246,10 @@ func buildConformancePayload(
 		}
 		headerInfo = append(headerInfo, hdr)
 	}
+
 	res.Msg.RequestInfo = &v1alpha1.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
+		Requests:       requests,
 	}
 
 	return res
@@ -241,8 +258,9 @@ func buildConformancePayload(
 func buildUnaryResponse(
 	def *v1alpha1.UnaryRequest,
 	headers http.Header,
+	requests []*anypb.Any,
 ) (*connect.Response[v1alpha1.ConformancePayload], error) {
-	res := buildConformancePayload(def, headers)
+	res := buildConformancePayload(def, headers, requests)
 
 	switch rt := def.Response.(type) {
 	case *v1alpha1.UnaryRequest_ResponseData:
@@ -270,4 +288,14 @@ func createError(err *v1alpha1.Error) *connect.Error {
 		connectErr.AddDetail(connectDetail)
 	}
 	return connectErr
+}
+
+func asAny(msg *proto.Message) (*anypb.Any, error) {
+	msgAsAny, err := anypb.New(msg)
+	if err != nil {
+		return nil, connect.NewError(
+			connect.CodeInternal,
+			fmt.Errorf("unable to convert request message: %w", err),
+		)
+	}
 }
