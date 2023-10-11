@@ -73,25 +73,12 @@ service ConformanceService {
   // If the input stream is empty, the server should send a single response
   // message that includes no data and only the request properties (headers,
   // timeout).
-  //
-  // Note that clients could specify a list of desired responses that is less than
-  // or greater than the amount of requests they send on the stream. If this is the case
-  // and full duplex is specified then servers should behave as follows:
-  //
-  // If the total desired responses is less than the requests, the server should
-  // simply stop sending responses once the total desired is sent and continue to read
-  // messages until the client is finished sending.
-  //
-  // If the total desired responses is greater than the requests, the server should
-  // flush the remaining responses once the client is finished sending.
-  //
-  // Note that unequal desired responses and requests is irrelevant with half duplex calls.
   rpc BidiStream(stream BidiStreamRequest) returns (stream BidiStreamResponse);
 }
 
 // A definition of a response to be sent from a single-response endpoint.
 // Can be used to define a response for unary or client-streaming calls.
-message SingleResponseDefinition {
+message UnaryResponseDefinition {
   // Response headers to send
   repeated Header response_headers = 1;
 
@@ -127,7 +114,7 @@ message StreamResponseDefinition {
 
 message UnaryRequest {
   // The response definition which should be returned in the conformance payload
-  SingleResponseDefinition response_definition = 1;
+  UnaryResponseDefinition response_definition = 1;
 }
 
 message UnaryResponse {
@@ -149,7 +136,7 @@ message ClientStreamRequest {
   // Tells the server how to reply once all client messages are
   // complete. Required in the first message in the stream, but
   // should be ignored in subsequent messages.
-  SingleResponseDefinition response_definition = 1;
+  UnaryResponseDefinition response_definition = 1;
 
   // Additional data for subsequent messages in the stream.
   bytes extra = 2;
@@ -199,8 +186,8 @@ message ConformancePayload {
     // For unary and server-streaming requests, this should always contain a single request
     // For client-streaming and half-duplex bidi-streaming, this should contain
     // all client requests in the order received and be present in each response.
-    // For full-duplex bidirectional-streaming, this should contain all requests *so far* in the
-    // order received, meaning that this should grow as responses are sent.
+    // For full-duplex bidirectional-streaming, this should contain all requests in the order
+    // they were received since the last sent response.
     repeated google.protobuf.Any requests = 3;
   }
 }
