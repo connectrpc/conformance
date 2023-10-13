@@ -6,3 +6,5 @@ _legacy/cover.out
 _legacy/node_modules
 _legacy/web/node_modules
 _legacy/web/coverage
+
+.tmp/

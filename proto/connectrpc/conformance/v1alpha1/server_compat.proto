@@ -39,7 +39,7 @@ message ServerListeningResult {
   string port = 2;
   // The server's PEM-encoded certificate, so the
   // client can verify it when connecting via TLS.
-  bytes  pem_cert = 3;
+  bytes pem_cert = 3;
 }
 
 // The server doesn't support the requested protocol, or had a runtime error

@@ -20,3 +20,4 @@ message TestCase {
   ClientCompatRequest request = 1;
   ClientResponseResult expected_response = 2;
 }
+
