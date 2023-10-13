@@ -35,6 +35,7 @@ type ConformanceRequest interface {
 	GetResponseTrailers() []*v1alpha1.Header
 }
 
+// Stream represents a stream with the ability to set headers and trailers and send a message T
 type Stream[T any] interface {
 	ResponseHeader() http.Header
 	ResponseTrailer() http.Header
