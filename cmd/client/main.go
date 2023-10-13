@@ -139,30 +139,29 @@ func run(flags *flags) {
 }
 
 func runUnary(client conformancev1alpha1connect.ConformanceServiceClient) {
-	// Happy path w/ response data
 	runUnary1(client)
-	// Happy path w/ error response
 	runUnary2(client)
-	// No values set in UnaryRequest
 	runUnary3(client)
 }
 
 func runUnary1(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runUnary1 --------")
+	fmt.Println("runUnary1 (happy path w/ response data) --------")
 	req := connect.NewRequest(&v1alpha1.UnaryRequest{
-		Response: &v1alpha1.UnaryRequest_ResponseData{
-			ResponseData: []byte("test response"),
-		},
-		ResponseHeaders: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-header",
-				Value: []string{"foo", "bar", "baz"},
+		ResponseDefinition: &v1alpha1.UnaryResponseDefinition{
+			Response: &v1alpha1.UnaryResponseDefinition_ResponseData{
+				ResponseData: []byte("test response"),
 			},
-		},
-		ResponseTrailers: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-trailer",
-				Value: []string{"bing", "quux"},
+			ResponseHeaders: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-header",
+					Value: []string{"foo", "bar", "baz"},
+				},
+			},
+			ResponseTrailers: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-trailer",
+					Value: []string{"bing", "quux"},
+				},
 			},
 		},
 	})
@@ -178,7 +177,7 @@ func runUnary1(client conformancev1alpha1connect.ConformanceServiceClient) {
 }
 
 func runUnary2(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runUnary2 --------")
+	fmt.Println("runUnary2 (happy path w/ error response) --------")
 	retryInfo := &errdetails.RetryInfo{
 		RetryDelay: durationpb.New(10 * time.Second),
 	}
@@ -190,17 +189,19 @@ func runUnary2(client conformancev1alpha1connect.ConformanceServiceClient) {
 	reply, err := client.Unary(
 		context.Background(),
 		connect.NewRequest(&v1alpha1.UnaryRequest{
-			Response: &v1alpha1.UnaryRequest_Error{
-				Error: &v1alpha1.Error{
-					Code:    int32(connect.CodeAborted),
-					Message: "The request has failed",
-					Details: []*anypb.Any{retryAny},
+			ResponseDefinition: &v1alpha1.UnaryResponseDefinition{
+				Response: &v1alpha1.UnaryResponseDefinition_Error{
+					Error: &v1alpha1.Error{
+						Code:    int32(connect.CodeAborted),
+						Message: "The request has failed",
+						Details: []*anypb.Any{retryAny},
+					},
 				},
-			},
-			ResponseHeaders: []*v1alpha1.Header{
-				{
-					Name:  "x-custom-header",
-					Value: []string{"foo", "bar", "baz", "bing"},
+				ResponseHeaders: []*v1alpha1.Header{
+					{
+						Name:  "x-custom-header",
+						Value: []string{"foo", "bar", "baz", "bing"},
+					},
 				},
 			},
 		}),
@@ -212,7 +213,7 @@ func runUnary2(client conformancev1alpha1connect.ConformanceServiceClient) {
 }
 
 func runUnary3(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runUnary3 --------")
+	fmt.Println("runUnary3 (empty UnaryRequest) --------")
 	reply, err := client.Unary(
 		context.Background(),
 		connect.NewRequest(&v1alpha1.UnaryRequest{}),
@@ -243,29 +244,28 @@ func printError(err error) {
 }
 
 func runServerStream(client conformancev1alpha1connect.ConformanceServiceClient) {
-	// Happy path
 	runServerStream1(client)
-	// Happy path w/ error response
 	runServerStream2(client)
-	// Trailers-only response
 	runServerStream3(client)
 }
 
 func runServerStream1(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runServerStream1 --------")
+	fmt.Println("runServerStream1 (happy path w/ no error) --------")
 	req := connect.NewRequest(&v1alpha1.ServerStreamRequest{
-		ResponseData:                [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
-		WaitBeforeEachMessageMillis: 2000,
-		ResponseHeaders: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-header",
-				Value: []string{"foo", "bar", "baz"},
+		ResponseDefinition: &v1alpha1.StreamResponseDefinition{
+			ResponseData:    [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
+			ResponseDelayMs: 2000,
+			ResponseHeaders: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-header",
+					Value: []string{"foo", "bar", "baz"},
+				},
 			},
-		},
-		ResponseTrailers: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-trailer",
-				Value: []string{"bing", "quux"},
+			ResponseTrailers: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-trailer",
+					Value: []string{"bing", "quux"},
+				},
 			},
 		},
 	})
@@ -280,34 +280,38 @@ func runServerStream1(client conformancev1alpha1connect.ConformanceServiceClient
 			return
 		}
 		fmt.Printf("Response: %+v\n", stream.Msg())
+		fmt.Println(stream.ResponseHeader())
+		fmt.Println(stream.ResponseTrailer())
 	}
 }
 
 func runServerStream2(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runServerStream2 --------")
+	fmt.Println("runServerStream2 (happy path w/ error response) --------")
 	retryInfo := &errdetails.RetryInfo{
 		RetryDelay: durationpb.New(10 * time.Second),
 	}
 	retryAny, err := anypb.New(retryInfo)
 	req := connect.NewRequest(&v1alpha1.ServerStreamRequest{
-		ResponseData:                [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
-		WaitBeforeEachMessageMillis: 2000,
-		ResponseHeaders: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-header",
-				Value: []string{"foo", "bar", "baz"},
+		ResponseDefinition: &v1alpha1.StreamResponseDefinition{
+			ResponseData:    [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
+			ResponseDelayMs: 2000,
+			ResponseHeaders: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-header",
+					Value: []string{"foo", "bar", "baz"},
+				},
 			},
-		},
-		ResponseTrailers: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-trailer",
-				Value: []string{"bing", "quux"},
+			ResponseTrailers: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-trailer",
+					Value: []string{"bing", "quux"},
+				},
 			},
-		},
-		Error: &v1alpha1.Error{
-			Code:    int32(connect.CodeAborted),
-			Message: "The request has failed",
-			Details: []*anypb.Any{retryAny},
+			Error: &v1alpha1.Error{
+				Code:    int32(connect.CodeAborted),
+				Message: "The request has failed",
+				Details: []*anypb.Any{retryAny},
+			},
 		},
 	})
 	req.Header().Set(
@@ -328,29 +332,31 @@ func runServerStream2(client conformancev1alpha1connect.ConformanceServiceClient
 }
 
 func runServerStream3(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runServerStream3 --------")
+	fmt.Println("runServerStream3 (no response, only an error) --------")
 	retryInfo := &errdetails.RetryInfo{
 		RetryDelay: durationpb.New(10 * time.Second),
 	}
 	retryAny, err := anypb.New(retryInfo)
 	req := connect.NewRequest(&v1alpha1.ServerStreamRequest{
-		WaitBeforeEachMessageMillis: 2000,
-		ResponseHeaders: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-header",
-				Value: []string{"foo", "bar", "baz"},
+		ResponseDefinition: &v1alpha1.StreamResponseDefinition{
+			ResponseDelayMs: 2000,
+			ResponseHeaders: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-header",
+					Value: []string{"foo", "bar", "baz"},
+				},
 			},
-		},
-		ResponseTrailers: []*v1alpha1.Header{
-			{
-				Name:  "x-custom-trailer",
-				Value: []string{"bing", "quux"},
+			ResponseTrailers: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-trailer",
+					Value: []string{"bing", "quux"},
+				},
 			},
-		},
-		Error: &v1alpha1.Error{
-			Code:    int32(connect.CodeAborted),
-			Message: "The request has failed",
-			Details: []*anypb.Any{retryAny},
+			Error: &v1alpha1.Error{
+				Code:    int32(connect.CodeAborted),
+				Message: "The request has failed",
+				Details: []*anypb.Any{retryAny},
+			},
 		},
 	})
 	req.Header().Set(
@@ -372,19 +378,20 @@ func runServerStream3(client conformancev1alpha1connect.ConformanceServiceClient
 
 func runBidiStream(client conformancev1alpha1connect.ConformanceServiceClient) {
 	runBidiStream1(client)
+	runBidiStream2(client)
 }
 
 func runBidiStream1(client conformancev1alpha1connect.ConformanceServiceClient) {
-	fmt.Println("runBidiStream1 --------")
+	fmt.Println("runBidiStream1 (full duplex) --------")
 	retryInfo := &errdetails.RetryInfo{
 		RetryDelay: durationpb.New(10 * time.Second),
 	}
 	retryAny, _ := anypb.New(retryInfo)
 	req := &v1alpha1.BidiStreamRequest{
-		WaitForEachRequest: true,
-		ResponseDefinition: &v1alpha1.ServerStreamRequest{
-			ResponseData:                [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
-			WaitBeforeEachMessageMillis: 2000,
+		FullDuplex: true,
+		ResponseDefinition: &v1alpha1.StreamResponseDefinition{
+			ResponseData:    [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
+			ResponseDelayMs: 2000,
 			ResponseHeaders: []*v1alpha1.Header{
 				{
 					Name:  "x-custom-header",
@@ -410,7 +417,85 @@ func runBidiStream1(client conformancev1alpha1connect.ConformanceServiceClient) 
 	// )
 
 	stream := client.BidiStream(context.Background())
+	fmt.Println("Sending first message")
 	stream.Send(req)
+	res, err := stream.Receive()
+	fmt.Printf("Response to first message: %+v\n", res)
+	if err != nil {
+		printError(err)
+	}
+
+	fmt.Println("Sending second message")
+	stream.Send(&v1alpha1.BidiStreamRequest{
+		RequestData: []byte("second request"),
+	})
+	res, err = stream.Receive()
+	fmt.Printf("Response to second message: %+v\n", res)
+	if err != nil {
+		printError(err)
+	}
+
+	fmt.Println("Sending third message")
+	stream.Send(&v1alpha1.BidiStreamRequest{
+		RequestData: []byte("third request"),
+	})
+	res, err = stream.Receive()
+	fmt.Printf("Response to third message: %+v\n", res)
+	if err != nil {
+		printError(err)
+	}
+	stream.CloseRequest()
+	res, err = stream.Receive()
+	if res != nil {
+		fmt.Printf("error: received an unexpected message %+v: ", res)
+	}
+	if !errors.Is(err, io.EOF) {
+		printError(err)
+	}
+	stream.CloseResponse()
+}
+
+func runBidiStream2(client conformancev1alpha1connect.ConformanceServiceClient) {
+	fmt.Println("runBidiStream2 (half duplex) --------")
+	retryInfo := &errdetails.RetryInfo{
+		RetryDelay: durationpb.New(10 * time.Second),
+	}
+	retryAny, _ := anypb.New(retryInfo)
+	req := &v1alpha1.BidiStreamRequest{
+		FullDuplex: true,
+		ResponseDefinition: &v1alpha1.StreamResponseDefinition{
+			ResponseData:    [][]byte{[]byte("response 1"), []byte("response 2"), []byte("response 3")},
+			ResponseDelayMs: 2000,
+			ResponseHeaders: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-header",
+					Value: []string{"foo", "bar", "baz"},
+				},
+			},
+			ResponseTrailers: []*v1alpha1.Header{
+				{
+					Name:  "x-custom-trailer",
+					Value: []string{"bing", "quux"},
+				},
+			},
+			Error: &v1alpha1.Error{
+				Code:    int32(connect.CodeAborted),
+				Message: "The request has failed",
+				Details: []*anypb.Any{retryAny},
+			},
+		}}
+
+	stream := client.BidiStream(context.Background())
+	fmt.Println("Sending first message")
+	stream.Send(req)
+	fmt.Println("Sending second message")
+	stream.Send(&v1alpha1.BidiStreamRequest{
+		RequestData: []byte("second request"),
+	})
+	fmt.Println("Sending third message")
+	stream.Send(&v1alpha1.BidiStreamRequest{
+		RequestData: []byte("third request"),
+	})
 	stream.CloseRequest()
 
 	for i := 0; i < len(req.ResponseDefinition.ResponseData); i++ {
@@ -425,7 +510,6 @@ func runBidiStream1(client conformancev1alpha1connect.ConformanceServiceClient) 
 		fmt.Printf("error: received an unexpected message %+v: ", res)
 	}
 	if !errors.Is(err, io.EOF) {
-		fmt.Printf("error: %+v: ", err)
 		printError(err)
 	}
 	stream.CloseResponse()

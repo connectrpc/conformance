@@ -35,9 +35,10 @@ type ConformanceRequest interface {
 	GetResponseTrailers() []*v1alpha1.Header
 }
 
-// NewConformanceServiceHandler returns a new ConformanceServiceHandler.
-func NewConformanceServiceHandler() conformancev1alpha1connect.ConformanceServiceHandler {
-	return &conformanceServer{}
+type Stream[T any] interface {
+	ResponseHeader() http.Header
+	ResponseTrailer() http.Header
+	Send(*T) error
 }
 
 type conformanceServer struct{}
@@ -45,89 +46,123 @@ type conformanceServer struct{}
 func (s *conformanceServer) Unary(
 	ctx context.Context,
 	req *connect.Request[v1alpha1.UnaryRequest],
-) (*connect.Response[v1alpha1.ConformancePayload], error) {
-	return buildUnaryResponse(req.Msg, req.Header(), nil)
+) (*connect.Response[v1alpha1.UnaryResponse], error) {
+	msgAsAny, err := asAny(req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	payload, err := parseUnaryResponseDefinition(req.Msg.ResponseDefinition, req.Header(), []*anypb.Any{msgAsAny})
+	if err != nil {
+		return nil, err
+	}
+
+	resp := connect.NewResponse(&v1alpha1.UnaryResponse{
+		Payload: payload,
+	})
+
+	if req.Msg.ResponseDefinition != nil {
+		setResponseHeadersAndTrailers(req.Msg.ResponseDefinition, resp)
+	}
+
+	return resp, nil
 }
 
 func (s *conformanceServer) ClientStream(
 	ctx context.Context,
 	stream *connect.ClientStream[v1alpha1.ClientStreamRequest],
-) (*connect.Response[v1alpha1.ConformancePayload], error) {
-	var responseDefinition *v1alpha1.UnaryRequest
+) (*connect.Response[v1alpha1.ClientStreamResponse], error) {
+	var responseDefinition *v1alpha1.UnaryResponseDefinition
 	firstRecv := true
-	var requests []*anypb.Any
+	var reqs []*anypb.Any
 	for stream.Receive() {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
 		msg := stream.Msg()
-		// If this is the first message received on the stream, save off the total responses we need to send
-		// plus whether this should be full or half duplex
+		// If this is the first message received on the stream, save off the response definition we need to send
 		if firstRecv {
-			if msg.ResponseDefinition == nil {
-				return nil, connect.NewError(
-					connect.CodeInvalidArgument,
-					errors.New("a response definition must be provided in the first message on a client stream"),
-				)
-			}
 			responseDefinition = msg.ResponseDefinition
 			firstRecv = false
 		}
-		msgAsAny, err := anypb.New(msg)
+		// Record all the requests received
+		msgAsAny, err := asAny(msg)
 		if err != nil {
-			return nil, connect.NewError(
-				connect.CodeInternal,
-				fmt.Errorf("unable to convert request message: %w", err),
-			)
+			return nil, err
 		}
-		requests = append(requests, msgAsAny)
+		reqs = append(reqs, msgAsAny)
 	}
 	if err := stream.Err(); err != nil {
 		return nil, err
 	}
 
-	return buildUnaryResponse(responseDefinition, stream.RequestHeader(), requests)
+	payload, err := parseUnaryResponseDefinition(responseDefinition, stream.RequestHeader(), reqs)
+
+	resp := connect.NewResponse(&v1alpha1.ClientStreamResponse{
+		Payload: payload,
+	})
+
+	if responseDefinition != nil {
+		setResponseHeadersAndTrailers(responseDefinition, resp)
+	}
+
+	return resp, err
 }
 
 func (s *conformanceServer) ServerStream(
 	ctx context.Context,
 	req *connect.Request[v1alpha1.ServerStreamRequest],
-	stream *connect.ServerStream[v1alpha1.ConformancePayload],
+	stream *connect.ServerStream[v1alpha1.ServerStreamResponse],
 ) error {
-	var ticker *time.Ticker
-	if req.Msg.WaitBeforeEachMessageMillis > 0 {
-		ticker = time.NewTicker(time.Duration(req.Msg.WaitBeforeEachMessageMillis) * time.Millisecond)
-		defer ticker.Stop()
-	}
-	res := buildConformancePayload(req.Msg, req.Header(), nil)
-
-	for _, data := range req.Msg.ResponseData {
-		if ticker != nil {
-			select {
-			case <-ctx.Done():
-				return ctx.Err()
-			case <-ticker.C:
+	responseDefinition := req.Msg.ResponseDefinition
+	if responseDefinition != nil {
+		// Set all requested response headers on the response
+		for _, header := range responseDefinition.ResponseHeaders {
+			for _, val := range header.Value {
+				stream.ResponseHeader().Add(header.Name, val)
 			}
 		}
-		res.Msg.Data = data
-		if err := stream.Send(res.Msg); err != nil {
-			return err
+		// Set all requested response trailers on the response
+		for _, trailer := range responseDefinition.ResponseTrailers {
+			for _, val := range trailer.Value {
+				stream.ResponseTrailer().Add(trailer.Name, val)
+			}
 		}
 	}
-	if req.Msg.Error != nil {
-		return createError(req.Msg.Error)
+
+	// Convert the request to an Any so that it can be recorded in the payload
+	msgAsAny, err := asAny(req.Msg)
+	if err != nil {
+		return err
+	}
+	payload := initPayload(req.Header(), []*anypb.Any{msgAsAny})
+
+	for _, data := range responseDefinition.ResponseData {
+		payload.Data = data
+
+		resp := &v1alpha1.ServerStreamResponse{
+			Payload: payload,
+		}
+
+		if err := sendOnStream[v1alpha1.ServerStreamResponse](ctx, stream, responseDefinition, resp); err != nil {
+			return err
+		}
+
+	}
+	if responseDefinition.Error != nil {
+		return createError(responseDefinition.Error)
 	}
 	return nil
 }
 
 func (s *conformanceServer) BidiStream(
 	ctx context.Context,
-	stream *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload],
+	stream *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse],
 ) error {
-	var responseDefinition *v1alpha1.ServerStreamRequest
+	var responseDefinition *v1alpha1.StreamResponseDefinition
 	fullDuplex := false
 	firstRecv := true
 	respNum := 0
+	var reqs []*anypb.Any
 	for {
 		if err := ctx.Err(); err != nil {
 			return err
@@ -141,29 +176,40 @@ func (s *conformanceServer) BidiStream(
 			return fmt.Errorf("receive request: %w", err)
 		}
 
+		// Record all requests received
+		msgAsAny, err := asAny(req)
+		if err != nil {
+			return err
+		}
+		reqs = append(reqs, msgAsAny)
+
 		// If this is the first message in the stream, save off the total responses we need to send
 		// plus whether this should be full or half duplex
 		if firstRecv {
-			if req.ResponseDefinition == nil {
-				return connect.NewError(
-					connect.CodeInvalidArgument,
-					errors.New("a response definition must be provided in the first message on a Bidi stream"),
-				)
-			}
 			responseDefinition = req.ResponseDefinition
-			fullDuplex = req.WaitForEachRequest
+			fullDuplex = req.FullDuplex
 			firstRecv = false
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
 		if fullDuplex {
-			res := buildConformancePayload(responseDefinition, stream.RequestHeader(), nil)
-			res.Msg.Data = responseDefinition.ResponseData[respNum]
-			err := sendBidi(ctx, stream, responseDefinition.WaitBeforeEachMessageMillis, res.Msg)
+			if respNum >= len(responseDefinition.ResponseData) {
+				return connect.NewError(
+					connect.CodeAborted,
+					errors.New("received more requests than desired responses on a full duplex stream"),
+				)
+			}
+			payload := initPayload(stream.RequestHeader(), reqs)
+			payload.Data = responseDefinition.ResponseData[respNum]
+			resp := &v1alpha1.BidiStreamResponse{
+				Payload: payload,
+			}
+			err := sendOnStream[v1alpha1.BidiStreamResponse](ctx, stream, responseDefinition, resp)
 			if err != nil {
 				return err
 			}
 			respNum++
+			reqs = nil
 		}
 	}
 
@@ -174,9 +220,12 @@ func (s *conformanceServer) BidiStream(
 	// full duplex, we should have some responses left over to send.
 	if respNum < len(responseDefinition.ResponseData) {
 		for i := respNum; i < len(responseDefinition.ResponseData); i++ {
-			res := buildConformancePayload(responseDefinition, stream.RequestHeader(), nil)
-			res.Msg.Data = responseDefinition.ResponseData[i]
-			err := sendBidi(ctx, stream, responseDefinition.WaitBeforeEachMessageMillis, res.Msg)
+			payload := initPayload(stream.RequestHeader(), reqs)
+			payload.Data = responseDefinition.ResponseData[i]
+			resp := &v1alpha1.BidiStreamResponse{
+				Payload: payload,
+			}
+			err := sendOnStream[v1alpha1.BidiStreamResponse](ctx, stream, responseDefinition, resp)
 			if err != nil {
 				return err
 			}
@@ -190,15 +239,22 @@ func (s *conformanceServer) BidiStream(
 	return nil
 }
 
-func sendBidi(
+// NewConformanceServiceHandler returns a new ConformanceServiceHandler.
+func NewConformanceServiceHandler() conformancev1alpha1connect.ConformanceServiceHandler {
+	return &conformanceServer{}
+}
+
+// Sends a response T on the given stream, setting response headers and trailers
+// according to the provided response definition.
+func sendOnStream[T any](
 	ctx context.Context,
-	stream *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.ConformancePayload],
-	delay uint32,
-	resp *v1alpha1.ConformancePayload,
+	stream Stream[T],
+	def *v1alpha1.StreamResponseDefinition,
+	resp *T,
 ) error {
 	var ticker *time.Ticker
-	if delay > 0 {
-		ticker = time.NewTicker(time.Duration(delay) * time.Millisecond)
+	if def.ResponseDelayMs > 0 {
+		ticker = time.NewTicker(time.Duration(def.ResponseDelayMs) * time.Millisecond)
 		defer ticker.Stop()
 	}
 	if ticker != nil {
@@ -208,33 +264,43 @@ func sendBidi(
 		case <-ticker.C:
 		}
 	}
+
 	if err := stream.Send(resp); err != nil {
-		return fmt.Errorf("error sending on bidi stream: %w", err)
+		return fmt.Errorf("error sending on stream: %w", err)
 	}
 	return nil
 }
 
-func buildConformancePayload(
-	msg ConformanceRequest,
+// Parses the given unary response definition and returns either
+// a built payload or a connect error based on the definition.
+func parseUnaryResponseDefinition(
+	def *v1alpha1.UnaryResponseDefinition,
 	headers http.Header,
-	requests []*anypb.Any,
-) *connect.Response[v1alpha1.ConformancePayload] {
-	res := connect.NewResponse(&v1alpha1.ConformancePayload{})
+	reqs []*anypb.Any,
+) (*v1alpha1.ConformancePayload, error) {
+	if def != nil {
+		switch rt := def.Response.(type) {
+		case *v1alpha1.UnaryResponseDefinition_Error:
+			return nil, createError(rt.Error)
+		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
+			payload := initPayload(headers, reqs)
 
-	// Set all requested response headers on the response
-	for _, header := range msg.GetResponseHeaders() {
-		for _, val := range header.Value {
-			res.Header().Add(header.Name, val)
+			// If response data was provided, set that in the payload response
+			if rt, ok := rt.(*v1alpha1.UnaryResponseDefinition_ResponseData); ok {
+				payload.Data = rt.ResponseData
+			}
+			return payload, nil
+		default:
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", rt))
 		}
 	}
-	// Set all requested response trailers on the response
-	for _, trailer := range msg.GetResponseTrailers() {
-		for _, val := range trailer.Value {
-			res.Trailer().Add(trailer.Name, val)
-		}
-	}
+	return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no response definition provided"))
+}
 
-	// Set all observed request headers in the response payload
+// Initializes a conformance payload
+func initPayload(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload {
+	payload := &v1alpha1.ConformancePayload{}
+
 	headerInfo := []*v1alpha1.Header{}
 	for key, value := range headers {
 		hdr := &v1alpha1.Header{
@@ -244,37 +310,31 @@ func buildConformancePayload(
 		headerInfo = append(headerInfo, hdr)
 	}
 
-	res.Msg.RequestInfo = &v1alpha1.ConformancePayload_RequestInfo{
+	// Set all observed request headers and requests in the response payload
+	payload.RequestInfo = &v1alpha1.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
-		Requests:       requests,
+		Requests:       reqs,
 	}
-
-	return res
+	return payload
 }
 
-func buildUnaryResponse(
-	def *v1alpha1.UnaryRequest,
-	headers http.Header,
-	requests []*anypb.Any,
-) (*connect.Response[v1alpha1.ConformancePayload], error) {
-	res := buildConformancePayload(def, headers, requests)
-
-	switch rt := def.Response.(type) {
-	case *v1alpha1.UnaryRequest_ResponseData:
-		res.Msg.Data = rt.ResponseData
-		return res, nil
-	case *v1alpha1.UnaryRequest_Error:
-		return nil, createError(rt.Error)
-	case nil:
-		return nil, connect.NewError(
-			connect.CodeInvalidArgument,
-			errors.New("desired response data or response error is required"),
-		)
-	default:
-		return nil, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", rt)
+// Sets all response headers and trailers onto the given response
+func setResponseHeadersAndTrailers[T any](def ConformanceRequest, resp *connect.Response[T]) {
+	// Set all requested response headers on the response
+	for _, header := range def.GetResponseHeaders() {
+		for _, val := range header.Value {
+			resp.Header().Add(header.Name, val)
+		}
+	}
+	// Set all requested response trailers on the response
+	for _, trailer := range def.GetResponseTrailers() {
+		for _, val := range trailer.Value {
+			resp.Trailer().Add(trailer.Name, val)
+		}
 	}
 }
 
+// Creates a Connect error from the given Error message
 func createError(err *v1alpha1.Error) *connect.Error {
 	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.Message))
 	for _, detail := range err.Details {
@@ -287,12 +347,13 @@ func createError(err *v1alpha1.Error) *connect.Error {
 	return connectErr
 }
 
+// Converts the given message to an Any
 func asAny(msg proto.Message) (*anypb.Any, error) {
 	msgAsAny, err := anypb.New(msg)
 	if err != nil {
 		return nil, connect.NewError(
 			connect.CodeInternal,
-			fmt.Errorf("unable to convert request message: %w", err),
+			fmt.Errorf("unable to convert message: %w", err),
 		)
 	}
 	return msgAsAny, nil

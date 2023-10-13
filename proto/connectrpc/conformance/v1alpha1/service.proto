@@ -90,6 +90,8 @@ message UnaryResponseDefinition {
   }
 
   // Response trailers to send - together with the error if present
+  // TODO - This implies that we can't send nil, err from our endpoint bc we need
+  // to create a connect.NewResponse to set the headers and trailers
   repeated Header response_trailers = 4;
 }
 

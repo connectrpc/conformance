@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -88,13 +89,14 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 		}
 	}()
 
+	fmt.Printf("HTTP/1.1 server listening on port %s\nHTTP/2 server listening on port %s", h1Port, h2Port)
+
 	select {
 	case err := <-errs:
 		return err
 	case <-done:
 	}
 
-	// <-done
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := h1Server.Shutdown(ctx); err != nil {
