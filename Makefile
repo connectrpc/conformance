@@ -7,8 +7,8 @@ MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 MAKEFLAGS += --no-print-directory
 BIN := .tmp/bin
-COPYRIGHT_YEARS := 2022-2023
-LICENSE_IGNORE :=
+COPYRIGHT_YEARS := 2023
+LICENSE_IGNORE := internal/gen _legacy/
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 
