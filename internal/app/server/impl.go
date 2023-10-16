@@ -144,7 +144,12 @@ func (s *conformanceServer) ServerStream(
 			Payload: payload,
 		}
 
-		if err := sendOnStream[v1alpha1.ServerStreamResponse](ctx, stream, responseDefinition, resp); err != nil {
+		if err := sendOnStream[v1alpha1.ServerStreamResponse](
+			ctx,
+			stream,
+			resp,
+			responseDefinition.ResponseDelayMs,
+		); err != nil {
 			return err
 		}
 
@@ -205,7 +210,12 @@ func (s *conformanceServer) BidiStream(
 			resp := &v1alpha1.BidiStreamResponse{
 				Payload: payload,
 			}
-			err := sendOnStream[v1alpha1.BidiStreamResponse](ctx, stream, responseDefinition, resp)
+			err := sendOnStream[v1alpha1.BidiStreamResponse](
+				ctx,
+				stream,
+				resp,
+				responseDefinition.ResponseDelayMs,
+			)
 			if err != nil {
 				return err
 			}
@@ -214,11 +224,9 @@ func (s *conformanceServer) BidiStream(
 		}
 	}
 
-	// If this is a half duplex call, then send all the responses now.
-	// If this is a full deplex call, then flush any remaining responses. It is possible
-	// that the initial request specifying the desired response definitions contained more
-	// definitions than requests sent on the stream. In that case, if we interleave for
-	// full duplex, we should have some responses left over to send.
+	// If we still have responses left to send, flush them now. This accommodates
+	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
+	// where the requested responses are greater than the total requests.
 	if respNum < len(responseDefinition.ResponseData) {
 		for i := respNum; i < len(responseDefinition.ResponseData); i++ {
 			payload := initPayload(stream.RequestHeader(), reqs)
@@ -226,7 +234,12 @@ func (s *conformanceServer) BidiStream(
 			resp := &v1alpha1.BidiStreamResponse{
 				Payload: payload,
 			}
-			err := sendOnStream[v1alpha1.BidiStreamResponse](ctx, stream, responseDefinition, resp)
+			err := sendOnStream[v1alpha1.BidiStreamResponse](
+				ctx,
+				stream,
+				resp,
+				responseDefinition.ResponseDelayMs,
+			)
 			if err != nil {
 				return err
 			}
@@ -245,17 +258,17 @@ func NewConformanceServiceHandler() conformancev1alpha1connect.ConformanceServic
 	return &conformanceServer{}
 }
 
-// Sends a response T on the given stream, setting response headers and trailers
-// according to the provided response definition.
+// Sends a response T on the given stream. If delayMs is > 0, the function
+// will wait that many milliseconds before sending the message.
 func sendOnStream[T any](
 	ctx context.Context,
 	stream Stream[T],
-	def *v1alpha1.StreamResponseDefinition,
 	resp *T,
+	delayMs uint32,
 ) error {
 	var ticker *time.Ticker
-	if def.ResponseDelayMs > 0 {
-		ticker = time.NewTicker(time.Duration(def.ResponseDelayMs) * time.Millisecond)
+	if delayMs > 0 {
+		ticker = time.NewTicker(time.Duration(delayMs) * time.Millisecond)
 		defer ticker.Stop()
 	}
 	if ticker != nil {
