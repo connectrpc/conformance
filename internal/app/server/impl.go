@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"time"
 
-	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
 	proto "google.golang.org/protobuf/proto"
@@ -33,13 +32,6 @@ import (
 type ConformanceRequest interface {
 	GetResponseHeaders() []*v1alpha1.Header
 	GetResponseTrailers() []*v1alpha1.Header
-}
-
-// Stream represents a stream with the ability to set headers and trailers and send a message T
-type Stream[T any] interface {
-	ResponseHeader() http.Header
-	ResponseTrailer() http.Header
-	Send(*T) error
 }
 
 type conformanceServer struct{}
@@ -144,15 +136,11 @@ func (s *conformanceServer) ServerStream(
 			Payload: payload,
 		}
 
-		if err := sendOnStream[v1alpha1.ServerStreamResponse](
-			ctx,
-			stream,
-			resp,
-			responseDefinition.ResponseDelayMs,
-		); err != nil {
-			return err
-		}
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
+		if err := stream.Send(resp); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+		}
 	}
 	if responseDefinition.Error != nil {
 		return createError(responseDefinition.Error)
@@ -210,14 +198,10 @@ func (s *conformanceServer) BidiStream(
 			resp := &v1alpha1.BidiStreamResponse{
 				Payload: payload,
 			}
-			err := sendOnStream[v1alpha1.BidiStreamResponse](
-				ctx,
-				stream,
-				resp,
-				responseDefinition.ResponseDelayMs,
-			)
-			if err != nil {
-				return err
+			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			if err := stream.Send(resp); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 			}
 			respNum++
 			reqs = nil
@@ -234,53 +218,16 @@ func (s *conformanceServer) BidiStream(
 			resp := &v1alpha1.BidiStreamResponse{
 				Payload: payload,
 			}
-			err := sendOnStream[v1alpha1.BidiStreamResponse](
-				ctx,
-				stream,
-				resp,
-				responseDefinition.ResponseDelayMs,
-			)
-			if err != nil {
-				return err
-			}
+			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
+			if err := stream.Send(resp); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+			}
 		}
 	}
 
 	if responseDefinition.Error != nil {
 		return createError(responseDefinition.Error)
-	}
-	return nil
-}
-
-// NewConformanceServiceHandler returns a new ConformanceServiceHandler.
-func NewConformanceServiceHandler() conformancev1alpha1connect.ConformanceServiceHandler {
-	return &conformanceServer{}
-}
-
-// Sends a response T on the given stream. If delayMs is > 0, the function
-// will wait that many milliseconds before sending the message.
-func sendOnStream[T any](
-	ctx context.Context,
-	stream Stream[T],
-	resp *T,
-	delayMs uint32,
-) error {
-	var ticker *time.Ticker
-	if delayMs > 0 {
-		ticker = time.NewTicker(time.Duration(delayMs) * time.Millisecond)
-		defer ticker.Stop()
-	}
-	if ticker != nil {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-ticker.C:
-		}
-	}
-
-	if err := stream.Send(resp); err != nil {
-		return fmt.Errorf("error sending on stream: %w", err)
 	}
 	return nil
 }

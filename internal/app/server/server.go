@@ -37,7 +37,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
-		NewConformanceServiceHandler(),
+		&conformanceServer{},
 	))
 	corsHandler := cors.New(cors.Options{
 		AllowedMethods: []string{
@@ -75,6 +75,9 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 	h2Server := newH2Server(h2Port, mux)
 	done := make(chan os.Signal, 1)
 	errs := make(chan error, 2)
+	// TODO - This graceful shutdown sophistication may not be needed.
+	// The test scaffolding won't send the signal until after all requests are complete
+	// (or until it decides to abort, in which it's okay to have non-graceful termination of requests in progress)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		err := h1Server.ListenAndServe()
@@ -111,7 +114,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 
 func newH1Server(h1Port string, handler http.Handler) *http.Server {
 	h1Server := &http.Server{
-		Addr:    ":" + h1Port,
+		Addr:    "127.0.0.1:" + h1Port,
 		Handler: handler,
 	}
 	return h1Server
@@ -119,7 +122,7 @@ func newH1Server(h1Port string, handler http.Handler) *http.Server {
 
 func newH2Server(h2Port string, handler http.Handler) *http.Server {
 	h2Server := &http.Server{
-		Addr: ":" + h2Port,
+		Addr: "127.0.0.1:" + h2Port,
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return h2Server
