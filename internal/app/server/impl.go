@@ -44,18 +44,23 @@ func (s *conformanceServer) Unary(
 	if err != nil {
 		return nil, err
 	}
-	payload, err := parseUnaryResponseDefinition(req.Msg.ResponseDefinition, req.Header(), []*anypb.Any{msgAsAny})
-	if err != nil {
-		return nil, err
+	payload, connectErr := parseUnaryResponseDefinition(
+		req.Msg.ResponseDefinition,
+		req.Header(),
+		[]*anypb.Any{msgAsAny},
+	)
+	if connectErr != nil {
+		addHeaders(req.Msg.ResponseDefinition.ResponseHeaders, connectErr.Meta())
+		addHeaders(req.Msg.ResponseDefinition.ResponseTrailers, connectErr.Meta())
+		return nil, connectErr
 	}
 
 	resp := connect.NewResponse(&v1alpha1.UnaryResponse{
 		Payload: payload,
 	})
 
-	if req.Msg.ResponseDefinition != nil {
-		setResponseHeadersAndTrailers(req.Msg.ResponseDefinition, resp)
-	}
+	addHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
+	addHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
 
 	return resp, nil
 }
@@ -94,9 +99,8 @@ func (s *conformanceServer) ClientStream(
 		Payload: payload,
 	})
 
-	if responseDefinition != nil {
-		setResponseHeadersAndTrailers(responseDefinition, resp)
-	}
+	addHeaders(responseDefinition.ResponseHeaders, resp.Header())
+	addHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
 
 	return resp, err
 }
@@ -127,7 +131,10 @@ func (s *conformanceServer) ServerStream(
 	if err != nil {
 		return err
 	}
-	payload := initPayload(req.Header(), []*anypb.Any{msgAsAny})
+	requestInfo := createRequestInfo(req.Header(), []*anypb.Any{msgAsAny})
+	payload := &v1alpha1.ConformancePayload{
+		RequestInfo: requestInfo,
+	}
 
 	for _, data := range responseDefinition.ResponseData {
 		payload.Data = data
@@ -141,6 +148,8 @@ func (s *conformanceServer) ServerStream(
 		if err := stream.Send(resp); err != nil {
 			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 		}
+		// Only echo back the request info in the first response
+		payload.RequestInfo = nil
 	}
 	if responseDefinition.Error != nil {
 		return createError(responseDefinition.Error)
@@ -193,10 +202,12 @@ func (s *conformanceServer) BidiStream(
 					errors.New("received more requests than desired responses on a full duplex stream"),
 				)
 			}
-			payload := initPayload(stream.RequestHeader(), reqs)
-			payload.Data = responseDefinition.ResponseData[respNum]
+			requestInfo := createRequestInfo(stream.RequestHeader(), reqs)
 			resp := &v1alpha1.BidiStreamResponse{
-				Payload: payload,
+				Payload: &v1alpha1.ConformancePayload{
+					RequestInfo: requestInfo,
+					Data:        responseDefinition.ResponseData[respNum],
+				},
 			}
 			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
@@ -211,18 +222,18 @@ func (s *conformanceServer) BidiStream(
 	// If we still have responses left to send, flush them now. This accommodates
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
-	if respNum < len(responseDefinition.ResponseData) {
-		for i := respNum; i < len(responseDefinition.ResponseData); i++ {
-			payload := initPayload(stream.RequestHeader(), reqs)
-			payload.Data = responseDefinition.ResponseData[i]
-			resp := &v1alpha1.BidiStreamResponse{
-				Payload: payload,
-			}
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+		requestInfo := createRequestInfo(stream.RequestHeader(), reqs)
+		resp := &v1alpha1.BidiStreamResponse{
+			Payload: &v1alpha1.ConformancePayload{
+				RequestInfo: requestInfo,
+				Data:        responseDefinition.ResponseData[respNum],
+			},
+		}
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
-			if err := stream.Send(resp); err != nil {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
-			}
+		if err := stream.Send(resp); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 		}
 	}
 
@@ -238,13 +249,16 @@ func parseUnaryResponseDefinition(
 	def *v1alpha1.UnaryResponseDefinition,
 	headers http.Header,
 	reqs []*anypb.Any,
-) (*v1alpha1.ConformancePayload, error) {
+) (*v1alpha1.ConformancePayload, *connect.Error) {
 	if def != nil {
 		switch rt := def.Response.(type) {
 		case *v1alpha1.UnaryResponseDefinition_Error:
 			return nil, createError(rt.Error)
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
-			payload := initPayload(headers, reqs)
+			requestInfo := createRequestInfo(headers, reqs)
+			payload := &v1alpha1.ConformancePayload{
+				RequestInfo: requestInfo,
+			}
 
 			// If response data was provided, set that in the payload response
 			if rt, ok := rt.(*v1alpha1.UnaryResponseDefinition_ResponseData); ok {
@@ -258,9 +272,9 @@ func parseUnaryResponseDefinition(
 	return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no response definition provided"))
 }
 
-// Initializes a conformance payload
-func initPayload(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload {
-	headerInfo := make([]*v1alpha1.Header{}, 0, len(headers))
+// Creates request info for a conformance payload
+func createRequestInfo(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
+	headerInfo := make([]*v1alpha1.Header, 0, len(headers))
 	for key, value := range headers {
 		hdr := &v1alpha1.Header{
 			Name:  key,
@@ -270,29 +284,21 @@ func initPayload(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePa
 	}
 
 	// Set all observed request headers and requests in the response payload
-	return &v1alpha1.ConformancePayload{
-		RequestInfo: &v1alpha1.ConformancePayload_RequestInfo{
-			RequestHeaders: headerInfo,
-			Requests:       reqs,
-		}
+	return &v1alpha1.ConformancePayload_RequestInfo{
+		RequestHeaders: headerInfo,
+		Requests:       reqs,
 	}
 }
 
 // Adds all header values in src to dest.
 func addHeaders(
-    src []*v1alpha1.Header,
-    dest http.Header,
+	src []*v1alpha1.Header,
+	dest http.Header,
 ) {
 	// Set all requested response headers on the response
-	for _, header := range def.GetResponseHeaders() {
+	for _, header := range src {
 		for _, val := range header.Value {
-			resp.Header().Add(header.Name, val)
-		}
-	}
-	// Set all requested response trailers on the response
-	for _, trailer := range def.GetResponseTrailers() {
-		for _, val := range trailer.Value {
-			resp.Trailer().Add(trailer.Name, val)
+			dest.Add(header.Name, val)
 		}
 	}
 }
