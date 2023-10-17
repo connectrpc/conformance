@@ -1,4 +1,4 @@
-// Copyright 2023 The Connect Authors
+// Copyright 2022-2023 The Connect Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package server
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,8 +33,10 @@ import (
 )
 
 func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error {
-	h1Port := args[0]
-	h2Port := args[1]
+	h1Port := flag.String("h1Port", "8080", "port for HTTP/1.1 traffic")
+	h2Port := flag.String("h2Port", "8081", "port for HTTP/2 traffic")
+
+	flag.Parse()
 
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
@@ -48,36 +51,20 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 			http.MethodPatch,
 			http.MethodDelete,
 		},
-		// Mirror the `Origin` header value in the `Access-Control-Allow-Origin`
-		// preflight response header.
-		// This is equivalent to `Access-Control-Allow-Origin: *`, but allows
-		// for requests with credentials.
-		// Note that this effectively disables CORS and is not safe for use in
-		// production environments.
-		AllowOriginFunc: func(origin string) bool {
-			return true
-		},
 		// Note that rs/cors does not return `Access-Control-Allow-Headers: *`
 		// in response to preflight requests with the following configuration.
 		// It simply mirrors all headers listed in the `Access-Control-Request-Headers`
 		// preflight request header.
 		AllowedHeaders: []string{"*"},
-		// We explicitly set the exposed header names instead of using the wildcard *,
-		// because in requests with credentials, it is treated as the literal header
-		// name "*" without special semantics.
-		ExposedHeaders: []string{
-			"Grpc-Status", "Grpc-Message", "Grpc-Status-Details-Bin", "X-Grpc-Test-Echo-Initial",
-			"Trailer-X-Grpc-Test-Echo-Trailing-Bin", "Request-Protocol", "Get-Request"},
+		// Expose all headers
+		ExposedHeaders: []string{"*"},
 	}).Handler(mux)
 
 	// Create servers
-	h1Server := newH1Server(h1Port, corsHandler)
-	h2Server := newH2Server(h2Port, mux)
+	h1Server := newH1Server(*h1Port, corsHandler)
+	h2Server := newH2Server(*h2Port, mux)
 	done := make(chan os.Signal, 1)
 	errs := make(chan error, 2)
-	// TODO - This graceful shutdown sophistication may not be needed.
-	// The test scaffolding won't send the signal until after all requests are complete
-	// (or until it decides to abort, in which it's okay to have non-graceful termination of requests in progress)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		err := h1Server.ListenAndServe()
@@ -92,7 +79,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 		}
 	}()
 
-	fmt.Printf("HTTP/1.1 server listening on port %s\nHTTP/2 server listening on port %s", h1Port, h2Port)
+	fmt.Printf("HTTP/1.1 server listening on port %s\nHTTP/2 server listening on port %s", *h1Port, *h2Port)
 
 	select {
 	case err := <-errs:
@@ -114,7 +101,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 
 func newH1Server(h1Port string, handler http.Handler) *http.Server {
 	h1Server := &http.Server{
-		Addr:    "127.0.0.1:" + h1Port,
+		Addr:    ":" + h1Port,
 		Handler: handler,
 	}
 	return h1Server
@@ -122,7 +109,7 @@ func newH1Server(h1Port string, handler http.Handler) *http.Server {
 
 func newH2Server(h2Port string, handler http.Handler) *http.Server {
 	h2Server := &http.Server{
-		Addr: "127.0.0.1:" + h2Port,
+		Addr: ":" + h2Port,
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return h2Server
