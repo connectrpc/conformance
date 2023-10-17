@@ -313,9 +313,7 @@ func parseUnaryResponseDefinition(
 
 // Initializes a conformance payload
 func initPayload(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload {
-	payload := &v1alpha1.ConformancePayload{}
-
-	headerInfo := []*v1alpha1.Header{}
+	headerInfo := make([]*v1alpha1.Header{}, 0, len(headers))
 	for key, value := range headers {
 		hdr := &v1alpha1.Header{
 			Name:  key,
@@ -325,11 +323,12 @@ func initPayload(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePa
 	}
 
 	// Set all observed request headers and requests in the response payload
-	payload.RequestInfo = &v1alpha1.ConformancePayload_RequestInfo{
-		RequestHeaders: headerInfo,
-		Requests:       reqs,
+	return &v1alpha1.ConformancePayload{
+		RequestInfo: &v1alpha1.ConformancePayload_RequestInfo{
+			RequestHeaders: headerInfo,
+			Requests:       reqs,
+		}
 	}
-	return payload
 }
 
 // Sets all response headers and trailers onto the given response
