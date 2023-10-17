@@ -331,8 +331,11 @@ func initPayload(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePa
 	}
 }
 
-// Sets all response headers and trailers onto the given response
-func setResponseHeadersAndTrailers[T any](def ConformanceRequest, resp *connect.Response[T]) {
+// Adds all header values in src to dest.
+func addHeaders(
+    src []*v1alpha1.Header,
+    dest http.Header,
+) {
 	// Set all requested response headers on the response
 	for _, header := range def.GetResponseHeaders() {
 		for _, val := range header.Value {
