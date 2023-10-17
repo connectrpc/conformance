@@ -94,6 +94,11 @@ func (s *conformanceServer) ClientStream(
 	}
 
 	payload, err := parseUnaryResponseDefinition(responseDefinition, stream.RequestHeader(), reqs)
+	if err != nil {
+		addHeaders(responseDefinition.ResponseHeaders, err.Meta())
+		addHeaders(responseDefinition.ResponseTrailers, err.Meta())
+		return nil, err
+	}
 
 	resp := connect.NewResponse(&v1alpha1.ClientStreamResponse{
 		Payload: payload,
@@ -112,18 +117,8 @@ func (s *conformanceServer) ServerStream(
 ) error {
 	responseDefinition := req.Msg.ResponseDefinition
 	if responseDefinition != nil {
-		// Set all requested response headers on the response
-		for _, header := range responseDefinition.ResponseHeaders {
-			for _, val := range header.Value {
-				stream.ResponseHeader().Add(header.Name, val)
-			}
-		}
-		// Set all requested response trailers on the response
-		for _, trailer := range responseDefinition.ResponseTrailers {
-			for _, val := range trailer.Value {
-				stream.ResponseTrailer().Add(trailer.Name, val)
-			}
-		}
+		addHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
+		addHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 	}
 
 	// Convert the request to an Any so that it can be recorded in the payload
