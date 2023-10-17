@@ -42,6 +42,8 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
 	))
+	// The server needs a lenient cors setup so that it can handle testing
+	// browser clients.
 	corsHandler := cors.New(cors.Options{
 		AllowedMethods: []string{
 			http.MethodHead,
