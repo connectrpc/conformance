@@ -153,7 +153,7 @@ message ClientStreamRequest {
   UnaryResponseDefinition response_definition = 1;
 
   // Additional data for subsequent messages in the stream.
-  bytes extra = 2;
+  bytes request_data = 2;
 }
 
 message ClientStreamResponse {
