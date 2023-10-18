@@ -32,6 +32,14 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
+const (
+	// The default host to use for the server
+	defaultHost = "127.0.0.1"
+	// The default port to use for the server. We choose 0 so that
+	// an ephemeral port is selected by the OS
+	defaultPort = "0"
+)
+
 func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error {
 	rdr := bufio.NewReader(in)
 
@@ -96,10 +104,12 @@ func startServer(req *v1alpha1.ServerCompatRequest) (*v1alpha1.ServerCompatRespo
 		server = newH1Server(corsHandler)
 	} else if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_2 {
 		server = newH2Server(mux)
+	} else if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_3 {
+		return nil, errors.New("HTTP/3 is not yet supported")
 	} else {
 		return nil, errors.New("an HTTP version must be specifed.")
 	}
-	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	ln, err := net.Listen("tcp", net.JoinHostPort(defaultHost, defaultPort))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +147,7 @@ func startServer(req *v1alpha1.ServerCompatRequest) (*v1alpha1.ServerCompatRespo
 
 func newH1Server(handler http.Handler) *http.Server {
 	h1Server := &http.Server{
-		Addr:    ":0",
+		Addr:    net.JoinHostPort(defaultHost, defaultPort),
 		Handler: handler,
 	}
 	return h1Server
@@ -145,7 +155,7 @@ func newH1Server(handler http.Handler) *http.Server {
 
 func newH2Server(handler http.Handler) *http.Server {
 	h2Server := &http.Server{
-		Addr: ":0",
+		Addr: net.JoinHostPort(defaultHost, defaultPort),
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return h2Server
