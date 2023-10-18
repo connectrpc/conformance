@@ -15,6 +15,7 @@
 package server
 
 import (
+	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -37,6 +38,34 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 	h2Port := flag.String("h2Port", "8081", "port for HTTP/2 traffic")
 
 	flag.Parse()
+	rdr := bufio.NewReader(in)
+
+	for {
+		b, err := io.ReadAll(in)
+		fmt.Println("we got ")
+		fmt.Println(b)
+		var bytes []byte
+		line, err := rdr.Read(bytes)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		if line != 0 {
+			fmt.Println("goit something there")
+			fmt.Println(line)
+		}
+	}
+
+	startServer(*h1Port, *h2Port)
+
+	return nil
+}
+
+func startServer(h1Port string, h2Port string) error {
+
+	// Block here to read a ServerCompatRequest from stdin here and use that to start
 
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
@@ -63,8 +92,8 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 	}).Handler(mux)
 
 	// Create servers
-	h1Server := newH1Server(*h1Port, corsHandler)
-	h2Server := newH2Server(*h2Port, mux)
+	h1Server := newH1Server(h1Port, corsHandler)
+	h2Server := newH2Server(h2Port, mux)
 	done := make(chan os.Signal, 1)
 	errs := make(chan error, 2)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -81,7 +110,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 		}
 	}()
 
-	fmt.Printf("HTTP/1.1 server listening on port %s\nHTTP/2 server listening on port %s", *h1Port, *h2Port)
+	fmt.Printf("HTTP/1.1 server listening on port %s\nHTTP/2 server listening on port %s", h1Port, h2Port)
 
 	select {
 	case err := <-errs:
