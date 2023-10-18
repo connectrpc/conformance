@@ -1,10 +1,4 @@
-_legacy/.tmp/
-_legacy/bazel-*
-_legacy/*.pprof
-_legacy/*.svg
-_legacy/cover.out
-_legacy/node_modules
-_legacy/web/node_modules
-_legacy/web/coverage
-
-.tmp/
+/.tmp/
+*.pprof
+*.svg
+cover.out

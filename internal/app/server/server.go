@@ -18,55 +18,54 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
-	"os"
-	"os/signal"
-	"syscall"
-	"time"
 
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
+	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/protobuf/encoding/protojson"
+	proto "google.golang.org/protobuf/proto"
 )
 
 func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error {
-	h1Port := flag.String("h1Port", "8080", "port for HTTP/1.1 traffic")
-	h2Port := flag.String("h2Port", "8081", "port for HTTP/2 traffic")
-
-	flag.Parse()
 	rdr := bufio.NewReader(in)
 
+	var data string
 	for {
-		b, err := io.ReadAll(in)
-		fmt.Println("we got ")
-		fmt.Println(b)
-		var bytes []byte
-		line, err := rdr.Read(bytes)
-		if err == io.EOF {
-			break
-		}
+		bytes, err := rdr.ReadString('\n')
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return err
 		}
-		if line != 0 {
-			fmt.Println("goit something there")
-			fmt.Println(line)
-		}
+		data = bytes
+	}
+	req := &v1alpha1.ServerCompatRequest{}
+	if err := protojson.Unmarshal([]byte(data), req); err != nil {
+		return err
 	}
 
-	startServer(*h1Port, *h2Port)
+	resp, serverErr := startServer(req)
+	if serverErr != nil {
+		return serverErr
+	}
+
+	respBytes, marshalErr := proto.Marshal(resp)
+	if marshalErr != nil {
+		return marshalErr
+	}
+	out.Write(respBytes)
 
 	return nil
 }
 
-func startServer(h1Port string, h2Port string) error {
-
-	// Block here to read a ServerCompatRequest from stdin here and use that to start
-
+func startServer(req *v1alpha1.ServerCompatRequest) (*v1alpha1.ServerCompatResponse, error) {
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
@@ -92,55 +91,61 @@ func startServer(h1Port string, h2Port string) error {
 	}).Handler(mux)
 
 	// Create servers
-	h1Server := newH1Server(h1Port, corsHandler)
-	h2Server := newH2Server(h2Port, mux)
-	done := make(chan os.Signal, 1)
-	errs := make(chan error, 2)
-	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	var server *http.Server
+	if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_1 {
+		server = newH1Server(corsHandler)
+	} else if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_2 {
+		server = newH2Server(mux)
+	} else {
+		return nil, errors.New("an HTTP version must be specifed.")
+	}
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		return nil, err
+	}
+	resp := &v1alpha1.ServerCompatResponse{}
+	errs := make(chan error, 1)
 	go func() {
-		err := h1Server.ListenAndServe()
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errs <- err
-		}
-	}()
-	go func() {
-		err := h2Server.ListenAndServe()
+		err := server.Serve(ln)
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errs <- err
 		}
 	}()
 
-	fmt.Printf("HTTP/1.1 server listening on port %s\nHTTP/2 server listening on port %s", h1Port, h2Port)
-
+	// TODO - Is there a race condition here where we reach the default case before any error is sent
+	// on the errs channel?
 	select {
 	case err := <-errs:
-		return err
-	case <-done:
+		errResult := &v1alpha1.ServerCompatResponse_Error{
+			Error: &v1alpha1.ServerErrorResult{
+				Message: err.Error(),
+			},
+		}
+		resp.Result = errResult
+	default:
+		result := &v1alpha1.ServerCompatResponse_Listening{
+			Listening: &v1alpha1.ServerListeningResult{
+				Host: fmt.Sprint(ln.Addr().(*net.TCPAddr).IP),
+				Port: fmt.Sprint(ln.Addr().(*net.TCPAddr).Port),
+			},
+		}
+		resp.Result = result
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := h1Server.Shutdown(ctx); err != nil {
-		return err
-	}
-	if err := h2Server.Shutdown(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return resp, nil
 }
 
-func newH1Server(h1Port string, handler http.Handler) *http.Server {
+func newH1Server(handler http.Handler) *http.Server {
 	h1Server := &http.Server{
-		Addr:    ":" + h1Port,
+		Addr:    ":0",
 		Handler: handler,
 	}
 	return h1Server
 }
 
-func newH2Server(h2Port string, handler http.Handler) *http.Server {
+func newH2Server(handler http.Handler) *http.Server {
 	h2Server := &http.Server{
-		Addr: ":" + h2Port,
+		Addr: ":0",
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return h2Server
