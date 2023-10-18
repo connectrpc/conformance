@@ -44,6 +44,9 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.Write
 	rdr := bufio.NewReader(in)
 
 	var data string
+	// TODO - How should we read from 'in'? Using ReadString or ReadBytes?
+	// Assuming ReadBytes, but I used ReadString so i could test by redirecting a file
+	// to stdin with JSON inside
 	for {
 		bytes, err := rdr.ReadString('\n')
 		if err != nil {
