@@ -33,6 +33,9 @@ import (
 )
 
 func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error {
+	// TODO - The ports should not be given to the run call. Instead the server should read a
+	// ServerCompatRequest and start itself. It should then return the port numbers back on stdout
+	// as a ServerCompatResponse
 	h1Port := flag.String("h1Port", "8080", "port for HTTP/1.1 traffic")
 	h2Port := flag.String("h2Port", "8081", "port for HTTP/2 traffic")
 
