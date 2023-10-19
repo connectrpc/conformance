@@ -15,7 +15,6 @@
 package server
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"fmt"
@@ -28,7 +27,6 @@ import (
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
 )
 
@@ -41,24 +39,13 @@ const (
 )
 
 func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error {
-	rdr := bufio.NewReader(in)
-
-	var data string
-	// TODO - How should we read from 'in'? Using ReadString or ReadBytes?
-	// Assuming ReadBytes, but I used ReadString so i could test by redirecting a file
-	// to stdin with JSON inside
-	for {
-		bytes, err := rdr.ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return err
-		}
-		data = bytes
+	bytes, readErr := io.ReadAll(in)
+	if readErr != nil {
+		return readErr
 	}
+
 	req := &v1alpha1.ServerCompatRequest{}
-	if err := protojson.Unmarshal([]byte(data), req); err != nil {
+	if err := proto.Unmarshal(bytes, req); err != nil {
 		return err
 	}
 
