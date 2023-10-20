@@ -51,11 +51,11 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 		return err
 	}
 
-	marshaler := app.NewMarshaler(*json)
+	codec := app.NewCodec(*json)
 
 	// Unmarshal into a ServerCompatRequest
 	req := &v1alpha1.ServerCompatRequest{}
-	if err := marshaler.Unmarshal(data, req); err != nil {
+	if err := codec.Unmarshal(data, req); err != nil {
 		return err
 	}
 
@@ -79,7 +79,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 			},
 		},
 	}
-	bytes, err := marshaler.Marshal(resp)
+	bytes, err := codec.Marshal(resp)
 	if err != nil {
 		return err
 	}
