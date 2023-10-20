@@ -19,12 +19,12 @@ import (
 	"log"
 	"os"
 
-	"connectrpc.com/conformance/internal/app/server"
+	"connectrpc.com/conformance/internal/app/client"
 )
 
 func main() {
-	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
+	err := client.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
 	if err != nil {
-		log.Fatalf("an error occurred running the server: %s", err.Error())
+		log.Fatalf("an error occurred running the client: %s", err.Error())
 	}
 }
