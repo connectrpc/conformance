@@ -17,18 +17,18 @@ package server
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
 
+	"connectrpc.com/conformance/internal/app"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
-	"google.golang.org/protobuf/encoding/protojson"
-	proto "google.golang.org/protobuf/proto"
 )
 
 const (
@@ -41,15 +41,21 @@ const (
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteCloser) error {
+	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+
+	flag.Parse()
+
 	// Read the server config from  the in reader
-	bytes, err := io.ReadAll(in)
+	data, err := io.ReadAll(in)
 	if err != nil {
 		return err
 	}
 
+	marshaler := app.NewMarshaler(*json)
+
 	// Unmarshal into a ServerCompatRequest
 	req := &v1alpha1.ServerCompatRequest{}
-	if err := protojson.Unmarshal(bytes, req); err != nil {
+	if err := marshaler.Unmarshal(data, req); err != nil {
 		return err
 	}
 
@@ -73,7 +79,11 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 			},
 		},
 	}
-	if err := write(out, resp); err != nil {
+	bytes, err := marshaler.Marshal(resp)
+	if err != nil {
+		return err
+	}
+	if _, err := out.Write(bytes); err != nil {
 		return err
 	}
 
@@ -82,18 +92,6 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 		return err
 	}
 
-	return nil
-}
-
-// Write the given message using the given writer
-func write(out io.WriteCloser, msg proto.Message) error {
-	bytes, err := proto.Marshal(msg)
-	if err != nil {
-		return err
-	}
-	if _, err := out.Write(bytes); err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -132,8 +130,8 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 		server = newH2Server(mux)
 	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
 		return nil, errors.New("HTTP/3 is not yet supported")
-	default:
-		return nil, errors.New("an HTTP version must be specifed.")
+	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
+		return nil, errors.New("an HTTP version must be specified.")
 	}
 
 	return server, nil

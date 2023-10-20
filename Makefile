@@ -10,7 +10,7 @@ BIN := .tmp/bin
 export PATH := $(BIN):$(PATH)
 export GOBIN := $(abspath $(BIN))
 COPYRIGHT_YEARS := 2023
-LICENSE_IGNORE := -e internal/gen -e _legacy
+LICENSE_IGNORE := -e internal/gen -e _legacy -e testdata/
 
 .PHONY: help
 help: ## Describe useful make targets
