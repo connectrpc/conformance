@@ -27,6 +27,7 @@ import (
 	"github.com/rs/cors"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
+	"google.golang.org/protobuf/encoding/protojson"
 	proto "google.golang.org/protobuf/proto"
 )
 
@@ -38,32 +39,66 @@ const (
 	defaultPort = "0"
 )
 
-func Run(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error {
-	bytes, readErr := io.ReadAll(in)
-	if readErr != nil {
-		return readErr
-	}
-
-	req := &v1alpha1.ServerCompatRequest{}
-	if err := proto.Unmarshal(bytes, req); err != nil {
+// Run runs the server according to server config read from the 'in' reader.
+func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteCloser) error {
+	// Read the server config from  the in reader
+	bytes, err := io.ReadAll(in)
+	if err != nil {
 		return err
 	}
 
-	resp, serverErr := startServer(req)
-	if serverErr != nil {
-		return serverErr
+	// Unmarshal into a ServerCompatRequest
+	req := &v1alpha1.ServerCompatRequest{}
+	if err := protojson.Unmarshal(bytes, req); err != nil {
+		return err
 	}
 
-	respBytes, marshalErr := proto.Marshal(resp)
-	if marshalErr != nil {
-		return marshalErr
+	// Create an HTTP server based on the request
+	server, err := createServer(req)
+	if err != nil {
+		return err
 	}
-	out.Write(respBytes)
+
+	// Create a listener for the server so that we are able to obtain
+	// the IP and port for publishing on the out writer
+	ln, err := net.Listen("tcp", net.JoinHostPort(defaultHost, defaultPort))
+	if err != nil {
+		return err
+	}
+	resp := &v1alpha1.ServerCompatResponse{
+		Result: &v1alpha1.ServerCompatResponse_Listening{
+			Listening: &v1alpha1.ServerListeningResult{
+				Host: fmt.Sprint(ln.Addr().(*net.TCPAddr).IP),
+				Port: fmt.Sprint(ln.Addr().(*net.TCPAddr).Port),
+			},
+		},
+	}
+	if err := write(out, resp); err != nil {
+		return err
+	}
+
+	// Finally, start the server
+	if err := server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
 
 	return nil
 }
 
-func startServer(req *v1alpha1.ServerCompatRequest) (*v1alpha1.ServerCompatResponse, error) {
+// Write the given message using the given writer
+func write(out io.WriteCloser, msg proto.Message) error {
+	bytes, err := proto.Marshal(msg)
+	if err != nil {
+		return err
+	}
+	if _, err := out.Write(bytes); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Creates an HTTP server using the provided ServerCompatRequest
+func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
@@ -90,51 +125,21 @@ func startServer(req *v1alpha1.ServerCompatRequest) (*v1alpha1.ServerCompatRespo
 
 	// Create servers
 	var server *http.Server
-	if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_1 {
+	switch req.HttpVersion {
+	case v1alpha1.HTTPVersion_HTTP_VERSION_1:
 		server = newH1Server(corsHandler)
-	} else if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_2 {
+	case v1alpha1.HTTPVersion_HTTP_VERSION_2:
 		server = newH2Server(mux)
-	} else if req.HttpVersion == v1alpha1.HTTPVersion_HTTP_VERSION_3 {
+	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
 		return nil, errors.New("HTTP/3 is not yet supported")
-	} else {
+	default:
 		return nil, errors.New("an HTTP version must be specifed.")
 	}
-	ln, err := net.Listen("tcp", net.JoinHostPort(defaultHost, defaultPort))
-	if err != nil {
-		return nil, err
-	}
-	resp := &v1alpha1.ServerCompatResponse{}
-	errs := make(chan error, 1)
-	go func() {
-		err := server.Serve(ln)
-		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errs <- err
-		}
-	}()
 
-	// TODO - Is there a race condition here where we reach the default case before any error is sent
-	// on the errs channel?
-	select {
-	case err := <-errs:
-		errResult := &v1alpha1.ServerCompatResponse_Error{
-			Error: &v1alpha1.ServerErrorResult{
-				Message: err.Error(),
-			},
-		}
-		resp.Result = errResult
-	default:
-		result := &v1alpha1.ServerCompatResponse_Listening{
-			Listening: &v1alpha1.ServerListeningResult{
-				Host: fmt.Sprint(ln.Addr().(*net.TCPAddr).IP),
-				Port: fmt.Sprint(ln.Addr().(*net.TCPAddr).Port),
-			},
-		}
-		resp.Result = result
-	}
-
-	return resp, nil
+	return server, nil
 }
 
+// Create a new HTTP/1.1 server
 func newH1Server(handler http.Handler) *http.Server {
 	h1Server := &http.Server{
 		Addr:    net.JoinHostPort(defaultHost, defaultPort),
@@ -143,6 +148,7 @@ func newH1Server(handler http.Handler) *http.Server {
 	return h1Server
 }
 
+// Create a new HTTP/2 server
 func newH2Server(handler http.Handler) *http.Server {
 	h2Server := &http.Server{
 		Addr: net.JoinHostPort(defaultHost, defaultPort),

@@ -30,16 +30,15 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log"
 	"os"
 
 	"connectrpc.com/conformance/internal/app/server"
 )
 
 func main() {
-	// TODO Need to read from stdout to get the server response
-	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
+	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
 	if err != nil {
-		fmt.Println("an error occurred running the server ", err)
+		log.Fatalf("an error occurred running the server: %s", err.Error())
 	}
 }
