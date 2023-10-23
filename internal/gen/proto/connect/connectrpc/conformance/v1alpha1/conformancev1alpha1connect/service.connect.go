@@ -59,6 +59,9 @@ const (
 	// ConformanceServiceBidiStreamProcedure is the fully-qualified name of the ConformanceService's
 	// BidiStream RPC.
 	ConformanceServiceBidiStreamProcedure = "/connectrpc.conformance.v1alpha1.ConformanceService/BidiStream"
+	// ConformanceServiceUnimplementedProcedure is the fully-qualified name of the ConformanceService's
+	// Unimplemented RPC.
+	ConformanceServiceUnimplementedProcedure = "/connectrpc.conformance.v1alpha1.ConformanceService/Unimplemented"
 )
 
 // ConformanceServiceClient is a client for the connectrpc.conformance.v1alpha1.ConformanceService
@@ -113,6 +116,9 @@ type ConformanceServiceClient interface {
 	// message that includes no data and only the request properties (headers,
 	// timeout).
 	BidiStream(context.Context) *connect.BidiStreamForClient[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse]
+	// A unary endpoint that the server should not implement and should instead
+	// return an unimplemented error when invoked.
+	Unimplemented(context.Context, *connect.Request[v1alpha1.UnimplementedRequest]) (*connect.Response[v1alpha1.UnimplementedResponse], error)
 }
 
 // NewConformanceServiceClient constructs a client for the
@@ -146,15 +152,21 @@ func NewConformanceServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			baseURL+ConformanceServiceBidiStreamProcedure,
 			opts...,
 		),
+		unimplemented: connect.NewClient[v1alpha1.UnimplementedRequest, v1alpha1.UnimplementedResponse](
+			httpClient,
+			baseURL+ConformanceServiceUnimplementedProcedure,
+			opts...,
+		),
 	}
 }
 
 // conformanceServiceClient implements ConformanceServiceClient.
 type conformanceServiceClient struct {
-	unary        *connect.Client[v1alpha1.UnaryRequest, v1alpha1.UnaryResponse]
-	serverStream *connect.Client[v1alpha1.ServerStreamRequest, v1alpha1.ServerStreamResponse]
-	clientStream *connect.Client[v1alpha1.ClientStreamRequest, v1alpha1.ClientStreamResponse]
-	bidiStream   *connect.Client[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse]
+	unary         *connect.Client[v1alpha1.UnaryRequest, v1alpha1.UnaryResponse]
+	serverStream  *connect.Client[v1alpha1.ServerStreamRequest, v1alpha1.ServerStreamResponse]
+	clientStream  *connect.Client[v1alpha1.ClientStreamRequest, v1alpha1.ClientStreamResponse]
+	bidiStream    *connect.Client[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse]
+	unimplemented *connect.Client[v1alpha1.UnimplementedRequest, v1alpha1.UnimplementedResponse]
 }
 
 // Unary calls connectrpc.conformance.v1alpha1.ConformanceService.Unary.
@@ -175,6 +187,11 @@ func (c *conformanceServiceClient) ClientStream(ctx context.Context) *connect.Cl
 // BidiStream calls connectrpc.conformance.v1alpha1.ConformanceService.BidiStream.
 func (c *conformanceServiceClient) BidiStream(ctx context.Context) *connect.BidiStreamForClient[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse] {
 	return c.bidiStream.CallBidiStream(ctx)
+}
+
+// Unimplemented calls connectrpc.conformance.v1alpha1.ConformanceService.Unimplemented.
+func (c *conformanceServiceClient) Unimplemented(ctx context.Context, req *connect.Request[v1alpha1.UnimplementedRequest]) (*connect.Response[v1alpha1.UnimplementedResponse], error) {
+	return c.unimplemented.CallUnary(ctx, req)
 }
 
 // ConformanceServiceHandler is an implementation of the
@@ -229,6 +246,9 @@ type ConformanceServiceHandler interface {
 	// message that includes no data and only the request properties (headers,
 	// timeout).
 	BidiStream(context.Context, *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse]) error
+	// A unary endpoint that the server should not implement and should instead
+	// return an unimplemented error when invoked.
+	Unimplemented(context.Context, *connect.Request[v1alpha1.UnimplementedRequest]) (*connect.Response[v1alpha1.UnimplementedResponse], error)
 }
 
 // NewConformanceServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -257,6 +277,11 @@ func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect
 		svc.BidiStream,
 		opts...,
 	)
+	conformanceServiceUnimplementedHandler := connect.NewUnaryHandler(
+		ConformanceServiceUnimplementedProcedure,
+		svc.Unimplemented,
+		opts...,
+	)
 	return "/connectrpc.conformance.v1alpha1.ConformanceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ConformanceServiceUnaryProcedure:
@@ -267,6 +292,8 @@ func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect
 			conformanceServiceClientStreamHandler.ServeHTTP(w, r)
 		case ConformanceServiceBidiStreamProcedure:
 			conformanceServiceBidiStreamHandler.ServeHTTP(w, r)
+		case ConformanceServiceUnimplementedProcedure:
+			conformanceServiceUnimplementedHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -290,4 +317,8 @@ func (UnimplementedConformanceServiceHandler) ClientStream(context.Context, *con
 
 func (UnimplementedConformanceServiceHandler) BidiStream(context.Context, *connect.BidiStream[v1alpha1.BidiStreamRequest, v1alpha1.BidiStreamResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.BidiStream is not implemented"))
+}
+
+func (UnimplementedConformanceServiceHandler) Unimplemented(context.Context, *connect.Request[v1alpha1.UnimplementedRequest]) (*connect.Response[v1alpha1.UnimplementedResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1alpha1.ConformanceService.Unimplemented is not implemented"))
 }
