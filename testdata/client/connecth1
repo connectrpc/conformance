@@ -4,8 +4,8 @@
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
-  "port": 55433,
-  "service": "/connectrpc.conformance.v1alpha1.ConformanceService",
+  "port": 51356,
+  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
   "method": "Unary",
   "streamType": "STREAM_TYPE_UNARY",
   "requestHeaders": [

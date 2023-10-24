@@ -5,18 +5,21 @@ import (
 	"crypto/tls"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strconv"
 
 	"connectrpc.com/conformance/internal/app"
-	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
+)
+
+const (
+	ProtocolConnect = "connect"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
@@ -38,31 +41,11 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 		return err
 	}
 
-	client, err := newClient(req)
+	resp, err := callClient(ctx, req)
 	if err != nil {
 		return err
 	}
-
-	// TODO - How do we know what type this is
-	ur := &v1alpha1.UnaryRequest{}
-	// TODO - Need to loop over these and send all of them
-	req.RequestMessages[0].UnmarshalTo(ur)
-
-	request := connect.NewRequest(ur)
-
-	for _, header := range req.RequestHeaders {
-		for _, val := range header.Value {
-			request.Header().Add(header.Name, val)
-		}
-	}
-	// TODO - Cleanup this reflection nonsense
-	inv, err := Invoke(client, req.Method, context.Background(), request)
-	if err != nil {
-		return err
-	}
-	// TODO - How do we know what type this is
-	reply := inv[0].Interface().(*connect.Response[v1alpha1.UnaryResponse])
-	bytes, err := codec.Marshal(reply.Msg)
+	bytes, err := codec.Marshal(resp)
 	if err != nil {
 		return err
 	}
@@ -73,22 +56,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 	return nil
 }
 
-func Invoke(any interface{}, name string, args ...interface{}) ([]reflect.Value, error) {
-	inputs := make([]reflect.Value, len(args))
-	for i := range args {
-		inputs[i] = reflect.ValueOf(args[i])
-	}
-	method := reflect.ValueOf(any).MethodByName(name)
-	if !method.IsValid() {
-		return nil, errors.New("method " + name + " does not exist")
-	}
-
-	return method.Call(inputs), nil
-}
-
-// TODO - This always assumes a ConformanceServiceClient
-// Can we use the req.Service value somehow?
-func newClient(req *v1alpha1.ClientCompatRequest) (conformancev1alpha1connect.ConformanceServiceClient, error) {
+func callClient(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error) {
 	var scheme string
 	if req.ServerTlsCert != nil {
 		scheme = "https://"
@@ -123,6 +91,14 @@ func newClient(req *v1alpha1.ClientCompatRequest) (conformancev1alpha1connect.Co
 		implementation += "h3"
 	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified.")
+	}
+
+	impl := fmt.Sprintf("%s%s", req.Protocol, req.HttpVersion)
+
+	fmt.Println(impl)
+	switch impl {
+	case v1alpha1.Protocol_PROTOCOL_CONNECT.String() + "-" + v1alpha1.HTTPVersion_HTTP_VERSION_1.String():
+		fmt.Println("got eem!!")
 	}
 
 	var transport http.RoundTripper
@@ -168,9 +144,12 @@ func newClient(req *v1alpha1.ClientCompatRequest) (conformancev1alpha1connect.Co
 		// Do nothing
 	}
 
-	return conformancev1alpha1connect.NewConformanceServiceClient(
-		&http.Client{Transport: transport},
-		serverURL.String(),
-		clientOptions...,
-	), nil
+	var wrapper ClientWrapper
+	switch req.Service {
+	case "connectrpc.conformance.v1alpha1.ConformanceService":
+		fallthrough
+	default:
+		wrapper = NewConformanceClientWrapper(transport, serverURL, clientOptions)
+	}
+	return wrapper.Invoke(ctx, req)
 }
