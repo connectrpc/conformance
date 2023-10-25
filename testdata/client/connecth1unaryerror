@@ -53,7 +53,5 @@
         ]
       }
     }
-  ],
-  "timeoutMs": 1000,
-  "responseDelayMs": 1000
+  ]
 }

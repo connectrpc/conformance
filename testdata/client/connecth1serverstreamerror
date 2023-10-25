@@ -55,7 +55,7 @@
             ]
           }
         ],
-        "responseDelayMs": 2000
+        "responseDelayMs": 500
       }
     }
   ]
