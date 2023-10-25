@@ -1,3 +1,17 @@
+// Copyright 2023 The Connect Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package client
 
 import (
@@ -5,7 +19,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"flag"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -13,14 +26,15 @@ import (
 	"strconv"
 
 	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
 	"golang.org/x/net/http2"
 )
 
-const (
-	ProtocolConnect = "connect"
-)
+type Wrapper interface {
+	Invoke(context.Context, *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error)
+}
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteCloser) error {
@@ -41,7 +55,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 		return err
 	}
 
-	resp, err := callClient(ctx, req)
+	resp, err := invoke(ctx, req)
 	if err != nil {
 		return err
 	}
@@ -56,7 +70,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 	return nil
 }
 
-func callClient(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error) {
+func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error) {
 	var scheme string
 	if req.ServerTlsCert != nil {
 		scheme = "https://"
@@ -69,60 +83,29 @@ func callClient(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alph
 		return nil, errors.New("invalid url: %s" + urlString)
 	}
 
-	var implementation string
-
-	switch req.Protocol {
-	case v1alpha1.Protocol_PROTOCOL_CONNECT:
-		implementation = "connect"
-	case v1alpha1.Protocol_PROTOCOL_GRPC:
-		implementation = "connectgrpc"
-	case v1alpha1.Protocol_PROTOCOL_GRPC_WEB:
-		implementation = "connectgrpcweb"
-	case v1alpha1.Protocol_PROTOCOL_UNSPECIFIED:
-		return nil, errors.New("an protocol must be specified.")
-	}
-
+	var transport http.RoundTripper
 	switch req.HttpVersion {
 	case v1alpha1.HTTPVersion_HTTP_VERSION_1:
-		implementation += "h1"
-	case v1alpha1.HTTPVersion_HTTP_VERSION_2:
-		implementation += "h2"
-	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
-		implementation += "h3"
-	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
-		return nil, errors.New("an HTTP version must be specified.")
-	}
-
-	impl := fmt.Sprintf("%s%s", req.Protocol, req.HttpVersion)
-
-	fmt.Println(impl)
-	switch impl {
-	case v1alpha1.Protocol_PROTOCOL_CONNECT.String() + "-" + v1alpha1.HTTPVersion_HTTP_VERSION_1.String():
-		fmt.Println("got eem!!")
-	}
-
-	var transport http.RoundTripper
-	// create transport base on HTTP protocol of the implementation
-	switch implementation {
-	case "connecth1", "connectgrpch1", "connectgrpcwebh1":
 		transport = &http.Transport{}
-	case "connecth2", "connectgrpch2", "connectgrpcwebh2":
+	case v1alpha1.HTTPVersion_HTTP_VERSION_2:
 		transport = &http2.Transport{
 			AllowHTTP: true,
 			DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
 				return net.Dial(network, addr)
 			},
 		}
-	default:
-		return nil, errors.New("invalid implementation: " + implementation)
+	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
+		return nil, errors.New("HTTP/3 is not yet supported")
+	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
+		return nil, errors.New("an HTTP version must be specified.")
 	}
 
 	// Create client options based on protocol of the implementation
 	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
-	switch implementation {
-	case "connectgrpch1", "connectgrpch2":
+	switch req.Protocol {
+	case v1alpha1.Protocol_PROTOCOL_GRPC:
 		clientOptions = append(clientOptions, connect.WithGRPC())
-	case "connectgrpcwebh1", "connectgrpcwebh2":
+	case v1alpha1.Protocol_PROTOCOL_GRPC_WEB:
 		clientOptions = append(clientOptions, connect.WithGRPCWeb())
 	}
 
@@ -144,12 +127,12 @@ func callClient(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alph
 		// Do nothing
 	}
 
-	var wrapper ClientWrapper
+	var wrapper Wrapper
 	switch req.Service {
-	case "connectrpc.conformance.v1alpha1.ConformanceService":
-		fallthrough
-	default:
+	case conformancev1alpha1connect.ConformanceServiceName:
 		wrapper = NewConformanceClientWrapper(transport, serverURL, clientOptions)
+	default:
+		return nil, errors.New("service name " + req.Service + " is not a valid service")
 	}
 	return wrapper.Invoke(ctx, req)
 }
