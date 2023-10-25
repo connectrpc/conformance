@@ -40,7 +40,13 @@ const (
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
+func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+	// errWriter is unused for now, but this will eventually serve as a
+	// side-channel so the reference server can communicates other kinds
+	// of info to the test runner about requests received from the
+	// client-under-test.
+	_ = errWriter
+
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
 	flag.Parse()
@@ -77,12 +83,9 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 	}
 
 	resp := &v1alpha1.ServerCompatResponse{
-		Result: &v1alpha1.ServerCompatResponse_Listening{
-			Listening: &v1alpha1.ServerListeningResult{
-				Host: fmt.Sprint(tcpAddr.IP),
-				Port: fmt.Sprint(tcpAddr.Port),
-			},
-		},
+		Host: fmt.Sprint(tcpAddr.IP),
+		Port: uint32(tcpAddr.Port),
+		// TODO: server cert if req.UseTls
 	}
 	bytes, err := codec.Marshal(resp)
 	if err != nil {
@@ -125,6 +128,8 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 		// Expose all headers
 		ExposedHeaders: []string{"*"},
 	}).Handler(mux)
+
+	// TODO: create TLS config is req.UseTls
 
 	// Create servers
 	var server *http.Server

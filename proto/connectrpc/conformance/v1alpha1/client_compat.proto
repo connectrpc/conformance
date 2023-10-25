@@ -40,14 +40,18 @@ message ClientCompatRequest {
   string service = 9;
   string method = 10;
   StreamType stream_type = 11;
-  repeated Header request_headers = 12;
+  // If protocol indicates Connect and stream type indicates
+  // Unary, this instructs the client to use a GET HTTP method
+  // when making the request.
+  bool use_get_http_method = 12;
+  repeated Header request_headers = 13;
   // There will be exactly one for unary and server-stream methods.
   // For client- and bidi-stream methods, all entries will have the
   // same type URL (which matches the request type of the method).
-  repeated google.protobuf.Any request_messages = 13;
-  optional uint32 timeout_ms = 14;
+  repeated google.protobuf.Any request_messages = 14;
+  optional uint32 timeout_ms = 15;
   // wait this many milliseconds before sending a request message
-  uint32 response_delay_ms = 15;
+  uint32 response_delay_ms = 16;
   // Tells the server whether it should wait for each request
   // before sending a response.
   // If true, it indicates the server should effectively interleave the
@@ -59,7 +63,7 @@ message ClientCompatRequest {
   // This field is only relevant in the first message in the stream
   // and should be ignored in subsequent messages.
   // Note, this is only applicable to bidi endpoints.
-  bool full_duplex = 16;
+  bool full_duplex = 17;
 }
 
 // The outcome of one ClientCompatRequest.
@@ -76,9 +80,13 @@ message ClientResponseResult {
   repeated Header response_headers = 1;
   repeated ConformancePayload payloads = 2;
   Error error = 3;
-  // In case the client cannot decode Any from JSON, it should instead return the received JSON
-  repeated google.protobuf.Struct error_details_raw = 7;
   repeated Header response_trailers = 4;
+  // When processing an error from a Connect server, this should contain
+  // the actual JSON received on the wire. Clients under test do not need
+  // to populate this field. It is primarily used by the reference client,
+  // so that a server-under-test's on-the-wire error can be examined and
+  // validated.
+  google.protobuf.Struct connect_error_raw = 5;
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due

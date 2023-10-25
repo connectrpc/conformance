@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package client
 
 import (
 	"context"
-	"log"
-	"os"
-
-	"connectrpc.com/conformance/internal/app/server"
+	"io"
 )
 
-func main() {
-	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
-	if err != nil {
-		log.Fatalf("an error occurred running the server: %s", err.Error())
-	}
+// Run runs the reference client process. It will read details describing all requests
+// to send from stdin and then write the results of each operation to stdout. It
+// exits after all data has been read from stdin and all described RPCs have completed.
+func Run(ctx context.Context, args []string, stdin io.ReadCloser, stdout, stderr io.WriteCloser) error {
+	// TODO: move everything out of cmd/client/main.go into here. Update that main func to call this.
+	_ = ctx
+	_ = args
+	_ = stdin
+	_ = stdout
+	_ = stderr
+	return nil
 }
