@@ -20,12 +20,11 @@ import (
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 )
 
-// Adds all header values in src to dest.
+// AddHeaders adds all header values in src to dest.
 func AddHeaders(
 	src []*v1alpha1.Header,
 	dest http.Header,
 ) {
-	// Set all requested response headers on the response
 	for _, header := range src {
 		for _, val := range header.Value {
 			dest.Add(header.Name, val)
@@ -33,6 +32,7 @@ func AddHeaders(
 	}
 }
 
+// ConvertToProtoHeader converts HTTP headers to a slice of proto Headers.
 func ConvertToProtoHeader(
 	src http.Header,
 ) []*v1alpha1.Header {

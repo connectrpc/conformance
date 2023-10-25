@@ -25,6 +25,6 @@ import (
 func main() {
 	err := client.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
 	if err != nil {
-		log.Fatalf("an error occurred running the client: %s", err.Error())
+		log.Fatalf("an error occurred running the client: %s", err.Error()) //nolint:forbidigo
 	}
 }

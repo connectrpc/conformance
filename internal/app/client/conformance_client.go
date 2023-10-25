@@ -34,10 +34,6 @@ func (w *conformanceClientWrapper) Invoke(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientCompatResponse, error) {
-	ccResp := &v1alpha1.ClientCompatResponse{
-		TestName: req.TestName,
-	}
-
 	switch req.Method {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
@@ -57,16 +53,17 @@ func (w *conformanceClientWrapper) Invoke(
 			return nil, err
 		}
 		return resp, nil
-
 	default:
-		ccResp.Result = &v1alpha1.ClientCompatResponse_Error{
-			Error: &v1alpha1.ClientErrorResult{
-				Message: "method name " + req.Method + " does not exist",
+		// TODO: Should this be a returned 'error' or via the ClientCompatResponse? Same as above two cases
+		return &v1alpha1.ClientCompatResponse{
+			TestName: req.TestName,
+			Result: &v1alpha1.ClientCompatResponse_Error{
+				Error: &v1alpha1.ClientErrorResult{
+					Message: "method name " + req.Method + " does not exist",
+				},
 			},
-		}
+		}, nil
 	}
-
-	return ccResp, nil
 }
 
 func (w *conformanceClientWrapper) unary(
@@ -139,7 +136,7 @@ func (w *conformanceClientWrapper) serverStream(
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, request.Header())
 
-	stream, err := w.client.ServerStream(context.Background(), request)
+	stream, err := w.client.ServerStream(ctx, request)
 	// TODO - should this error be added to the clientcompatresponse or returned here?
 	// IMO, the error returned from this function represents an internal error independent
 	// of anything invoking the service

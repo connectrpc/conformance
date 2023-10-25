@@ -37,13 +37,13 @@ type Wrapper interface {
 }
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteCloser) error {
+func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
 	flag.Parse()
 
 	// Read the server config from  the in reader
-	data, err := io.ReadAll(in)
+	data, err := io.ReadAll(inReader)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 	if err != nil {
 		return err
 	}
-	if _, err := out.Write(bytes); err != nil {
+	if _, err := outWriter.Write(bytes); err != nil {
 		return err
 	}
 
@@ -97,7 +97,7 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
 		return nil, errors.New("HTTP/3 is not yet supported")
 	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
-		return nil, errors.New("an HTTP version must be specified.")
+		return nil, errors.New("an HTTP version must be specified")
 	}
 
 	// Create client options based on protocol of the implementation
@@ -107,6 +107,10 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 		clientOptions = append(clientOptions, connect.WithGRPC())
 	case v1alpha1.Protocol_PROTOCOL_GRPC_WEB:
 		clientOptions = append(clientOptions, connect.WithGRPCWeb())
+	case v1alpha1.Protocol_PROTOCOL_CONNECT:
+		// Do nothing
+	case v1alpha1.Protocol_PROTOCOL_UNSPECIFIED:
+		return nil, errors.New("a protocol must be specified")
 	}
 
 	if req.Codec == v1alpha1.Codec_CODEC_JSON {
