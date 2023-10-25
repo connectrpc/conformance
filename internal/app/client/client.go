@@ -120,7 +120,7 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 	}
 
 	// TODO - How do we configure each compression algo? i.e.
-	// how do we know the string to use?
+	// how do we know the string to use and the func for WithCompression?
 	switch req.Compression {
 	case v1alpha1.Compression_COMPRESSION_GZIP:
 		clientOptions = append(clientOptions, connect.WithSendGzip())

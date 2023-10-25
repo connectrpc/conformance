@@ -54,7 +54,10 @@ func (w *conformanceClientWrapper) Invoke(
 		}
 		return resp, nil
 	default:
-		// TODO: Should this be a returned 'error' or via the ClientCompatResponse? Same as above two cases
+		// TODO: Should this be a returned 'error' or via the ClientCompatResponse?
+		// We should probably treat 'error' here as something independent of invoking a request
+		// So any internal error that doesn't involve actually calling an RPC. In that case, then,
+		// this should just return an errors.New like the above cases
 		return &v1alpha1.ClientCompatResponse{
 			TestName: req.TestName,
 			Result: &v1alpha1.ClientCompatResponse_Error{
