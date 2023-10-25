@@ -111,7 +111,7 @@ func (s *conformanceServer) ClientStream(
 	app.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
 	app.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
 
-	return resp, err
+	return resp, nil
 }
 
 func (s *conformanceServer) ServerStream(
