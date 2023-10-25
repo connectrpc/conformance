@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
 	proto "google.golang.org/protobuf/proto"
@@ -34,10 +35,12 @@ type ConformanceRequest interface {
 	GetResponseTrailers() []*v1alpha1.Header
 }
 
-type conformanceServer struct{}
+type conformanceServer struct {
+	conformancev1alpha1connect.UnimplementedConformanceServiceHandler
+}
 
 func (s *conformanceServer) Unary(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[v1alpha1.UnaryRequest],
 ) (*connect.Response[v1alpha1.UnaryResponse], error) {
 	msgAsAny, err := asAny(req.Msg)
@@ -111,7 +114,7 @@ func (s *conformanceServer) ClientStream(
 }
 
 func (s *conformanceServer) ServerStream(
-	ctx context.Context,
+	_ context.Context,
 	req *connect.Request[v1alpha1.ServerStreamRequest],
 	stream *connect.ServerStream[v1alpha1.ServerStreamResponse],
 ) error {
@@ -246,9 +249,9 @@ func parseUnaryResponseDefinition(
 	reqs []*anypb.Any,
 ) (*v1alpha1.ConformancePayload, *connect.Error) {
 	if def != nil {
-		switch rt := def.Response.(type) {
+		switch respType := def.Response.(type) {
 		case *v1alpha1.UnaryResponseDefinition_Error:
-			return nil, createError(rt.Error)
+			return nil, createError(respType.Error)
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
 			requestInfo := createRequestInfo(headers, reqs)
 			payload := &v1alpha1.ConformancePayload{
@@ -256,18 +259,18 @@ func parseUnaryResponseDefinition(
 			}
 
 			// If response data was provided, set that in the payload response
-			if rt, ok := rt.(*v1alpha1.UnaryResponseDefinition_ResponseData); ok {
-				payload.Data = rt.ResponseData
+			if respType, ok := respType.(*v1alpha1.UnaryResponseDefinition_ResponseData); ok {
+				payload.Data = respType.ResponseData
 			}
 			return payload, nil
 		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", rt))
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
 		}
 	}
 	return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no response definition provided"))
 }
 
-// Creates request info for a conformance payload
+// Creates request info for a conformance payload.
 func createRequestInfo(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
 	headerInfo := make([]*v1alpha1.Header, 0, len(headers))
 	for key, value := range headers {
@@ -298,7 +301,7 @@ func addHeaders(
 	}
 }
 
-// Creates a Connect error from the given Error message
+// Creates a Connect error from the given Error message.
 func createError(err *v1alpha1.Error) *connect.Error {
 	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.Message))
 	for _, detail := range err.Details {
@@ -311,7 +314,7 @@ func createError(err *v1alpha1.Error) *connect.Error {
 	return connectErr
 }
 
-// Converts the given message to an Any
+// Converts the given message to an Any.
 func asAny(msg proto.Message) (*anypb.Any, error) {
 	msgAsAny, err := anypb.New(msg)
 	if err != nil {

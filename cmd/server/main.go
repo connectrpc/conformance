@@ -39,6 +39,6 @@ import (
 func main() {
 	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
 	if err != nil {
-		log.Fatalf("an error occurred running the server: %s", err.Error())
+		log.Fatalf("an error occurred running the server: %s", err.Error()) //nolint:forbidigo
 	}
 }
