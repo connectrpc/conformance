@@ -92,11 +92,12 @@ func (w *conformanceClientWrapper) unary(
 	// Invoke the Unary call
 	resp, err := w.client.Unary(ctx, request)
 	if err != nil {
-		// If an error was returned, convert it to a proto Error
-		// and get the headers from the Meta property
-		connectErr := app.AsConnectError(err)
-		protoErr = app.ConvertToProtoError(connectErr)
+		// If an error was returned, first convert it to a Connect error
+		// so that we can get the headers from the Meta property. Then,
+		// convert _that_ to a proto Error so we can set it in the response.
+		connectErr := app.ConvertErrorToConnectError(err)
 		headers = app.ConvertToProtoHeader(connectErr.Meta())
+		protoErr = app.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
@@ -139,7 +140,7 @@ func (w *conformanceClientWrapper) serverStream(
 	stream, err := w.client.ServerStream(ctx, request)
 	// TODO - should this error be added to the clientcompatresponse or returned here?
 	// IMO, the error returned from this function represents an internal error independent
-	// of anything invoking the service
+	// of anything invoking the service but it's unclear what this err is vs. a stream.Err()
 	if err != nil {
 		return nil, err
 	}
@@ -148,17 +149,16 @@ func (w *conformanceClientWrapper) serverStream(
 	var trailers []*v1alpha1.Header
 	payloads := make([]*v1alpha1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	for stream.Receive() {
-		if stream.Err() != nil {
-			connectErr := app.AsConnectError(stream.Err())
-			// If an error was returned, convert it to a proto Error
-			protoErr = app.ConvertToProtoError(connectErr)
-			break
-		}
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
+
 		headers = app.ConvertToProtoHeader(stream.ResponseHeader())
 		trailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
+	}
+	if stream.Err() != nil {
+		// If an error was returned, convert it to a proto Error
+		protoErr = app.ConvertErrorToProtoError(stream.Err())
 	}
 	stream.Close()
 	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
@@ -173,6 +173,7 @@ func (w *conformanceClientWrapper) serverStream(
 	return ccResp, nil
 }
 
+// NewConformanceClientWrapper creates a new wrapper around a ConformanceServiceClient
 func NewConformanceClientWrapper(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) Wrapper {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},

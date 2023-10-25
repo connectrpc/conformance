@@ -1,0 +1,49 @@
+{
+  "testName": "Unary Happy Path",
+  "httpVersion": "HTTP_VERSION_1",
+  "protocol": "PROTOCOL_CONNECT",
+  "codec": "CODEC_JSON",
+  "host": "127.0.0.1",
+  "port": 51356,
+  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
+  "method": "Unary",
+  "streamType": "STREAM_TYPE_UNARY",
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": "dGVzdCByZXNwb25zZQ==",
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "timeoutMs": 1000,
+  "responseDelayMs": 1000
+}

@@ -151,7 +151,7 @@ func (s *conformanceServer) ServerStream(
 		payload.RequestInfo = nil
 	}
 	if responseDefinition.Error != nil {
-		return app.ConvertToConnectError(responseDefinition.Error)
+		return app.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
 }
@@ -237,7 +237,7 @@ func (s *conformanceServer) BidiStream(
 	}
 
 	if responseDefinition.Error != nil {
-		return app.ConvertToConnectError(responseDefinition.Error)
+		return app.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
 }
@@ -252,7 +252,7 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1alpha1.UnaryResponseDefinition_Error:
-			return nil, app.ConvertToConnectError(respType.Error)
+			return nil, app.ConvertProtoToConnectError(respType.Error)
 
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
 			requestInfo := createRequestInfo(headers, reqs)

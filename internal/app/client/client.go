@@ -32,7 +32,9 @@ import (
 	"golang.org/x/net/http2"
 )
 
+// Wrapper defines a wrapper around a client which can invoke requests based on a ClientCompatRequest
 type Wrapper interface {
+	// Invoke invokes a request according to a given config
 	Invoke(context.Context, *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error)
 }
 

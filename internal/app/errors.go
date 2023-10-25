@@ -22,10 +22,10 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-// AsConnectError returns the given error as a Connect error
+// ConvertErrorToConnectError converts the given error to a Connect error
 // If err is nil, function will also return nil. If err is not
 // of type connect.Error, a Connect error of code Unknown is returned.
-func AsConnectError(err error) *connect.Error {
+func ConvertErrorToConnectError(err error) *connect.Error {
 	if err == nil {
 		return nil
 	}
@@ -36,30 +36,47 @@ func AsConnectError(err error) *connect.Error {
 	return connectErr
 }
 
-// ConvertToProtoError converts the given Connect error to a
-// proto Error message. If err is nil, the function will also
-// return nil.
-func ConvertToProtoError(err *connect.Error) *v1alpha1.Error {
+// ConvertErrorToConnectError converts the given error to a proto Error
+// If err is nil, function will also return nil. If err is not
+// of type connect.Error, a code representing Unknown is returned.
+func ConvertErrorToProtoError(err error) *v1alpha1.Error {
 	if err == nil {
 		return nil
 	}
-	protoErr := &v1alpha1.Error{}
-	protoErr.Code = int32(err.Code())
-	protoErr.Message = err.Message()
+	connectErr := new(connect.Error)
+	if !errors.As(err, &connectErr) {
+		return &v1alpha1.Error{
+			Code:    int32(connect.CodeUnknown),
+			Message: err.Error(),
+		}
+	}
+	return ConvertConnectToProtoError(connectErr)
+}
+
+// ConvertConnectToProtoError converts the given Connect error to a
+// proto Error message. If err is nil, the function will also
+// return nil.
+func ConvertConnectToProtoError(err *connect.Error) *v1alpha1.Error {
+	if err == nil {
+		return nil
+	}
+	protoErr := &v1alpha1.Error{
+		Code:    int32(err.Code()),
+		Message: err.Message(),
+	}
 	details := make([]*anypb.Any, 0, len(err.Details()))
 	for _, detail := range err.Details() {
-		asAny := &anypb.Any{
+		details = append(details, &anypb.Any{
 			TypeUrl: detail.Type(),
 			Value:   detail.Bytes(),
-		}
-		details = append(details, asAny)
+		})
 	}
 	protoErr.Details = details
 	return protoErr
 }
 
-// ConvertToConnectError creates a Connect error from the given proto Error message.
-func ConvertToConnectError(err *v1alpha1.Error) *connect.Error {
+// ConvertProtoToConnectError creates a Connect error from the given proto Error message.
+func ConvertProtoToConnectError(err *v1alpha1.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}
