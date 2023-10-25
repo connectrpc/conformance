@@ -178,7 +178,7 @@ func (w *conformanceClientWrapper) serverStream(
 	return ccResp, nil
 }
 
-// NewConformanceClientWrapper creates a new wrapper around a ConformanceServiceClient
+// NewConformanceClientWrapper creates a new wrapper around a ConformanceServiceClient.
 func NewConformanceClientWrapper(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) Wrapper {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
