@@ -1,5 +1,5 @@
 {
-  "testName": "Server Stream Happy Path",
+  "testName": "Server Stream with an Error",
   "httpVersion": "HTTP_VERSION_1",
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
