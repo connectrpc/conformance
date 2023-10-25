@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
 	proto "google.golang.org/protobuf/proto"
@@ -34,7 +35,9 @@ type ConformanceRequest interface {
 	GetResponseTrailers() []*v1alpha1.Header
 }
 
-type conformanceServer struct{}
+type conformanceServer struct {
+	conformancev1alpha1connect.UnimplementedConformanceServiceHandler
+}
 
 func (s *conformanceServer) Unary(
 	_ context.Context,
