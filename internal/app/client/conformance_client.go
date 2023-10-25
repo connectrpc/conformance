@@ -155,14 +155,16 @@ func (w *conformanceClientWrapper) serverStream(
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
-
-		headers = app.ConvertToProtoHeader(stream.ResponseHeader())
-		trailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
 	}
 	if stream.Err() != nil {
 		// If an error was returned, convert it to a proto Error
 		protoErr = app.ConvertErrorToProtoError(stream.Err())
 	}
+
+	// Read headers and trailers from the stream
+	headers = app.ConvertToProtoHeader(stream.ResponseHeader())
+	trailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
+
 	stream.Close()
 	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
 		Response: &v1alpha1.ClientResponseResult{
