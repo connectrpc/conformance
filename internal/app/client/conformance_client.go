@@ -109,7 +109,7 @@ func (w *conformanceClientWrapper) unary(
 		Response: &v1alpha1.ClientResponseResult{
 			ResponseHeaders:  headers,
 			ResponseTrailers: trailers,
-			ResponseMessages: payloads,
+			Payloads:         payloads,
 			Error:            protoErr,
 			ErrorDetailsRaw:  nil, // TODO
 		},
@@ -165,7 +165,7 @@ func (w *conformanceClientWrapper) serverStream(
 		Response: &v1alpha1.ClientResponseResult{
 			ResponseHeaders:  headers,
 			ResponseTrailers: trailers,
-			ResponseMessages: payloads,
+			Payloads:         payloads,
 			Error:            protoErr,
 			ErrorDetailsRaw:  nil, // TODO
 		},

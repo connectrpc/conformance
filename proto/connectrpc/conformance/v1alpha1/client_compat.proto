@@ -45,11 +45,21 @@ message ClientCompatRequest {
   // For client- and bidi-stream methods, all entries will have the
   // same type URL (which matches the request type of the method).
   repeated google.protobuf.Any request_messages = 13;
-  optional uint32 timeout_millis = 14;
+  optional uint32 timeout_ms = 14;
   // wait this many milliseconds before sending a request message
-  uint32 wait_before_each_request_message = 15;
-  // if true, wait for response before sending next request (only applicable to bidi endpoints)
-  bool wait_for_each_request = 16;
+  uint32 response_delay_ms = 15;
+  // Tells the server whether it should wait for each request
+  // before sending a response.
+  // If true, it indicates the server should effectively interleave the
+  // stream so messages are sent in request->response pairs.
+  // If false, then the response stream will be sent once all request messages
+  // are finished sending with the only delays between messages
+  // being the optional fixed milliseconds defined in the response
+  // definition.
+  // This field is only relevant in the first message in the stream
+  // and should be ignored in subsequent messages.
+  // Note, this is only applicable to bidi endpoints.
+  bool full_duplex = 16;
 }
 
 // The outcome of one ClientCompatRequest.
@@ -64,7 +74,7 @@ message ClientCompatResponse {
 // The result of a ClientCompatRequest, which may or may bot be successful.
 message ClientResponseResult {
   repeated Header response_headers = 1;
-  repeated ConformancePayload response_messages = 2;
+  repeated ConformancePayload payloads = 2;
   Error error = 3;
   // In case the client cannot decode Any from JSON, it should instead return the received JSON
   repeated google.protobuf.Struct error_details_raw = 7;

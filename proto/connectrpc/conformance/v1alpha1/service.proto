@@ -88,6 +88,9 @@ service ConformanceService {
   // message that includes no data and only the request properties (headers,
   // timeout).
   rpc BidiStream(stream BidiStreamRequest) returns (stream BidiStreamResponse);
+  // A unary endpoint that the server should not implement and should instead
+  // return an unimplemented error when invoked.
+  rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse);
 }
 
 // A definition of a response to be sent from a single-response endpoint.
@@ -185,6 +188,10 @@ message BidiStreamResponse {
   // The conformance payload to respond with
   ConformancePayload payload = 1;
 }
+
+message UnimplementedRequest {}
+
+message UnimplementedResponse {}
 
 message ConformancePayload {
   bytes data = 1;

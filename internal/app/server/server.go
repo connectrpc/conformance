@@ -32,21 +32,21 @@ import (
 )
 
 const (
-	// The default host to use for the server
+	// The default host to use for the server.
 	defaultHost = "127.0.0.1"
 	// The default port to use for the server. We choose 0 so that
-	// an ephemeral port is selected by the OS
+	// an ephemeral port is selected by the OS.
 	defaultPort = "0"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteCloser) error {
+func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
 	flag.Parse()
 
 	// Read the server config from  the in reader
-	data, err := io.ReadAll(in)
+	data, err := io.ReadAll(inReader)
 	if err != nil {
 		return err
 	}
@@ -67,15 +67,20 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 
 	// Create a listener for the server so that we are able to obtain
 	// the IP and port for publishing on the out writer
-	ln, err := net.Listen("tcp", net.JoinHostPort(defaultHost, defaultPort))
+	listener, err := net.Listen("tcp", net.JoinHostPort(defaultHost, defaultPort))
 	if err != nil {
 		return err
 	}
+	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		return errors.New("unable to determine tcp address from listener")
+	}
+
 	resp := &v1alpha1.ServerCompatResponse{
 		Result: &v1alpha1.ServerCompatResponse_Listening{
 			Listening: &v1alpha1.ServerListeningResult{
-				Host: fmt.Sprint(ln.Addr().(*net.TCPAddr).IP),
-				Port: fmt.Sprint(ln.Addr().(*net.TCPAddr).Port),
+				Host: fmt.Sprint(tcpAddr.IP),
+				Port: fmt.Sprint(tcpAddr.Port),
 			},
 		},
 	}
@@ -83,19 +88,19 @@ func Run(ctx context.Context, args []string, in io.ReadCloser, out io.WriteClose
 	if err != nil {
 		return err
 	}
-	if _, err := out.Write(bytes); err != nil {
+	if _, err := outWriter.Write(bytes); err != nil {
 		return err
 	}
 
 	// Finally, start the server
-	if err := server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return err
 	}
 
 	return nil
 }
 
-// Creates an HTTP server using the provided ServerCompatRequest
+// Creates an HTTP server using the provided ServerCompatRequest.
 func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
@@ -131,24 +136,24 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
 		return nil, errors.New("HTTP/3 is not yet supported")
 	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
-		return nil, errors.New("an HTTP version must be specified.")
+		return nil, errors.New("an HTTP version must be specified")
 	}
 
 	return server, nil
 }
 
-// Create a new HTTP/1.1 server
+// Create a new HTTP/1.1 server.
 func newH1Server(handler http.Handler) *http.Server {
-	h1Server := &http.Server{
+	h1Server := &http.Server{ //nolint:gosec
 		Addr:    net.JoinHostPort(defaultHost, defaultPort),
 		Handler: handler,
 	}
 	return h1Server
 }
 
-// Create a new HTTP/2 server
+// Create a new HTTP/2 server.
 func newH2Server(handler http.Handler) *http.Server {
-	h2Server := &http.Server{
+	h2Server := &http.Server{ //nolint:gosec
 		Addr: net.JoinHostPort(defaultHost, defaultPort),
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
