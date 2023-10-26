@@ -63,6 +63,15 @@ func (w *conformanceClientWrapper) Invoke(
 			return nil, err
 		}
 		return resp, nil
+	case "BidiStream":
+		if len(req.RequestMessages) < 1 {
+			return nil, errors.New("bidi streaming calls must specify at least one request message")
+		}
+		resp, err := w.bidiStream(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 	default:
 		// TODO: Should this be a returned 'error' or via the ClientCompatResponse?
 		// We should probably treat 'error' here as something independent of invoking a request
@@ -231,6 +240,103 @@ func (w *conformanceClientWrapper) clientStream(
 		trailers = app.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
+		Response: &v1alpha1.ClientResponseResult{
+			ResponseHeaders:  headers,
+			ResponseTrailers: trailers,
+			Payloads:         payloads,
+			Error:            protoErr,
+			ErrorDetailsRaw:  nil, // TODO
+		},
+	}
+	return ccResp, nil
+}
+
+func (w *conformanceClientWrapper) bidiStream(
+	ctx context.Context,
+	req *v1alpha1.ClientCompatRequest,
+) (*v1alpha1.ClientCompatResponse, error) {
+	ccResp := &v1alpha1.ClientCompatResponse{
+		TestName: req.TestName,
+	}
+	stream := w.client.BidiStream(context.Background())
+	// Add the specified request headers to the request
+	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
+
+	firstSend := true
+	fullDuplex := false
+
+	var protoErr *v1alpha1.Error
+	var headers []*v1alpha1.Header
+	var trailers []*v1alpha1.Header
+	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
+
+	for _, msg := range req.RequestMessages {
+		bsr := &v1alpha1.BidiStreamRequest{}
+		if err := msg.UnmarshalTo(bsr); err != nil {
+			return nil, err
+		}
+		if firstSend {
+			fullDuplex = bsr.FullDuplex
+		}
+		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
+			break
+		}
+		if fullDuplex {
+			msg, err := stream.Receive()
+			// If this is a full duplex stream, receive a response for each request
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					// Reads are done, break the receive loop
+					break
+				}
+				// If an error was returned, convert it to a proto Error
+				// TODO - If we error here, we should stop immediately right?
+				protoErr = app.ConvertErrorToProtoError(err)
+				break
+			}
+			// If the call was successful, get the returned payloads
+			// and the headers and trailers
+			payloads = append(payloads, msg.Payload)
+		}
+	}
+
+	// Close the send side of the stream
+	if err := stream.CloseRequest(); err != nil {
+		// TODO - If we error here, we should stop immediately right?
+		protoErr = app.ConvertErrorToProtoError(err)
+	}
+
+	for {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			protoErr = app.ConvertErrorToProtoError(err)
+			break
+		}
+		msg, err := stream.Receive()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				// Reads are done, break the receive loop
+				break
+			}
+			// If an error was returned, convert it to a proto Error
+			protoErr = app.ConvertErrorToProtoError(err)
+			break
+		}
+		// If the call was successful, get the returned payloads
+		// and the headers and trailers
+		payloads = append(payloads, msg.Payload)
+	}
+
+	if err := stream.CloseResponse(); err != nil {
+		protoErr = app.ConvertErrorToProtoError(err)
+	}
+
+	// Read headers and trailers from the stream
+	headers = app.ConvertToProtoHeader(stream.ResponseHeader())
+	trailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
+
+	// TODO - How can we distinguish whether we properly processed full vs. half duplex?
 	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
 		Response: &v1alpha1.ClientResponseResult{
 			ResponseHeaders:  headers,
