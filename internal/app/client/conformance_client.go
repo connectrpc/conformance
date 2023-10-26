@@ -27,14 +27,14 @@ import (
 	"connectrpc.com/connect"
 )
 
-type conformanceClientWrapper struct {
+type invoker struct {
 	client conformancev1alpha1connect.ConformanceServiceClient
 }
 
-func (w *conformanceClientWrapper) Invoke(
+func (w *invoker) Invoke(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientCompatResponse, error) {
+) (*v1alpha1.ClientResponseResult, error) {
 	switch req.Method {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
@@ -63,29 +63,18 @@ func (w *conformanceClientWrapper) Invoke(
 			return nil, err
 		}
 		return resp, nil
+	case "BidiStream":
+		// TODO - Implement BidiStream
+		return nil, errors.New("bidi streaming is not yet supported")
 	default:
-		// TODO: Should this be a returned 'error' or via the ClientCompatResponse?
-		// We should probably treat 'error' here as something independent of invoking a request
-		// So any internal error that doesn't involve actually calling an RPC. In that case, then,
-		// this should just return an errors.New like the above cases
-		return &v1alpha1.ClientCompatResponse{
-			TestName: req.TestName,
-			Result: &v1alpha1.ClientCompatResponse_Error{
-				Error: &v1alpha1.ClientErrorResult{
-					Message: "method name " + req.Method + " does not exist",
-				},
-			},
-		}, nil
+		return nil, errors.New("method name " + req.Method + " does not exist")
 	}
 }
 
-func (w *conformanceClientWrapper) unary(
+func (w *invoker) unary(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientCompatResponse, error) {
-	ccResp := &v1alpha1.ClientCompatResponse{
-		TestName: req.TestName,
-	}
+) (*v1alpha1.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
 	ur := &v1alpha1.UnaryRequest{}
 	if err := msg.UnmarshalTo(ur); err != nil {
@@ -119,26 +108,19 @@ func (w *conformanceClientWrapper) unary(
 		trailers = app.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
-		Response: &v1alpha1.ClientResponseResult{
-			ResponseHeaders:  headers,
-			ResponseTrailers: trailers,
-			Payloads:         payloads,
-			Error:            protoErr,
-			ErrorDetailsRaw:  nil, // TODO
-		},
-	}
-
-	return ccResp, nil
+	return &v1alpha1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ErrorDetailsRaw:  nil, // TODO
+	}, nil
 }
 
-func (w *conformanceClientWrapper) serverStream(
+func (w *invoker) serverStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientCompatResponse, error) {
-	ccResp := &v1alpha1.ClientCompatResponse{
-		TestName: req.TestName,
-	}
+) (*v1alpha1.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
 	ssr := &v1alpha1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(ssr); err != nil {
@@ -151,9 +133,6 @@ func (w *conformanceClientWrapper) serverStream(
 	app.AddHeaders(req.RequestHeaders, request.Header())
 
 	stream, err := w.client.ServerStream(ctx, request)
-	// TODO - should this error be added to the clientcompatresponse or returned here?
-	// IMO, the error returned from this function represents an internal error independent
-	// of anything invoking the service but it's unclear what this err is vs. a stream.Err()
 	if err != nil {
 		return nil, err
 	}
@@ -175,26 +154,23 @@ func (w *conformanceClientWrapper) serverStream(
 	headers = app.ConvertToProtoHeader(stream.ResponseHeader())
 	trailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
 
-	stream.Close()
-	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
-		Response: &v1alpha1.ClientResponseResult{
-			ResponseHeaders:  headers,
-			ResponseTrailers: trailers,
-			Payloads:         payloads,
-			Error:            protoErr,
-			ErrorDetailsRaw:  nil, // TODO
-		},
+	err = stream.Close()
+	if err != nil {
+		return nil, err
 	}
-	return ccResp, nil
+	return &v1alpha1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ErrorDetailsRaw:  nil, // TODO
+	}, nil
 }
 
-func (w *conformanceClientWrapper) clientStream(
+func (w *invoker) clientStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientCompatResponse, error) {
-	ccResp := &v1alpha1.ClientCompatResponse{
-		TestName: req.TestName,
-	}
+) (*v1alpha1.ClientResponseResult, error) {
 	stream := w.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
@@ -231,26 +207,23 @@ func (w *conformanceClientWrapper) clientStream(
 		trailers = app.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	ccResp.Result = &v1alpha1.ClientCompatResponse_Response{
-		Response: &v1alpha1.ClientResponseResult{
-			ResponseHeaders:  headers,
-			ResponseTrailers: trailers,
-			Payloads:         payloads,
-			Error:            protoErr,
-			ErrorDetailsRaw:  nil, // TODO
-		},
-	}
-	return ccResp, nil
+	return &v1alpha1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ErrorDetailsRaw:  nil, // TODO
+	}, nil
 }
 
-// NewConformanceClientWrapper creates a new wrapper around a ConformanceServiceClient.
-func NewConformanceClientWrapper(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) Wrapper {
+// Creates a new wrapper around a ConformanceServiceClient.
+func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
 		url.String(),
 		opts...,
 	)
-	return &conformanceClientWrapper{
+	return &invoker{
 		client: client,
 	}
 }
