@@ -42,6 +42,8 @@ func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.W
 	flag.Parse()
 
 	// Read the server config from  the in reader
+	// TODO - This should be able to read many compatrequests and make sure that whatever format this
+	// reads is the same as the format that the test runner actually writes.
 	data, err := io.ReadAll(inReader)
 	if err != nil {
 		return err
@@ -144,20 +146,16 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 	switch req.Compression {
 	case v1alpha1.Compression_COMPRESSION_GZIP:
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v1alpha1.Compression_COMPRESSION_BR:
-	case v1alpha1.Compression_COMPRESSION_ZSTD:
-	case v1alpha1.Compression_COMPRESSION_DEFLATE:
-	case v1alpha1.Compression_COMPRESSION_SNAPPY:
-	case v1alpha1.Compression_COMPRESSION_IDENTITY:
-		// Do nothing
-	case v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
+	case v1alpha1.Compression_COMPRESSION_BR, v1alpha1.Compression_COMPRESSION_ZSTD,
+		v1alpha1.Compression_COMPRESSION_DEFLATE, v1alpha1.Compression_COMPRESSION_SNAPPY:
+		return nil, errors.New(req.Compression.String() + " is not yet supported")
+	case v1alpha1.Compression_COMPRESSION_IDENTITY, v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}
 
 	switch req.Service {
 	case conformancev1alpha1connect.ConformanceServiceName:
-		wrapper := newInvoker(transport, serverURL, clientOptions)
-		return wrapper.Invoke(ctx, req)
+		return newInvoker(transport, serverURL, clientOptions).Invoke(ctx, req)
 	default:
 		return nil, errors.New("service name " + req.Service + " is not a valid service")
 	}

@@ -31,7 +31,7 @@ type invoker struct {
 	client conformancev1alpha1connect.ConformanceServiceClient
 }
 
-func (w *invoker) Invoke(
+func (i *invoker) Invoke(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -40,7 +40,7 @@ func (w *invoker) Invoke(
 		if len(req.RequestMessages) != 1 {
 			return nil, errors.New("unary calls must specify exactly one request message")
 		}
-		resp, err := w.unary(ctx, req)
+		resp, err := i.unary(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +49,7 @@ func (w *invoker) Invoke(
 		if len(req.RequestMessages) != 1 {
 			return nil, errors.New("server streaming calls must specify exactly one request message")
 		}
-		resp, err := w.serverStream(ctx, req)
+		resp, err := i.serverStream(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -71,7 +71,7 @@ func (w *invoker) Invoke(
 	}
 }
 
-func (w *invoker) unary(
+func (i *invoker) unary(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -92,7 +92,7 @@ func (w *invoker) unary(
 	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
 
 	// Invoke the Unary call
-	resp, err := w.client.Unary(ctx, request)
+	resp, err := i.client.Unary(ctx, request)
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -117,7 +117,7 @@ func (w *invoker) unary(
 	}, nil
 }
 
-func (w *invoker) serverStream(
+func (i *invoker) serverStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -132,7 +132,7 @@ func (w *invoker) serverStream(
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, request.Header())
 
-	stream, err := w.client.ServerStream(ctx, request)
+	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (w *invoker) serverStream(
 	}, nil
 }
 
-func (w *invoker) clientStream(
+func (i *invoker) clientStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -216,7 +216,7 @@ func (w *invoker) clientStream(
 	}, nil
 }
 
-// Creates a new wrapper around a ConformanceServiceClient.
+// Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
