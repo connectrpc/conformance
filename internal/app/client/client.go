@@ -156,7 +156,7 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 
 	switch req.Service {
 	case conformancev1alpha1connect.ConformanceServiceName:
-		wrapper := NewInvoker(transport, serverURL, clientOptions)
+		wrapper := newInvoker(transport, serverURL, clientOptions)
 		return wrapper.Invoke(ctx, req)
 	default:
 		return nil, errors.New("service name " + req.Service + " is not a valid service")

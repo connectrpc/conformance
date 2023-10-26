@@ -26,11 +26,11 @@ import (
 	"connectrpc.com/connect"
 )
 
-type Invoker struct {
+type invoker struct {
 	client conformancev1alpha1connect.ConformanceServiceClient
 }
 
-func (w *Invoker) Invoke(
+func (w *invoker) Invoke(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -64,7 +64,7 @@ func (w *Invoker) Invoke(
 	}
 }
 
-func (w *Invoker) unary(
+func (w *invoker) unary(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -110,7 +110,7 @@ func (w *Invoker) unary(
 	}, nil
 }
 
-func (w *Invoker) serverStream(
+func (w *invoker) serverStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -160,14 +160,14 @@ func (w *Invoker) serverStream(
 	}, nil
 }
 
-// NewInvoker creates a new wrapper around a ConformanceServiceClient.
-func NewInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *Invoker {
+// Creates a new wrapper around a ConformanceServiceClient.
+func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
 		url.String(),
 		opts...,
 	)
-	return &Invoker{
+	return &invoker{
 		client: client,
 	}
 }
