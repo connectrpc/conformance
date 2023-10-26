@@ -90,7 +90,7 @@ func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.W
 // Invokes a ClientCompatRequest, returning either the result of the invocation or an error. The error
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
-// the actual RPC invocation will be present in the returned ClientResponseResult
+// the actual RPC invocation will be present in the returned ClientResponseResult.
 func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientResponseResult, error) {
 	var scheme string
 	if req.ServerTlsCert != nil {
