@@ -32,13 +32,10 @@ import (
 	"golang.org/x/net/http2"
 )
 
-// Wrapper defines a wrapper around a client which can invoke requests based on a ClientCompatRequest.
-type Wrapper interface {
-	// Invoke invokes a request according to a given config
-	Invoke(context.Context, *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error)
-}
-
-// Run runs the server according to server config read from the 'in' reader.
+// Run runs the client according to a client config read from the 'in' reader. The result of the run
+// is written to the 'out' writer, including any errors encountered during the actual run. Any error
+// returned from this function is indicative of an issue with the reader or writer and should not be related
+// to the actual run.
 func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
@@ -57,10 +54,28 @@ func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.W
 		return err
 	}
 
-	resp, err := invoke(ctx, req)
-	if err != nil {
-		return err
+	result, err := invoke(ctx, req)
+
+	// Build the result for the out writer.
+	resp := &v1alpha1.ClientCompatResponse{
+		TestName: req.TestName,
 	}
+	// If an error was returned, it was a runtime / unexpected internal error so
+	// the written response should contain an error result, not a response with
+	// any RPC information
+	if err != nil {
+		resp.Result = &v1alpha1.ClientCompatResponse_Error{
+			Error: &v1alpha1.ClientErrorResult{
+				Message: err.Error(),
+			},
+		}
+	} else {
+		resp.Result = &v1alpha1.ClientCompatResponse_Response{
+			Response: result,
+		}
+	}
+
+	// Marshal the response and write the output
 	bytes, err := codec.Marshal(resp)
 	if err != nil {
 		return err
@@ -72,7 +87,11 @@ func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.W
 	return nil
 }
 
-func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientCompatResponse, error) {
+// Invokes a ClientCompatRequest, returning either the result of the invocation or an error. The error
+// returned from this function indicates a runtime/unexpected internal error and is not indicative of a
+// Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
+// the actual RPC invocation will be present in the returned ClientResponseResult
+func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientResponseResult, error) {
 	var scheme string
 	if req.ServerTlsCert != nil {
 		scheme = "https://"
@@ -85,6 +104,8 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 		return nil, errors.New("invalid url: %s" + urlString)
 	}
 
+	// TODO - We should cache the transports here so that we're not creating one for each
+	// test case
 	var transport http.RoundTripper
 	switch req.HttpVersion {
 	case v1alpha1.HTTPVersion_HTTP_VERSION_1:
@@ -119,26 +140,25 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 		clientOptions = append(clientOptions, connect.WithProtoJSON())
 	}
 
-	// TODO - How do we configure each compression algo? i.e.
-	// how do we know the string to use and the func for WithCompression?
+	// TODO - Add support for other compression algos
 	switch req.Compression {
 	case v1alpha1.Compression_COMPRESSION_GZIP:
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v1alpha1.Compression_COMPRESSION_IDENTITY:
 	case v1alpha1.Compression_COMPRESSION_BR:
 	case v1alpha1.Compression_COMPRESSION_ZSTD:
 	case v1alpha1.Compression_COMPRESSION_DEFLATE:
 	case v1alpha1.Compression_COMPRESSION_SNAPPY:
+	case v1alpha1.Compression_COMPRESSION_IDENTITY:
+		// Do nothing
 	case v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}
 
-	var wrapper Wrapper
 	switch req.Service {
 	case conformancev1alpha1connect.ConformanceServiceName:
-		wrapper = NewConformanceClientWrapper(transport, serverURL, clientOptions)
+		wrapper := NewInvoker(transport, serverURL, clientOptions)
+		return wrapper.Invoke(ctx, req)
 	default:
 		return nil, errors.New("service name " + req.Service + " is not a valid service")
 	}
-	return wrapper.Invoke(ctx, req)
 }
