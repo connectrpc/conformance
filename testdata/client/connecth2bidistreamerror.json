@@ -35,6 +35,17 @@
           "dGVzdCByZXNwb25zZQ==",
           "dGVzdCByZXNwb25zZQ=="
         ],
+        "error": {
+          "code": 13,
+          "message": "bidi stream failed",
+          "details": [
+            {
+              "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header",
+              "name": "test error detail name",
+              "value": ["test error detail value"]
+            }
+          ]
+        },
         "responseTrailers": [
           {
             "name": "x-custom-trailer",

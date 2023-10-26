@@ -23,7 +23,7 @@
       "responseDefinition": {
         "error": {
           "code": 13,
-          "message": "server stream failed",
+          "message": "client stream failed",
           "details": [
             {
               "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header",

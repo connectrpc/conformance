@@ -35,13 +35,15 @@ const (
 	// The default host to use for the server.
 	defaultHost = "127.0.0.1"
 	// The default port to use for the server. We choose 0 so that
-	// an ephemeral port is selected by the OS.
+	// an ephemeral port is selected by the OS if no port is specified.
 	defaultPort = "0"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+	host := flag.String("host", defaultHost, "the host for the conformance server")
+	port := flag.String("port", defaultPort, "the port for the conformance server ")
 
 	flag.Parse()
 
@@ -67,7 +69,7 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 
 	// Create a listener for the server so that we are able to obtain
 	// the IP and port for publishing on the out writer
-	listener, err := net.Listen("tcp", net.JoinHostPort(defaultHost, defaultPort))
+	listener, err := net.Listen("tcp", net.JoinHostPort(*host, *port))
 	if err != nil {
 		return err
 	}

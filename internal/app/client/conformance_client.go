@@ -31,7 +31,7 @@ type invoker struct {
 	client conformancev1alpha1connect.ConformanceServiceClient
 }
 
-func (w *invoker) Invoke(
+func (i *invoker) Invoke(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -40,7 +40,7 @@ func (w *invoker) Invoke(
 		if len(req.RequestMessages) != 1 {
 			return nil, errors.New("unary calls must specify exactly one request message")
 		}
-		resp, err := w.unary(ctx, req)
+		resp, err := i.unary(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -49,7 +49,7 @@ func (w *invoker) Invoke(
 		if len(req.RequestMessages) != 1 {
 			return nil, errors.New("server streaming calls must specify exactly one request message")
 		}
-		resp, err := w.serverStream(ctx, req)
+		resp, err := i.serverStream(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -58,7 +58,7 @@ func (w *invoker) Invoke(
 		if len(req.RequestMessages) < 1 {
 			return nil, errors.New("client streaming calls must specify at least one request message")
 		}
-		resp, err := w.clientStream(ctx, req)
+		resp, err := i.clientStream(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +67,7 @@ func (w *invoker) Invoke(
 		if len(req.RequestMessages) < 1 {
 			return nil, errors.New("bidi streaming calls must specify at least one request message")
 		}
-		resp, err := w.bidiStream(ctx, req)
+		resp, err := i.bidiStream(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +77,7 @@ func (w *invoker) Invoke(
 	}
 }
 
-func (w *invoker) unary(
+func (i *invoker) unary(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -98,7 +98,7 @@ func (w *invoker) unary(
 	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
 
 	// Invoke the Unary call
-	resp, err := w.client.Unary(ctx, request)
+	resp, err := i.client.Unary(ctx, request)
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -123,7 +123,7 @@ func (w *invoker) unary(
 	}, nil
 }
 
-func (w *invoker) serverStream(
+func (i *invoker) serverStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
@@ -138,7 +138,7 @@ func (w *invoker) serverStream(
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, request.Header())
 
-	stream, err := w.client.ServerStream(ctx, request)
+	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
 		return nil, err
 	}
@@ -173,11 +173,11 @@ func (w *invoker) serverStream(
 	}, nil
 }
 
-func (w *invoker) clientStream(
+func (i *invoker) clientStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
-	stream := w.client.ClientStream(ctx)
+	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
@@ -222,11 +222,12 @@ func (w *invoker) clientStream(
 	}, nil
 }
 
-func (w *invoker) bidiStream(
+func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
-	stream := w.client.BidiStream(context.Background())
+	stream := i.client.BidiStream(ctx)
+
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
@@ -239,6 +240,11 @@ func (w *invoker) bidiStream(
 	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
 
 	for _, msg := range req.RequestMessages {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			protoErr = app.ConvertErrorToProtoError(err)
+			break
+		}
 		bsr := &v1alpha1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			return nil, err
@@ -247,56 +253,71 @@ func (w *invoker) bidiStream(
 			fullDuplex = bsr.FullDuplex
 		}
 		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
-			break
+			// TODO - Is this correct? Docs say the returned error will wrap EOF
+			// and clients should call Receive to get the error so assuming this error
+			// is the unwrapped error from the send call?
+			// Call receive to get the error
+			_, err := stream.Receive()
+			if err != nil {
+				// If an error was returned, convert it
+				// to a proto Error
+				protoErr = app.ConvertErrorToProtoError(err)
+				// Break the send loop
+				break
+			}
 		}
 		if fullDuplex {
-			msg, err := stream.Receive()
 			// If this is a full duplex stream, receive a response for each request
+			msg, err := stream.Receive()
 			if err != nil {
-				if errors.Is(err, io.EOF) {
-					// Reads are done, break the receive loop
-					break
+				if !errors.Is(err, io.EOF) {
+					// If an error was returned that is not an EOF, convert it
+					// to a proto Error
+					protoErr = app.ConvertErrorToProtoError(err)
 				}
+				// Reads are done either because we received an error or an EOF
+				// In either case, break the outer loop
+				break
+			}
+			// If the call was successful, get the returned payloads
+			payloads = append(payloads, msg.Payload)
+		}
+	}
+
+	// If protoErr is nil, then the send loop terminated successfully
+	if protoErr == nil {
+		// Close the send side of the stream
+		if err := stream.CloseRequest(); err != nil {
+			protoErr = app.ConvertErrorToProtoError(err)
+		}
+	}
+
+	// If there were no errors encountered yet, then receive any additional responses
+	if protoErr == nil {
+		for {
+			if err := ctx.Err(); err != nil {
 				// If an error was returned, convert it to a proto Error
-				// TODO - If we error here, we should stop immediately right?
 				protoErr = app.ConvertErrorToProtoError(err)
+				break
+			}
+			msg, err := stream.Receive()
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					// If an error was returned, convert it to a proto Error
+					protoErr = app.ConvertErrorToProtoError(err)
+				}
+				// Reads are done either because we received an error or an EOF
+				// In either case, break the outer loop
 				break
 			}
 			// If the call was successful, get the returned payloads
 			// and the headers and trailers
 			payloads = append(payloads, msg.Payload)
 		}
-	}
 
-	// Close the send side of the stream
-	if err := stream.CloseRequest(); err != nil {
-		// TODO - If we error here, we should stop immediately right?
-		protoErr = app.ConvertErrorToProtoError(err)
-	}
-
-	for {
-		if err := ctx.Err(); err != nil {
-			// If an error was returned, convert it to a proto Error
+		if err := stream.CloseResponse(); err != nil {
 			protoErr = app.ConvertErrorToProtoError(err)
-			break
 		}
-		msg, err := stream.Receive()
-		if err != nil {
-			if errors.Is(err, io.EOF) {
-				// Reads are done, break the receive loop
-				break
-			}
-			// If an error was returned, convert it to a proto Error
-			protoErr = app.ConvertErrorToProtoError(err)
-			break
-		}
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
-		payloads = append(payloads, msg.Payload)
-	}
-
-	if err := stream.CloseResponse(); err != nil {
-		protoErr = app.ConvertErrorToProtoError(err)
 	}
 
 	// Read headers and trailers from the stream
@@ -313,7 +334,7 @@ func (w *invoker) bidiStream(
 	}, nil
 }
 
-// Creates a new wrapper around a ConformanceServiceClient.
+// Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
