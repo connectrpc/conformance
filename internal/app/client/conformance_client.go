@@ -58,7 +58,7 @@ func (i *invoker) Invoke(
 		if len(req.RequestMessages) < 1 {
 			return nil, errors.New("client streaming calls must specify at least one request message")
 		}
-		resp, err := w.clientStream(ctx, req)
+		resp, err := i.clientStream(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -171,7 +171,7 @@ func (i *invoker) clientStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
-	stream := w.client.ClientStream(ctx)
+	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
