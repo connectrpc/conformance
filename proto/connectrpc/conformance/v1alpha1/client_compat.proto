@@ -47,6 +47,8 @@ message ClientCompatRequest {
   repeated google.protobuf.Any request_messages = 13;
   optional uint32 timeout_ms = 14;
   // wait this many milliseconds before sending a request message
+  // TODO - This could potentially be removed bc this is in the relevant requests
+  // in the request_messages field
   uint32 response_delay_ms = 15;
   // Tells the server whether it should wait for each request
   // before sending a response.
@@ -59,6 +61,8 @@ message ClientCompatRequest {
   // This field is only relevant in the first message in the stream
   // and should be ignored in subsequent messages.
   // Note, this is only applicable to bidi endpoints.
+  // TODO - This could potentially be removed bc this is in the BidiStreamRequest
+  // which would be in the request_messages field
   bool full_duplex = 16;
 }
 
@@ -75,6 +79,8 @@ message ClientCompatResponse {
 message ClientResponseResult {
   repeated Header response_headers = 1;
   repeated ConformancePayload payloads = 2;
+  // The error received from the actual RPC invocation. Note this is not representative
+  // of a runtime error and should always be the proto equivalent of a Connect error
   Error error = 3;
   // In case the client cannot decode Any from JSON, it should instead return the received JSON
   repeated google.protobuf.Struct error_details_raw = 7;
@@ -82,7 +88,8 @@ message ClientResponseResult {
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due
-// to a runtime error, or because the requested protocol is not supported.
+// to a runtime error or an unexpected internal error such as the requested protocol
+// not being supported. This is completely independent of the actual RPC invocation
 message ClientErrorResult {
   string message = 1;
 }

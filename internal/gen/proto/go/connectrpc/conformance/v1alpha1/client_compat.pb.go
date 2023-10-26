@@ -66,6 +66,8 @@ type ClientCompatRequest struct {
 	RequestMessages []*anypb.Any `protobuf:"bytes,13,rep,name=request_messages,json=requestMessages,proto3" json:"request_messages,omitempty"`
 	TimeoutMs       *uint32      `protobuf:"varint,14,opt,name=timeout_ms,json=timeoutMs,proto3,oneof" json:"timeout_ms,omitempty"`
 	// wait this many milliseconds before sending a request message
+	// TODO - This could potentially be removed bc this is in the relevant requests
+	// in the request_messages field
 	ResponseDelayMs uint32 `protobuf:"varint,15,opt,name=response_delay_ms,json=responseDelayMs,proto3" json:"response_delay_ms,omitempty"`
 	// Tells the server whether it should wait for each request
 	// before sending a response.
@@ -78,6 +80,8 @@ type ClientCompatRequest struct {
 	// This field is only relevant in the first message in the stream
 	// and should be ignored in subsequent messages.
 	// Note, this is only applicable to bidi endpoints.
+	// TODO - This could potentially be removed bc this is in the BidiStreamRequest
+	// which would be in the request_messages field
 	FullDuplex bool `protobuf:"varint,16,opt,name=full_duplex,json=fullDuplex,proto3" json:"full_duplex,omitempty"`
 }
 
@@ -323,7 +327,9 @@ type ClientResponseResult struct {
 
 	ResponseHeaders []*Header             `protobuf:"bytes,1,rep,name=response_headers,json=responseHeaders,proto3" json:"response_headers,omitempty"`
 	Payloads        []*ConformancePayload `protobuf:"bytes,2,rep,name=payloads,proto3" json:"payloads,omitempty"`
-	Error           *Error                `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	// The error received from the actual RPC invocation. Note this is not representative
+	// of a runtime error and should always be the proto equivalent of a Connect error
+	Error *Error `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
 	// In case the client cannot decode Any from JSON, it should instead return the received JSON
 	ErrorDetailsRaw  []*structpb.Struct `protobuf:"bytes,7,rep,name=error_details_raw,json=errorDetailsRaw,proto3" json:"error_details_raw,omitempty"`
 	ResponseTrailers []*Header          `protobuf:"bytes,4,rep,name=response_trailers,json=responseTrailers,proto3" json:"response_trailers,omitempty"`
@@ -397,7 +403,8 @@ func (x *ClientResponseResult) GetResponseTrailers() []*Header {
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due
-// to a runtime error, or because the requested protocol is not supported.
+// to a runtime error or an unexpected internal error such as the requested protocol
+// not being supported. This is completely independent of the actual RPC invocation
 type ClientErrorResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

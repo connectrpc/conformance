@@ -22,6 +22,7 @@ import (
 	"net/http"
 	"time"
 
+	"connectrpc.com/conformance/internal/app"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
@@ -53,8 +54,8 @@ func (s *conformanceServer) Unary(
 		[]*anypb.Any{msgAsAny},
 	)
 	if connectErr != nil {
-		addHeaders(req.Msg.ResponseDefinition.ResponseHeaders, connectErr.Meta())
-		addHeaders(req.Msg.ResponseDefinition.ResponseTrailers, connectErr.Meta())
+		app.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, connectErr.Meta())
+		app.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, connectErr.Meta())
 		return nil, connectErr
 	}
 
@@ -62,8 +63,8 @@ func (s *conformanceServer) Unary(
 		Payload: payload,
 	})
 
-	addHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
-	addHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+	app.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
+	app.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
 
 	return resp, nil
 }
@@ -98,8 +99,8 @@ func (s *conformanceServer) ClientStream(
 
 	payload, err := parseUnaryResponseDefinition(responseDefinition, stream.RequestHeader(), reqs)
 	if err != nil {
-		addHeaders(responseDefinition.ResponseHeaders, err.Meta())
-		addHeaders(responseDefinition.ResponseTrailers, err.Meta())
+		app.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
+		app.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
 		return nil, err
 	}
 
@@ -107,8 +108,8 @@ func (s *conformanceServer) ClientStream(
 		Payload: payload,
 	})
 
-	addHeaders(responseDefinition.ResponseHeaders, resp.Header())
-	addHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+	app.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
+	app.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
 
 	return resp, err
 }
@@ -120,8 +121,8 @@ func (s *conformanceServer) ServerStream(
 ) error {
 	responseDefinition := req.Msg.ResponseDefinition
 	if responseDefinition != nil {
-		addHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
-		addHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+		app.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
+		app.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 	}
 
 	// Convert the request to an Any so that it can be recorded in the payload
@@ -150,7 +151,7 @@ func (s *conformanceServer) ServerStream(
 		payload.RequestInfo = nil
 	}
 	if responseDefinition.Error != nil {
-		return createError(responseDefinition.Error)
+		return app.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
 }
@@ -236,7 +237,7 @@ func (s *conformanceServer) BidiStream(
 	}
 
 	if responseDefinition.Error != nil {
-		return createError(responseDefinition.Error)
+		return app.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
 }
@@ -251,7 +252,8 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1alpha1.UnaryResponseDefinition_Error:
-			return nil, createError(respType.Error)
+			return nil, app.ConvertProtoToConnectError(respType.Error)
+
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
 			requestInfo := createRequestInfo(headers, reqs)
 			payload := &v1alpha1.ConformancePayload{
@@ -272,46 +274,13 @@ func parseUnaryResponseDefinition(
 
 // Creates request info for a conformance payload.
 func createRequestInfo(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
-	headerInfo := make([]*v1alpha1.Header, 0, len(headers))
-	for key, value := range headers {
-		hdr := &v1alpha1.Header{
-			Name:  key,
-			Value: value,
-		}
-		headerInfo = append(headerInfo, hdr)
-	}
+	headerInfo := app.ConvertToProtoHeader(headers)
 
 	// Set all observed request headers and requests in the response payload
 	return &v1alpha1.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
 		Requests:       reqs,
 	}
-}
-
-// Adds all header values in src to dest.
-func addHeaders(
-	src []*v1alpha1.Header,
-	dest http.Header,
-) {
-	// Set all requested response headers on the response
-	for _, header := range src {
-		for _, val := range header.Value {
-			dest.Add(header.Name, val)
-		}
-	}
-}
-
-// Creates a Connect error from the given Error message.
-func createError(err *v1alpha1.Error) *connect.Error {
-	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.Message))
-	for _, detail := range err.Details {
-		connectDetail, err := connect.NewErrorDetail(detail)
-		if err != nil {
-			return connect.NewError(connect.CodeInvalidArgument, err)
-		}
-		connectErr.AddDetail(connectDetail)
-	}
-	return connectErr
 }
 
 // Converts the given message to an Any.
