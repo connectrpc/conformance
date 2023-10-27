@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"connectrpc.com/conformance/internal/app"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
@@ -55,18 +56,12 @@ func (i *invoker) Invoke(
 		}
 		return resp, nil
 	case "ClientStream":
-		if len(req.RequestMessages) < 1 {
-			return nil, errors.New("client streaming calls must specify at least one request message")
-		}
 		resp, err := i.clientStream(ctx, req)
 		if err != nil {
 			return nil, err
 		}
 		return resp, nil
 	case "BidiStream":
-		if len(req.RequestMessages) < 1 {
-			return nil, errors.New("bidi streaming calls must specify at least one request message")
-		}
 		resp, err := i.bidiStream(ctx, req)
 		if err != nil {
 			return nil, err
@@ -187,6 +182,10 @@ func (i *invoker) clientStream(
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
 		}
+
+		// Sleep for any specified delay
+		time.Sleep(time.Duration(req.RequestDelayMs) * time.Millisecond)
+
 		if err := stream.Send(csr); err != nil && errors.Is(err, io.EOF) {
 			break
 		}
@@ -334,6 +333,8 @@ func (i *invoker) bidiStream(
 	}, nil
 }
 
+=======
+>>>>>>> v2
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
