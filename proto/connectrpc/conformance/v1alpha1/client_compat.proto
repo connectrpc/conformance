@@ -46,10 +46,10 @@ message ClientCompatRequest {
   // same type URL (which matches the request type of the method).
   repeated google.protobuf.Any request_messages = 13;
   optional uint32 timeout_ms = 14;
-  // wait this many milliseconds before sending a request message
-  // TODO - This could potentially be removed bc this is in the relevant requests
-  // in the request_messages field
-  uint32 response_delay_ms = 15;
+  // Wait this many milliseconds before sending a request message.
+  // For client- or bidi-streaming requests, this delay should be
+  // applied before each request sent
+  uint32 request_delay_ms = 15;
   // Tells the server whether it should wait for each request
   // before sending a response.
   // If true, it indicates the server should effectively interleave the

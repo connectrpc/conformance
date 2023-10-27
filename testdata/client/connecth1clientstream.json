@@ -1,0 +1,52 @@
+{
+  "testName": "Client Stream Happy Path",
+  "httpVersion": "HTTP_VERSION_1",
+  "protocol": "PROTOCOL_CONNECT",
+  "codec": "CODEC_JSON",
+  "host": "127.0.0.1",
+  "port": 53289,
+  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
+  "method": "ClientStream",
+  "streamType": "STREAM_TYPE_CLIENT_STREAM",
+  "requestDelayMs": 500,
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": "dGVzdCByZXNwb25zZQ==",
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
+      "requestData": "dGVzdCByZXNwb25zZQ=="
+    }
+  ]
+}

@@ -17,8 +17,10 @@ package client
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"connectrpc.com/conformance/internal/app"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
@@ -54,8 +56,11 @@ func (i *invoker) Invoke(
 		}
 		return resp, nil
 	case "ClientStream":
-		// TODO - Implement ClientStream
-		return nil, errors.New("client streaming is not yet supported")
+		resp, err := i.clientStream(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 	case "BidiStream":
 		// TODO - Implement BidiStream
 		return nil, errors.New("bidi streaming is not yet supported")
@@ -151,6 +156,59 @@ func (i *invoker) serverStream(
 	if err != nil {
 		return nil, err
 	}
+	return &v1alpha1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ErrorDetailsRaw:  nil, // TODO
+	}, nil
+}
+
+func (i *invoker) clientStream(
+	ctx context.Context,
+	req *v1alpha1.ClientCompatRequest,
+) (*v1alpha1.ClientResponseResult, error) {
+	stream := i.client.ClientStream(ctx)
+
+	// Add the specified request headers to the request
+	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
+
+	for _, msg := range req.RequestMessages {
+		csr := &v1alpha1.ClientStreamRequest{}
+		if err := msg.UnmarshalTo(csr); err != nil {
+			return nil, err
+		}
+
+		// Sleep for any specified delay
+		time.Sleep(time.Duration(req.RequestDelayMs) * time.Millisecond)
+
+		if err := stream.Send(csr); err != nil && errors.Is(err, io.EOF) {
+			break
+		}
+	}
+
+	var protoErr *v1alpha1.Error
+	var headers []*v1alpha1.Header
+	var trailers []*v1alpha1.Header
+	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
+
+	resp, err := stream.CloseAndReceive()
+	if err != nil {
+		// If an error was returned, first convert it to a Connect error
+		// so that we can get the headers from the Meta property. Then,
+		// convert _that_ to a proto Error so we can set it in the response.
+		connectErr := app.ConvertErrorToConnectError(err)
+		headers = app.ConvertToProtoHeader(connectErr.Meta())
+		protoErr = app.ConvertConnectToProtoError(connectErr)
+	} else {
+		// If the call was successful, get the returned payloads
+		// and the headers and trailers
+		payloads = append(payloads, resp.Msg.Payload)
+		headers = app.ConvertToProtoHeader(resp.Header())
+		trailers = app.ConvertToProtoHeader(resp.Trailer())
+	}
+
 	return &v1alpha1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
