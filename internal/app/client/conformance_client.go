@@ -20,6 +20,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"connectrpc.com/conformance/internal/app"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
@@ -55,9 +56,6 @@ func (i *invoker) Invoke(
 		}
 		return resp, nil
 	case "ClientStream":
-		if len(req.RequestMessages) < 1 {
-			return nil, errors.New("client streaming calls must specify at least one request message")
-		}
 		resp, err := i.clientStream(ctx, req)
 		if err != nil {
 			return nil, err
@@ -181,6 +179,10 @@ func (i *invoker) clientStream(
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
 		}
+
+		// Sleep for any specified delay
+		time.Sleep(time.Duration(req.RequestDelayMs) * time.Millisecond)
+
 		if err := stream.Send(csr); err != nil && errors.Is(err, io.EOF) {
 			break
 		}
