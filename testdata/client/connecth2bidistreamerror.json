@@ -1,5 +1,5 @@
 {
-  "testName": "Bidi Stream Half Duplex Happy Path",
+  "testName": "Bidi Stream Half Duplex with an Error",
   "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
