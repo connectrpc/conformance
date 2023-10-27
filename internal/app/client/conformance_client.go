@@ -301,12 +301,10 @@ func (i *invoker) bidiStream(
 			}
 			msg, err := stream.Receive()
 			if err != nil {
-				if !errors.Is(err, io.EOF) {
-					// If an error was returned, convert it to a proto Error
-					protoErr = app.ConvertErrorToProtoError(err)
-				}
-				// Reads are done either because we received an error or an EOF
-				// In either case, break the outer loop
+				// TODO - Should we check whether err is io.EOF? Because if not,
+				// then we have an error that should be recorded probably?
+				// OR will this be unwrapped via the CloseResponse call below?
+				// Reads are done break the outer loop
 				break
 			}
 			// If the call was successful, get the returned payloads
@@ -314,6 +312,8 @@ func (i *invoker) bidiStream(
 			payloads = append(payloads, msg.Payload)
 		}
 
+		// TODO - Related to the above TODO, will this unwrap the error from the
+		// receive call?
 		if err := stream.CloseResponse(); err != nil {
 			protoErr = app.ConvertErrorToProtoError(err)
 		}
@@ -333,8 +333,6 @@ func (i *invoker) bidiStream(
 	}, nil
 }
 
-=======
->>>>>>> v2
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
 	client := conformancev1alpha1connect.NewConformanceServiceClient(
