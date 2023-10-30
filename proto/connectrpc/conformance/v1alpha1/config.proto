@@ -75,6 +75,8 @@ message ConfigCase {
   Codec codec = 3;
   // If unspecified, indicates cases for all compression algorithms.
   Compression compression = 4;
+  // If absent, indicates cases for plaintext (no TLS) but also for
+  // TLS if features indicate that TLS is supported.
   optional bool use_tls = 5;
   // If unspecified, indicates cases for all stream types.
   StreamType stream_type = 6;

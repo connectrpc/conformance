@@ -360,11 +360,11 @@ func resolveCase(features supportedFeatures, unresolvedCase *conformancev1alpha1
 		switch unresolvedCase.StreamType { //nolint:exhaustive
 		case conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
 			if !features.SupportsHalfDuplexBidiOverHTTP1 && only(impliedFeatures.Versions, conformancev1alpha1.HTTPVersion_HTTP_VERSION_1) {
-				return nil, errors.New("config case indicates bidi stream type, but features indicate only HTTP/1.1 and that bidi is not supported over HTTP/1.1")
+				return nil, errors.New("config case indicates half-duplex bidi stream type, but features indicate only HTTP/1.1 and that half-duplex is not supported over HTTP1.1")
 			}
 		case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
 			if only(impliedFeatures.Versions, conformancev1alpha1.HTTPVersion_HTTP_VERSION_1) {
-				return nil, errors.New("config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support HTTP/1.1")
+				return nil, errors.New("config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex")
 			}
 		}
 		impliedFeatures.StreamTypes = []conformancev1alpha1.StreamType{unresolvedCase.StreamType}

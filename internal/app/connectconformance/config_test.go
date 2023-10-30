@@ -494,7 +494,7 @@ func TestLoadConfig_RejectsInvalidConfigurations(t *testing.T) {
                         streamTypes: [STREAM_TYPE_UNARY, STREAM_TYPE_CLIENT_STREAM, STREAM_TYPE_SERVER_STREAM]
                      include_cases:
                       - streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`,
-			expectedErr: "config case indicates bidi stream type, but features indicate only HTTP/1.1 and that bidi is not supported over HTTP/1.1",
+			expectedErr: "config case indicates half-duplex bidi stream type, but features indicate only HTTP/1.1 and that half-duplex is not supported over HTTP1.1",
 		},
 		{
 			name: "included case: half-duplex with only HTTP/1 (b)",
@@ -504,7 +504,7 @@ func TestLoadConfig_RejectsInvalidConfigurations(t *testing.T) {
                      include_cases:
                       - version: HTTP_VERSION_1
                         streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`,
-			expectedErr: "config case indicates bidi stream type, but features indicate only HTTP/1.1 and that bidi is not supported over HTTP/1.1",
+			expectedErr: "config case indicates half-duplex bidi stream type, but features indicate only HTTP/1.1 and that half-duplex is not supported over HTTP1.1",
 		},
 		{
 			name: "included case: full-duplex with only HTTP/1",
@@ -515,7 +515,7 @@ func TestLoadConfig_RejectsInvalidConfigurations(t *testing.T) {
                         supportsHalfDuplexBidiOverHttp1: true
                      include_cases:
                       - streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
-			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support HTTP/1.1",
+			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex",
 		},
 		{
 			name: "included case: full-duplex with only HTTP/1 (b)",
@@ -526,7 +526,7 @@ func TestLoadConfig_RejectsInvalidConfigurations(t *testing.T) {
                      include_cases:
                       - version: HTTP_VERSION_1
                         streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
-			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support HTTP/1.1",
+			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex",
 		},
 	}
 

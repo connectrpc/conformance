@@ -536,7 +536,9 @@ type ConfigCase struct {
 	Codec Codec `protobuf:"varint,3,opt,name=codec,proto3,enum=connectrpc.conformance.v1alpha1.Codec" json:"codec,omitempty"`
 	// If unspecified, indicates cases for all compression algorithms.
 	Compression Compression `protobuf:"varint,4,opt,name=compression,proto3,enum=connectrpc.conformance.v1alpha1.Compression" json:"compression,omitempty"`
-	UseTls      *bool       `protobuf:"varint,5,opt,name=use_tls,json=useTls,proto3,oneof" json:"use_tls,omitempty"`
+	// If absent, indicates cases for plaintext (no TLS) but also for
+	// TLS if features indicate that TLS is supported.
+	UseTls *bool `protobuf:"varint,5,opt,name=use_tls,json=useTls,proto3,oneof" json:"use_tls,omitempty"`
 	// If unspecified, indicates cases for all stream types.
 	StreamType StreamType `protobuf:"varint,6,opt,name=stream_type,json=streamType,proto3,enum=connectrpc.conformance.v1alpha1.StreamType" json:"stream_type,omitempty"`
 }
