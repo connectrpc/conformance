@@ -67,7 +67,6 @@ message ConfigCase {
   // TODO: we could probably model some of the constraints on what is a valid
   //       vs. invalid config case using protovalidate rules
 
-
   // If unspecified, indicates cases for all versions.
   HTTPVersion version = 1;
   // If unspecified, indicates cases for all protocols.
