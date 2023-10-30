@@ -393,7 +393,7 @@ type Features struct {
 	Protocols []Protocol `protobuf:"varint,2,rep,packed,name=protocols,proto3,enum=connectrpc.conformance.v1alpha1.Protocol" json:"protocols,omitempty"`
 	// If empty, "proto" and "json" are assumed.
 	Codecs []Codec `protobuf:"varint,3,rep,packed,name=codecs,proto3,enum=connectrpc.conformance.v1alpha1.Codec" json:"codecs,omitempty"`
-	// If empty, "gzip" alone is assumed.
+	// If empty, "identity" and "gzip" are assumed.
 	Compressions []Compression `protobuf:"varint,4,rep,packed,name=compressions,proto3,enum=connectrpc.conformance.v1alpha1.Compression" json:"compressions,omitempty"`
 	// If absent, true is assumed.
 	SupportsH2C *bool `protobuf:"varint,5,opt,name=supports_h2c,json=supportsH2c,proto3,oneof" json:"supports_h2c,omitempty"`

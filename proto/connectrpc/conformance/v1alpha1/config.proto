@@ -33,13 +33,16 @@ message Config {
 }
 
 message Features {
+  // TODO: we could probably model some of the constraints on what are valid vs.
+  //       invalid (i.e. conflicting/impossible) features using protovalidate rules
+
   // If empty, HTTP 1.1 and HTTP/2 are assumed.
   repeated HTTPVersion versions = 1;
   // If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
   repeated Protocol protocols = 2;
   // If empty, "proto" and "json" are assumed.
   repeated Codec codecs = 3;
-  // If empty, "gzip" alone is assumed.
+  // If empty, "identity" and "gzip" are assumed.
   repeated Compression compressions = 4;
   // If absent, true is assumed.
   optional bool supports_h2c = 5;
@@ -61,6 +64,10 @@ message Features {
 }
 
 message ConfigCase {
+  // TODO: we could probably model some of the constraints on what is a valid
+  //       vs. invalid config case using protovalidate rules
+
+
   // If unspecified, indicates cases for all versions.
   HTTPVersion version = 1;
   // If unspecified, indicates cases for all protocols.
