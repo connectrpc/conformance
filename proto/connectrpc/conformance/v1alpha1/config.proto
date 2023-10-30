@@ -69,7 +69,7 @@ message ConfigCase {
   Codec codec = 3;
   // If unspecified, indicates cases for all compression algorithms.
   Compression compression = 4;
-  bool use_tls = 5;
+  optional bool use_tls = 5;
   // If unspecified, indicates cases for all stream types.
   StreamType stream_type = 6;
 }
