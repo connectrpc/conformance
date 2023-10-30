@@ -111,7 +111,7 @@ func (i *invoker) unary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
@@ -161,7 +161,7 @@ func (i *invoker) serverStream(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
@@ -214,7 +214,7 @@ func (i *invoker) clientStream(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
