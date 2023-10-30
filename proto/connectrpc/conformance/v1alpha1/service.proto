@@ -210,6 +210,16 @@ message ConformancePayload {
     // For full-duplex bidirectional-streaming, this should contain all requests in the order
     // they were received since the last sent response.
     repeated google.protobuf.Any requests = 3;
+    // If present, the request used the Connect protocol and a GET method. This
+    // captures other relevant information about the request. If a server implementation
+    // is unable to populate this (due to the server framework not exposing all of these
+    // details to application code), it may be an empty message. This implies that the
+    // server framework, at a minimum, at least expose to application code whether the
+    // request used GET vs. POST.
+    ConnectGetInfo connect_get_info = 4;
+  }
+  message ConnectGetInfo {
+    repeated Header query_params = 1;
   }
 }
 
