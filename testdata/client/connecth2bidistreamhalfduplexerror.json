@@ -4,10 +4,10 @@
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
-  "port": 60892,
+  "port": 58686,
   "service": "connectrpc.conformance.v1alpha1.ConformanceService",
   "method": "BidiStream",
-  "streamType": "STREAM_TYPE_BIDI_STREAM",
+  "streamType": "STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM",
   "requestHeaders": [
     {
       "name": "X-Conformance-Test",
@@ -62,6 +62,5 @@
       "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
       "requestData": "dGVzdCByZXNwb25zZQ=="
     }
-  ],
-  "fullDuplex": false
+  ]
 }

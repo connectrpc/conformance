@@ -224,20 +224,26 @@ func (i *invoker) clientStream(
 func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+) (result *v1alpha1.ClientResponseResult, retErr error) {
+	result = &v1alpha1.ClientResponseResult{
+		ConnectErrorRaw: nil, // TODO
+	}
+
 	stream := i.client.BidiStream(ctx)
+	defer func() {
+		if result != nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = app.ConvertToProtoHeader(stream.ResponseHeader())
+			result.ResponseTrailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
+		}
+	}()
 
 	// Add the specified request headers to the request
 	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
-	firstSend := true
-	fullDuplex := false
+	fullDuplex := req.StreamType == v1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
 	var protoErr *v1alpha1.Error
-	var headers []*v1alpha1.Header
-	var trailers []*v1alpha1.Header
-	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
-
 	for _, msg := range req.RequestMessages {
 		if err := ctx.Err(); err != nil {
 			// If an error was returned, convert it to a proto Error
@@ -246,24 +252,22 @@ func (i *invoker) bidiStream(
 		}
 		bsr := &v1alpha1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
+			// Return the error and nil result because this is an
+			// unmarshalling error unrelated to the RPC
 			return nil, err
 		}
-		if firstSend {
-			fullDuplex = bsr.FullDuplex
-		}
 		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
-			// TODO - Is this correct? Docs say the returned error will wrap EOF
-			// and clients should call Receive to get the error so assuming this error
-			// is the unwrapped error from the send call?
-			// Call receive to get the error
-			_, err := stream.Receive()
-			if err != nil {
-				// If an error was returned, convert it
-				// to a proto Error
+			// Call receive to get the error and convert it to a proto error
+			if _, recvErr := stream.Receive(); recvErr != nil {
+				protoErr = app.ConvertErrorToProtoError(recvErr)
+			} else {
+				// Just in case the receive call doesn't return the error,
+				// use the error returned from Send. Note this should never
+				// happen, but is here as a safeguard.
 				protoErr = app.ConvertErrorToProtoError(err)
-				// Break the send loop
-				break
 			}
+			// Break the send loop
+			break
 		}
 		if fullDuplex {
 			// If this is a full duplex stream, receive a response for each request
@@ -271,7 +275,8 @@ func (i *invoker) bidiStream(
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
-					// to a proto Error
+					// to a proto Error. If the error was an EOF, that just means
+					// reads are done.
 					protoErr = app.ConvertErrorToProtoError(err)
 				}
 				// Reads are done either because we received an error or an EOF
@@ -279,58 +284,50 @@ func (i *invoker) bidiStream(
 				break
 			}
 			// If the call was successful, get the returned payloads
-			payloads = append(payloads, msg.Payload)
+			result.Payloads = append(result.Payloads, msg.Payload)
 		}
 	}
 
-	// If protoErr is nil, then the send loop terminated successfully
-	if protoErr == nil {
-		// Close the send side of the stream
-		if err := stream.CloseRequest(); err != nil {
-			protoErr = app.ConvertErrorToProtoError(err)
-		}
+	// If we received an error in any of the send logic or full-duplex reads, then exit
+	if protoErr != nil {
+		result.Error = protoErr
+		return result, nil
 	}
 
-	// If there were no errors encountered yet, then receive any additional responses
-	if protoErr == nil {
-		for {
-			if err := ctx.Err(); err != nil {
-				// If an error was returned, convert it to a proto Error
+	// Sends are done, close the send side of the stream
+	if err := stream.CloseRequest(); err != nil {
+		result.Error = app.ConvertErrorToProtoError(err)
+		return result, nil
+	}
+
+	// Receive any remaining responses
+	for {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			result.Error = app.ConvertErrorToProtoError(err)
+			break
+		}
+		msg, err := stream.Receive()
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				// If an error was returned that is not an EOF, convert it
+				// to a proto Error. If the error was an EOF, that just means
+				// reads are done.
 				protoErr = app.ConvertErrorToProtoError(err)
-				break
 			}
-			msg, err := stream.Receive()
-			if err != nil {
-				// TODO - Should we check whether err is io.EOF? Because if not,
-				// then we have an error that should be recorded probably?
-				// OR will this be unwrapped via the CloseResponse call below?
-				// Reads are done break the outer loop
-				break
-			}
-			// If the call was successful, get the returned payloads
-			// and the headers and trailers
-			payloads = append(payloads, msg.Payload)
+			break
 		}
-
-		// TODO - Related to the above TODO, will this unwrap the error from the
-		// receive call?
-		if err := stream.CloseResponse(); err != nil {
-			protoErr = app.ConvertErrorToProtoError(err)
-		}
+		// If the call was successful, save the payloads
+		result.Payloads = append(result.Payloads, msg.Payload)
 	}
 
-	// Read headers and trailers from the stream
-	headers = app.ConvertToProtoHeader(stream.ResponseHeader())
-	trailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
+	// TODO - Does this unwrap the error from the receive call?
+	if err := stream.CloseResponse(); err != nil {
+		result.Error = app.ConvertErrorToProtoError(err)
+	}
 
 	// TODO - How can we distinguish whether we properly processed full vs. half duplex?
-	return &v1alpha1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
-	}, nil
+	return result, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
