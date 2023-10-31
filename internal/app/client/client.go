@@ -146,9 +146,31 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 	switch req.Compression {
 	case v1alpha1.Compression_COMPRESSION_GZIP:
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v1alpha1.Compression_COMPRESSION_BR, v1alpha1.Compression_COMPRESSION_ZSTD,
-		v1alpha1.Compression_COMPRESSION_DEFLATE, v1alpha1.Compression_COMPRESSION_SNAPPY:
+	case v1alpha1.Compression_COMPRESSION_SNAPPY, v1alpha1.Compression_COMPRESSION_DEFLATE:
 		return nil, errors.New(req.Compression.String() + " is not yet supported")
+	case v1alpha1.Compression_COMPRESSION_ZSTD:
+		clientOptions = append(
+			clientOptions,
+			connect.WithAcceptCompression(
+				"zstd",
+				NewZstdDecompressor,
+				NewZstdCompressor,
+			),
+		)
+	case v1alpha1.Compression_COMPRESSION_BR:
+	// 	clientOptions = append(
+	// 		clientOptions,
+	// 		connect.WithAcceptCompression(
+	// 			"br",
+	// 			func() connect.Decompressor {
+	// 				return brotli.NewReader(nil) // brotli's reader doesn't implement Close
+	// 			},
+	// 			func() connect.Compressor {
+	// 				return brotli.NewWriter(nil)
+	// 			},
+	// 		),
+	// 	)
+	// 	clientOptions = append(clientOptions, connect.WithSendCompression("br"))
 	case v1alpha1.Compression_COMPRESSION_IDENTITY, v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}
