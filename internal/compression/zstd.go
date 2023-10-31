@@ -21,26 +21,29 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
-// ZstdDecompressor is a thin wrapper around a zstd Decoder.
-type ZstdDecompressor struct {
+// zstdDecompressor is a thin wrapper around a zstd Decoder.
+type zstdDecompressor struct {
 	decoder *zstd.Decoder
 }
 
-func (c *ZstdDecompressor) Read(bytes []byte) (int, error) {
+func (c *zstdDecompressor) Read(bytes []byte) (int, error) {
 	return c.decoder.Read(bytes)
 }
-func (c *ZstdDecompressor) Reset(rdr io.Reader) error {
+func (c *zstdDecompressor) Reset(rdr io.Reader) error {
 	return c.decoder.Reset(rdr)
 }
-func (c *ZstdDecompressor) Close() error {
+func (c *zstdDecompressor) Close() error {
 	c.decoder.Close()
 	return nil
 }
 
 // NewZstdDecompressor returns a new Zstd Decompressor.
 func NewZstdDecompressor() connect.Decompressor {
-	d, _ := zstd.NewReader(nil)
-	return &ZstdDecompressor{
+	d, err := zstd.NewReader(nil)
+	if err != nil {
+		return &errorDecompressor{err: err}
+	}
+	return &zstdDecompressor{
 		decoder: d,
 	}
 }
@@ -52,6 +55,9 @@ type ZstdCompressor struct {
 
 // NewZstdCompressor returns a new Zstd Compressor.
 func NewZstdCompressor() connect.Compressor {
-	w, _ := zstd.NewWriter(nil)
+	w, err := zstd.NewWriter(nil)
+	if err != nil {
+		return &errorCompressor{err: err}
+	}
 	return w
 }
