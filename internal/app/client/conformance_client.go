@@ -221,7 +221,7 @@ func (i *invoker) clientStream(
 	}, nil
 }
 
-func (i *invoker) bidiStream(
+func (i *invoker) bidiStream( //nolint:nonamedreturns
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (result *v1alpha1.ClientResponseResult, retErr error) {
@@ -304,7 +304,7 @@ func (i *invoker) bidiStream(
 	for {
 		if err := ctx.Err(); err != nil {
 			// If an error was returned, convert it to a proto Error
-			result.Error = app.ConvertErrorToProtoError(err)
+			protoErr = app.ConvertErrorToProtoError(err)
 			break
 		}
 		msg, err := stream.Receive()
@@ -321,7 +321,13 @@ func (i *invoker) bidiStream(
 		result.Payloads = append(result.Payloads, msg.Payload)
 	}
 
-	// TODO - Does this unwrap the error from the receive call?
+	if protoErr != nil {
+		result.Error = protoErr
+		return result, nil
+	}
+
+	// TODO - Does this unwrap the error from the receive call or is this
+	// a separate error that needs handled?
 	if err := stream.CloseResponse(); err != nil {
 		result.Error = app.ConvertErrorToProtoError(err)
 	}
