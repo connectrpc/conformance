@@ -1,13 +1,13 @@
 {
-  "testName": "Client Stream with an Error",
-  "httpVersion": "HTTP_VERSION_1",
+  "testName": "Bidi Stream Full Duplex Happy Path",
+  "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
-  "port": 53289,
+  "port": 58686,
   "service": "connectrpc.conformance.v1alpha1.ConformanceService",
-  "method": "ClientStream",
-  "streamType": "STREAM_TYPE_CLIENT_STREAM",
+  "method": "BidiStream",
+  "streamType": "STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM",
   "requestHeaders": [
     {
       "name": "X-Conformance-Test",
@@ -19,19 +19,8 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
       "responseDefinition": {
-        "error": {
-          "code": 13,
-          "message": "client stream failed",
-          "details": [
-            {
-              "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header",
-              "name": "test error detail name",
-              "value": ["test error detail value"]
-            }
-          ]
-        },
         "responseHeaders": [
           {
             "name": "x-custom-header",
@@ -42,6 +31,10 @@
             ]
           }
         ],
+        "responseData": [
+          "dGVzdCByZXNwb25zZQ==",
+          "dGVzdCByZXNwb25zZQ=="
+        ],
         "responseTrailers": [
           {
             "name": "x-custom-trailer",
@@ -51,10 +44,11 @@
             ]
           }
         ]
-      }
+      },
+      "fullDuplex": true
     },
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
       "requestData": "dGVzdCByZXNwb25zZQ=="
     }
   ]

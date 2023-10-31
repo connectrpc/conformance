@@ -62,8 +62,11 @@ func (i *invoker) Invoke(
 		}
 		return resp, nil
 	case "BidiStream":
-		// TODO - Implement BidiStream
-		return nil, errors.New("bidi streaming is not yet supported")
+		resp, err := i.bidiStream(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 	default:
 		return nil, errors.New("method name " + req.Method + " does not exist")
 	}
@@ -111,7 +114,7 @@ func (i *invoker) unary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
@@ -161,7 +164,7 @@ func (i *invoker) serverStream(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
@@ -214,8 +217,120 @@ func (i *invoker) clientStream(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ErrorDetailsRaw:  nil, // TODO
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
+}
+
+func (i *invoker) bidiStream(
+	ctx context.Context,
+	req *v1alpha1.ClientCompatRequest,
+) (result *v1alpha1.ClientResponseResult, retErr error) {
+	result = &v1alpha1.ClientResponseResult{
+		ConnectErrorRaw: nil, // TODO
+	}
+
+	stream := i.client.BidiStream(ctx)
+	defer func() {
+		if result != nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = app.ConvertToProtoHeader(stream.ResponseHeader())
+			result.ResponseTrailers = app.ConvertToProtoHeader(stream.ResponseTrailer())
+		}
+	}()
+
+	// Add the specified request headers to the request
+	app.AddHeaders(req.RequestHeaders, stream.RequestHeader())
+
+	fullDuplex := req.StreamType == v1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+
+	var protoErr *v1alpha1.Error
+	for _, msg := range req.RequestMessages {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			protoErr = app.ConvertErrorToProtoError(err)
+			break
+		}
+		bsr := &v1alpha1.BidiStreamRequest{}
+		if err := msg.UnmarshalTo(bsr); err != nil {
+			// Return the error and nil result because this is an
+			// unmarshalling error unrelated to the RPC
+			return nil, err
+		}
+		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
+			// Call receive to get the error and convert it to a proto error
+			if _, recvErr := stream.Receive(); recvErr != nil {
+				protoErr = app.ConvertErrorToProtoError(recvErr)
+			} else {
+				// Just in case the receive call doesn't return the error,
+				// use the error returned from Send. Note this should never
+				// happen, but is here as a safeguard.
+				protoErr = app.ConvertErrorToProtoError(err)
+			}
+			// Break the send loop
+			break
+		}
+		if fullDuplex {
+			// If this is a full duplex stream, receive a response for each request
+			msg, err := stream.Receive()
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					// If an error was returned that is not an EOF, convert it
+					// to a proto Error. If the error was an EOF, that just means
+					// reads are done.
+					protoErr = app.ConvertErrorToProtoError(err)
+				}
+				// Reads are done either because we received an error or an EOF
+				// In either case, break the outer loop
+				break
+			}
+			// If the call was successful, get the returned payloads
+			result.Payloads = append(result.Payloads, msg.Payload)
+		}
+	}
+
+	// If we received an error in any of the send logic or full-duplex reads, then exit
+	if protoErr != nil {
+		result.Error = protoErr
+		return result, nil
+	}
+
+	// Sends are done, close the send side of the stream
+	if err := stream.CloseRequest(); err != nil {
+		result.Error = app.ConvertErrorToProtoError(err)
+		return result, nil
+	}
+
+	// Receive any remaining responses
+	for {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			protoErr = app.ConvertErrorToProtoError(err)
+			break
+		}
+		msg, err := stream.Receive()
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				// If an error was returned that is not an EOF, convert it
+				// to a proto Error. If the error was an EOF, that just means
+				// reads are done.
+				protoErr = app.ConvertErrorToProtoError(err)
+			}
+			break
+		}
+		// If the call was successful, save the payloads
+		result.Payloads = append(result.Payloads, msg.Payload)
+	}
+
+	if protoErr != nil {
+		result.Error = protoErr
+		return result, nil
+	}
+
+	if err := stream.CloseResponse(); err != nil {
+		result.Error = app.ConvertErrorToProtoError(err)
+	}
+
+	return result, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.

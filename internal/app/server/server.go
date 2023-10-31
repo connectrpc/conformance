@@ -79,12 +79,8 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 	}
 
 	resp := &v1alpha1.ServerCompatResponse{
-		Result: &v1alpha1.ServerCompatResponse_Listening{
-			Listening: &v1alpha1.ServerListeningResult{
-				Host: fmt.Sprint(tcpAddr.IP),
-				Port: fmt.Sprint(tcpAddr.Port),
-			},
-		},
+		Host: fmt.Sprint(tcpAddr.IP),
+		Port: uint32(tcpAddr.Port),
 	}
 	bytes, err := codec.Marshal(resp)
 	if err != nil {
