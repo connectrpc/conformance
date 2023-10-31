@@ -14,7 +14,7 @@
 
 package compression
 
-// The IANA names for supported compression algorithms
+// The IANA names for supported compression algorithms.
 const (
 	Zstd = "zstd"
 )
