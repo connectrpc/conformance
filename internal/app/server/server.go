@@ -24,6 +24,7 @@ import (
 	"net/http"
 
 	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal/compression"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
@@ -104,7 +105,7 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
-		connect.WithCompression("zstd", app.NewZstdDecompressor, app.NewZstdCompressor),
+		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
 	))
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
