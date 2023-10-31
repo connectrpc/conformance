@@ -79,6 +79,9 @@ message ClientResponseResult {
   // so that a server-under-test's on-the-wire error can be examined and
   // validated.
   google.protobuf.Struct connect_error_raw = 5;
+  // TODO - We should probably add a field to indicate the number of messages that were
+  // in the test case request definition but that couldn't be sent, due to an error
+  // occurring before finishing the upload.
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due
