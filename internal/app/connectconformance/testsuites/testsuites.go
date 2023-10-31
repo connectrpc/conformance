@@ -44,7 +44,7 @@ func LoadTestSuites() (map[string][]byte, error) {
 		}
 		data, err := testSuiteFS.ReadFile(currentPath)
 		if err != nil {
-			return fmt.Errorf("failed to load test suite date file %s: %w", currentPath, err)
+			return fmt.Errorf("failed to load test suite data file %s: %w", currentPath, err)
 		}
 		testSuites[currentPath] = data
 		return nil
