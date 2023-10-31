@@ -19,35 +19,67 @@ package connectrpc.conformance.v1alpha1;
 // Config defines the configuration for running conformance tests.
 // This enumerates all of the "flavors" of the test suite to run.
 message Config {
+  // The features supported by the client or server under test.
+  // This is used to filter the set of test cases that are run.
+  // If absent, an empty message is used. See Features for more
+  // on how empty/absent fields are interpreted.
   Features features = 1;
+  // This can indicate additional permutations that are supported
+  // that might otherwise be excluded based on the above features.
   repeated ConfigCase include_cases = 2;
+  // This can indicates permutations that are not supported even
+  // though their support might be implied by the above features.
   repeated ConfigCase exclude_cases = 3;
 }
 
 message Features {
+  // TODO: we could probably model some of the constraints on what are valid vs.
+  //       invalid (i.e. conflicting/impossible) features using protovalidate rules
+
+  // If empty, HTTP 1.1 and HTTP/2 are assumed.
   repeated HTTPVersion versions = 1;
+  // If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
   repeated Protocol protocols = 2;
+  // If empty, "proto" and "json" are assumed.
   repeated Codec codecs = 3;
-  repeated Compression compression_algorithms = 4;
-  bool supports_h2c = 5;
-  bool supports_tls = 6;
-  bool supports_trailers = 7;
-  bool supports_connect_get = 8;
-  bool requires_connect_version_header = 9;
-  // If non-empty, the set of stream types that are supported. This is
-  // usually for clients, since some client environments may not be
-  // able to support certain kinds of streaming operations, especially
+  // If empty, "identity" and "gzip" are assumed.
+  repeated Compression compressions = 4;
+  // If absent, true is assumed.
+  optional bool supports_h2c = 5;
+  // If absent, true is assumed.
+  optional bool supports_tls = 6;
+  // If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
+  optional bool supports_trailers = 7;
+  // If absent, false is assumed.
+  optional bool supports_half_duplex_bidi_over_http1 = 8;
+  // If absent, true is assumed.
+  optional bool supports_connect_get = 9;
+  // If absent, false is assumed.
+  optional bool requires_connect_version_header = 10;
+  // If empty, all stream types are assumed. This is usually for
+  // clients, since some client environments may not be able to
+  // support certain kinds of streaming operations, especially
   // bidirectional streams.
-  repeated StreamType stream_types = 10;
+  repeated StreamType stream_types = 11;
 }
 
 message ConfigCase {
+  // TODO: we could probably model some of the constraints on what is a valid
+  //       vs. invalid config case using protovalidate rules
+
+  // If unspecified, indicates cases for all versions.
   HTTPVersion version = 1;
+  // If unspecified, indicates cases for all protocols.
   Protocol protocol = 2;
+  // If unspecified, indicates cases for all codecs.
   Codec codec = 3;
+  // If unspecified, indicates cases for all compression algorithms.
   Compression compression = 4;
-  bool use_tls = 5;
-  repeated StreamType stream_types = 6;
+  // If absent, indicates cases for plaintext (no TLS) but also for
+  // TLS if features indicate that TLS is supported.
+  optional bool use_tls = 5;
+  // If unspecified, indicates cases for all stream types.
+  StreamType stream_type = 6;
 }
 
 enum HTTPVersion {
@@ -89,5 +121,6 @@ enum StreamType {
   STREAM_TYPE_UNARY = 1;
   STREAM_TYPE_CLIENT_STREAM = 2;
   STREAM_TYPE_SERVER_STREAM = 3;
-  STREAM_TYPE_BIDI_STREAM = 4;
+  STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM = 4;
+  STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM = 5;
 }

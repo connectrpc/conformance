@@ -42,15 +42,8 @@ message ServerCompatRequest {
 
 // The outcome of one ServerCompatRequest.
 message ServerCompatResponse {
-  oneof result {
-    ServerListeningResult listening = 1;
-    ServerErrorResult error = 2;
-  }
-}
-
-message ServerListeningResult {
   string host = 1;
-  string port = 2;
+  uint32 port = 2;
   // The server's PEM-encoded certificate, so the
   // client can verify it when connecting via TLS.
   bytes pem_cert = 3;
