@@ -153,10 +153,11 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 			clientOptions,
 			connect.WithAcceptCompression(
 				"zstd",
-				NewZstdDecompressor,
-				NewZstdCompressor,
+				app.NewZstdDecompressor,
+				app.NewZstdCompressor,
 			),
 		)
+		clientOptions = append(clientOptions, connect.WithSendCompression("zstd"))
 	case v1alpha1.Compression_COMPRESSION_BR:
 	// 	clientOptions = append(
 	// 		clientOptions,

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package app
 
 import (
 	"io"
@@ -21,16 +21,11 @@ import (
 	"github.com/klauspost/compress/zstd"
 )
 
+// ZstdDecompressor is a thin wrapper around a zstd Decoder.
 type ZstdDecompressor struct {
 	decoder *zstd.Decoder
 }
 
-func NewZstdDecompressor() connect.Decompressor {
-	d, _ := zstd.NewReader(nil)
-	return &ZstdDecompressor{
-		decoder: d,
-	}
-}
 func (c *ZstdDecompressor) Read(bytes []byte) (int, error) {
 	return c.decoder.Read(bytes)
 }
@@ -42,10 +37,20 @@ func (c *ZstdDecompressor) Close() error {
 	return nil
 }
 
+// NewZstdDecompressor returns a new Zstd Decompressor.
+func NewZstdDecompressor() connect.Decompressor {
+	d, _ := zstd.NewReader(nil)
+	return &ZstdDecompressor{
+		decoder: d,
+	}
+}
+
+// ZstdCompressor is a thin wrapper around a zstd Encoder.
 type ZstdCompressor struct {
 	*zstd.Encoder
 }
 
+// NewZstdCompressor returns a new Zstd Compressor.
 func NewZstdCompressor() connect.Compressor {
 	w, _ := zstd.NewWriter(nil)
 	return w
