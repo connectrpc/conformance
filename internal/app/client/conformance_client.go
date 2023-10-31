@@ -221,7 +221,7 @@ func (i *invoker) clientStream(
 	}, nil
 }
 
-func (i *invoker) bidiStream( //nolint:nonamedreturns
+func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1alpha1.ClientCompatRequest,
 ) (result *v1alpha1.ClientResponseResult, retErr error) {
@@ -326,13 +326,10 @@ func (i *invoker) bidiStream( //nolint:nonamedreturns
 		return result, nil
 	}
 
-	// TODO - Does this unwrap the error from the receive call or is this
-	// a separate error that needs handled?
 	if err := stream.CloseResponse(); err != nil {
 		result.Error = app.ConvertErrorToProtoError(err)
 	}
 
-	// TODO - How can we distinguish whether we properly processed full vs. half duplex?
 	return result, nil
 }
 
