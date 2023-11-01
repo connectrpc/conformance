@@ -6,6 +6,7 @@ require (
 	connectrpc.com/connect v1.11.1
 	github.com/bufbuild/protoyaml-go v0.1.4
 	github.com/google/go-cmp v0.5.9
+	github.com/klauspost/compress v1.17.2
 	github.com/rs/cors v1.10.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.15.0

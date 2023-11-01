@@ -26,6 +26,7 @@ import (
 	"strconv"
 
 	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal/compression"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
@@ -146,9 +147,19 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 	switch req.Compression {
 	case v1alpha1.Compression_COMPRESSION_GZIP:
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v1alpha1.Compression_COMPRESSION_BR, v1alpha1.Compression_COMPRESSION_ZSTD,
-		v1alpha1.Compression_COMPRESSION_DEFLATE, v1alpha1.Compression_COMPRESSION_SNAPPY:
+	case v1alpha1.Compression_COMPRESSION_SNAPPY, v1alpha1.Compression_COMPRESSION_DEFLATE,
+		v1alpha1.Compression_COMPRESSION_BR:
 		return nil, errors.New(req.Compression.String() + " is not yet supported")
+	case v1alpha1.Compression_COMPRESSION_ZSTD:
+		clientOptions = append(
+			clientOptions,
+			connect.WithAcceptCompression(
+				compression.Zstd,
+				compression.NewZstdDecompressor,
+				compression.NewZstdCompressor,
+			),
+		)
+		clientOptions = append(clientOptions, connect.WithSendCompression(compression.Zstd))
 	case v1alpha1.Compression_COMPRESSION_IDENTITY, v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}
