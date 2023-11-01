@@ -152,8 +152,8 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 				compression.NewBrotliDecompressor,
 				compression.NewBrotliCompressor,
 			),
+			connect.WithSendCompression(compression.Brotli),
 		)
-		clientOptions = append(clientOptions, connect.WithSendCompression(compression.Brotli))
 	case v1alpha1.Compression_COMPRESSION_DEFLATE:
 		clientOptions = append(
 			clientOptions,
@@ -162,8 +162,8 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 				compression.NewDeflateDecompressor,
 				compression.NewDeflateCompressor,
 			),
+			connect.WithSendCompression(compression.Deflate),
 		)
-		clientOptions = append(clientOptions, connect.WithSendCompression(compression.Deflate))
 	case v1alpha1.Compression_COMPRESSION_GZIP:
 		// Connect clients send uncompressed requests and ask for gzipped responses by default
 		// As a result, specifying a compression of gzip for a client indicates it should also
@@ -177,8 +177,8 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 				compression.NewSnappyDecompressor,
 				compression.NewSnappyCompressor,
 			),
+			connect.WithSendCompression(compression.Snappy),
 		)
-		clientOptions = append(clientOptions, connect.WithSendCompression(compression.Snappy))
 	case v1alpha1.Compression_COMPRESSION_ZSTD:
 		clientOptions = append(
 			clientOptions,
@@ -187,8 +187,8 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 				compression.NewZstdDecompressor,
 				compression.NewZstdCompressor,
 			),
+			connect.WithSendCompression(compression.Zstd),
 		)
-		clientOptions = append(clientOptions, connect.WithSendCompression(compression.Zstd))
 	case v1alpha1.Compression_COMPRESSION_IDENTITY, v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}

@@ -31,12 +31,15 @@ func (c *deflateDecompressor) Read(bytes []byte) (int, error) {
 	return c.reader.Read(bytes)
 }
 func (c *deflateDecompressor) Reset(rdr io.Reader) error {
-	r, ok := c.reader.(flate.Resetter)
+	resetter, ok := c.reader.(flate.Resetter)
 	if !ok {
+		// This should never happen as the returned type from flate should always
+		// implement Resetter, but the check is here as a safeguard just in case.
+		// This error would be a very exceptional / unexpected occurrence.
 		return errors.New("deflate reader is not able to be used as a resetter")
 	}
 	// Mimics NewReader internal logic, which initializes the internal dict to nil
-	return r.Reset(rdr, nil)
+	return resetter.Reset(rdr, nil)
 }
 func (c *deflateDecompressor) Close() error {
 	return c.reader.Close()
