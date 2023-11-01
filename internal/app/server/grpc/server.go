@@ -20,29 +20,19 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"net"
-	"net/http"
 
 	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal/app/server"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
-	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
-)
-
-const (
-	// The default host to use for the server.
-	defaultHost = "127.0.0.1"
-	// The default port to use for the server. We choose 0 so that
-	// an ephemeral port is selected by the OS if no port is specified.
-	defaultPort = "0"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flag.String("host", defaultHost, "the host for the conformance server")
-	port := flag.String("port", defaultPort, "the port for the conformance server ")
+	host := flag.String("host", server.DefaultHost, "the host for the conformance server")
+	port := flag.String("port", server.DefaultPort, "the port for the conformance server ")
 
 	flag.Parse()
 
@@ -55,13 +45,13 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 	codec := app.NewCodec(*json)
 
 	// Unmarshal into a ServerCompatRequest
-	req := &v1alpha1.ServerCompatRequest{}
+	req := &conformancev1alpha1.ServerCompatRequest{}
 	if err := codec.Unmarshal(data, req); err != nil {
 		return err
 	}
 
-	// Create an HTTP server based on the request
-	server, err := run()
+	// Create a gRPC server based on the request
+	server, err := createServer()
 	if err != nil {
 		return err
 	}
@@ -77,7 +67,7 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 		return errors.New("unable to determine tcp address from listener")
 	}
 
-	resp := &v1alpha1.ServerCompatResponse{
+	resp := &conformancev1alpha1.ServerCompatResponse{
 		Host: fmt.Sprint(tcpAddr.IP),
 		Port: uint32(tcpAddr.Port),
 	}
@@ -90,18 +80,14 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 	}
 
 	// Finally, start the server
-	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if err := server.Serve(listener); err != nil { //nolint:if-return
 		return err
 	}
 
 	return nil
 }
 
-func run() (*grpc.Server, error) {
-	lis, err := net.Listen("tcp", ":"+defaultPort)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
+func createServer() (*grpc.Server, error) { //nolint:unparam
 	server := grpc.NewServer()
 	conformancev1alpha1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
 	return server, nil

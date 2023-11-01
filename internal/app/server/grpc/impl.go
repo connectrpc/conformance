@@ -15,7 +15,11 @@
 package grpcserver
 
 import (
+	"context"
+
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // NewConformanceServiceServer creates a new Conformance Service server.
@@ -25,4 +29,30 @@ func NewConformanceServiceServer() conformancev1alpha1.ConformanceServiceServer 
 
 type conformanceServiceServer struct {
 	conformancev1alpha1.UnimplementedConformanceServiceServer
+}
+
+func (c *conformanceServiceServer) Unary(
+	ctx context.Context,
+	req *conformancev1alpha1.UnaryRequest,
+) (*conformancev1alpha1.UnaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Unary not implemented")
+}
+
+func (c *conformanceServiceServer) ClientStream(
+	stream conformancev1alpha1.ConformanceService_ClientStreamServer,
+) error {
+	return status.Errorf(codes.Unimplemented, "method ClientStream not implemented")
+}
+
+func (c *conformanceServiceServer) ServerStream(
+	req *conformancev1alpha1.ServerStreamRequest,
+	stream conformancev1alpha1.ConformanceService_ServerStreamServer,
+) error {
+	return status.Errorf(codes.Unimplemented, "method ServerStream not implemented")
+}
+
+func (c *conformanceServiceServer) BidiStream(
+	stream conformancev1alpha1.ConformanceService_BidiStreamServer,
+) error {
+	return status.Errorf(codes.Unimplemented, "method BidiStream not implemented")
 }

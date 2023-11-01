@@ -19,12 +19,12 @@ import (
 	"log"
 	"os"
 
-	"connectrpc.com/conformance/internal/app/server"
+	grpcserver "connectrpc.com/conformance/internal/app/server/grpc"
 )
 
 func main() {
-	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
+	err := grpcserver.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
 	if err != nil {
-		log.Fatalf("an error occurred running the server: %s", err.Error())
+		log.Fatalf("an error occurred running the gRPC server: %s", err.Error())
 	}
 }
