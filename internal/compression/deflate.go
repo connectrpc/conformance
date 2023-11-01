@@ -22,7 +22,7 @@ import (
 	"connectrpc.com/connect"
 )
 
-// deflateDecompressor is a thin wrapper around a deflate Reader.
+// deflateDecompressor is a thin wrapper around a flate Reader.
 type deflateDecompressor struct {
 	reader io.ReadCloser
 }

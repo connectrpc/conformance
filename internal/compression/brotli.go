@@ -33,6 +33,7 @@ func (c *brotliDecompressor) Reset(rdr io.Reader) error {
 	return c.reader.Reset(rdr)
 }
 func (c *brotliDecompressor) Close() error {
+	// brotli's Reader does not expose a Close function
 	return nil
 }
 
@@ -41,11 +42,6 @@ func NewBrotliDecompressor() connect.Decompressor {
 	return &brotliDecompressor{
 		reader: brotli.NewReader(nil),
 	}
-}
-
-// BrotliCompressor is a thin wrapper around a brotli Writer.
-type BrotliCompressor struct {
-	*brotli.Writer
 }
 
 // NewBrotliCompressor returns a new Brotli Compressor.
