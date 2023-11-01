@@ -1,0 +1,48 @@
+{
+  "testName": "Unary Happy Path with zstd compression",
+  "httpVersion": "HTTP_VERSION_1",
+  "protocol": "PROTOCOL_CONNECT",
+  "codec": "CODEC_JSON",
+  "host": "127.0.0.1",
+  "port": 53289,
+  "compression": "COMPRESSION_ZSTD",
+  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
+  "method": "Unary",
+  "streamType": "STREAM_TYPE_UNARY",
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": "dGVzdCByZXNwb25zZQ==",
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
