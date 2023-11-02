@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoadConfig_ComputesPermutations(t *testing.T) {
+func TestParseConfig_ComputesPermutations(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name          string
@@ -344,7 +344,7 @@ func TestLoadConfig_ComputesPermutations(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			cases, err := loadConfig("config.yaml", []byte(testCase.config))
+			cases, err := parseConfig("config.yaml", []byte(testCase.config))
 			require.NoError(t, err)
 			sortCases(cases)
 			sortCases(testCase.expectedCases)
@@ -353,7 +353,7 @@ func TestLoadConfig_ComputesPermutations(t *testing.T) {
 	}
 }
 
-func TestLoadConfig_RejectsInvalidConfigurations(t *testing.T) {
+func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name        string
@@ -534,7 +534,7 @@ func TestLoadConfig_RejectsInvalidConfigurations(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			_, err := loadConfig("config.yaml", []byte(testCase.config))
+			_, err := parseConfig("config.yaml", []byte(testCase.config))
 			require.ErrorContains(t, err, testCase.expectedErr)
 			t.Log(err)
 		})

@@ -37,7 +37,7 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
+func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
 	flag.Parse()
