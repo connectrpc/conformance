@@ -143,13 +143,42 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 		clientOptions = append(clientOptions, connect.WithProtoJSON())
 	}
 
-	// TODO - Add support for other compression algos
 	switch req.Compression {
+	case v1alpha1.Compression_COMPRESSION_BR:
+		clientOptions = append(
+			clientOptions,
+			connect.WithAcceptCompression(
+				compression.Brotli,
+				compression.NewBrotliDecompressor,
+				compression.NewBrotliCompressor,
+			),
+			connect.WithSendCompression(compression.Brotli),
+		)
+	case v1alpha1.Compression_COMPRESSION_DEFLATE:
+		clientOptions = append(
+			clientOptions,
+			connect.WithAcceptCompression(
+				compression.Deflate,
+				compression.NewDeflateDecompressor,
+				compression.NewDeflateCompressor,
+			),
+			connect.WithSendCompression(compression.Deflate),
+		)
 	case v1alpha1.Compression_COMPRESSION_GZIP:
+		// Connect clients send uncompressed requests and ask for gzipped responses by default
+		// As a result, specifying a compression of gzip for a client indicates it should also
+		// send gzipped requests
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v1alpha1.Compression_COMPRESSION_SNAPPY, v1alpha1.Compression_COMPRESSION_DEFLATE,
-		v1alpha1.Compression_COMPRESSION_BR:
-		return nil, errors.New(req.Compression.String() + " is not yet supported")
+	case v1alpha1.Compression_COMPRESSION_SNAPPY:
+		clientOptions = append(
+			clientOptions,
+			connect.WithAcceptCompression(
+				compression.Snappy,
+				compression.NewSnappyDecompressor,
+				compression.NewSnappyCompressor,
+			),
+			connect.WithSendCompression(compression.Snappy),
+		)
 	case v1alpha1.Compression_COMPRESSION_ZSTD:
 		clientOptions = append(
 			clientOptions,
@@ -158,8 +187,8 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 				compression.NewZstdDecompressor,
 				compression.NewZstdCompressor,
 			),
+			connect.WithSendCompression(compression.Zstd),
 		)
-		clientOptions = append(clientOptions, connect.WithSendCompression(compression.Zstd))
 	case v1alpha1.Compression_COMPRESSION_IDENTITY, v1alpha1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}

@@ -4,7 +4,9 @@ go 1.20
 
 require (
 	connectrpc.com/connect v1.11.1
+	github.com/andybalholm/brotli v1.0.6
 	github.com/bufbuild/protoyaml-go v0.1.4
+	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.5.9
 	github.com/klauspost/compress v1.17.2
 	github.com/rs/cors v1.10.1
