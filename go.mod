@@ -4,12 +4,15 @@ go 1.20
 
 require (
 	connectrpc.com/connect v1.11.1
+	github.com/andybalholm/brotli v1.0.6
 	github.com/bufbuild/protoyaml-go v0.1.4
+	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.5.9
 	github.com/klauspost/compress v1.17.2
 	github.com/rs/cors v1.10.1
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.15.0
+	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
 )
 
@@ -27,6 +30,5 @@ require (
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
-	google.golang.org/grpc v1.59.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
