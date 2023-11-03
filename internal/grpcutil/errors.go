@@ -20,7 +20,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// ConvertProtoToGrpcError converts a proto Error into a gRPC error
+// ConvertProtoToGrpcError converts a proto Error into a gRPC error.
 func ConvertProtoToGrpcError(err *v1alpha1.Error) error {
 	if err == nil {
 		return nil

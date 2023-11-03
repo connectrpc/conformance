@@ -22,20 +22,20 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-func init() { //nolint:gochecknoinits
+func init() { //nolint:gochecknoinits // gRPC requires this to register a codec.
 	encoding.RegisterCodec(&jsonCodec{})
 }
 
-// jsonCodec is a codec for use with a gRPC server
+// jsonCodec is a codec for use with a gRPC server.
 type jsonCodec struct{}
 
-// Name returns the name of the json codec for use with gRPC
+// Name returns the name of the json codec for use with gRPC.
 func (j *jsonCodec) Name() string {
 	return "json"
 }
 
 // Marshal marshals a given message. If the given parameter is not a proto.Message,
-// function returns an error
+// function returns an error.
 func (j *jsonCodec) Marshal(v any) (out []byte, err error) {
 	pm, ok := v.(proto.Message)
 	if !ok {
@@ -45,7 +45,7 @@ func (j *jsonCodec) Marshal(v any) (out []byte, err error) {
 }
 
 // Marshal unmarshals a given message. If the given parameter is not a proto.Message,
-// function returns an error
+// function returns an error.
 func (j *jsonCodec) Unmarshal(data []byte, v interface{}) (err error) {
 	pm, ok := v.(proto.Message)
 	if !ok {
