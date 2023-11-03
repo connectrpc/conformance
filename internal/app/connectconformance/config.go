@@ -62,7 +62,7 @@ func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 			Path: configFileName,
 		}
 		if err := opts.Unmarshal(data, &config); err != nil {
-			return nil, err
+			return nil, ensureFileName(err, configFileName)
 		}
 	}
 	if config.Features == nil {
