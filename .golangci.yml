@@ -24,6 +24,7 @@ linters-settings:
       - i int
       - wg sync.WaitGroup
       - ok bool
+      - in io.Reader
 linters:
   enable-all: true
   disable:
