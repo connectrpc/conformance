@@ -15,20 +15,37 @@
 package app
 
 import (
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+
 	"google.golang.org/protobuf/encoding/protojson"
-	proto "google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/proto"
 )
+
+// StreamDecoder is used to decode messages from a stream. This is used
+// when the input contains a sequence of messages, not just one.
+type StreamDecoder interface {
+	DecodeNext(msg proto.Message) error
+}
+
+// StreamEncoder is used to encode messages to a stream. This is used
+// when the output will contain a sequence of messages, not just one.
+type StreamEncoder interface {
+	Encode(msg proto.Message) error
+}
 
 // codec describes anything that can marshal and unmarshal proto messages.
 type codec interface {
-	Marshal(msg proto.Message) ([]byte, error)
-	Unmarshal(b []byte, msg proto.Message) error
+	NewDecoder(io.Reader) StreamDecoder
+	NewEncoder(io.Writer) StreamEncoder
 }
 
 // NewCodec returns a new Codec.
 func NewCodec(json bool) codec {
 	if json {
-		return &jsonCodec{}
+		return &jsonCodec{MarshalOptions: protojson.MarshalOptions{Multiline: true}}
 	}
 	return &protoCodec{}
 }
@@ -39,8 +56,104 @@ type jsonCodec struct {
 	protojson.UnmarshalOptions
 }
 
+func (c *jsonCodec) NewDecoder(in io.Reader) StreamDecoder {
+	dec := json.NewDecoder(in)
+	return &jsonDecoder{
+		opts:    c.UnmarshalOptions,
+		decoder: dec,
+	}
+}
+
+func (c *jsonCodec) NewEncoder(out io.Writer) StreamEncoder {
+	return &jsonEncoder{
+		opts: c.MarshalOptions,
+		out:  out,
+	}
+}
+
+type jsonDecoder struct {
+	opts    protojson.UnmarshalOptions
+	decoder *json.Decoder
+}
+
+func (j *jsonDecoder) DecodeNext(msg proto.Message) error {
+	var msgData json.RawMessage
+	if err := j.decoder.Decode(&msgData); err != nil {
+		if errors.Is(err, io.EOF) {
+			return err
+		}
+		return fmt.Errorf("failed to decode JSON message from input: %w", err)
+	}
+	if err := j.opts.Unmarshal(msgData, msg); err != nil {
+		return fmt.Errorf("failed to unmarshal JSON message: %w", err)
+	}
+	return nil
+}
+
+type jsonEncoder struct {
+	opts protojson.MarshalOptions
+	out  io.Writer
+}
+
+func (j *jsonEncoder) Encode(msg proto.Message) error {
+	data, err := j.opts.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal message to JSON: %w", err)
+	}
+	if _, err := j.out.Write(data); err != nil {
+		return fmt.Errorf("failed to write message to output: %w", err)
+	}
+	if len(data) > 0 || data[len(data)-1] != '\n' {
+		_, _ = j.out.Write([]byte{'\n'}) // best effort newline between JSON outputs
+	}
+	return nil
+}
+
 // protoCodec marshals and unmarshals the Protobuf binary format.
 type protoCodec struct {
 	proto.MarshalOptions
 	proto.UnmarshalOptions
+}
+
+func (c *protoCodec) NewDecoder(in io.Reader) StreamDecoder {
+	return &protoDecoder{
+		opts: c.UnmarshalOptions,
+		in:   in,
+	}
+}
+
+func (c *protoCodec) NewEncoder(out io.Writer) StreamEncoder {
+	return &protoEncoder{
+		opts: c.MarshalOptions,
+		out:  out,
+	}
+}
+
+type protoDecoder struct {
+	opts proto.UnmarshalOptions
+	in   io.Reader
+}
+
+func (p *protoDecoder) DecodeNext(msg proto.Message) error {
+	data, err := readDelimitedMessageRaw(p.in)
+	if err != nil {
+		return err
+	}
+	if err := p.opts.Unmarshal(data, msg); err != nil {
+		return fmt.Errorf("failed to unmarshal binary message: %w", err)
+	}
+	return nil
+}
+
+type protoEncoder struct {
+	opts proto.MarshalOptions
+	out  io.Writer
+}
+
+func (p *protoEncoder) Encode(msg proto.Message) error {
+	data, err := p.opts.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal response to binary: %w", err)
+	}
+	return writeDelimitedMessageRaw(p.out, data)
 }

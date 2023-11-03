@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"connectrpc.com/conformance/internal/app"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 )
 
@@ -101,7 +102,7 @@ func (c *clientProcessRunner) sendRequest(req *conformancev1alpha1.ClientCompatR
 		return fmt.Errorf("%w: %q", errDuplicate, req.TestName)
 	}
 
-	if err := writeDelimitedMessage(c.proc.stdin, req); err != nil {
+	if err := app.WriteDelimitedMessage(c.proc.stdin, req); err != nil {
 		// Since we eagerly added to pending set but failed to write,
 		// we now need to remove it to clean up.
 		c.pendingMu.Lock()
@@ -173,7 +174,7 @@ func (c *clientProcessRunner) consumeOutput() {
 		readDone := make(chan struct{})
 		go func() {
 			defer close(readDone)
-			readErr = readDelimitedMessage(c.proc.stdout, resp)
+			readErr = app.ReadDelimitedMessage(c.proc.stdout, resp)
 		}()
 
 		select {

@@ -19,10 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"sync"
 
+	"connectrpc.com/conformance/internal/app"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/protobuf/proto"
 )
@@ -90,16 +90,12 @@ func runTestCasesForServer(
 	}
 
 	// Write server request.
-	serverRequestData, err := proto.Marshal(&conformancev1alpha1.ServerCompatRequest{
+	err = app.WriteDelimitedMessage(serverProcess.stdin, &conformancev1alpha1.ServerCompatRequest{
 		Protocol:    meta.protocol,
 		HttpVersion: meta.httpVersion,
 		UseTls:      meta.useTLS,
 	})
 	if err != nil {
-		results.failedToStart(testCases, fmt.Errorf("error writing server request: %w", err))
-		return
-	}
-	if _, err := serverProcess.stdin.Write(serverRequestData); err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error writing server request: %w", err))
 		return
 	}
@@ -109,13 +105,9 @@ func runTestCasesForServer(
 	}
 
 	// Read response.
-	serverResponseData, err := io.ReadAll(serverProcess.stdout)
-	if err != nil {
-		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
-		return
-	}
 	var resp conformancev1alpha1.ServerCompatResponse
-	if err := proto.Unmarshal(serverResponseData, &resp); err != nil {
+	err = app.ReadDelimitedMessage(serverProcess.stdout, &resp)
+	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
 		return
 	}

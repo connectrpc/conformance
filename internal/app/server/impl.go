@@ -41,7 +41,7 @@ type conformanceServer struct {
 }
 
 func (s *conformanceServer) Unary(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[v1alpha1.UnaryRequest],
 ) (*connect.Response[v1alpha1.UnaryResponse], error) {
 	msgAsAny, err := asAny(req.Msg)
@@ -49,6 +49,7 @@ func (s *conformanceServer) Unary(
 		return nil, err
 	}
 	payload, connectErr := parseUnaryResponseDefinition(
+		ctx,
 		req.Msg.ResponseDefinition,
 		req.Header(),
 		[]*anypb.Any{msgAsAny},
@@ -97,7 +98,7 @@ func (s *conformanceServer) ClientStream(
 		return nil, err
 	}
 
-	payload, err := parseUnaryResponseDefinition(responseDefinition, stream.RequestHeader(), reqs)
+	payload, err := parseUnaryResponseDefinition(ctx, responseDefinition, stream.RequestHeader(), reqs)
 	if err != nil {
 		app.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
 		app.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
@@ -115,7 +116,7 @@ func (s *conformanceServer) ClientStream(
 }
 
 func (s *conformanceServer) ServerStream(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[v1alpha1.ServerStreamRequest],
 	stream *connect.ServerStream[v1alpha1.ServerStreamResponse],
 ) error {
@@ -130,7 +131,7 @@ func (s *conformanceServer) ServerStream(
 	if err != nil {
 		return err
 	}
-	requestInfo := createRequestInfo(req.Header(), []*anypb.Any{msgAsAny})
+	requestInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
 	payload := &v1alpha1.ConformancePayload{
 		RequestInfo: requestInfo,
 	}
@@ -201,7 +202,7 @@ func (s *conformanceServer) BidiStream(
 					errors.New("received more requests than desired responses on a full duplex stream"),
 				)
 			}
-			requestInfo := createRequestInfo(stream.RequestHeader(), reqs)
+			requestInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
 			resp := &v1alpha1.BidiStreamResponse{
 				Payload: &v1alpha1.ConformancePayload{
 					RequestInfo: requestInfo,
@@ -222,7 +223,7 @@ func (s *conformanceServer) BidiStream(
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
 	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
-		requestInfo := createRequestInfo(stream.RequestHeader(), reqs)
+		requestInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
 		resp := &v1alpha1.BidiStreamResponse{
 			Payload: &v1alpha1.ConformancePayload{
 				RequestInfo: requestInfo,
@@ -245,6 +246,7 @@ func (s *conformanceServer) BidiStream(
 // Parses the given unary response definition and returns either
 // a built payload or a connect error based on the definition.
 func parseUnaryResponseDefinition(
+	ctx context.Context,
 	def *v1alpha1.UnaryResponseDefinition,
 	headers http.Header,
 	reqs []*anypb.Any,
@@ -255,7 +257,7 @@ func parseUnaryResponseDefinition(
 			return nil, app.ConvertProtoToConnectError(respType.Error)
 
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
-			requestInfo := createRequestInfo(headers, reqs)
+			requestInfo := createRequestInfo(ctx, headers, reqs)
 			payload := &v1alpha1.ConformancePayload{
 				RequestInfo: requestInfo,
 			}
@@ -273,13 +275,19 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-func createRequestInfo(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
+func createRequestInfo(ctx context.Context, headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
 	headerInfo := app.ConvertToProtoHeader(headers)
+
+	var timeoutMs *int64
+	if deadline, ok := ctx.Deadline(); ok {
+		timeoutMs = proto.Int64(time.Until(deadline).Milliseconds())
+	}
 
 	// Set all observed request headers and requests in the response payload
 	return &v1alpha1.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
 		Requests:       reqs,
+		TimeoutMs:      timeoutMs,
 	}
 }
 
