@@ -182,6 +182,7 @@ func (r *testResults) report(writer io.Writer) error {
 	for testCaseName := range r.outcomes {
 		testCaseNames = append(testCaseNames, testCaseName)
 	}
+	var succeeded, failed, expectedFailures int
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
@@ -190,11 +191,33 @@ func (r *testResults) report(writer io.Writer) error {
 		switch {
 		case !expectError && outcome.actualFailure != nil:
 			_, err = fmt.Fprintf(writer, "FAILED: %s: %v\n", name, outcome.actualFailure)
+			failed++
 		case expectError && outcome.actualFailure == nil:
 			_, err = fmt.Fprintf(writer, "FAILED: %s was expected to fail but did not\n", name)
+			failed++
 		case expectError && outcome.actualFailure != nil:
 			_, err = fmt.Fprintf(writer, "INFO: %s failed (as expected): %v\n", name, outcome.actualFailure)
+			expectedFailures++
+		default:
+			succeeded++
 		}
+		if err != nil {
+			return err
+		}
+	}
+	if failed+expectedFailures > 0 {
+		// Add a blank line to separate summary from messages above
+		_, err := writer.Write([]byte{'\n'})
+		if err != nil {
+			return err
+		}
+	}
+	_, err := fmt.Fprintf(writer, "Total cases: %d\n%d passed, %d failed\n", len(r.outcomes), succeeded, failed)
+	if err != nil {
+		return err
+	}
+	if expectedFailures > 0 {
+		_, err := fmt.Fprintf(writer, "(%d failed as expected due to being known failures.)\n", expectedFailures)
 		if err != nil {
 			return err
 		}
