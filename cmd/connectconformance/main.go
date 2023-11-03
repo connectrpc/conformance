@@ -15,8 +15,10 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 
 	"connectrpc.com/conformance/internal/app/connectconformance"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -71,8 +73,8 @@ that will be executed. If no config file is indicated, all tests will be run.
 A file with a list of known-failing test cases may also be provided. For these
 cases, the test runner reverses its assertions: it considers the test case
 failing to be successful; if the test case succeeds, it is considered a failure.
-(The latter aspect makes sure that the file doesn't is up-to-date and does not
-include test cases which have actually been fixed.)
+(The latter aspect makes sure that the file is up-to-date and does not include
+test cases which have actually been fixed.)
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			run(flagset, args)
@@ -89,6 +91,11 @@ func bind(cmd *cobra.Command, flags *flags) {
 }
 
 func run(flags *flags, command []string) {
+	fatal := func(format string, args ...any) {
+		_, _ = fmt.Fprintf(os.Stderr, format+"\n", args...)
+		os.Exit(1)
+	}
+
 	var mode conformancev1alpha1.TestSuite_TestMode
 	switch flags.mode {
 	case "client":
@@ -98,9 +105,24 @@ func run(flags *flags, command []string) {
 	default:
 		// TODO: support mode "both", which would allow the caller to supply both the
 		//       client and server commands, instead of using a reference impl?
-		log.Fatalf(`invalid mode: expecting "client" or "server""; got %q`, flags.mode)
+		fatal(`Invalid mode: expecting "client" or "server""; got %q`, flags.mode)
 	}
-	err := connectconformance.Run(
+
+	if len(command) == 0 {
+		fatal(`Positional arguments are required to configure the command line of the %s under test.`, flags.mode)
+	}
+	// Resolve command name, using PATH if need be.
+	resolvedCommand, err := exec.LookPath(command[0])
+	if err != nil {
+		if !strings.Contains(err.Error(), command[0]) {
+			// make sure error message includes file name
+			err = fmt.Errorf("%s: %w", command[0], err)
+		}
+		fatal("%s", err)
+	}
+	command[0] = resolvedCommand
+
+	err = connectconformance.Run(
 		&connectconformance.Flags{
 			Mode:             mode,
 			ConfigFile:       flags.configFile,
@@ -110,6 +132,6 @@ func run(flags *flags, command []string) {
 		os.Stdout,
 	)
 	if err != nil {
-		log.Fatal(err)
+		fatal("%s", err)
 	}
 }
