@@ -15,9 +15,13 @@
 package app
 
 import (
+	"context"
 	"net/http"
+	"strings"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 )
 
 // AddHeaders adds all header values in src to dest.
@@ -45,4 +49,45 @@ func ConvertToProtoHeader(
 		headerInfo = append(headerInfo, hdr)
 	}
 	return headerInfo
+}
+
+func ConvertMetadataToProtoHeader(
+	src metadata.MD,
+) []*v1alpha1.Header {
+	headerInfo := make([]*v1alpha1.Header, 0, len(src))
+	for key, value := range src {
+		hdr := &v1alpha1.Header{
+			Name:  key,
+			Value: value,
+		}
+		headerInfo = append(headerInfo, hdr)
+	}
+	return headerInfo
+}
+
+func ConvertProtoHeaderToMetadata(
+	src []*v1alpha1.Header,
+) metadata.MD {
+	md := make(metadata.MD, len(src))
+	for _, hdr := range src {
+		key := strings.ToLower(hdr.Name)
+		md[key] = hdr.Value
+	}
+	return md
+}
+
+func AddHeaderMetadata(
+	src []*v1alpha1.Header,
+	ctx context.Context,
+) {
+	hdrs := ConvertProtoHeaderToMetadata(src)
+	grpc.SetHeader(ctx, hdrs)
+}
+
+func AddTrailerMetadata(
+	src []*v1alpha1.Header,
+	ctx context.Context,
+) {
+	hdrs := ConvertProtoHeaderToMetadata(src)
+	grpc.SetTrailer(ctx, hdrs)
 }
