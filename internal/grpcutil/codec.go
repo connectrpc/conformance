@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package grpcserver
+package grpcutil
 
 import (
 	"errors"
@@ -22,17 +22,17 @@ import (
 	proto "google.golang.org/protobuf/proto"
 )
 
-func init() {
-	encoding.RegisterCodec(JSON{})
+func init() { //nolint:gochecknoinits
+	encoding.RegisterCodec(&jsonCodec{})
 }
 
-type JSON struct{}
+type jsonCodec struct{}
 
-func (_ JSON) Name() string {
+func (j *jsonCodec) Name() string {
 	return "json"
 }
 
-func (j JSON) Marshal(v any) (out []byte, err error) {
+func (j *jsonCodec) Marshal(v any) (out []byte, err error) {
 	pm, ok := v.(proto.Message)
 	if !ok {
 		return nil, errors.New("message is not a proto message and cannot be marshalled ")
@@ -40,7 +40,7 @@ func (j JSON) Marshal(v any) (out []byte, err error) {
 	return protojson.Marshal(pm)
 }
 
-func (j JSON) Unmarshal(data []byte, v interface{}) (err error) {
+func (j *jsonCodec) Unmarshal(data []byte, v interface{}) (err error) {
 	pm, ok := v.(proto.Message)
 	if !ok {
 		return errors.New("message is not a proto message and cannot be unmarshalled")

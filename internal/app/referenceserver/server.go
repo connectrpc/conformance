@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connectserver
+package referenceserver
 
 import (
 	"context"
@@ -23,9 +23,9 @@ import (
 	"net"
 	"net/http"
 
-	"connectrpc.com/conformance/internal/app"
-	"connectrpc.com/conformance/internal/app/server"
+	"connectrpc.com/conformance/internal/codec"
 	"connectrpc.com/conformance/internal/compression"
+	"connectrpc.com/conformance/internal/config"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	connect "connectrpc.com/connect"
@@ -37,8 +37,8 @@ import (
 // Run runs the server according to server config read from the 'in' reader.
 func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flag.String("host", server.DefaultHost, "the host for the conformance server")
-	port := flag.String("port", server.DefaultPort, "the port for the conformance server ")
+	host := flag.String("host", config.DefaultHost, "the host for the conformance server")
+	port := flag.String("port", config.DefaultPort, "the port for the conformance server ")
 
 	flag.Parse()
 
@@ -48,7 +48,7 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 		return err
 	}
 
-	codec := app.NewCodec(*json)
+	codec := codec.NewCodec(*json)
 
 	// Unmarshal into a ServerCompatRequest
 	req := &v1alpha1.ServerCompatRequest{}
@@ -142,7 +142,7 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 // Create a new HTTP/1.1 server.
 func newH1Server(handler http.Handler) *http.Server {
 	h1Server := &http.Server{ //nolint:gosec
-		Addr:    net.JoinHostPort(server.DefaultHost, server.DefaultPort),
+		Addr:    net.JoinHostPort(config.DefaultHost, config.DefaultPort),
 		Handler: handler,
 	}
 	return h1Server
@@ -151,7 +151,7 @@ func newH1Server(handler http.Handler) *http.Server {
 // Create a new HTTP/2 server.
 func newH2Server(handler http.Handler) *http.Server {
 	h2Server := &http.Server{ //nolint:gosec
-		Addr: net.JoinHostPort(server.DefaultHost, server.DefaultPort),
+		Addr: net.JoinHostPort(config.DefaultHost, config.DefaultPort),
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return h2Server

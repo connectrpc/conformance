@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package errors
 
 import (
 	"errors"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -91,19 +89,4 @@ func ConvertProtoToConnectError(err *v1alpha1.Error) *connect.Error {
 		connectErr.AddDetail(connectDetail)
 	}
 	return connectErr
-}
-
-func ConvertProtoToGrpcError(err *v1alpha1.Error) error {
-	if err == nil {
-		return nil
-	}
-	grpcErr := status.Error(codes.Code(err.Code), err.Message)
-	// for _, detail := range err.Details {
-	// 	connectDetail, err := connect.NewErrorDetail(detail)
-	// 	if err != nil {
-	// 		return connect.NewError(connect.CodeInternal, err)
-	// 	}
-	// 	grpcErr.AddDetail(connectDetail)
-	// }
-	return grpcErr
 }

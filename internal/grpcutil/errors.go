@@ -12,19 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package grpcutil
 
 import (
-	"context"
-	"log"
-	"os"
-
-	"connectrpc.com/conformance/internal/app/client"
+	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
-func main() {
-	err := client.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
-	if err != nil {
-		log.Fatalf("an error occurred running the client: %s", err.Error())
+func ConvertProtoToGrpcError(err *v1alpha1.Error) error {
+	if err == nil {
+		return nil
 	}
+	grpcErr := status.Error(codes.Code(err.Code), err.Message)
+	// TODO - Error Details?
+	return grpcErr
 }

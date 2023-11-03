@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"connectrpc.com/conformance/internal/app"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -45,8 +45,12 @@ func (c *conformanceServiceServer) Unary(
 		return nil, err
 	}
 
-	app.AddHeaderMetadata(req.ResponseDefinition.ResponseHeaders, ctx)
-	app.AddTrailerMetadata(req.ResponseDefinition.ResponseTrailers, ctx)
+	if err := grpcutil.AddHeaderMetadata(ctx, req.ResponseDefinition.ResponseHeaders); err != nil {
+		return nil, err
+	}
+	if err := grpcutil.AddTrailerMetadata(ctx, req.ResponseDefinition.ResponseTrailers); err != nil {
+		return nil, err
+	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
 	payload, grpcErr := parseUnaryResponseDefinition(
@@ -64,21 +68,24 @@ func (c *conformanceServiceServer) Unary(
 }
 
 func (c *conformanceServiceServer) ClientStream(
-	stream v1alpha1.ConformanceService_ClientStreamServer,
+	_ v1alpha1.ConformanceService_ClientStreamServer,
 ) error {
+	// TODO - Implement ClientStream
 	return status.Errorf(codes.Unimplemented, "method ClientStream not implemented")
 }
 
 func (c *conformanceServiceServer) ServerStream(
-	req *v1alpha1.ServerStreamRequest,
-	stream v1alpha1.ConformanceService_ServerStreamServer,
+	_ *v1alpha1.ServerStreamRequest,
+	_ v1alpha1.ConformanceService_ServerStreamServer,
 ) error {
+	// TODO - Implement ServerStream
 	return status.Errorf(codes.Unimplemented, "method ServerStream not implemented")
 }
 
 func (c *conformanceServiceServer) BidiStream(
-	stream v1alpha1.ConformanceService_BidiStreamServer,
+	_ v1alpha1.ConformanceService_BidiStreamServer,
 ) error {
+	// TODO - Implement BidiStream
 	return status.Errorf(codes.Unimplemented, "method BidiStream not implemented")
 }
 
@@ -92,7 +99,7 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1alpha1.UnaryResponseDefinition_Error:
-			return nil, app.ConvertProtoToGrpcError(respType.Error)
+			return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
 
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
 			requestInfo := createRequestInfo(metadata, reqs)
@@ -114,7 +121,7 @@ func parseUnaryResponseDefinition(
 
 // Creates request info for a conformance payload.
 func createRequestInfo(metadata metadata.MD, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
-	headerInfo := app.ConvertMetadataToProtoHeader(metadata)
+	headerInfo := grpcutil.ConvertMetadataToProtoHeader(metadata)
 
 	// Set all observed request headers and requests in the response payload
 	return &v1alpha1.ConformancePayload_RequestInfo{

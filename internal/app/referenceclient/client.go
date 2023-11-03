@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package referenceclient
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal/codec"
 	"connectrpc.com/conformance/internal/compression"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -37,7 +37,7 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
+func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
 	flag.Parse()
@@ -50,7 +50,7 @@ func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter io.W
 		return err
 	}
 
-	codec := app.NewCodec(*json)
+	codec := codec.NewCodec(*json)
 
 	req := &v1alpha1.ClientCompatRequest{}
 	if err := codec.Unmarshal(data, req); err != nil {

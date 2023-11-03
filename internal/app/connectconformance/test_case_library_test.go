@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoadTestCases(t *testing.T) {
+func TestNewTestCaseLibrary(t *testing.T) {
 	t.Parallel()
 
 	testData := map[string]string{
@@ -265,7 +265,7 @@ func TestLoadTestCases(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			testCaseLib, err := loadTestCases(testSuites, testCase.config, testCase.mode)
+			testCaseLib, err := newTestCaseLibrary(testSuites, testCase.config, testCase.mode)
 			require.NoError(t, err)
 			results := make(map[serverInstance][]string, len(testCaseLib.casesByServer))
 			for svrKey, testCaseProtos := range testCaseLib.casesByServer {

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package connectserver
+package referenceserver
 
 import (
 	"context"
@@ -22,9 +22,10 @@ import (
 	"net/http"
 	"time"
 
-	"connectrpc.com/conformance/internal/app"
+	connecterrors "connectrpc.com/conformance/internal/errors"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	"connectrpc.com/conformance/internal/headers"
 	connect "connectrpc.com/connect"
 	proto "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -54,8 +55,8 @@ func (s *conformanceServer) Unary(
 		[]*anypb.Any{msgAsAny},
 	)
 	if connectErr != nil {
-		app.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, connectErr.Meta())
-		app.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, connectErr.Meta())
+		headers.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, connectErr.Meta())
+		headers.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, connectErr.Meta())
 		return nil, connectErr
 	}
 
@@ -63,8 +64,8 @@ func (s *conformanceServer) Unary(
 		Payload: payload,
 	})
 
-	app.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
-	app.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+	headers.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
+	headers.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
 
 	return resp, nil
 }
@@ -99,8 +100,8 @@ func (s *conformanceServer) ClientStream(
 
 	payload, err := parseUnaryResponseDefinition(responseDefinition, stream.RequestHeader(), reqs)
 	if err != nil {
-		app.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
-		app.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
+		headers.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
+		headers.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
 		return nil, err
 	}
 
@@ -108,8 +109,8 @@ func (s *conformanceServer) ClientStream(
 		Payload: payload,
 	})
 
-	app.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
-	app.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+	headers.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
+	headers.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
 
 	return resp, nil
 }
@@ -121,8 +122,8 @@ func (s *conformanceServer) ServerStream(
 ) error {
 	responseDefinition := req.Msg.ResponseDefinition
 	if responseDefinition != nil {
-		app.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
-		app.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+		headers.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
+		headers.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 	}
 
 	// Convert the request to an Any so that it can be recorded in the payload
@@ -151,7 +152,7 @@ func (s *conformanceServer) ServerStream(
 		payload.RequestInfo = nil
 	}
 	if responseDefinition.Error != nil {
-		return app.ConvertProtoToConnectError(responseDefinition.Error)
+		return connecterrors.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
 }
@@ -237,7 +238,7 @@ func (s *conformanceServer) BidiStream(
 	}
 
 	if responseDefinition.Error != nil {
-		return app.ConvertProtoToConnectError(responseDefinition.Error)
+		return connecterrors.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
 }
@@ -246,16 +247,16 @@ func (s *conformanceServer) BidiStream(
 // a built payload or a connect error based on the definition.
 func parseUnaryResponseDefinition(
 	def *v1alpha1.UnaryResponseDefinition,
-	headers http.Header,
+	hdrs http.Header,
 	reqs []*anypb.Any,
 ) (*v1alpha1.ConformancePayload, *connect.Error) {
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1alpha1.UnaryResponseDefinition_Error:
-			return nil, app.ConvertProtoToConnectError(respType.Error)
+			return nil, connecterrors.ConvertProtoToConnectError(respType.Error)
 
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
-			requestInfo := createRequestInfo(headers, reqs)
+			requestInfo := createRequestInfo(hdrs, reqs)
 			payload := &v1alpha1.ConformancePayload{
 				RequestInfo: requestInfo,
 			}
@@ -273,8 +274,8 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-func createRequestInfo(headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
-	headerInfo := app.ConvertToProtoHeader(headers)
+func createRequestInfo(hdrs http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
+	headerInfo := headers.ConvertToProtoHeader(hdrs)
 
 	// Set all observed request headers and requests in the response payload
 	return &v1alpha1.ConformancePayload_RequestInfo{

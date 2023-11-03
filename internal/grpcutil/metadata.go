@@ -12,44 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package app
+package grpcutil
 
 import (
 	"context"
-	"net/http"
 	"strings"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
-
-// AddHeaders adds all header values in src to dest.
-func AddHeaders(
-	src []*v1alpha1.Header,
-	dest http.Header,
-) {
-	for _, header := range src {
-		for _, val := range header.Value {
-			dest.Add(header.Name, val)
-		}
-	}
-}
-
-// ConvertToProtoHeader converts HTTP headers to a slice of proto Headers.
-func ConvertToProtoHeader(
-	src http.Header,
-) []*v1alpha1.Header {
-	headerInfo := make([]*v1alpha1.Header, 0, len(src))
-	for key, value := range src {
-		hdr := &v1alpha1.Header{
-			Name:  key,
-			Value: value,
-		}
-		headerInfo = append(headerInfo, hdr)
-	}
-	return headerInfo
-}
 
 func ConvertMetadataToProtoHeader(
 	src metadata.MD,
@@ -77,17 +49,17 @@ func ConvertProtoHeaderToMetadata(
 }
 
 func AddHeaderMetadata(
-	src []*v1alpha1.Header,
 	ctx context.Context,
-) {
-	hdrs := ConvertProtoHeaderToMetadata(src)
-	grpc.SetHeader(ctx, hdrs)
+	hdrs []*v1alpha1.Header,
+) error {
+	md := ConvertProtoHeaderToMetadata(hdrs)
+	return grpc.SetHeader(ctx, md)
 }
 
 func AddTrailerMetadata(
-	src []*v1alpha1.Header,
 	ctx context.Context,
-) {
-	hdrs := ConvertProtoHeaderToMetadata(src)
-	grpc.SetTrailer(ctx, hdrs)
+	hdrs []*v1alpha1.Header,
+) error {
+	md := ConvertProtoHeaderToMetadata(hdrs)
+	return grpc.SetTrailer(ctx, md)
 }

@@ -53,9 +53,9 @@ type supportedFeatures struct {
 	RequiresConnectVersionHeader    bool
 }
 
-// loadConfig loads all config cases from the given file name. If the given
+// parseConfig loads all config cases from the given file name. If the given
 // file name is blank, it returns all config cases based on default features.
-func loadConfig(configFileName string, data []byte) ([]configCase, error) {
+func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 	var config conformancev1alpha1.Config
 	if len(data) > 0 {
 		opts := protoyaml.UnmarshalOptions{

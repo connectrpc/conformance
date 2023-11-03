@@ -22,17 +22,17 @@ import (
 	"io"
 	"net"
 
-	"connectrpc.com/conformance/internal/app"
-	"connectrpc.com/conformance/internal/app/server"
+	"connectrpc.com/conformance/internal/codec"
+	"connectrpc.com/conformance/internal/config"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
+func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
 	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flag.String("host", server.DefaultHost, "the host for the conformance server")
-	port := flag.String("port", server.DefaultPort, "the port for the conformance server ")
+	host := flag.String("host", config.DefaultHost, "the host for the conformance server")
+	port := flag.String("port", config.DefaultPort, "the port for the conformance server ")
 
 	flag.Parse()
 
@@ -42,7 +42,7 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 		return err
 	}
 
-	codec := app.NewCodec(*json)
+	codec := codec.NewCodec(*json)
 
 	// Unmarshal into a ServerCompatRequest
 	req := &conformancev1alpha1.ServerCompatRequest{}
@@ -80,7 +80,7 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 	}
 
 	// Finally, start the server
-	if err := server.Serve(listener); err != nil { //nolint:if-return
+	if err := server.Serve(listener); err != nil { //nolint:golint // it feels clearer to have this as a separate line
 		return err
 	}
 
