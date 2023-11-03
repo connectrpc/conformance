@@ -26,12 +26,16 @@ func init() { //nolint:gochecknoinits
 	encoding.RegisterCodec(&jsonCodec{})
 }
 
+// jsonCodec is a codec for use with a gRPC server
 type jsonCodec struct{}
 
+// Name returns the name of the json codec for use with gRPC
 func (j *jsonCodec) Name() string {
 	return "json"
 }
 
+// Marshal marshals a given message. If the given parameter is not a proto.Message,
+// function returns an error
 func (j *jsonCodec) Marshal(v any) (out []byte, err error) {
 	pm, ok := v.(proto.Message)
 	if !ok {
@@ -40,6 +44,8 @@ func (j *jsonCodec) Marshal(v any) (out []byte, err error) {
 	return protojson.Marshal(pm)
 }
 
+// Marshal unmarshals a given message. If the given parameter is not a proto.Message,
+// function returns an error
 func (j *jsonCodec) Unmarshal(data []byte, v interface{}) (err error) {
 	pm, ok := v.(proto.Message)
 	if !ok {

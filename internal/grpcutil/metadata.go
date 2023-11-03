@@ -23,6 +23,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// ConvertMetadataToProtoHeader converts gRPC metadata into proto Headers
 func ConvertMetadataToProtoHeader(
 	src metadata.MD,
 ) []*v1alpha1.Header {
@@ -37,6 +38,7 @@ func ConvertMetadataToProtoHeader(
 	return headerInfo
 }
 
+// ConvertProtoHeaderToMetadata converts a slice of proto Headers into gRPC metadata
 func ConvertProtoHeaderToMetadata(
 	src []*v1alpha1.Header,
 ) metadata.MD {
@@ -48,6 +50,7 @@ func ConvertProtoHeaderToMetadata(
 	return md
 }
 
+// AddHeaderMetadata adds the given proto Headers into the context
 func AddHeaderMetadata(
 	ctx context.Context,
 	hdrs []*v1alpha1.Header,
@@ -56,10 +59,11 @@ func AddHeaderMetadata(
 	return grpc.SetHeader(ctx, md)
 }
 
+// AddTrailerMetadata adds the given proto trailers into the context
 func AddTrailerMetadata(
 	ctx context.Context,
-	hdrs []*v1alpha1.Header,
+	trailers []*v1alpha1.Header,
 ) error {
-	md := ConvertProtoHeaderToMetadata(hdrs)
+	md := ConvertProtoHeaderToMetadata(trailers)
 	return grpc.SetTrailer(ctx, md)
 }
