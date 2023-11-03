@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout)
+	err := server.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
 	if err != nil {
 		log.Fatalf("an error occurred running the server: %s", err.Error())
 	}

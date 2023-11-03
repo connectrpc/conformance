@@ -41,9 +41,10 @@ type testCaseLibrary struct {
 	casesByServer map[serverInstance][]*conformancev1alpha1.TestCase
 }
 
-// loadTestCases applies the given test suite configuration to the given
-// config cases that are applicable to the current run of conformance tests.
-func loadTestCases(
+// newTestCaseLibrary creates a new resolved set of test cases by applying
+// the given test suite configuration to the given config cases that are
+// applicable to the current run of conformance tests.
+func newTestCaseLibrary(
 	allSuites map[string]*conformancev1alpha1.TestSuite,
 	configCases []configCase,
 	mode conformancev1alpha1.TestSuite_TestMode,
