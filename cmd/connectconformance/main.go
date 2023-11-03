@@ -27,14 +27,12 @@ const (
 	modeFlagName         = "mode"
 	configFlagName       = "conf"
 	knownFailingFlagName = "known-failing"
-	maxServersFlagName   = "max-servers"
 )
 
 type flags struct {
 	mode             string
 	configFile       string
 	knownFailingFile string
-	maxServers       uint
 }
 
 func main() {
@@ -88,7 +86,6 @@ func bind(cmd *cobra.Command, flags *flags) {
 	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client' or 'server'")
 	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
-	cmd.Flags().UintVar(&flags.maxServers, maxServersFlagName, 4, "the maximum number of server processes to run concurrently")
 }
 
 func run(flags *flags, command []string) {
@@ -108,7 +105,6 @@ func run(flags *flags, command []string) {
 			Mode:             mode,
 			ConfigFile:       flags.configFile,
 			KnownFailingFile: flags.knownFailingFile,
-			MaxServers:       flags.maxServers,
 		},
 		command,
 		os.Stdout,

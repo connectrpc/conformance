@@ -32,7 +32,6 @@ type Flags struct {
 	Mode             conformancev1alpha1.TestSuite_TestMode
 	ConfigFile       string
 	KnownFailingFile string
-	MaxServers       uint
 }
 
 func Run(flags *Flags, command []string, logOut io.Writer) error {
