@@ -22,7 +22,9 @@ import (
 
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func TestResults_SetOutcome(t *testing.T) {
@@ -138,6 +140,578 @@ func TestResults_Assert(t *testing.T) {
 	require.Contains(t, lines[3], "INFO: known-to-fail/2 failed (as expected): ")
 	require.Equal(t, lines[4], "FAILED: known-to-fail/3 was expected to fail but did not\n")
 	require.Equal(t, lines[5], "FAILED: known-to-fail/4 was expected to fail but did not\n")
+}
+
+func TestResults_Assert_ReportsAllErrors(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name             string
+		expected, actual string
+		expectedErrors   []string
+	}{
+		{
+			name: "identical",
+			expected: `{
+				"response_headers": [
+					{"name": "abc", "value": ["xyz","123"]}
+				],
+				"error": {
+					"code": 5,
+					"message": "foobar",
+					"details": [
+						{"@type":"/google.protobuf.Empty", "value":{}}
+					]
+				},
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "foo", "value": ["bar", "baz"]}
+							],
+							"timeout_ms": 12345,
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 123}
+							]
+						}
+					}
+				],
+				"response_trailers": [
+					{"name": "xyz", "value": ["value1"]}
+				]
+			}`,
+		},
+		{
+			name: "superset request headers allowed",
+			expected: `{
+				"payloads": [
+					{
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"request_info": {
+							"request_headers": [
+								{"name": "User-Agent", "value": ["blah blah blah"]},
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "case-does-not-matter-for-name", "value": ["value2"]},
+								{"name": "Content-Type", "value": ["application/json"]}
+							]
+						}
+					}
+				]
+			}`,
+		},
+		{
+			name: "superset response headers allowed",
+			expected: `{
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+			actual: `{
+				"response_headers": [
+					{"name": "User-Agent", "value": ["blah blah blah"]},
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "case-does-not-matter-for-name", "value": ["value2"]},
+					{"name": "Content-Type", "value": ["application/json"]}
+				]
+			}`,
+		},
+		{
+			name: "superset response trailers allowed",
+			expected: `{
+				"response_trailers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+			actual: `{
+				"response_trailers": [
+					{"name": "User-Agent", "value": ["blah blah blah"]},
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "case-does-not-matter-for-name", "value": ["value2"]},
+					{"name": "Content-Type", "value": ["application/json"]}
+				]
+			}`,
+		},
+		{
+			name: "response headers or trailers missing/misattributed",
+			expected: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]}
+				],
+				"response_trailers": [
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+			actual: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				],
+				"response_trailers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]}
+				]
+			}`,
+			expectedErrors: []string{
+				`actual response headers missing "abc"`,
+				`actual response headers missing "xyz"`,
+				`actual response trailers missing "case-does-not-matter-for-name"`,
+			},
+		},
+		{
+			name: "response meta misattributed allowed for trailers-only response (all in headers)",
+			expected: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]}
+				],
+				"response_trailers": [
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+			actual: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+		},
+		{
+			name: "response meta misattributed allowed for trailers-only response (all in trailers)",
+			expected: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]}
+				],
+				"response_trailers": [
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+			actual: `{
+				"error": {"code": 5},
+				"response_trailers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+		},
+		{
+			name: "error code mismatch",
+			expected: `{
+				"error": {
+					"code": 5,
+					"message": "foobar"
+				}
+			}`,
+			actual: `{
+				"error": {
+					"code": 11,
+					"message": "foobar"
+				}
+			}`,
+			expectedErrors: []string{
+				"actual error does not match expected error",
+			},
+		},
+		{
+			name: "error message mismatch",
+			expected: `{
+				"error": {
+					"code": 5,
+					"message": "foobar"
+				}
+			}`,
+			actual: `{
+				"error": {
+					"code": 5,
+					"message": "oof!"
+				}
+			}`,
+			expectedErrors: []string{
+				"actual error does not match expected error",
+			},
+		},
+		{
+			name: "error detail mismatch",
+			expected: `{
+				"error": {
+					"code": 5,
+					"message": "foobar",
+					"details": [
+						{
+							"@type": "/google.protobuf.Int32Value",
+							"value": 123
+						},	
+						{
+							"@type": "/google.protobuf.StringValue",
+							"value": "foobar"
+						}
+					]
+				}
+			}`,
+			actual: `{
+				"error": {
+					"code": 5,
+					"message": "foobar",
+					"details": [
+						{
+							"@type": "/google.protobuf.Int32Value",
+							"value": 456
+						},	
+						{
+							"@type": "/google.protobuf.StringValue",
+							"value": "bobloblaw"
+						}
+					]
+				}
+			}`,
+			expectedErrors: []string{
+				"actual error does not match expected error",
+			},
+		},
+		{
+			name: "missing error",
+			expected: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					}
+				],
+				"error": {
+					"code": 5,
+					"message": "foobar"
+				}
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					}
+				]
+			}`,
+			expectedErrors: []string{
+				"actual error does not match expected error",
+			},
+		},
+		{
+			name: "unexpected error",
+			expected: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					}
+				],
+				"error": {
+					"code": 5,
+					"message": "foobar"
+				}
+			}`,
+			expectedErrors: []string{
+				"actual error does not match expected error",
+			},
+		},
+		{
+			name: "mismatch response count",
+			expected: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					},
+					{
+						"data": "abcdefgh"
+					}
+				]
+			}`,
+			expectedErrors: []string{
+				"expecting 1 response messages but instead got 2",
+			},
+		},
+		{
+			name: "mismatch response data",
+			expected: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					},
+					{
+						"data": "12345678"
+					}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "abc", "value": ["xyz", "123"]},
+								{"name": "xyz", "value": ["value1"]},
+								{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+							]
+						}
+					},
+					{
+						"data": "abcdefgh"
+					}
+				]
+			}`,
+			expectedErrors: []string{
+				"response #2: expecting data d76df8e7aefc, got 69b71d79f821",
+			},
+		},
+		{
+			name: "mismatch request count",
+			expected: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 123},
+								{"@type": "/google.protobuf.Int32Value", "value": 456},
+								{"@type": "/google.protobuf.Int32Value", "value": 789}
+							]
+						}
+					}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 123},
+								{"@type": "/google.protobuf.Int32Value", "value": 456}
+							]
+						}
+					}
+				]
+			}`,
+			expectedErrors: []string{
+				"response #1: expecting 3 request messages to be described but instead got 2",
+			},
+		},
+		{
+			name: "mismatch request data",
+			expected: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 123},
+								{"@type": "/google.protobuf.Int32Value", "value": 456}
+							]
+						}
+					}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 101},
+								{"@type": "/google.protobuf.Int32Value", "value": 404}
+							]
+						}
+					}
+				]
+			}`,
+			expectedErrors: []string{
+				"request #1: did not survive round-trip",
+				"request #2: did not survive round-trip",
+			},
+		},
+		{
+			name: "everything is wrong 😱",
+			expected: `{
+				"response_headers": [
+					{"name": "abc", "value": ["xyz","123"]}
+				],
+				"error": {
+					"code": 5,
+					"message": "foobar",
+					"details": [
+						{"@type":"/google.protobuf.Empty", "value":{}}
+					]
+				},
+				"payloads": [
+					{
+						"data": "abcdefgh",
+						"request_info": {
+							"request_headers": [
+								{"name": "foo", "value": ["bar", "baz"]}
+							],
+							"timeout_ms": 12345,
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 123}
+							]
+						}
+					},
+					{
+						"data": "abcdefgh"
+					},
+					{
+						"data": "abcdefgh"
+					}
+				],
+				"response_trailers": [
+					{"name": "xyz", "value": ["value1"]}
+				]
+			}`,
+			actual: `{
+				"payloads": [
+					{
+						"data": "1234",
+						"request_info": {
+							"requests": [
+								{"@type": "/google.protobuf.Int32Value", "value": 999},
+								{"@type": "/google.protobuf.Int32Value", "value": 123}
+							]
+						}
+					}
+				]
+			}`,
+			// It tries to describe everything wrong, all in one shot.
+			expectedErrors: []string{
+				`actual response headers missing "abc"`,
+				`actual response trailers missing "xyz"`,
+				`expecting 3 response messages but instead got 1`,
+				`response #1: expecting data 69b71d79f821, got d76df8`,
+				`actual request headers missing "foo"`,
+				`server did not echo back a timeout but one was expected (12345 ms)`,
+				`response #1: expecting 1 request messages to be described but instead got 2`,
+				`request #1: did not survive round-trip`,
+				`actual error does not match expected error`,
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			results := newResults(&knownFailingTrie{})
+
+			expected := &conformancev1alpha1.ClientResponseResult{}
+			err := protojson.Unmarshal(([]byte)(testCase.expected), expected)
+			require.NoError(t, err)
+
+			actual := &conformancev1alpha1.ClientResponseResult{}
+			actualJSON := testCase.actual
+			if actualJSON == "" {
+				actualJSON = testCase.expected
+			}
+			err = protojson.Unmarshal(([]byte)(actualJSON), actual)
+			require.NoError(t, err)
+
+			results.assert(testCase.name, expected, actual)
+			err = results.outcomes[testCase.name].actualFailure
+			if len(testCase.expectedErrors) == 0 {
+				require.NoError(t, err)
+			} else {
+				var errs multiErrors
+				if !errors.As(err, &errs) {
+					errs = multiErrors{err}
+				}
+				assert.Len(t, errs, len(testCase.expectedErrors))
+				for i := 0; i < len(errs) && i < len(testCase.expectedErrors); i++ {
+					assert.ErrorContains(t, errs[i], testCase.expectedErrors[i])
+				}
+			}
+		})
+	}
 }
 
 func TestResults_ServerSideband(t *testing.T) {
