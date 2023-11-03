@@ -22,6 +22,7 @@ import (
 	"sort"
 	"testing"
 
+	"connectrpc.com/conformance/internal/app"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -139,7 +140,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 	var count int
 	for {
 		req := &conformancev1alpha1.ClientCompatRequest{}
-		if err := readDelimitedMessage(in, req); err != nil {
+		if err := app.ReadDelimitedMessage(in, req); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -155,7 +156,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 				},
 			},
 		}
-		if err := writeDelimitedMessage(out, resp); err != nil {
+		if err := app.WriteDelimitedMessage(out, resp); err != nil {
 			return err
 		}
 		count++
@@ -169,7 +170,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 	var allCases []string
 	for {
 		req := &conformancev1alpha1.ClientCompatRequest{}
-		if err := readDelimitedMessage(in, req); err != nil {
+		if err := app.ReadDelimitedMessage(in, req); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -203,7 +204,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 				},
 			},
 		}
-		if err := writeDelimitedMessage(out, resp); err != nil {
+		if err := app.WriteDelimitedMessage(out, resp); err != nil {
 			return err
 		}
 	}

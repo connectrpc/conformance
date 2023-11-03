@@ -24,6 +24,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"connectrpc.com/conformance/internal/app"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
@@ -36,25 +37,29 @@ import (
 func TestRunTestCasesForServer(t *testing.T) {
 	t.Parallel()
 
+	var svrResponseBuf bytes.Buffer
 	svrResponse := &conformancev1alpha1.ServerCompatResponse{
 		Host:    "127.0.0.1",
 		Port:    12345,
 		PemCert: []byte("some cert"),
 	}
-	svrResponseData, err := proto.Marshal(svrResponse)
+	err := app.WriteDelimitedMessage(&svrResponseBuf, svrResponse)
 	require.NoError(t, err)
+	svrResponseData := svrResponseBuf.Bytes()
 
 	svrInstance := serverInstance{
 		protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
 		httpVersion: conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
 		useTLS:      false,
 	}
-	expectedSvrReqData, err := proto.Marshal(&conformancev1alpha1.ServerCompatRequest{
+	var expectedSvrReqBuf bytes.Buffer
+	err = app.WriteDelimitedMessage(&expectedSvrReqBuf, &conformancev1alpha1.ServerCompatRequest{
 		Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
 		HttpVersion: conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
 		UseTls:      false,
 	})
 	require.NoError(t, err)
+	expectedSvrReqData := expectedSvrReqBuf.Bytes()
 
 	testCaseData := []*conformancev1alpha1.TestCase{
 		{

@@ -22,6 +22,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"time"
 
 	"connectrpc.com/conformance/internal/app"
 	"connectrpc.com/conformance/internal/compression"
@@ -42,26 +43,24 @@ const (
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
 	_ = errWriter // TODO: send out-of-band messages about test cases to this writer
 
-	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flag.String("host", defaultHost, "the host for the conformance server")
-	port := flag.String("port", defaultPort, "the port for the conformance server ")
+	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+	host := flags.String("host", defaultHost, "the host for the conformance server")
+	port := flags.String("port", defaultPort, "the port for the conformance server ")
 
-	flag.Parse()
-
-	// Read the server config from  the in reader
-	data, err := io.ReadAll(inReader)
-	if err != nil {
-		return err
+	_ = flags.Parse(args[1:])
+	if flags.NArg() != 0 {
+		return errors.New("this command does not accept any positional arguments")
 	}
 
 	codec := app.NewCodec(*json)
 
-	// Unmarshal into a ServerCompatRequest
+	// Read the server config from  the in reader
 	req := &v1alpha1.ServerCompatRequest{}
-	if err := codec.Unmarshal(data, req); err != nil {
+	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
 
@@ -86,20 +85,26 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter, errWr
 		Host: fmt.Sprint(tcpAddr.IP),
 		Port: uint32(tcpAddr.Port),
 	}
-	bytes, err := codec.Marshal(resp)
-	if err != nil {
-		return err
-	}
-	if _, err := outWriter.Write(bytes); err != nil {
+	if err := codec.NewEncoder(outWriter).Encode(resp); err != nil {
 		return err
 	}
 
 	// Finally, start the server
-	if err := server.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		return err
+	var serveError error
+	serveDone := make(chan struct{})
+	go func() {
+		defer close(serveDone)
+		serveError = server.Serve(listener)
+	}()
+	select {
+	case <-serveDone:
+		return serveError
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		//nolint:contextcheck // we use context.Background() because ctx is already done
+		return server.Shutdown(shutdownCtx)
 	}
-
-	return nil
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
