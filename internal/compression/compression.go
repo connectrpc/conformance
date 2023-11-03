@@ -16,5 +16,8 @@ package compression
 
 // The IANA names for supported compression algorithms.
 const (
-	Zstd = "zstd"
+	Brotli  = "br"
+	Deflate = "deflate"
+	Snappy  = "snappy"
+	Zstd    = "zstd"
 )

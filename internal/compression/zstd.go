@@ -48,11 +48,6 @@ func NewZstdDecompressor() connect.Decompressor {
 	}
 }
 
-// ZstdCompressor is a thin wrapper around a zstd Encoder.
-type ZstdCompressor struct {
-	*zstd.Encoder
-}
-
 // NewZstdCompressor returns a new Zstd Compressor.
 func NewZstdCompressor() connect.Compressor {
 	w, err := zstd.NewWriter(nil)

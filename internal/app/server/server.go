@@ -107,6 +107,9 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
+		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
+		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
+		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
 	))
 	// The server needs a lenient cors setup so that it can handle testing
