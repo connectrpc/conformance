@@ -17,6 +17,7 @@ package connectconformance
 import (
 	"bytes"
 	"errors"
+	"strings"
 	"testing"
 
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -123,13 +124,20 @@ func TestResults_Assert(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	require.Len(t, logger.lines, 6)
-	require.Contains(t, logger.lines[0], "FAILED: foo/bar/1: ")
-	require.Contains(t, logger.lines[1], "FAILED: foo/bar/2: ")
-	require.Contains(t, logger.lines[2], "INFO: known-to-fail/1 failed (as expected): ")
-	require.Contains(t, logger.lines[3], "INFO: known-to-fail/2 failed (as expected): ")
-	require.Equal(t, logger.lines[4], "FAILED: known-to-fail/3 was expected to fail but did not\n")
-	require.Equal(t, logger.lines[5], "FAILED: known-to-fail/4 was expected to fail but did not\n")
+	// only keep the summary lines:
+	var lines []string
+	for _, line := range logger.lines {
+		if strings.HasPrefix(line, "FAILED: ") || strings.HasPrefix(line, "INFO: ") {
+			lines = append(lines, line)
+		}
+	}
+	require.Len(t, lines, 6)
+	require.Contains(t, lines[0], "FAILED: foo/bar/1: ")
+	require.Contains(t, lines[1], "FAILED: foo/bar/2: ")
+	require.Contains(t, lines[2], "INFO: known-to-fail/1 failed (as expected): ")
+	require.Contains(t, lines[3], "INFO: known-to-fail/2 failed (as expected): ")
+	require.Equal(t, lines[4], "FAILED: known-to-fail/3 was expected to fail but did not\n")
+	require.Equal(t, lines[5], "FAILED: known-to-fail/4 was expected to fail but did not\n")
 }
 
 func TestResults_ServerSideband(t *testing.T) {
