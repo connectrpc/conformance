@@ -451,3 +451,10 @@ func (f *fakeClient) closeSend() {
 func (f *fakeClient) waitForResponses() error {
 	return nil
 }
+
+func (f *fakeClient) isRunning() bool {
+	return false
+}
+
+func (f *fakeClient) stop() {
+}

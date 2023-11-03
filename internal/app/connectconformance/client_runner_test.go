@@ -101,7 +101,7 @@ func TestRunClient(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			start := runInProcess(testCase.clientFunc)
+			start := runInProcess("testclient", testCase.clientFunc)
 			runner, err := runClient(context.Background(), start)
 			require.NoError(t, err)
 
@@ -109,6 +109,9 @@ func TestRunClient(t *testing.T) {
 			var actualFailedToSend int
 			for i, req := range testReqs {
 				err := runner.sendRequest(req, func(name string, _ *conformancev1alpha1.ClientCompatResponse, err error) {
+					if err != nil {
+						t.Logf("error for %s: %v", name, err)
+					}
 					actualResults[name] = err == nil
 				})
 				if err != nil {
