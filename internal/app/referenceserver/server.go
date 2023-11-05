@@ -35,20 +35,13 @@ import (
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-<<<<<<< HEAD:internal/app/referenceserver/server.go
-func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser) error {
-	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flag.String("host", internal.DefaultHost, "the host for the conformance server")
-	port := flag.String("port", internal.DefaultPort, "the port for the conformance server ")
-=======
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
 	_ = errWriter // TODO: send out-of-band messages about test cases to this writer
 
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flags.String("host", defaultHost, "the host for the conformance server")
-	port := flags.String("port", defaultPort, "the port for the conformance server ")
->>>>>>> v2:internal/app/server/server.go
+	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
+	port := flags.String("port", internal.DefaultPort, "the port for the conformance server ")
 
 	_ = flags.Parse(args[1:])
 	if flags.NArg() != 0 {

@@ -22,7 +22,7 @@ import (
 	"strings"
 	"sync"
 
-	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/protobuf/proto"
 )
@@ -90,7 +90,7 @@ func runTestCasesForServer(
 	}
 
 	// Write server request.
-	err = app.WriteDelimitedMessage(serverProcess.stdin, &conformancev1alpha1.ServerCompatRequest{
+	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev1alpha1.ServerCompatRequest{
 		Protocol:    meta.protocol,
 		HttpVersion: meta.httpVersion,
 		UseTls:      meta.useTLS,
@@ -106,7 +106,7 @@ func runTestCasesForServer(
 
 	// Read response.
 	var resp conformancev1alpha1.ServerCompatResponse
-	err = app.ReadDelimitedMessage(serverProcess.stdout, &resp)
+	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp)
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
 		return

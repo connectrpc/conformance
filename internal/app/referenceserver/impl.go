@@ -257,11 +257,7 @@ func parseUnaryResponseDefinition(
 			return nil, internal.ConvertProtoToConnectError(respType.Error)
 
 		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
-<<<<<<< HEAD:internal/app/referenceserver/impl.go
-			requestInfo := createRequestInfo(hdrs, reqs)
-=======
-			requestInfo := createRequestInfo(ctx, headers, reqs)
->>>>>>> v2:internal/app/server/impl.go
+			requestInfo := createRequestInfo(ctx, hdrs, reqs)
 			payload := &v1alpha1.ConformancePayload{
 				RequestInfo: requestInfo,
 			}
@@ -279,13 +275,8 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-<<<<<<< HEAD:internal/app/referenceserver/impl.go
-func createRequestInfo(hdrs http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
-	headerInfo := internal.ConvertToProtoHeader(hdrs)
-=======
 func createRequestInfo(ctx context.Context, headers http.Header, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
-	headerInfo := app.ConvertToProtoHeader(headers)
->>>>>>> v2:internal/app/server/impl.go
+	headerInfo := internal.ConvertToProtoHeader(headers)
 
 	var timeoutMs *int64
 	if deadline, ok := ctx.Deadline(); ok {

@@ -23,12 +23,12 @@ import (
 	"net"
 
 	"connectrpc.com/conformance/internal"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(_ context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
@@ -39,17 +39,11 @@ func Run(_ context.Context, args []string, inReader io.ReadCloser, outWriter io.
 		return errors.New("this command does not accept any positional arguments")
 	}
 
-	// Read the server config from  the in reader
-	data, err := io.ReadAll(inReader)
-	if err != nil {
-		return err
-	}
-
 	codec := internal.NewCodec(*json)
 
-	// Unmarshal into a ServerCompatRequest
-	req := &conformancev1alpha1.ServerCompatRequest{}
-	if err := codec.Unmarshal(data, req); err != nil {
+	// Read the server config from  the in reader
+	req := &v1alpha1.ServerCompatRequest{}
+	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
 
@@ -70,28 +64,32 @@ func Run(_ context.Context, args []string, inReader io.ReadCloser, outWriter io.
 		return errors.New("unable to determine tcp address from listener")
 	}
 
-	resp := &conformancev1alpha1.ServerCompatResponse{
+	resp := &v1alpha1.ServerCompatResponse{
 		Host: fmt.Sprint(tcpAddr.IP),
 		Port: uint32(tcpAddr.Port),
 	}
-	bytes, err := codec.Marshal(resp)
-	if err != nil {
-		return err
-	}
-	if _, err := outWriter.Write(bytes); err != nil {
+	if err := codec.NewEncoder(outWriter).Encode(resp); err != nil {
 		return err
 	}
 
 	// Finally, start the server
-	if err := server.Serve(listener); err != nil { //nolint:golint // it feels clearer to have this as a separate line
-		return err
+	var serveError error
+	serveDone := make(chan struct{})
+	go func() {
+		defer close(serveDone)
+		serveError = server.Serve(listener)
+	}()
+	select {
+	case <-serveDone:
+		return serveError
+	case <-ctx.Done():
+		server.GracefulStop()
+		return nil
 	}
-
-	return nil
 }
 
 func createServer() (*grpc.Server, error) { //nolint:unparam
 	server := grpc.NewServer()
-	conformancev1alpha1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
+	v1alpha1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
 	return server, nil
 }
