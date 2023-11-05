@@ -16,7 +16,7 @@ package grpcutil
 
 import (
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
-	"google.golang.org/grpc/codes"
+	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
 )
 
@@ -25,7 +25,9 @@ func ConvertProtoToGrpcError(err *v1alpha1.Error) error {
 	if err == nil {
 		return nil
 	}
-	grpcErr := status.Error(codes.Code(err.Code), err.Message)
-	// TODO - Error Details?
-	return grpcErr
+	return status.ErrorProto(&statuspb.Status{
+		Code:    err.Code,
+		Message: err.Message,
+		Details: err.Details,
+	})
 }

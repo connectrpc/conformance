@@ -22,19 +22,22 @@ import (
 	"io"
 	"net"
 
-	"connectrpc.com/conformance/internal/codec"
-	"connectrpc.com/conformance/internal/config"
+	"connectrpc.com/conformance/internal"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
-	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flag.String("host", config.DefaultHost, "the host for the conformance server")
-	port := flag.String("port", config.DefaultPort, "the port for the conformance server ")
+func Run(_ context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
+	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
+	port := flags.String("port", internal.DefaultPort, "the port for the conformance server ")
 
-	flag.Parse()
+	_ = flags.Parse(args[1:])
+	if flags.NArg() != 0 {
+		return errors.New("this command does not accept any positional arguments")
+	}
 
 	// Read the server config from  the in reader
 	data, err := io.ReadAll(inReader)
@@ -42,7 +45,7 @@ func Run(_ context.Context, _ []string, inReader io.ReadCloser, outWriter io.Wri
 		return err
 	}
 
-	codec := codec.NewCodec(*json)
+	codec := internal.NewCodec(*json)
 
 	// Unmarshal into a ServerCompatRequest
 	req := &conformancev1alpha1.ServerCompatRequest{}

@@ -50,7 +50,8 @@ func ConvertProtoHeaderToMetadata(
 	return md
 }
 
-// AddHeaderMetadata adds the given proto Headers into the context.
+// AddHeaderMetadata adds the given slice of headers to the current RPC
+// stored in the given context.
 func AddHeaderMetadata(
 	ctx context.Context,
 	hdrs []*v1alpha1.Header,
@@ -59,7 +60,8 @@ func AddHeaderMetadata(
 	return grpc.SetHeader(ctx, md)
 }
 
-// AddTrailerMetadata adds the given proto trailers into the context.
+// AddTrailerMetadata adds the given slice of trailers to the current RPC
+// stored in the given context.
 func AddTrailerMetadata(
 	ctx context.Context,
 	trailers []*v1alpha1.Header,

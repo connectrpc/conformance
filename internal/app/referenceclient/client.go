@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"connectrpc.com/conformance/internal/codec"
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -50,7 +50,7 @@ func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter, _ i
 		return err
 	}
 
-	codec := codec.NewCodec(*json)
+	codec := internal.NewCodec(*json)
 
 	req := &v1alpha1.ClientCompatRequest{}
 	if err := codec.Unmarshal(data, req); err != nil {

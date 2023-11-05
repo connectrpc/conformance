@@ -4,7 +4,7 @@
   "protocol": "PROTOCOL_GRPC",
   "codec": "CODEC_PROTO",
   "host": "127.0.0.1",
-  "port": 50675,
+  "port": 23458,
   "service": "connectrpc.conformance.v1alpha1.ConformanceService",
   "method": "Unary",
   "streamType": "STREAM_TYPE_UNARY",

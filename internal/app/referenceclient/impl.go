@@ -22,10 +22,9 @@ import (
 	"net/url"
 	"time"
 
-	connecterrors "connectrpc.com/conformance/internal/errors"
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
-	"connectrpc.com/conformance/internal/headers"
 	"connectrpc.com/connect"
 )
 
@@ -86,10 +85,10 @@ func (i *invoker) unary(
 	request := connect.NewRequest(ur)
 
 	// Add the specified request headers to the request
-	headers.AddHeaders(req.RequestHeaders, request.Header())
+	internal.AddHeaders(req.RequestHeaders, request.Header())
 
 	var protoErr *v1alpha1.Error
-	var hdrs []*v1alpha1.Header
+	var headers []*v1alpha1.Header
 	var trailers []*v1alpha1.Header
 	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
 
@@ -99,19 +98,19 @@ func (i *invoker) unary(
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := connecterrors.ConvertErrorToConnectError(err)
-		hdrs = headers.ConvertToProtoHeader(connectErr.Meta())
-		protoErr = connecterrors.ConvertConnectToProtoError(connectErr)
+		connectErr := internal.ConvertErrorToConnectError(err)
+		headers = internal.ConvertToProtoHeader(connectErr.Meta())
+		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, resp.Msg.Payload)
-		hdrs = headers.ConvertToProtoHeader(resp.Header())
-		trailers = headers.ConvertToProtoHeader(resp.Trailer())
+		headers = internal.ConvertToProtoHeader(resp.Header())
+		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
 	return &v1alpha1.ClientResponseResult{
-		ResponseHeaders:  hdrs,
+		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
@@ -132,14 +131,14 @@ func (i *invoker) serverStream(
 	request := connect.NewRequest(ssr)
 
 	// Add the specified request headers to the request
-	headers.AddHeaders(req.RequestHeaders, request.Header())
+	internal.AddHeaders(req.RequestHeaders, request.Header())
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
 		return nil, err
 	}
 	var protoErr *v1alpha1.Error
-	var hdrs []*v1alpha1.Header
+	var headers []*v1alpha1.Header
 	var trailers []*v1alpha1.Header
 	payloads := make([]*v1alpha1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	for stream.Receive() {
@@ -149,19 +148,19 @@ func (i *invoker) serverStream(
 	}
 	if stream.Err() != nil {
 		// If an error was returned, convert it to a proto Error
-		protoErr = connecterrors.ConvertErrorToProtoError(stream.Err())
+		protoErr = internal.ConvertErrorToProtoError(stream.Err())
 	}
 
 	// Read headers and trailers from the stream
-	hdrs = headers.ConvertToProtoHeader(stream.ResponseHeader())
-	trailers = headers.ConvertToProtoHeader(stream.ResponseTrailer())
+	headers = internal.ConvertToProtoHeader(stream.ResponseHeader())
+	trailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 
 	err = stream.Close()
 	if err != nil {
 		return nil, err
 	}
 	return &v1alpha1.ClientResponseResult{
-		ResponseHeaders:  hdrs,
+		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
@@ -176,7 +175,7 @@ func (i *invoker) clientStream(
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
-	headers.AddHeaders(req.RequestHeaders, stream.RequestHeader())
+	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
 	for _, msg := range req.RequestMessages {
 		csr := &v1alpha1.ClientStreamRequest{}
@@ -193,7 +192,7 @@ func (i *invoker) clientStream(
 	}
 
 	var protoErr *v1alpha1.Error
-	var hdrs []*v1alpha1.Header
+	var headers []*v1alpha1.Header
 	var trailers []*v1alpha1.Header
 	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
 
@@ -202,19 +201,19 @@ func (i *invoker) clientStream(
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := connecterrors.ConvertErrorToConnectError(err)
-		hdrs = headers.ConvertToProtoHeader(connectErr.Meta())
-		protoErr = connecterrors.ConvertConnectToProtoError(connectErr)
+		connectErr := internal.ConvertErrorToConnectError(err)
+		headers = internal.ConvertToProtoHeader(connectErr.Meta())
+		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, resp.Msg.Payload)
-		hdrs = headers.ConvertToProtoHeader(resp.Header())
-		trailers = headers.ConvertToProtoHeader(resp.Trailer())
+		headers = internal.ConvertToProtoHeader(resp.Header())
+		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
 	return &v1alpha1.ClientResponseResult{
-		ResponseHeaders:  hdrs,
+		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
@@ -234,13 +233,13 @@ func (i *invoker) bidiStream(
 	defer func() {
 		if result != nil {
 			// Read headers and trailers from the stream
-			result.ResponseHeaders = headers.ConvertToProtoHeader(stream.ResponseHeader())
-			result.ResponseTrailers = headers.ConvertToProtoHeader(stream.ResponseTrailer())
+			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
+			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 		}
 	}()
 
 	// Add the specified request headers to the request
-	headers.AddHeaders(req.RequestHeaders, stream.RequestHeader())
+	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
 	fullDuplex := req.StreamType == v1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
@@ -248,7 +247,7 @@ func (i *invoker) bidiStream(
 	for _, msg := range req.RequestMessages {
 		if err := ctx.Err(); err != nil {
 			// If an error was returned, convert it to a proto Error
-			protoErr = connecterrors.ConvertErrorToProtoError(err)
+			protoErr = internal.ConvertErrorToProtoError(err)
 			break
 		}
 		bsr := &v1alpha1.BidiStreamRequest{}
@@ -260,12 +259,12 @@ func (i *invoker) bidiStream(
 		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
 			// Call receive to get the error and convert it to a proto error
 			if _, recvErr := stream.Receive(); recvErr != nil {
-				protoErr = connecterrors.ConvertErrorToProtoError(recvErr)
+				protoErr = internal.ConvertErrorToProtoError(recvErr)
 			} else {
 				// Just in case the receive call doesn't return the error,
 				// use the error returned from Send. Note this should never
 				// happen, but is here as a safeguard.
-				protoErr = connecterrors.ConvertErrorToProtoError(err)
+				protoErr = internal.ConvertErrorToProtoError(err)
 			}
 			// Break the send loop
 			break
@@ -278,7 +277,7 @@ func (i *invoker) bidiStream(
 					// If an error was returned that is not an EOF, convert it
 					// to a proto Error. If the error was an EOF, that just means
 					// reads are done.
-					protoErr = connecterrors.ConvertErrorToProtoError(err)
+					protoErr = internal.ConvertErrorToProtoError(err)
 				}
 				// Reads are done either because we received an error or an EOF
 				// In either case, break the outer loop
@@ -297,7 +296,7 @@ func (i *invoker) bidiStream(
 
 	// Sends are done, close the send side of the stream
 	if err := stream.CloseRequest(); err != nil {
-		result.Error = connecterrors.ConvertErrorToProtoError(err)
+		result.Error = internal.ConvertErrorToProtoError(err)
 		return result, nil
 	}
 
@@ -305,7 +304,7 @@ func (i *invoker) bidiStream(
 	for {
 		if err := ctx.Err(); err != nil {
 			// If an error was returned, convert it to a proto Error
-			protoErr = connecterrors.ConvertErrorToProtoError(err)
+			protoErr = internal.ConvertErrorToProtoError(err)
 			break
 		}
 		msg, err := stream.Receive()
@@ -314,7 +313,7 @@ func (i *invoker) bidiStream(
 				// If an error was returned that is not an EOF, convert it
 				// to a proto Error. If the error was an EOF, that just means
 				// reads are done.
-				protoErr = connecterrors.ConvertErrorToProtoError(err)
+				protoErr = internal.ConvertErrorToProtoError(err)
 			}
 			break
 		}
@@ -328,7 +327,7 @@ func (i *invoker) bidiStream(
 	}
 
 	if err := stream.CloseResponse(); err != nil {
-		result.Error = connecterrors.ConvertErrorToProtoError(err)
+		result.Error = internal.ConvertErrorToProtoError(err)
 	}
 
 	return result, nil
