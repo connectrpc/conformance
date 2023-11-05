@@ -1,0 +1,55 @@
+{
+  "testName": "gRPC Bidi Stream Full Duplex Happy Path",
+  "httpVersion": "HTTP_VERSION_2",
+  "protocol": "PROTOCOL_GRPC",
+  "codec": "CODEC_PROTO",
+  "host": "127.0.0.1",
+  "port": 23458,
+  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
+  "method": "BidiStream",
+  "streamType": "STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM",
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": [
+          "dGVzdCByZXNwb25zZQ==",
+          "dGVzdCByZXNwb25zZQ=="
+        ],
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      },
+      "fullDuplex": true
+    },
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
+      "requestData": "dGVzdCByZXNwb25zZQ=="
+    }
+  ]
+}

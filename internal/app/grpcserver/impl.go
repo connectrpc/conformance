@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"time"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/conformance/internal/grpcutil"
@@ -115,11 +116,46 @@ func (c *conformanceServiceServer) ClientStream(
 }
 
 func (c *conformanceServiceServer) ServerStream(
-	_ *v1alpha1.ServerStreamRequest,
-	_ v1alpha1.ConformanceService_ServerStreamServer,
+	req *v1alpha1.ServerStreamRequest,
+	stream v1alpha1.ConformanceService_ServerStreamServer,
 ) error {
-	// TODO - Implement ServerStream
-	return status.Errorf(codes.Unimplemented, "method ServerStream not implemented")
+	responseDefinition := req.ResponseDefinition
+	if responseDefinition != nil {
+		grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders)
+		grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers)
+	}
+
+	// Convert the request to an Any so that it can be recorded in the payload
+	msgAsAny, err := asAny(req)
+	if err != nil {
+		return err
+	}
+
+	metadata, _ := metadata.FromIncomingContext(stream.Context())
+	requestInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+	payload := &v1alpha1.ConformancePayload{
+		RequestInfo: requestInfo,
+	}
+
+	for _, data := range responseDefinition.ResponseData {
+		payload.Data = data
+
+		resp := &v1alpha1.ServerStreamResponse{
+			Payload: payload,
+		}
+
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+		if err := stream.Send(resp); err != nil {
+			return status.Errorf(codes.Internal, fmt.Sprintf("error sending on stream: %s", err.Error()))
+		}
+		// Only echo back the request info in the first response
+		payload.RequestInfo = nil
+	}
+	if responseDefinition.Error != nil {
+		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+	}
+	return nil
 }
 
 func (c *conformanceServiceServer) BidiStream(
