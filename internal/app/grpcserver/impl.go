@@ -17,6 +17,7 @@ package grpcserver
 import (
 	"context"
 	"fmt"
+	"io"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/conformance/internal/grpcutil"
@@ -68,10 +69,49 @@ func (c *conformanceServiceServer) Unary(
 }
 
 func (c *conformanceServiceServer) ClientStream(
-	_ v1alpha1.ConformanceService_ClientStreamServer,
+	stream v1alpha1.ConformanceService_ClientStreamServer,
 ) error {
-	// TODO - Implement ClientStream
-	return status.Errorf(codes.Unimplemented, "method ClientStream not implemented")
+	var responseDefinition *v1alpha1.UnaryResponseDefinition
+	firstRecv := true
+	var reqs []*anypb.Any
+
+	for {
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
+		msg, err := stream.Recv()
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return err
+		}
+		// If this is the first message received on the stream, save off the response definition we need to send
+		if firstRecv {
+			responseDefinition = msg.ResponseDefinition
+			firstRecv = false
+		}
+		// Record all the requests received
+		msgAsAny, err := asAny(msg)
+		if err != nil {
+			return err
+		}
+		reqs = append(reqs, msgAsAny)
+
+	}
+
+	grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders)
+	grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers)
+
+	md, _ := metadata.FromIncomingContext(stream.Context())
+	payload, err := parseUnaryResponseDefinition(responseDefinition, md, reqs)
+	if err != nil {
+		return err
+	}
+
+	return stream.SendAndClose(&v1alpha1.ClientStreamResponse{
+		Payload: payload,
+	})
 }
 
 func (c *conformanceServiceServer) ServerStream(
