@@ -16,7 +16,6 @@ package grpcserver
 
 import (
 	"context"
-	"fmt"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/conformance/internal/grpcutil"
@@ -71,7 +70,7 @@ func (c *conformanceServiceServer) ClientStream(
 	_ v1alpha1.ConformanceService_ClientStreamServer,
 ) error {
 	// TODO - Implement ClientStream
-	return status.Errorf(codes.Unimplemented, "method ClientStream not implemented")
+	return status.Error(codes.Unimplemented, "method ClientStream not implemented")
 }
 
 func (c *conformanceServiceServer) ServerStream(
@@ -79,14 +78,14 @@ func (c *conformanceServiceServer) ServerStream(
 	_ v1alpha1.ConformanceService_ServerStreamServer,
 ) error {
 	// TODO - Implement ServerStream
-	return status.Errorf(codes.Unimplemented, "method ServerStream not implemented")
+	return status.Error(codes.Unimplemented, "method ServerStream not implemented")
 }
 
 func (c *conformanceServiceServer) BidiStream(
 	_ v1alpha1.ConformanceService_BidiStreamServer,
 ) error {
 	// TODO - Implement BidiStream
-	return status.Errorf(codes.Unimplemented, "method BidiStream not implemented")
+	return status.Error(codes.Unimplemented, "method BidiStream not implemented")
 }
 
 // Parses the given unary response definition and returns either
@@ -113,10 +112,14 @@ func parseUnaryResponseDefinition(
 			}
 			return payload, nil
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("provided UnaryRequest.Response has an unexpected type %T", respType))
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"provided UnaryRequest.Response has an unexpected type %T",
+				respType,
+			)
 		}
 	}
-	return nil, status.Errorf(codes.InvalidArgument, "no response definition provided")
+	return nil, status.Error(codes.InvalidArgument, "no response definition provided")
 }
 
 // Creates request info for a conformance payload.
@@ -136,7 +139,8 @@ func asAny(msg proto.Message) (*anypb.Any, error) {
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
-			fmt.Sprintf("unable to convert message: %s", err.Error()),
+			"unable to convert message: %s",
+			err.Error(),
 		)
 	}
 	return msgAsAny, nil
