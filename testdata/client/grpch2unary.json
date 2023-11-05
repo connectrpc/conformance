@@ -1,5 +1,5 @@
 {
-  "testName": "Unary Happy Path via gRPC HTTP/2",
+  "testName": "gRPC Unary Happy Path",
   "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_GRPC",
   "codec": "CODEC_PROTO",
