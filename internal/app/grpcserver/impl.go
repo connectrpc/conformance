@@ -16,6 +16,7 @@ package grpcserver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -159,10 +160,97 @@ func (c *conformanceServiceServer) ServerStream(
 }
 
 func (c *conformanceServiceServer) BidiStream(
-	_ v1alpha1.ConformanceService_BidiStreamServer,
+	stream v1alpha1.ConformanceService_BidiStreamServer,
 ) error {
-	// TODO - Implement BidiStream
-	return status.Errorf(codes.Unimplemented, "method BidiStream not implemented")
+	var responseDefinition *v1alpha1.StreamResponseDefinition
+	fullDuplex := false
+	firstRecv := true
+	respNum := 0
+	var reqs []*anypb.Any
+	for {
+		if err := stream.Context().Err(); err != nil {
+			return err
+		}
+		req, err := stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				// Reads are done, break the receive loop and send any remaining responses
+				break
+			}
+			return fmt.Errorf("receive request: %w", err)
+		}
+
+		// Record all requests received
+		msgAsAny, err := asAny(req)
+		if err != nil {
+			return err
+		}
+		reqs = append(reqs, msgAsAny)
+
+		// If this is the first message in the stream, save off the total responses we need to send
+		// plus whether this should be full or half duplex
+		if firstRecv {
+			responseDefinition = req.ResponseDefinition
+			fullDuplex = req.FullDuplex
+			firstRecv = false
+
+			if err := grpcutil.AddHeaderMetadata(stream.Context(), req.ResponseDefinition.ResponseHeaders); err != nil {
+				return err
+			}
+			if err := grpcutil.AddTrailerMetadata(stream.Context(), req.ResponseDefinition.ResponseTrailers); err != nil {
+				return err
+			}
+		}
+
+		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
+		if fullDuplex {
+			if respNum >= len(responseDefinition.ResponseData) {
+				return status.Error(
+					codes.Aborted,
+					"received more requests than desired responses on a full duplex stream",
+				)
+			}
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			requestInfo := createRequestInfo(metadata, reqs)
+			resp := &v1alpha1.BidiStreamResponse{
+				Payload: &v1alpha1.ConformancePayload{
+					RequestInfo: requestInfo,
+					Data:        responseDefinition.ResponseData[respNum],
+				},
+			}
+			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			if err := stream.Send(resp); err != nil {
+				return status.Error(codes.Internal, fmt.Sprintf("error sending on stream: %s", err.Error()))
+			}
+			respNum++
+			reqs = nil
+		}
+	}
+
+	// If we still have responses left to send, flush them now. This accommodates
+	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
+	// where the requested responses are greater than the total requests.
+	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+		metadata, _ := metadata.FromIncomingContext(stream.Context())
+		requestInfo := createRequestInfo(metadata, reqs)
+		resp := &v1alpha1.BidiStreamResponse{
+			Payload: &v1alpha1.ConformancePayload{
+				RequestInfo: requestInfo,
+				Data:        responseDefinition.ResponseData[respNum],
+			},
+		}
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+		if err := stream.Send(resp); err != nil {
+			return status.Error(codes.Internal, fmt.Sprintf("error sending on stream: %s", err.Error()))
+		}
+	}
+
+	if responseDefinition.Error != nil {
+		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+	}
+	return nil
 }
 
 // Parses the given unary response definition and returns either
