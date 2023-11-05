@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"connectrpc.com/conformance/internal/app"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 )
 
@@ -35,29 +36,31 @@ type clientRunner interface {
 	sendRequest(req *conformancev1alpha1.ClientCompatRequest, whenDone func(string, *conformancev1alpha1.ClientCompatResponse, error)) error
 	closeSend()
 	waitForResponses() error
+
+	isRunning() bool
+	stop()
 }
 
 func runClient(ctx context.Context, start processStarter) (clientRunner, error) {
-	ctx, cancel := context.WithCancel(ctx)
 	proc, err := start(ctx, false)
 	if err != nil {
-		cancel() // prevent any context-related leak
 		return nil, err
 	}
-	proc.whenDone(func(_ error) { cancel() })
 	result := &clientProcessRunner{
 		proc:       proc,
-		cancel:     cancel,
 		done:       make(chan struct{}),
 		pendingOps: map[string]func(string, *conformancev1alpha1.ClientCompatResponse, error){},
 	}
+	proc.whenDone(func(_ error) {
+		result.terminated.Store(false)
+	})
 	go result.consumeOutput()
 	return result, nil
 }
 
 type clientProcessRunner struct {
-	proc   *process
-	cancel context.CancelFunc
+	proc       *process
+	terminated atomic.Bool
 
 	err  atomic.Pointer[error]
 	done chan struct{}
@@ -101,7 +104,7 @@ func (c *clientProcessRunner) sendRequest(req *conformancev1alpha1.ClientCompatR
 		return fmt.Errorf("%w: %q", errDuplicate, req.TestName)
 	}
 
-	if err := writeDelimitedMessage(c.proc.stdin, req); err != nil {
+	if err := app.WriteDelimitedMessage(c.proc.stdin, req); err != nil {
 		// Since we eagerly added to pending set but failed to write,
 		// we now need to remove it to clean up.
 		c.pendingMu.Lock()
@@ -121,7 +124,6 @@ func (c *clientProcessRunner) sendRequest(req *conformancev1alpha1.ClientCompatR
 			err = errors.New("could not write request: client closed stdin")
 		}
 		c.err.CompareAndSwap(nil, &err)
-		c.cancel()
 		return err
 	}
 
@@ -137,12 +139,40 @@ func (c *clientProcessRunner) closeSend() {
 
 func (c *clientProcessRunner) waitForResponses() error {
 	<-c.done
-	procErr := c.proc.result()
+
+	// Allow process some time to close on its own.
+	procErrChan := make(chan error, 1)
+	go func() {
+		procErrChan <- c.proc.result()
+	}()
+	var procErr error
+	select {
+	case procErr = <-procErrChan:
+	case <-time.After(3 * time.Second):
+		// Not closing fast enough. Let's prod it along
+		c.proc.abort()
+		select {
+		case procErr = <-procErrChan:
+		case <-time.After(3 * time.Second):
+			procErr = errors.New("client process took to long terminate")
+		}
+	}
+
 	err := c.err.Load()
 	if err != nil {
 		return *err
 	}
 	return procErr
+}
+
+func (c *clientProcessRunner) isRunning() bool {
+	return !c.terminated.Load()
+}
+
+func (c *clientProcessRunner) stop() {
+	c.proc.abort()
+	c.terminated.Store(true)
+	_ = c.proc.result() // wait for process to stop
 }
 
 func (c *clientProcessRunner) consumeOutput() {
@@ -151,6 +181,8 @@ func (c *clientProcessRunner) consumeOutput() {
 	defer func() {
 		if reasonForReturn != nil && !errors.Is(reasonForReturn, io.EOF) {
 			c.err.CompareAndSwap(nil, &reasonForReturn)
+			c.terminated.Store(true)
+			c.proc.abort()
 		}
 		c.closeSend() // stop the send side now that we're done with receive side
 
@@ -173,7 +205,7 @@ func (c *clientProcessRunner) consumeOutput() {
 		readDone := make(chan struct{})
 		go func() {
 			defer close(readDone)
-			readErr = readDelimitedMessage(c.proc.stdout, resp)
+			readErr = app.ReadDelimitedMessage(c.proc.stdout, resp)
 		}()
 
 		select {
@@ -184,6 +216,7 @@ func (c *clientProcessRunner) consumeOutput() {
 			}
 		case <-time.After(testCaseTimeout):
 			reasonForReturn = errors.New("timed out waiting for result from client")
+			return
 		}
 
 		c.pendingMu.Lock()

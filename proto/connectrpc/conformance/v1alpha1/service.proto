@@ -201,8 +201,10 @@ message ConformancePayload {
   message RequestInfo {
     // The server echos back the request headers it observed here.
     repeated Header request_headers = 1;
-    // The timeout observed that was included in the request.
-    optional uint32 timeout_ms = 2;
+    // The timeout observed that was included in the request. Other timeouts use a
+    // type of uint32, but we want to be lenient here to allow whatever value the RPC
+    // server observes, even if it's outside the range of uint32.
+    optional int64 timeout_ms = 2;
     // The server should echo back all requests received.
     // For unary and server-streaming requests, this should always contain a single request
     // For client-streaming and half-duplex bidi-streaming, this should contain

@@ -37,57 +37,54 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, _ []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) error {
-	json := flag.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) error {
+	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 
-	flag.Parse()
-
-	// Read the server config from  the in reader
-	// TODO - This should be able to read many compatrequests and make sure that whatever format this
-	// reads is the same as the format that the test runner actually writes.
-	data, err := io.ReadAll(inReader)
-	if err != nil {
-		return err
+	_ = flags.Parse(args[1:])
+	if flags.NArg() != 0 {
+		return errors.New("this command does not accept any positional arguments")
 	}
 
 	codec := internal.NewCodec(*json)
+	decoder := codec.NewDecoder(inReader)
+	encoder := codec.NewEncoder(outWriter)
 
-	req := &v1alpha1.ClientCompatRequest{}
-	if err := codec.Unmarshal(data, req); err != nil {
-		return err
-	}
-
-	result, err := invoke(ctx, req)
-
-	// Build the result for the out writer.
-	resp := &v1alpha1.ClientCompatResponse{
-		TestName: req.TestName,
-	}
-	// If an error was returned, it was a runtime / unexpected internal error so
-	// the written response should contain an error result, not a response with
-	// any RPC information
-	if err != nil {
-		resp.Result = &v1alpha1.ClientCompatResponse_Error{
-			Error: &v1alpha1.ClientErrorResult{
-				Message: err.Error(),
-			},
+	for {
+		var req v1alpha1.ClientCompatRequest
+		err := decoder.DecodeNext(&req)
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return nil
+			}
+			return err
 		}
-	} else {
-		resp.Result = &v1alpha1.ClientCompatResponse_Response{
-			Response: result,
+		result, err := invoke(ctx, &req)
+
+		// Build the result for the out writer.
+		resp := &v1alpha1.ClientCompatResponse{
+			TestName: req.TestName,
+		}
+		// If an error was returned, it was a runtime / unexpected internal error so
+		// the written response should contain an error result, not a response with
+		// any RPC information
+		if err != nil {
+			resp.Result = &v1alpha1.ClientCompatResponse_Error{
+				Error: &v1alpha1.ClientErrorResult{
+					Message: err.Error(),
+				},
+			}
+		} else {
+			resp.Result = &v1alpha1.ClientCompatResponse_Response{
+				Response: result,
+			}
+		}
+
+		// Marshal the response and write the output
+		if err := encoder.Encode(resp); err != nil {
+			return err
 		}
 	}
-
-	// Marshal the response and write the output
-	bytes, err := codec.Marshal(resp)
-	if err != nil {
-		return err
-	}
-	if _, err := outWriter.Write(bytes); err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Invokes a ClientCompatRequest, returning either the result of the invocation or an error. The error

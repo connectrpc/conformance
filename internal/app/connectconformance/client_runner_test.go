@@ -22,6 +22,7 @@ import (
 	"sort"
 	"testing"
 
+	"connectrpc.com/conformance/internal/app"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -100,7 +101,7 @@ func TestRunClient(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			start := runInProcess(testCase.clientFunc)
+			start := runInProcess("testclient", testCase.clientFunc)
 			runner, err := runClient(context.Background(), start)
 			require.NoError(t, err)
 
@@ -108,6 +109,9 @@ func TestRunClient(t *testing.T) {
 			var actualFailedToSend int
 			for i, req := range testReqs {
 				err := runner.sendRequest(req, func(name string, _ *conformancev1alpha1.ClientCompatResponse, err error) {
+					if err != nil {
+						t.Logf("error for %s: %v", name, err)
+					}
 					actualResults[name] = err == nil
 				})
 				if err != nil {
@@ -139,7 +143,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 	var count int
 	for {
 		req := &conformancev1alpha1.ClientCompatRequest{}
-		if err := readDelimitedMessage(in, req); err != nil {
+		if err := app.ReadDelimitedMessage(in, req); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -155,7 +159,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 				},
 			},
 		}
-		if err := writeDelimitedMessage(out, resp); err != nil {
+		if err := app.WriteDelimitedMessage(out, resp); err != nil {
 			return err
 		}
 		count++
@@ -169,7 +173,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 	var allCases []string
 	for {
 		req := &conformancev1alpha1.ClientCompatRequest{}
-		if err := readDelimitedMessage(in, req); err != nil {
+		if err := app.ReadDelimitedMessage(in, req); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -203,7 +207,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 				},
 			},
 		}
-		if err := writeDelimitedMessage(out, resp); err != nil {
+		if err := app.WriteDelimitedMessage(out, resp); err != nil {
 			return err
 		}
 	}

@@ -70,13 +70,34 @@ func runCommand(command []string) processStarter {
 		if err := cmd.Start(); err != nil {
 			return nil, err
 		}
-		return (*cmdProcess)(cmd), nil
+		cmdProc := &cmdProcess{
+			cmd:  cmd,
+			done: make(chan struct{}),
+		}
+		go func() {
+			// cmd.Wait can only be called once. So we call it from this goroutine
+			// and then publish the result so it can be read via cmdProc.result()
+			defer close(cmdProc.done)
+			cmdProc.cmdResult = cmd.Wait()
+			// Also close pipes when the process exits, just so any goroutines that
+			// are blocked reading/writing can wake up and observe EOF.
+			if stdin != os.Stdin {
+				_ = stdin.Close()
+			}
+			if stdout != os.Stdout {
+				_ = stdout.Close()
+			}
+			if stderr != os.Stderr {
+				_ = stderr.Close()
+			}
+		}()
+		return cmdProc, nil
 	})
 }
 
 // runInProcess returns a process starter that invokes the given function
 // in another goroutine.
-func runInProcess(impl func(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error) processStarter {
+func runInProcess(name string, impl func(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error) processStarter {
 	return makeProcess(func(ctx context.Context, stdin io.ReadCloser, stdout, stderr io.WriteCloser) (processController, error) {
 		ctx, cancel := context.WithCancel(ctx)
 		proc := &localProcess{
@@ -105,7 +126,7 @@ func runInProcess(impl func(ctx context.Context, args []string, in io.ReadCloser
 					_ = stderr.Close()
 				}
 			}()
-			proc.err = impl(ctx, nil, stdin, stdout, stderr)
+			proc.err = impl(ctx, []string{name}, stdin, stdout, stderr)
 		}()
 		return proc, nil
 	})
@@ -136,21 +157,25 @@ func makeProcess(procFunc func(ctx context.Context, stdin io.ReadCloser, stdout,
 	}
 }
 
-type cmdProcess exec.Cmd
+type cmdProcess struct {
+	cmd       *exec.Cmd
+	done      chan struct{}
+	cmdResult error
+}
 
 func (c *cmdProcess) result() error {
-	return (*exec.Cmd)(c).Wait()
+	<-c.done
+	return c.cmdResult
 }
 
 func (c *cmdProcess) abort() {
-	cmd := (*exec.Cmd)(c)
-	err := cmd.Cancel()
+	err := c.cmd.Cancel()
 	if err == nil || errors.Is(err, os.ErrProcessDone) {
 		// done
 		return
 	}
 	// Failed to cancel? Try to kill the process.
-	_ = cmd.Process.Kill()
+	_ = c.cmd.Process.Kill()
 }
 
 func (c *cmdProcess) whenDone(action func(error)) {

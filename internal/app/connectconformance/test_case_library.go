@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"path"
 	"sort"
+	"strings"
 
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/bufbuild/protoyaml-go"
@@ -189,7 +190,7 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1a
 		}
 		suite := &conformancev1alpha1.TestSuite{}
 		if err := opts.Unmarshal(data, suite); err != nil {
-			return nil, err
+			return nil, ensureFileName(err, testFilePath)
 		}
 		allSuites[testFilePath] = suite
 	}
@@ -226,4 +227,11 @@ func allValues[T ~int32](m map[int32]string) []T {
 		return vals[i] < vals[j]
 	})
 	return vals
+}
+
+func ensureFileName(err error, filename string) error {
+	if strings.Contains(err.Error(), filename) {
+		return err // already contains filename, nothing else to do
+	}
+	return fmt.Errorf("%s: %w", filename, err)
 }

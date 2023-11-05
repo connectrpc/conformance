@@ -4,7 +4,7 @@
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
-  "port": 58686,
+  "port": 23457,
   "service": "connectrpc.conformance.v1alpha1.ConformanceService",
   "method": "BidiStream",
   "streamType": "STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM",
