@@ -74,3 +74,6 @@ issues:
     - linters: [gosec]
       path: cmd/serverconnect/main.go
       text: "G112: Potential Slowloris Attack because ReadHeaderTimeout is not configured in the http.Server"
+    # Ignore gosec linter in createcert (uses sha1, writes readable files).
+    - linters: [gosec]
+      path: cmd/createcert/main.go
