@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package client
+package referenceclient
 
 import (
 	"context"
@@ -25,7 +25,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -46,7 +46,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 		return errors.New("this command does not accept any positional arguments")
 	}
 
-	codec := app.NewCodec(*json)
+	codec := internal.NewCodec(*json)
 	decoder := codec.NewDecoder(inReader)
 	encoder := codec.NewEncoder(outWriter)
 

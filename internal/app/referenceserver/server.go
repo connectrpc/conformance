@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package server
+package referenceserver
 
 import (
 	"context"
@@ -24,7 +24,7 @@ import (
 	"net/http"
 	"time"
 
-	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -34,29 +34,21 @@ import (
 	"golang.org/x/net/http2/h2c"
 )
 
-const (
-	// The default host to use for the server.
-	defaultHost = "127.0.0.1"
-	// The default port to use for the server. We choose 0 so that
-	// an ephemeral port is selected by the OS if no port is specified.
-	defaultPort = "0"
-)
-
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
 	_ = errWriter // TODO: send out-of-band messages about test cases to this writer
 
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flags.String("host", defaultHost, "the host for the conformance server")
-	port := flags.String("port", defaultPort, "the port for the conformance server ")
+	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
+	port := flags.String("port", internal.DefaultPort, "the port for the conformance server ")
 
 	_ = flags.Parse(args[1:])
 	if flags.NArg() != 0 {
 		return errors.New("this command does not accept any positional arguments")
 	}
 
-	codec := app.NewCodec(*json)
+	codec := internal.NewCodec(*json)
 
 	// Read the server config from  the in reader
 	req := &v1alpha1.ServerCompatRequest{}
@@ -156,7 +148,7 @@ func createServer(req *v1alpha1.ServerCompatRequest) (*http.Server, error) {
 // Create a new HTTP/1.1 server.
 func newH1Server(handler http.Handler) *http.Server {
 	h1Server := &http.Server{ //nolint:gosec
-		Addr:    net.JoinHostPort(defaultHost, defaultPort),
+		Addr:    net.JoinHostPort(internal.DefaultHost, internal.DefaultPort),
 		Handler: handler,
 	}
 	return h1Server
@@ -165,7 +157,7 @@ func newH1Server(handler http.Handler) *http.Server {
 // Create a new HTTP/2 server.
 func newH2Server(handler http.Handler) *http.Server {
 	h2Server := &http.Server{ //nolint:gosec
-		Addr: net.JoinHostPort(defaultHost, defaultPort),
+		Addr: net.JoinHostPort(internal.DefaultHost, internal.DefaultPort),
 	}
 	h2Server.Handler = h2c.NewHandler(handler, &http2.Server{})
 	return h2Server
