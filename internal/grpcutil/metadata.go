@@ -51,7 +51,7 @@ func ConvertProtoHeaderToMetadata(
 }
 
 // AddHeaderMetadata adds the given slice of headers to the current RPC
-// stored in the given context.
+// stored in the given context. Used for sending metadata from the server side.
 func AddHeaderMetadata(
 	ctx context.Context,
 	hdrs []*v1alpha1.Header,
@@ -61,11 +61,22 @@ func AddHeaderMetadata(
 }
 
 // AddTrailerMetadata adds the given slice of trailers to the current RPC
-// stored in the given context.
+// stored in the given context. Used for sending metadata from the server side
 func AddTrailerMetadata(
 	ctx context.Context,
 	trailers []*v1alpha1.Header,
 ) error {
 	md := ConvertProtoHeaderToMetadata(trailers)
 	return grpc.SetTrailer(ctx, md)
+}
+
+// Appends the given headers to the outgoing context. Used for sending metadata
+// from the client side
+func AppendToOutgoingContext(ctx context.Context, src []*v1alpha1.Header) context.Context {
+	for _, hdr := range src {
+		for _, val := range hdr.Value {
+			ctx = metadata.AppendToOutgoingContext(ctx, hdr.Name, val)
+		}
+	}
+	return ctx
 }

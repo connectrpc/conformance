@@ -79,9 +79,7 @@ func (i *invoker) unary(
 	}
 
 	// Add the specified request headers to the request
-	if err := grpcutil.AddHeaderMetadata(ctx, ccr.RequestHeaders); err != nil {
-		return nil, err
-	}
+	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
 	var protoErr *v1alpha1.Error
 	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
@@ -98,13 +96,10 @@ func (i *invoker) unary(
 	headers := grpcutil.ConvertMetadataToProtoHeader(headerMD)
 	trailers := grpcutil.ConvertMetadataToProtoHeader(trailerMD)
 	if err != nil {
-		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
-		// convert _that_ to a proto Error so we can set it in the response.
+		// If an error was returned, convert it to a gRPC error
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
 	} else {
 		// If the call was successful, get the returned payloads
-		// and the headers and trailers
 		payloads = append(payloads, resp.Payload)
 	}
 
