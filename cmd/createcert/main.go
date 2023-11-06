@@ -16,8 +16,8 @@ package main
 
 // createcert is a simple standalone Go program to generate certificates for
 // use by the conformance tests. It generates a CA, and then generates a
-// client cert, two server certs (for connect and gRPC), and a client/server
-// cert for envoy. The certificates expire after 10 years, and once updated
+// client cert, two server certs (for connect and gRPC), and two client/server
+// certs for envoy/localhost. The certificates expire after 10 years, and once updated
 // any downstream projects will need to incorporate the new certs to run the
 // conformance tests.
 //
@@ -59,8 +59,10 @@ func main() {
 	if err := certgen.createCert("client", Client, notAfter); err != nil {
 		log.Fatalf("failed to create client certificate: %v", err)
 	}
-	if err := certgen.createCert("envoy", Client|Server, notAfter); err != nil {
-		log.Fatalf("failed to create envoy certificate: %v", err)
+	for _, name := range []string{"envoy", "localhost"} {
+		if err := certgen.createCert(name, Client|Server, notAfter); err != nil {
+			log.Fatalf("failed to create envoy certificate: %v", err)
+		}
 	}
 	for _, name := range []string{"server-connect", "server-grpc"} {
 		if err := certgen.createCert(name, Server, notAfter); err != nil {
