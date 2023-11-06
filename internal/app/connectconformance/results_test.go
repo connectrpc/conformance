@@ -40,12 +40,13 @@ func TestResults_SetOutcome(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	require.Len(t, logger.lines, 5)
-	require.Equal(t, logger.lines[0], "FAILED: foo/bar/2: fail\n")
-	require.Equal(t, logger.lines[1], "FAILED: foo/bar/3: fail\n")
-	require.Equal(t, logger.lines[2], "FAILED: known-to-fail/1 was expected to fail but did not\n")
-	require.Equal(t, logger.lines[3], "FAILED: known-to-fail/2: fail\n")
-	require.Equal(t, logger.lines[4], "INFO: known-to-fail/3 failed (as expected): fail\n")
+	lines := logger.errorLines()
+	require.Len(t, lines, 5)
+	require.Equal(t, lines[0], "FAILED: foo/bar/2: fail\n")
+	require.Equal(t, lines[1], "FAILED: foo/bar/3: fail\n")
+	require.Equal(t, lines[2], "FAILED: known-to-fail/1 was expected to fail but did not\n")
+	require.Equal(t, lines[3], "FAILED: known-to-fail/2: fail\n")
+	require.Equal(t, lines[4], "INFO: known-to-fail/3 failed (as expected): fail\n")
 }
 
 func TestResults_FailedToStart(t *testing.T) {
@@ -59,10 +60,11 @@ func TestResults_FailedToStart(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	require.Len(t, logger.lines, 2)
-	require.Equal(t, logger.lines[0], "FAILED: foo/bar/1: fail\n")
+	lines := logger.errorLines()
+	require.Len(t, lines, 2)
+	require.Equal(t, lines[0], "FAILED: foo/bar/1: fail\n")
 	// Marked as failure even though expected to fail because it failed to start.
-	require.Equal(t, logger.lines[1], "FAILED: known-to-fail/1: fail\n")
+	require.Equal(t, lines[1], "FAILED: known-to-fail/1: fail\n")
 }
 
 func TestResults_FailRemaining(t *testing.T) {
@@ -80,13 +82,14 @@ func TestResults_FailRemaining(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	require.Len(t, logger.lines, 3)
-	require.Equal(t, logger.lines[0], "FAILED: foo/bar/2: something went wrong\n")
-	require.Equal(t, logger.lines[1], "INFO: known-to-fail/1 failed (as expected): fail\n")
+	lines := logger.errorLines()
+	require.Len(t, lines, 3)
+	require.Equal(t, lines[0], "FAILED: foo/bar/2: something went wrong\n")
+	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected): fail\n")
 	// Marked as failure even though expected to fail because failRemaining is
 	// used when a process under test dies (so this error is not due to lack of
 	// conformance).
-	require.Equal(t, logger.lines[2], "FAILED: known-to-fail/2: something went wrong\n")
+	require.Equal(t, lines[2], "FAILED: known-to-fail/2: something went wrong\n")
 }
 
 func TestResults_Failed(t *testing.T) {
@@ -98,9 +101,10 @@ func TestResults_Failed(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	require.Len(t, logger.lines, 2)
-	require.Equal(t, logger.lines[0], "FAILED: foo/bar/1: fail\n")
-	require.Equal(t, logger.lines[1], "INFO: known-to-fail/1 failed (as expected): fail\n")
+	lines := logger.errorLines()
+	require.Len(t, lines, 2)
+	require.Equal(t, lines[0], "FAILED: foo/bar/1: fail\n")
+	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected): fail\n")
 }
 
 func TestResults_Assert(t *testing.T) {
@@ -126,13 +130,7 @@ func TestResults_Assert(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	// only keep the summary lines:
-	var lines []string
-	for _, line := range logger.lines {
-		if strings.HasPrefix(line, "FAILED: ") || strings.HasPrefix(line, "INFO: ") {
-			lines = append(lines, line)
-		}
-	}
+	lines := logger.errorLines()
 	require.Len(t, lines, 6)
 	require.Contains(t, lines[0], "FAILED: foo/bar/1: ")
 	require.Contains(t, lines[1], "FAILED: foo/bar/2: ")
@@ -729,11 +727,12 @@ func TestResults_ServerSideband(t *testing.T) {
 	logger := &lineWriter{}
 	err := results.report(logger)
 	require.NoError(t, err)
-	require.Len(t, logger.lines, 4)
-	require.Equal(t, logger.lines[0], "FAILED: foo/bar/2: something awkward in wire format; fail\n")
-	require.Equal(t, logger.lines[1], "FAILED: foo/bar/3: something awkward in wire format\n")
-	require.Equal(t, logger.lines[2], "INFO: known-to-fail/1 failed (as expected): something awkward in wire format\n")
-	require.Equal(t, logger.lines[3], "INFO: known-to-fail/2 failed (as expected): fail\n")
+	lines := logger.errorLines()
+	require.Len(t, lines, 4)
+	require.Equal(t, lines[0], "FAILED: foo/bar/2: something awkward in wire format; fail\n")
+	require.Equal(t, lines[1], "FAILED: foo/bar/3: something awkward in wire format\n")
+	require.Equal(t, lines[2], "INFO: known-to-fail/1 failed (as expected): something awkward in wire format\n")
+	require.Equal(t, lines[3], "INFO: known-to-fail/2 failed (as expected): fail\n")
 }
 
 func makeKnownFailing() *knownFailingTrie {
@@ -767,4 +766,14 @@ func (l *lineWriter) Write(data []byte) (n int, err error) {
 		}
 		data = data[pos:]
 	}
+}
+
+func (l *lineWriter) errorLines() []string {
+	var lines []string
+	for _, line := range l.lines {
+		if strings.HasPrefix(line, "FAILED: ") || strings.HasPrefix(line, "INFO: ") {
+			lines = append(lines, line)
+		}
+	}
+	return lines
 }

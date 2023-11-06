@@ -1,3 +1,48 @@
 name: Basic
-# TODO: define test cases
-testCases: []
+# TODO: define more test cases
+testCases:
+- request:
+    testName: client stream success
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        responseData: "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  expectedResponse:
+    responseHeaders:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
+    payloads:
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+          responseDefinition:
+            responseHeaders:
+            - name: x-custom-header
+              value: ["foo","bar","baz"]
+            responseData: "dGVzdCByZXNwb25zZQ=="
+            responseTrailers:
+            - name: x-custom-trailer
+              value: ["bing","quux"]
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
+    responseTrailers:
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]

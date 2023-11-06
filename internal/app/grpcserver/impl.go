@@ -83,7 +83,7 @@ func (c *conformanceServiceServer) ClientStream(
 		}
 		msg, err := stream.Recv()
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			}
 			return err
@@ -99,11 +99,14 @@ func (c *conformanceServiceServer) ClientStream(
 			return err
 		}
 		reqs = append(reqs, msgAsAny)
-
 	}
 
-	grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders)
-	grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers)
+	if err := grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders); err != nil {
+		return err
+	}
+	if err := grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers); err != nil {
+		return err
+	}
 
 	md, _ := metadata.FromIncomingContext(stream.Context())
 	payload, err := parseUnaryResponseDefinition(responseDefinition, md, reqs)
@@ -122,8 +125,12 @@ func (c *conformanceServiceServer) ServerStream(
 ) error {
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil {
-		grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders)
-		grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers)
+		if err := grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders); err != nil {
+			return err
+		}
+		if err := grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers); err != nil {
+			return err
+		}
 	}
 
 	// Convert the request to an Any so that it can be recorded in the payload
