@@ -148,7 +148,7 @@ func (c *conformanceServiceServer) ServerStream(
 		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
 		if err := stream.Send(resp); err != nil {
-			return status.Errorf(codes.Internal, fmt.Sprintf("error sending on stream: %s", err.Error()))
+			return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
 		}
 		// Only echo back the request info in the first response
 		payload.RequestInfo = nil
@@ -221,7 +221,7 @@ func (c *conformanceServiceServer) BidiStream(
 			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
 			if err := stream.Send(resp); err != nil {
-				return status.Error(codes.Internal, fmt.Sprintf("error sending on stream: %s", err.Error()))
+				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
 			}
 			respNum++
 			reqs = nil
@@ -243,7 +243,7 @@ func (c *conformanceServiceServer) BidiStream(
 		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
 		if err := stream.Send(resp); err != nil {
-			return status.Error(codes.Internal, fmt.Sprintf("error sending on stream: %s", err.Error()))
+			return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
 		}
 	}
 
@@ -277,10 +277,10 @@ func parseUnaryResponseDefinition(
 			}
 			return payload, nil
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, fmt.Sprintf("provided UnaryRequest.Response has an unexpected type %T", respType))
+			return nil, status.Errorf(codes.InvalidArgument, "provided UnaryRequest.Response has an unexpected type %T", respType)
 		}
 	}
-	return nil, status.Errorf(codes.InvalidArgument, "no response definition provided")
+	return nil, status.Error(codes.InvalidArgument, "no response definition provided")
 }
 
 // Creates request info for a conformance payload.
@@ -300,7 +300,8 @@ func asAny(msg proto.Message) (*anypb.Any, error) {
 	if err != nil {
 		return nil, status.Errorf(
 			codes.Internal,
-			fmt.Sprintf("unable to convert message: %s", err.Error()),
+			"unable to convert message: %s",
+			err.Error(),
 		)
 	}
 	return msgAsAny, nil
