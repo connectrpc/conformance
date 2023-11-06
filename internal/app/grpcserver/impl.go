@@ -277,7 +277,11 @@ func parseUnaryResponseDefinition(
 			}
 			return payload, nil
 		default:
-			return nil, status.Errorf(codes.InvalidArgument, "provided UnaryRequest.Response has an unexpected type %T", respType)
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"provided UnaryRequest.Response has an unexpected type %T",
+				respType,
+			)
 		}
 	}
 	return nil, status.Error(codes.InvalidArgument, "no response definition provided")
