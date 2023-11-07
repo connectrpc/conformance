@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"time"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/conformance/internal/grpcutil"
@@ -164,17 +165,174 @@ func (i *invoker) serverStream(
 }
 
 func (i *invoker) clientStream(
-	_ context.Context,
-	_ *v1alpha1.ClientCompatRequest,
+	ctx context.Context,
+	ccr *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
-	return nil, errors.New("client streaming is not yet implemented")
+	// Add the specified request headers to the request
+	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
+
+	stream, err := i.client.ClientStream(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read headers and trailers from the stream
+	hdr, err := stream.Header()
+	if err != nil {
+		return nil, err
+	}
+	headers := grpcutil.ConvertMetadataToProtoHeader(hdr)
+	trailers := grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+
+	for _, msg := range ccr.RequestMessages {
+		csr := &v1alpha1.ClientStreamRequest{}
+		if err := msg.UnmarshalTo(csr); err != nil {
+			return nil, err
+		}
+
+		// Sleep for any specified delay
+		time.Sleep(time.Duration(ccr.RequestDelayMs) * time.Millisecond)
+
+		if err := stream.Send(csr); err != nil && errors.Is(err, io.EOF) {
+			break
+		}
+	}
+
+	var protoErr *v1alpha1.Error
+	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
+
+	resp, err := stream.CloseAndRecv()
+	if err != nil {
+		// If an error was returned, convert it to a gRPC error
+		protoErr = grpcutil.ConvertGrpcToProtoError(err)
+	} else {
+		// If the call was successful, get the returned payloads
+		payloads = append(payloads, resp.Payload)
+	}
+
+	return &v1alpha1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ConnectErrorRaw:  nil, // TODO
+	}, nil
 }
 
 func (i *invoker) bidiStream(
-	_ context.Context,
-	_ *v1alpha1.ClientCompatRequest,
+	ctx context.Context,
+	ccr *v1alpha1.ClientCompatRequest,
 ) (result *v1alpha1.ClientResponseResult, retErr error) {
-	return nil, errors.New("bidi streaming is not yet implemented")
+	result = &v1alpha1.ClientResponseResult{
+		ConnectErrorRaw: nil, // TODO
+	}
+
+	// Add the specified request headers to the request
+	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
+
+	stream, err := i.client.BidiStream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	// Read headers and trailers from the stream
+	hdr, err := stream.Header()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if result != nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+		}
+	}()
+
+	fullDuplex := ccr.StreamType == v1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+
+	var protoErr *v1alpha1.Error
+	for _, msg := range ccr.RequestMessages {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			protoErr = grpcutil.ConvertGrpcToProtoError(err)
+			break
+		}
+		bsr := &v1alpha1.BidiStreamRequest{}
+		if err := msg.UnmarshalTo(bsr); err != nil {
+			// Return the error and nil result because this is an
+			// unmarshalling error unrelated to the RPC
+			return nil, err
+		}
+		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
+			// Call receive to get the error and convert it to a proto error
+			if _, recvErr := stream.Recv(); recvErr != nil {
+				protoErr = grpcutil.ConvertGrpcToProtoError(recvErr)
+			} else {
+				// Just in case the receive call doesn't return the error,
+				// use the error returned from Send. Note this should never
+				// happen, but is here as a safeguard.
+				protoErr = grpcutil.ConvertGrpcToProtoError(err)
+			}
+			// Break the send loop
+			break
+		}
+		if fullDuplex {
+			// If this is a full duplex stream, receive a response for each request
+			msg, err := stream.Recv()
+			if err != nil {
+				if !errors.Is(err, io.EOF) {
+					// If an error was returned that is not an EOF, convert it
+					// to a proto Error. If the error was an EOF, that just means
+					// reads are done.
+					protoErr = grpcutil.ConvertGrpcToProtoError(err)
+				}
+				// Reads are done either because we received an error or an EOF
+				// In either case, break the outer loop
+				break
+			}
+			// If the call was successful, get the returned payloads
+			result.Payloads = append(result.Payloads, msg.Payload)
+		}
+	}
+
+	// If we received an error in any of the send logic or full-duplex reads, then exit
+	if protoErr != nil {
+		result.Error = protoErr
+		return result, nil
+	}
+
+	// Sends are done, close the send side of the stream
+	if err := stream.CloseSend(); err != nil {
+		result.Error = grpcutil.ConvertGrpcToProtoError(err)
+		return result, nil
+	}
+
+	// Receive any remaining responses
+	for {
+		if err := ctx.Err(); err != nil {
+			// If an error was returned, convert it to a proto Error
+			protoErr = grpcutil.ConvertGrpcToProtoError(err)
+			break
+		}
+		msg, err := stream.Recv()
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				// If an error was returned that is not an EOF, convert it
+				// to a proto Error. If the error was an EOF, that just means
+				// reads are done.
+				protoErr = grpcutil.ConvertGrpcToProtoError(err)
+			}
+			break
+		}
+		// If the call was successful, save the payloads
+		result.Payloads = append(result.Payloads, msg.Payload)
+	}
+
+	if protoErr != nil {
+		result.Error = protoErr
+		return result, nil
+	}
+
+	return result, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.

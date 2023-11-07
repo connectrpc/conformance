@@ -1,13 +1,13 @@
 {
-  "testName": "gRPC Server Stream with an error",
+  "testName": "gRPC Bidi Stream Half Duplex with an Error",
   "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_GRPC",
   "codec": "CODEC_PROTO",
   "host": "127.0.0.1",
   "port": 23458,
   "service": "connectrpc.conformance.v1alpha1.ConformanceService",
-  "method": "ServerStream",
-  "streamType": "STREAM_TYPE_SERVER_STREAM",
+  "method": "BidiStream",
+  "streamType": "STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM",
   "requestHeaders": [
     {
       "name": "X-Conformance-Test",
@@ -19,7 +19,7 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
       "responseDefinition": {
         "responseHeaders": [
           {
@@ -33,11 +33,11 @@
         ],
         "responseData": [
           "dGVzdCByZXNwb25zZQ==",
-          "dGVzdCByZXNwb25zZZ=="
+          "dGVzdCByZXNwb25zZQ=="
         ],
         "error": {
           "code": 13,
-          "message": "server stream failed",
+          "message": "bidi stream failed",
           "details": [
             {
               "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header",
@@ -54,9 +54,13 @@
               "quux"
             ]
           }
-        ],
-        "responseDelayMs": 500
-      }
+        ]
+      },
+      "fullDuplex": false
+    },
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest",
+      "requestData": "dGVzdCByZXNwb25zZQ=="
     }
   ]
 }
