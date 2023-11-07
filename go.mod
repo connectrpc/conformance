@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	connectrpc.com/connect v1.12.0
-	github.com/quic-go/quic-go v0.39.3
+	github.com/quic-go/quic-go v0.40.0
 	github.com/rs/cors v1.10.1
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
@@ -23,7 +23,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.11.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
-	github.com/quic-go/qtls-go1-20 v0.3.4 // indirect
+	github.com/quic-go/qtls-go1-20 v0.4.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	go.uber.org/mock v0.3.0 // indirect
 	golang.org/x/crypto v0.14.0 // indirect
