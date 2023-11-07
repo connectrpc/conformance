@@ -24,7 +24,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"connectrpc.com/conformance/internal/app"
+	"connectrpc.com/conformance/internal"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
@@ -43,7 +43,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 		Port:    12345,
 		PemCert: []byte("some cert"),
 	}
-	err := app.WriteDelimitedMessage(&svrResponseBuf, svrResponse)
+	err := internal.WriteDelimitedMessage(&svrResponseBuf, svrResponse)
 	require.NoError(t, err)
 	svrResponseData := svrResponseBuf.Bytes()
 
@@ -53,7 +53,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 		useTLS:      false,
 	}
 	var expectedSvrReqBuf bytes.Buffer
-	err = app.WriteDelimitedMessage(&expectedSvrReqBuf, &conformancev1alpha1.ServerCompatRequest{
+	err = internal.WriteDelimitedMessage(&expectedSvrReqBuf, &conformancev1alpha1.ServerCompatRequest{
 		Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
 		HttpVersion: conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
 		UseTls:      false,

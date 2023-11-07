@@ -22,9 +22,9 @@ import (
 	"sort"
 	"strings"
 
-	"connectrpc.com/conformance/internal/app/client"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
-	"connectrpc.com/conformance/internal/app/server"
+	"connectrpc.com/conformance/internal/app/referenceclient"
+	"connectrpc.com/conformance/internal/app/referenceserver"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 )
 
@@ -99,7 +99,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) error {
 	if isClient {
 		startClient = runCommand(command)
 	} else {
-		startClient = runInProcess("reference-client", client.Run)
+		startClient = runInProcess("reference-client", referenceclient.Run)
 	}
 	clientProcess, err := runClient(ctx, startClient)
 	if err != nil {
@@ -111,7 +111,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) error {
 
 	var startServer processStarter
 	if isClient {
-		startServer = runInProcess("reference-server", server.Run)
+		startServer = runInProcess("reference-server", referenceserver.Run)
 	} else {
 		startServer = runCommand(command)
 	}
