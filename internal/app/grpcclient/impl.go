@@ -17,6 +17,7 @@ package grpcclient
 import (
 	"context"
 	"errors"
+	"io"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/conformance/internal/grpcutil"
@@ -113,10 +114,53 @@ func (i *invoker) unary(
 }
 
 func (i *invoker) serverStream(
-	_ context.Context,
-	_ *v1alpha1.ClientCompatRequest,
+	ctx context.Context,
+	ccr *v1alpha1.ClientCompatRequest,
 ) (*v1alpha1.ClientResponseResult, error) {
-	return nil, errors.New("server streaming is not yet implemented")
+	msg := ccr.RequestMessages[0]
+	req := &v1alpha1.ServerStreamRequest{}
+	if err := msg.UnmarshalTo(req); err != nil {
+		return nil, err
+	}
+
+	// Add the specified request headers to the request
+	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
+
+	stream, err := i.client.ServerStream(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	// Read headers and trailers from the stream
+	hdr, err := stream.Header()
+	if err != nil {
+		return nil, err
+	}
+	headers := grpcutil.ConvertMetadataToProtoHeader(hdr)
+	trailers := grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+
+	var protoErr *v1alpha1.Error
+	payloads := make([]*v1alpha1.ConformancePayload, 0, len(req.ResponseDefinition.ResponseData))
+
+	for {
+		msg, err := stream.Recv()
+		if err != nil {
+			if !errors.Is(err, io.EOF) {
+				protoErr = grpcutil.ConvertGrpcToProtoError(err)
+			}
+			break
+		}
+		// If the call was successful, get the returned payloads
+		// and the headers and trailers
+		payloads = append(payloads, msg.Payload)
+	}
+
+	return &v1alpha1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ConnectErrorRaw:  nil, // TODO
+	}, nil
 }
 
 func (i *invoker) clientStream(
