@@ -19,6 +19,7 @@ import (
 	"log"
 	"os"
 
+<<<<<<<< HEAD:cmd/grpcclient/main.go
 	"connectrpc.com/conformance/internal/app/grpcclient"
 )
 
@@ -26,5 +27,14 @@ func main() {
 	err := grpcclient.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
 	if err != nil {
 		log.Fatalf("an error occurred running the gRPC client: %s", err.Error())
+========
+	"connectrpc.com/conformance/internal/app/referenceclient"
+)
+
+func main() {
+	err := referenceclient.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatalf("an error occurred running the reference client: %s", err.Error())
+>>>>>>>> v2:cmd/referenceclient/main.go
 	}
 }

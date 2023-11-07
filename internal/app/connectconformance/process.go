@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:unused // some stuff is currently unused but will be used by future changes
 package connectconformance
 
 import (
