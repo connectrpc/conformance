@@ -123,6 +123,7 @@ func runTestCasesForServer(
 			}
 			return
 		}
+		fmt.Printf("Running: %s\n", testCase.Request.TestName)
 		req := proto.Clone(testCase.Request).(*conformancev1alpha1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 		req.Host = resp.Host
 		req.Port = resp.Port

@@ -1,0 +1,53 @@
+name: Bidi
+relevantHttpVersions:
+  - HTTP_VERSION_2
+testCases:
+- request:
+    testName: bidi half duplex stream success
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  expectedResponse:
+    responseHeaders:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
+    payloads:
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          responseDefinition:
+            responseHeaders:
+            - name: x-custom-header
+              value: ["foo","bar","baz"]
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+              - "dGVzdCByZXNwb25zZQ=="
+            responseTrailers:
+            - name: x-custom-trailer
+              value: ["bing","quux"]
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
+    responseTrailers:
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
