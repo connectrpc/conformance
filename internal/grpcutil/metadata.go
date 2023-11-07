@@ -61,7 +61,7 @@ func AddHeaderMetadata(
 }
 
 // AddTrailerMetadata adds the given slice of trailers to the current RPC
-// stored in the given context. Used for sending metadata from the server side
+// stored in the given context. Used for sending metadata from the server side.
 func AddTrailerMetadata(
 	ctx context.Context,
 	trailers []*v1alpha1.Header,
@@ -71,7 +71,7 @@ func AddTrailerMetadata(
 }
 
 // Appends the given headers to the outgoing context. Used for sending metadata
-// from the client side
+// from the client side.
 func AppendToOutgoingContext(ctx context.Context, src []*v1alpha1.Header) context.Context {
 	for _, hdr := range src {
 		for _, val := range hdr.Value {
