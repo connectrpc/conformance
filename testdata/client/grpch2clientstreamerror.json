@@ -22,16 +22,6 @@
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
       "responseDefinition": {
-        "responseHeaders": [
-          {
-            "name": "x-custom-header",
-            "value": [
-              "foo",
-              "bar",
-              "baz"
-            ]
-          }
-        ],
         "error": {
           "code": 13,
           "message": "client stream failed",
@@ -43,6 +33,16 @@
             }
           ]
         },
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
         "responseTrailers": [
           {
             "name": "x-custom-trailer",
