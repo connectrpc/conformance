@@ -68,11 +68,23 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
+.PHONY: bins
+bins: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/referenceserver $(BIN)/grpcclient $(BIN)/grpcserver
+
+$(BIN)/connectconformance: Makefile generate
+	go build -o $(@) cmd/connectconformance/main.go
+
 $(BIN)/referenceclient: Makefile generate
 	go build -o $(@) cmd/referenceclient/main.go
 
 $(BIN)/referenceserver: Makefile generate
 	go build -o $(@) cmd/referenceserver/main.go
+
+$(BIN)/grpcclient: Makefile generate
+	go build -o $(@) cmd/grpcclient/main.go
+
+$(BIN)/grpcserver: Makefile generate
+	go build -o $(@) cmd/grpcserver/main.go
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
