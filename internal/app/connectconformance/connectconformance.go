@@ -33,6 +33,7 @@ type Flags struct {
 	Mode             conformancev1alpha1.TestSuite_TestMode
 	ConfigFile       string
 	KnownFailingFile string
+	Verbose          bool
 }
 
 func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
@@ -42,10 +43,15 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 		if configData, err = os.ReadFile(flags.ConfigFile); err != nil {
 			return false, ensureFileName(err, flags.ConfigFile)
 		}
+	} else if flags.Verbose {
+		_, _ = fmt.Fprintf(logOut, "No config file provided. Using defaults.\n")
 	}
 	configCases, err := parseConfig(flags.ConfigFile, configData)
 	if err != nil {
 		return false, err
+	}
+	if flags.Verbose {
+		_, _ = fmt.Fprintf(logOut, "Computed %d active config case permutations.\n", len(configCases))
 	}
 
 	var knownFailingData []byte
@@ -59,6 +65,9 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 	if err != nil {
 		return false, err
 	}
+	if flags.Verbose {
+		_, _ = fmt.Fprintf(logOut, "Loaded %d known failing test cases/patterns.\n", knownFailing.length())
+	}
 
 	// TODO: allow test suite files to indicate on command-line to override use
 	//       of built-in, embedded test suite data
@@ -70,9 +79,36 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("embedded test suite: %w", err)
 	}
+	if flags.Verbose {
+		var numCases int
+		for _, suite := range allSuites {
+			numCases += len(suite.TestCases)
+		}
+		_, _ = fmt.Fprintf(logOut, "Loaded %d test suites, %d test case templates.\n", len(allSuites), numCases)
+	}
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, flags.Mode)
 	if err != nil {
 		return false, err
+	}
+	if flags.Verbose {
+		svrInstances := make([]serverInstance, 0, len(testCaseLib.casesByServer))
+		for svrInstance := range testCaseLib.casesByServer {
+			svrInstances = append(svrInstances, svrInstance)
+		}
+		sort.Slice(svrInstances, func(i, j int) bool {
+			if svrInstances[i].httpVersion != svrInstances[j].httpVersion {
+				return svrInstances[i].httpVersion < svrInstances[j].httpVersion
+			}
+			if svrInstances[i].protocol != svrInstances[j].protocol {
+				return svrInstances[i].protocol < svrInstances[j].protocol
+			}
+			return !svrInstances[i].useTLS || svrInstances[j].useTLS
+		})
+		for _, svrInstance := range svrInstances {
+			testCases := testCaseLib.casesByServer[svrInstance]
+			_, _ = fmt.Fprintf(logOut, "Running %d tests for server config {%s, %s, TLS:%v}...\n",
+				len(testCases), svrInstance.httpVersion, svrInstance.protocol, svrInstance.useTLS)
+		}
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
