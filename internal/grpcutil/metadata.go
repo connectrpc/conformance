@@ -15,6 +15,7 @@
 package grpcutil
 
 import (
+	"context"
 	"strings"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -46,4 +47,15 @@ func ConvertProtoHeaderToMetadata(
 		md[key] = hdr.Value
 	}
 	return md
+}
+
+// Appends the given headers to the outgoing context. Used for sending metadata
+// from the client side.
+func AppendToOutgoingContext(ctx context.Context, src []*v1alpha1.Header) context.Context {
+	for _, hdr := range src {
+		for _, val := range hdr.Value {
+			ctx = metadata.AppendToOutgoingContext(ctx, hdr.Name, val)
+		}
+	}
+	return ctx
 }

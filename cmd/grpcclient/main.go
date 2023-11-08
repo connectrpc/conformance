@@ -12,16 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package internal
+package main
 
-import "connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
+import (
+	"context"
+	"log"
+	"os"
 
-const (
-	// DefaultHost is the default host to use for the server.
-	DefaultHost = "127.0.0.1"
-	// DefaultPort is the default port to use for the server. We choose 0 so that
-	// an ephemeral port is selected by the OS if no port is specified.
-	DefaultPort = "0"
-	// The fully-qualified service name for the Conformance Service.
-	ConformanceServiceName = conformancev1alpha1connect.ConformanceServiceName
+	"connectrpc.com/conformance/internal/app/grpcclient"
 )
+
+func main() {
+	err := grpcclient.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
+	if err != nil {
+		log.Fatalf("an error occurred running the gRPC client: %s", err.Error())
+	}
+}
