@@ -170,10 +170,6 @@ type serverInstance struct {
 	useTLS      bool
 }
 
-func (s serverInstance) String() string {
-	return fmt.Sprintf("Server Instance: %s, %s, Use TLS=%t", s.httpVersion, s.protocol, s.useTLS)
-}
-
 func serverInstanceForCase(testCase *conformancev1alpha1.TestCase) serverInstance {
 	return serverInstance{
 		protocol:    testCase.Request.Protocol,

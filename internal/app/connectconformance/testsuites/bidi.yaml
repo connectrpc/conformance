@@ -30,6 +30,10 @@ testCases:
     - name: X-Custom-Header
       value: ["foo","bar","baz"]
     payloads:
+      # Success calls will return one payload for each requested response.
+      # The difference between full and half duplex is that full will show
+      # the info from the first request in the first response, second in the
+      # second, etc. (i.e. ping pong)
     - data: "dGVzdCByZXNwb25zZQ=="
       requestInfo:
         requestHeaders:
@@ -86,6 +90,10 @@ testCases:
     - name: X-Custom-Header
       value: ["foo","bar","baz"]
     payloads:
+      # Success calls will return one payload for each requested response.
+      # The difference between full and half duplex is that half will show
+      # all request info in both payloads since its building the payloads
+      # and responses _after_ all requests have been received.
     - data: "dGVzdCByZXNwb25zZQ=="
       requestInfo:
         requestHeaders:
