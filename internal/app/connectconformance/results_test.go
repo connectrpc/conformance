@@ -38,8 +38,9 @@ func TestResults_SetOutcome(t *testing.T) {
 	results.setOutcome("known-to-fail/3", false, errors.New("fail"))
 
 	logger := &lineWriter{}
-	err := results.report(logger)
+	success, err := results.report(logger)
 	require.NoError(t, err)
+	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 5)
 	require.Equal(t, lines[0], "FAILED: foo/bar/2: fail\n")
@@ -58,8 +59,9 @@ func TestResults_FailedToStart(t *testing.T) {
 	}, errors.New("fail"))
 
 	logger := &lineWriter{}
-	err := results.report(logger)
+	success, err := results.report(logger)
 	require.NoError(t, err)
+	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 2)
 	require.Equal(t, lines[0], "FAILED: foo/bar/1: fail\n")
@@ -80,8 +82,9 @@ func TestResults_FailRemaining(t *testing.T) {
 	}, errors.New("something went wrong"))
 
 	logger := &lineWriter{}
-	err := results.report(logger)
+	success, err := results.report(logger)
 	require.NoError(t, err)
+	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 3)
 	require.Equal(t, lines[0], "FAILED: foo/bar/2: something went wrong\n")
@@ -99,8 +102,9 @@ func TestResults_Failed(t *testing.T) {
 	results.failed("known-to-fail/1", &conformancev1alpha1.ClientErrorResult{Message: "fail"})
 
 	logger := &lineWriter{}
-	err := results.report(logger)
+	success, err := results.report(logger)
 	require.NoError(t, err)
+	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 2)
 	require.Equal(t, lines[0], "FAILED: foo/bar/1: fail\n")
@@ -128,8 +132,9 @@ func TestResults_Assert(t *testing.T) {
 	results.assert("known-to-fail/4", payload2, payload2)
 
 	logger := &lineWriter{}
-	err := results.report(logger)
+	success, err := results.report(logger)
 	require.NoError(t, err)
+	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 6)
 	require.Contains(t, lines[0], "FAILED: foo/bar/1: ")
@@ -725,14 +730,61 @@ func TestResults_ServerSideband(t *testing.T) {
 	results.recordServerSideband("known-to-fail/1", "something awkward in wire format")
 
 	logger := &lineWriter{}
-	err := results.report(logger)
+	success, err := results.report(logger)
 	require.NoError(t, err)
+	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 4)
 	require.Equal(t, lines[0], "FAILED: foo/bar/2: something awkward in wire format; fail\n")
 	require.Equal(t, lines[1], "FAILED: foo/bar/3: something awkward in wire format\n")
 	require.Equal(t, lines[2], "INFO: known-to-fail/1 failed (as expected): something awkward in wire format\n")
 	require.Equal(t, lines[3], "INFO: known-to-fail/2 failed (as expected): fail\n")
+}
+
+func TestResults_Report(t *testing.T) {
+	t.Parallel()
+	results := newResults(makeKnownFailing())
+	logger := &lineWriter{}
+
+	// No test cases? Report success.
+	success, err := results.report(logger)
+	require.NoError(t, err)
+	require.True(t, success)
+
+	// Only successful outcomes? Report success.
+	results = newResults(makeKnownFailing())
+	results.setOutcome("foo/bar/1", false, nil)
+	success, err = results.report(logger)
+	require.NoError(t, err)
+	require.True(t, success)
+
+	// Unexpected failure? Report failure.
+	results = newResults(makeKnownFailing())
+	results.setOutcome("foo/bar/1", false, errors.New("ruh roh"))
+	success, err = results.report(logger)
+	require.NoError(t, err)
+	require.False(t, success)
+
+	// Unexpected failure during setup? Report failure.
+	results = newResults(makeKnownFailing())
+	results.setOutcome("foo/bar/1", true, errors.New("ruh roh"))
+	success, err = results.report(logger)
+	require.NoError(t, err)
+	require.False(t, success)
+
+	// Expected failure? Report success.
+	results = newResults(makeKnownFailing())
+	results.setOutcome("known-to-fail/1", false, errors.New("ruh roh"))
+	success, err = results.report(logger)
+	require.NoError(t, err)
+	require.True(t, success)
+
+	// Setup error from expected failure? Report failure (setup errors never acceptable).
+	results = newResults(makeKnownFailing())
+	results.setOutcome("known-to-fail/1", true, errors.New("ruh roh"))
+	success, err = results.report(logger)
+	require.NoError(t, err)
+	require.False(t, success)
 }
 
 func makeKnownFailing() *knownFailingTrie {

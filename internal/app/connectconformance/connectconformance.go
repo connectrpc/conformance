@@ -16,6 +16,7 @@ package connectconformance
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -34,44 +35,44 @@ type Flags struct {
 	KnownFailingFile string
 }
 
-func Run(flags *Flags, command []string, logOut io.Writer) error {
+func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 	var configData []byte
 	if flags.ConfigFile != "" {
 		var err error
 		if configData, err = os.ReadFile(flags.ConfigFile); err != nil {
-			return ensureFileName(err, flags.ConfigFile)
+			return false, ensureFileName(err, flags.ConfigFile)
 		}
 	}
 	configCases, err := parseConfig(flags.ConfigFile, configData)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	var knownFailingData []byte
 	if flags.KnownFailingFile != "" {
 		var err error
 		if knownFailingData, err = os.ReadFile(flags.KnownFailingFile); err != nil {
-			return ensureFileName(err, flags.KnownFailingFile)
+			return false, ensureFileName(err, flags.KnownFailingFile)
 		}
 	}
 	knownFailing := parseKnownFailing(knownFailingData)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// TODO: allow test suite files to indicate on command-line to override use
 	//       of built-in, embedded test suite data
 	testSuiteData, err := testsuites.LoadTestSuites()
 	if err != nil {
-		return fmt.Errorf("failed to load embedded test suite data: %w", err)
+		return false, fmt.Errorf("failed to load embedded test suite data: %w", err)
 	}
 	allSuites, err := parseTestSuites(testSuiteData)
 	if err != nil {
-		return fmt.Errorf("embedded test suite: %w", err)
+		return false, fmt.Errorf("embedded test suite: %w", err)
 	}
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, flags.Mode)
 	if err != nil {
-		return err
+		return false, err
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
@@ -87,7 +88,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) error {
 			unmatchedSlice = append(unmatchedSlice, name)
 		}
 		sort.Strings(unmatchedSlice)
-		return fmt.Errorf("file %s contains unmatched and possibly invalid patterns:\n%v",
+		return false, fmt.Errorf("file %s contains unmatched and possibly invalid patterns:\n%v",
 			flags.KnownFailingFile, strings.Join(unmatchedSlice, "\n"))
 	}
 
@@ -103,7 +104,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) error {
 	}
 	clientProcess, err := runClient(ctx, startClient)
 	if err != nil {
-		return fmt.Errorf("error starting client: %w", err)
+		return false, fmt.Errorf("error starting client: %w", err)
 	}
 	defer clientProcess.stop()
 
@@ -119,12 +120,18 @@ func Run(flags *Flags, command []string, logOut io.Writer) error {
 	for svrInstance, testCases := range testCaseLib.casesByServer {
 		runTestCasesForServer(ctx, isClient, svrInstance, testCases, startServer, results, clientProcess)
 		if !clientProcess.isRunning() {
-			return clientProcess.waitForResponses()
+			err := clientProcess.waitForResponses()
+			if err == nil {
+				err = errors.New("client process unexpectedly stopped")
+			} else {
+				err = fmt.Errorf("client process unexpectedly stopped: %w", err)
+			}
+			return false, err
 		}
 	}
 	clientProcess.closeSend()
 	if err := clientProcess.waitForResponses(); err != nil {
-		return err
+		return false, err
 	}
 
 	return results.report(logOut)

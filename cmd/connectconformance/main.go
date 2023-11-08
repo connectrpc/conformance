@@ -122,7 +122,7 @@ func run(flags *flags, command []string) {
 	}
 	command[0] = resolvedCommand
 
-	err = connectconformance.Run(
+	ok, err := connectconformance.Run(
 		&connectconformance.Flags{
 			Mode:             mode,
 			ConfigFile:       flags.configFile,
@@ -133,5 +133,8 @@ func run(flags *flags, command []string) {
 	)
 	if err != nil {
 		fatal("%s", err)
+	}
+	if !ok {
+		os.Exit(1)
 	}
 }
