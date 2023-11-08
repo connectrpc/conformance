@@ -23,6 +23,7 @@ import (
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/conformance/internal/grpcutil"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
@@ -48,11 +49,16 @@ func (c *conformanceServiceServer) Unary(
 		return nil, err
 	}
 
-	if err := grpcutil.AddHeaderMetadata(ctx, req.ResponseDefinition.ResponseHeaders); err != nil {
-		return nil, err
-	}
-	if err := grpcutil.AddTrailerMetadata(ctx, req.ResponseDefinition.ResponseTrailers); err != nil {
-		return nil, err
+	responseDefinition := req.ResponseDefinition
+	if responseDefinition != nil {
+		headerMD := grpcutil.ConvertProtoHeaderToMetadata(req.ResponseDefinition.ResponseHeaders)
+		if err := grpc.SetHeader(ctx, headerMD); err != nil {
+			return nil, err
+		}
+		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(req.ResponseDefinition.ResponseTrailers)
+		if err := grpc.SetTrailer(ctx, trailerMD); err != nil {
+			return nil, err
+		}
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
@@ -101,11 +107,15 @@ func (c *conformanceServiceServer) ClientStream(
 		reqs = append(reqs, msgAsAny)
 	}
 
-	if err := grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders); err != nil {
-		return err
-	}
-	if err := grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers); err != nil {
-		return err
+	// Set headers and trailers on stream
+	if responseDefinition != nil {
+		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
+		if err := stream.SetHeader(headerMD); err != nil {
+			return err
+		}
+
+		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
+		stream.SetTrailer(trailerMD)
 	}
 
 	md, _ := metadata.FromIncomingContext(stream.Context())
@@ -125,12 +135,13 @@ func (c *conformanceServiceServer) ServerStream(
 ) error {
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil {
-		if err := grpcutil.AddHeaderMetadata(stream.Context(), responseDefinition.ResponseHeaders); err != nil {
+		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
+		if err := stream.SetHeader(headerMD); err != nil {
 			return err
 		}
-		if err := grpcutil.AddTrailerMetadata(stream.Context(), responseDefinition.ResponseTrailers); err != nil {
-			return err
-		}
+
+		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
+		stream.SetTrailer(trailerMD)
 	}
 
 	// Convert the request to an Any so that it can be recorded in the payload
@@ -201,11 +212,14 @@ func (c *conformanceServiceServer) BidiStream(
 			fullDuplex = req.FullDuplex
 			firstRecv = false
 
-			if err := grpcutil.AddHeaderMetadata(stream.Context(), req.ResponseDefinition.ResponseHeaders); err != nil {
-				return err
-			}
-			if err := grpcutil.AddTrailerMetadata(stream.Context(), req.ResponseDefinition.ResponseTrailers); err != nil {
-				return err
+			if responseDefinition != nil {
+				headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
+				if err := stream.SetHeader(headerMD); err != nil {
+					return err
+				}
+
+				trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
+				stream.SetTrailer(trailerMD)
 			}
 		}
 
