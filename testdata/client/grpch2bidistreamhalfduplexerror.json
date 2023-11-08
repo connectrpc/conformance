@@ -1,5 +1,5 @@
 {
-  "testName": "gRPC Bidi Stream Half Duplex with an Error",
+  "testName": "gRPC Bidi Stream Half Duplex with an error",
   "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_GRPC",
   "codec": "CODEC_PROTO",
