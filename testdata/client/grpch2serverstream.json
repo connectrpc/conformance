@@ -1,13 +1,13 @@
 {
-  "testName": "gRPC Unary with an Error",
+  "testName": "gRPC Server Stream Happy Path",
   "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_GRPC",
   "codec": "CODEC_PROTO",
   "host": "127.0.0.1",
   "port": 23458,
   "service": "connectrpc.conformance.v1alpha1.ConformanceService",
-  "method": "Unary",
-  "streamType": "STREAM_TYPE_UNARY",
+  "method": "ServerStream",
+  "streamType": "STREAM_TYPE_SERVER_STREAM",
   "requestHeaders": [
     {
       "name": "X-Conformance-Test",
@@ -19,7 +19,7 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest",
       "responseDefinition": {
         "responseHeaders": [
           {
@@ -31,17 +31,10 @@
             ]
           }
         ],
-        "error": {
-          "code": 13,
-          "message": "unary failed",
-          "details": [
-            {
-              "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header",
-              "name": "test error detail name",
-              "value": ["test error detail value"]
-            }
-          ]
-        },
+        "responseData": [
+          "dGVzdCByZXNwb25zZQ==",
+          "dGVzdCByZXNwb25zZZ=="
+        ],
         "responseTrailers": [
           {
             "name": "x-custom-trailer",
@@ -50,7 +43,8 @@
               "quux"
             ]
           }
-        ]
+        ],
+        "responseDelayMs": 500
       }
     }
   ]
