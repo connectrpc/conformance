@@ -21,7 +21,7 @@ const (
 	DefaultHost = "127.0.0.1"
 	// DefaultPort is the default port to use for the server. We choose 0 so that
 	// an ephemeral port is selected by the OS if no port is specified.
-	DefaultPort = "0"
+	DefaultPort = 0
 	// The fully-qualified service name for the Conformance Service.
 	ConformanceServiceName = conformancev1alpha1connect.ConformanceServiceName
 )
