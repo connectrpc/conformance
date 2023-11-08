@@ -48,6 +48,25 @@ testCases:
               value: ["bing","quux"]
         - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          responseDefinition:
+            responseHeaders:
+            - name: x-custom-header
+              value: ["foo","bar","baz"]
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+              - "dGVzdCByZXNwb25zZQ=="
+            responseTrailers:
+            - name: x-custom-trailer
+              value: ["bing","quux"]
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
