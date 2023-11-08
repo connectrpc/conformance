@@ -141,7 +141,7 @@ func (i *invoker) serverStream(
 	}
 	defer func() {
 		if result != nil {
-			// Read headers and trailers from the stream
+			// Set headers and trailers from the stream
 			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
 			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
 		}
@@ -192,19 +192,6 @@ func (i *invoker) clientStream(
 			break
 		}
 	}
-	// Read headers and trailers from the stream
-	hdr, err := stream.Header()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if result != nil {
-			// Read headers and trailers from the stream
-			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
-			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
-		}
-	}()
-
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		// If an error was returned, convert it to a gRPC error
@@ -213,6 +200,18 @@ func (i *invoker) clientStream(
 		// If the call was successful, get the returned payloads
 		result.Payloads = append(result.Payloads, resp.Payload)
 	}
+
+	hdr, err := stream.Header()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if result != nil {
+			// Set headers and trailers from the stream
+			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+		}
+	}()
 
 	return result, nil
 }
@@ -232,18 +231,6 @@ func (i *invoker) bidiStream(
 	if err != nil {
 		return nil, err
 	}
-	// Read headers and trailers from the stream
-	hdr, err := stream.Header()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if result != nil {
-			// Read headers and trailers from the stream
-			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
-			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
-		}
-	}()
 
 	fullDuplex := ccr.StreamType == v1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
@@ -303,6 +290,19 @@ func (i *invoker) bidiStream(
 		result.Error = grpcutil.ConvertGrpcToProtoError(err)
 		return result, nil
 	}
+
+	// Once the send side is closed, header metadata is ready to be read
+	hdr, err := stream.Header()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if result != nil {
+			// Set headers and trailers from the stream
+			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+		}
+	}()
 
 	// Receive any remaining responses
 	for {
