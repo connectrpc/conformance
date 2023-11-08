@@ -117,13 +117,16 @@ func (i *invoker) unary(
 func (i *invoker) serverStream(
 	ctx context.Context,
 	ccr *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+) (result *v1alpha1.ClientResponseResult, retErr error) {
+	result = &v1alpha1.ClientResponseResult{
+		ConnectErrorRaw: nil, // TODO
+	}
+
 	msg := ccr.RequestMessages[0]
 	req := &v1alpha1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
-
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
@@ -131,43 +134,43 @@ func (i *invoker) serverStream(
 	if err != nil {
 		return nil, err
 	}
-	// Read headers and trailers from the stream
+	// Read headers from the stream
 	hdr, err := stream.Header()
 	if err != nil {
 		return nil, err
 	}
-	headers := grpcutil.ConvertMetadataToProtoHeader(hdr)
-	trailers := grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
-
-	var protoErr *v1alpha1.Error
-	payloads := make([]*v1alpha1.ConformancePayload, 0, len(req.ResponseDefinition.ResponseData))
+	defer func() {
+		if result != nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+		}
+	}()
 
 	for {
 		msg, err := stream.Recv()
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
-				protoErr = grpcutil.ConvertGrpcToProtoError(err)
+				result.Error = grpcutil.ConvertGrpcToProtoError(err)
 			}
 			break
 		}
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
-		payloads = append(payloads, msg.Payload)
+		result.Payloads = append(result.Payloads, msg.Payload)
 	}
 
-	return &v1alpha1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
-	}, nil
+	return result, nil
 }
 
 func (i *invoker) clientStream(
 	ctx context.Context,
 	ccr *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+) (result *v1alpha1.ClientResponseResult, retErr error) {
+	result = &v1alpha1.ClientResponseResult{
+		ConnectErrorRaw: nil, // TODO
+	}
+
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
@@ -175,14 +178,6 @@ func (i *invoker) clientStream(
 	if err != nil {
 		return nil, err
 	}
-
-	// Read headers and trailers from the stream
-	hdr, err := stream.Header()
-	if err != nil {
-		return nil, err
-	}
-	headers := grpcutil.ConvertMetadataToProtoHeader(hdr)
-	trailers := grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
 
 	for _, msg := range ccr.RequestMessages {
 		csr := &v1alpha1.ClientStreamRequest{}
@@ -197,26 +192,29 @@ func (i *invoker) clientStream(
 			break
 		}
 	}
-
-	var protoErr *v1alpha1.Error
-	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
+	// Read headers and trailers from the stream
+	hdr, err := stream.Header()
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if result != nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+		}
+	}()
 
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
 		// If an error was returned, convert it to a gRPC error
-		protoErr = grpcutil.ConvertGrpcToProtoError(err)
+		result.Error = grpcutil.ConvertGrpcToProtoError(err)
 	} else {
 		// If the call was successful, get the returned payloads
-		payloads = append(payloads, resp.Payload)
+		result.Payloads = append(result.Payloads, resp.Payload)
 	}
 
-	return &v1alpha1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
-	}, nil
+	return result, nil
 }
 
 func (i *invoker) bidiStream(
