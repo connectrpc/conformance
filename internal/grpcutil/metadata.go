@@ -19,7 +19,6 @@ import (
 	"strings"
 
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -48,26 +47,6 @@ func ConvertProtoHeaderToMetadata(
 		md[key] = hdr.Value
 	}
 	return md
-}
-
-// AddHeaderMetadata adds the given slice of headers to the current RPC
-// stored in the given context. Used for sending metadata from the server side.
-func AddHeaderMetadata(
-	ctx context.Context,
-	hdrs []*v1alpha1.Header,
-) error {
-	md := ConvertProtoHeaderToMetadata(hdrs)
-	return grpc.SetHeader(ctx, md)
-}
-
-// AddTrailerMetadata adds the given slice of trailers to the current RPC
-// stored in the given context. Used for sending metadata from the server side.
-func AddTrailerMetadata(
-	ctx context.Context,
-	trailers []*v1alpha1.Header,
-) error {
-	md := ConvertProtoHeaderToMetadata(trailers)
-	return grpc.SetTrailer(ctx, md)
 }
 
 // Appends the given headers to the outgoing context. Used for sending metadata
