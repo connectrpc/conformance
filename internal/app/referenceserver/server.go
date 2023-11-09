@@ -111,6 +111,9 @@ type stdHTTPServer struct {
 }
 
 func (s *stdHTTPServer) Serve() error {
+	if s.svr.TLSConfig != nil {
+		return s.svr.ServeTLS(s.lis, "", "")
+	}
 	return s.svr.Serve(s.lis)
 }
 
@@ -191,9 +194,6 @@ func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpSer
 
 // newH1Server creates a new HTTP/1.1 server.
 func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
-	if tlsConf != nil {
-		tlsConf.NextProtos = []string{"http/1.1"}
-	}
 	h1Server := &http.Server{
 		Addr:              listenAddr,
 		Handler:           handler,
@@ -209,9 +209,7 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 
 // newH2Server creates a new HTTP/2 server.
 func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
-	if tlsConf != nil {
-		tlsConf.NextProtos = []string{"h2"}
-	} else {
+	if tlsConf == nil {
 		handler = h2c.NewHandler(handler, &http2.Server{})
 	}
 	h2Server := &http.Server{

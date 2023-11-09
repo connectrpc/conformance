@@ -30,6 +30,7 @@ import (
 	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"connectrpc.com/connect"
+	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/net/http2"
 )
 
@@ -92,13 +93,17 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
 func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientResponseResult, error) {
+	tlsConf, err := createTLSConfig(req)
+	if err != nil {
+		return nil, err
+	}
 	var scheme string
-	if req.ServerTlsCert != nil {
+	if tlsConf != nil {
 		scheme = "https://"
 	} else {
 		scheme = "http://"
 	}
-	urlString := scheme + net.JoinHostPort(req.Host, strconv.FormatUint(uint64(req.Port), 10))
+	urlString := scheme + net.JoinHostPort(req.Host, strconv.Itoa(int(req.Port)))
 	serverURL, err := url.ParseRequestURI(urlString)
 	if err != nil {
 		return nil, errors.New("invalid url: %s" + urlString)
@@ -109,16 +114,39 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 	var transport http.RoundTripper
 	switch req.HttpVersion {
 	case v1alpha1.HTTPVersion_HTTP_VERSION_1:
-		transport = &http.Transport{}
+		if tlsConf != nil {
+			tlsConf.NextProtos = []string{"http/1.1"}
+		}
+		transport = &http.Transport{
+			DisableCompression: true,
+			TLSClientConfig:    tlsConf,
+		}
 	case v1alpha1.HTTPVersion_HTTP_VERSION_2:
-		transport = &http2.Transport{
-			AllowHTTP: true,
-			DialTLSContext: func(ctx context.Context, network, addr string, cfg *tls.Config) (net.Conn, error) {
-				return net.Dial(network, addr)
-			},
+		if tlsConf != nil {
+			tlsConf.NextProtos = []string{"h2"}
+			transport = &http.Transport{
+				DisableCompression: true,
+				TLSClientConfig:    tlsConf,
+				ForceAttemptHTTP2:  true,
+			}
+		} else {
+			transport = &http2.Transport{
+				DisableCompression: true,
+				AllowHTTP:          true,
+				DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+					return (&net.Dialer{}).DialContext(ctx, network, addr)
+				},
+			}
 		}
 	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
-		return nil, errors.New("HTTP/3 is not yet supported")
+		if tlsConf == nil {
+			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
+		}
+		transport = &http3.RoundTripper{
+			DisableCompression: true,
+			EnableDatagrams:    true,
+			TLSClientConfig:    tlsConf,
+		}
 	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
 	}
@@ -190,10 +218,24 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 		// Do nothing
 	}
 
+	if req.MessageReceiveLimit > 0 {
+		clientOptions = append(clientOptions, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
+	}
+
 	switch req.Service {
 	case conformancev1alpha1connect.ConformanceServiceName:
 		return newInvoker(transport, serverURL, clientOptions).Invoke(ctx, req)
 	default:
 		return nil, errors.New("service name " + req.Service + " is not a valid service")
 	}
+}
+
+func createTLSConfig(req *v1alpha1.ClientCompatRequest) (*tls.Config, error) {
+	if req.ServerTlsCert == nil {
+		if req.ClientTlsCreds != nil {
+			return nil, errors.New("request indicated TLS client credentials but not server TLS cert provided")
+		}
+		return nil, nil //nolint:nilnil
+	}
+	return internal.NewClientTLSConfig(req.ServerTlsCert, req.ClientTlsCreds.GetCert(), req.ClientTlsCreds.GetKey())
 }
