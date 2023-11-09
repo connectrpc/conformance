@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strconv"
 
 	"connectrpc.com/conformance/internal"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
@@ -32,7 +33,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
-	port := flags.String("port", internal.DefaultPort, "the port for the conformance server ")
+	port := flags.Int("port", internal.DefaultPort, "the port for the conformance server ")
 
 	_ = flags.Parse(args[1:])
 	if flags.NArg() != 0 {
@@ -55,7 +56,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 
 	// Create a listener for the server so that we are able to obtain
 	// the IP and port for publishing on the out writer
-	listener, err := net.Listen("tcp", net.JoinHostPort(*host, *port))
+	listener, err := net.Listen("tcp", net.JoinHostPort(*host, strconv.Itoa(*port)))
 	if err != nil {
 		return err
 	}
