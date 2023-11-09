@@ -23,7 +23,7 @@ testCases:
           code: 13
           message: "bidi half duplex stream failed"
           details:
-            - "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
@@ -56,6 +56,14 @@ testCases:
             responseData:
               - "dGVzdCByZXNwb25zZQ=="
               - "dGVzdCByZXNwb25zZQ=="
+            error:
+              code: 13
+              message: "bidi half duplex stream failed"
+              details:
+                - "@type": "connectrpc.conformance.v1alpha1.Header"
+                  name: "test error detail name"
+                  value:
+                    - "test error detail value"
             responseTrailers:
             - name: x-custom-trailer
               value: ["bing","quux"]
@@ -68,6 +76,16 @@ testCases:
         requests:
         - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 13
+      message: "bidi half duplex stream failed"
+      details:
+        # Even if we leave off type.googleapis.com here, it's added back in the 'expected' code when marshalled
+        # But connect always strips off the type.googleapis.com so it's impossible to compare them
+        - "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
@@ -143,13 +161,3 @@ testCases:
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
-    error:
-      code: 13
-      message: "bidi half duplex stream failed"
-      details:
-        - "@type": "google.protobuf.Any"
-          typeUrl: "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
-          value:
-            name: "test error detail name"
-            value:
-              - "test error detail value"
