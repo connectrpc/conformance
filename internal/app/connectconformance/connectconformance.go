@@ -137,7 +137,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 	}
 	// TODO: start servers in parallel (up to a limit) to allow parallelism and faster test execution
 	for svrInstance, testCases := range testCaseLib.casesByServer {
-		runTestCasesForServer(ctx, isClient, svrInstance, testCases, startServer, results, clientProcess)
+		runTestCasesForServer(ctx, !isClient, isClient, svrInstance, testCases, startServer, results, clientProcess)
 		if !clientProcess.isRunning() {
 			err := clientProcess.waitForResponses()
 			if err == nil {

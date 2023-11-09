@@ -725,9 +725,9 @@ func TestResults_ServerSideband(t *testing.T) {
 	results.setOutcome("foo/bar/3", false, nil)
 	results.setOutcome("known-to-fail/1", false, nil)
 	results.setOutcome("known-to-fail/2", false, errors.New("fail"))
-	results.recordServerSideband("foo/bar/2", "something awkward in wire format")
-	results.recordServerSideband("foo/bar/3", "something awkward in wire format")
-	results.recordServerSideband("known-to-fail/1", "something awkward in wire format")
+	results.recordSideband("foo/bar/2", "something awkward in wire format")
+	results.recordSideband("foo/bar/3", "something awkward in wire format")
+	results.recordSideband("known-to-fail/1", "something awkward in wire format")
 
 	logger := &lineWriter{}
 	success, err := results.report(logger)

@@ -237,6 +237,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 
 			runTestCasesForServer(
 				context.Background(),
+				!testCase.isReferenceServer,
 				testCase.isReferenceServer,
 				svrInstance,
 				testCaseData,
@@ -257,7 +258,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				res := map[string]bool{}
 				results.mu.Lock()
 				defer results.mu.Unlock()
-				results.processServerSidebandInfoLocked()
+				results.processSidebandInfoLocked()
 				for name, outcome := range results.outcomes {
 					res[name] = outcome.actualFailure == nil
 				}

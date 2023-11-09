@@ -40,6 +40,7 @@ import (
 // record out-of-band feedback about the client requests.
 func runTestCasesForServer(
 	ctx context.Context,
+	isReferenceClient bool,
 	isReferenceServer bool,
 	meta serverInstance,
 	testCases []*conformancev1alpha1.TestCase,
@@ -78,7 +79,7 @@ func runTestCasesForServer(
 					if len(parts) == 2 {
 						if _, ok := expectations[parts[0]]; ok {
 							// appears to be valid message in the form "test case: error message"
-							results.recordServerSideband(parts[0], parts[1])
+							results.recordSideband(parts[0], parts[1])
 						}
 					}
 				}
@@ -138,6 +139,11 @@ func runTestCasesForServer(
 				results.failed(name, resp.GetError())
 			default:
 				results.assert(name, expectations[resp.TestName], resp.GetResponse())
+			}
+			if isReferenceClient {
+				for _, msg := range resp.Feedback {
+					results.recordSideband(resp.TestName, msg)
+				}
 			}
 		})
 		if err != nil {
