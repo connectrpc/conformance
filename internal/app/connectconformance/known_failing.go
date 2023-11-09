@@ -123,3 +123,14 @@ func (k *knownFailingTrie) findUnmatched(prefix string, unmatched map[string]str
 		child.findUnmatched(childPrefix, unmatched)
 	}
 }
+
+func (k *knownFailingTrie) length() int {
+	var result int
+	if k.present {
+		result++
+	}
+	for _, child := range k.children {
+		result += child.length()
+	}
+	return result
+}

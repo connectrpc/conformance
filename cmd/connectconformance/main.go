@@ -29,12 +29,15 @@ const (
 	modeFlagName         = "mode"
 	configFlagName       = "conf"
 	knownFailingFlagName = "known-failing"
+	verboseFlagName      = "verbose"
+	verboseFlagShortName = "v"
 )
 
 type flags struct {
 	mode             string
 	configFile       string
 	knownFailingFile string
+	verbose          bool
 }
 
 func main() {
@@ -88,6 +91,7 @@ func bind(cmd *cobra.Command, flags *flags) {
 	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client' or 'server'")
 	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
+	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
 }
 
 func run(flags *flags, command []string) {
@@ -127,6 +131,7 @@ func run(flags *flags, command []string) {
 			Mode:             mode,
 			ConfigFile:       flags.configFile,
 			KnownFailingFile: flags.knownFailingFile,
+			Verbose:          flags.verbose,
 		},
 		command,
 		os.Stdout,
