@@ -91,24 +91,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 		return false, err
 	}
 	if flags.Verbose {
-		svrInstances := make([]serverInstance, 0, len(testCaseLib.casesByServer))
-		for svrInstance := range testCaseLib.casesByServer {
-			svrInstances = append(svrInstances, svrInstance)
-		}
-		sort.Slice(svrInstances, func(i, j int) bool {
-			if svrInstances[i].httpVersion != svrInstances[j].httpVersion {
-				return svrInstances[i].httpVersion < svrInstances[j].httpVersion
-			}
-			if svrInstances[i].protocol != svrInstances[j].protocol {
-				return svrInstances[i].protocol < svrInstances[j].protocol
-			}
-			return !svrInstances[i].useTLS || svrInstances[j].useTLS
-		})
-		for _, svrInstance := range svrInstances {
-			testCases := testCaseLib.casesByServer[svrInstance]
-			_, _ = fmt.Fprintf(logOut, "Running %d tests for server config {%s, %s, TLS:%v}...\n",
-				len(testCases), svrInstance.httpVersion, svrInstance.protocol, svrInstance.useTLS)
-		}
+		logTestCaseInfo(testCaseLib, logOut)
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
@@ -171,4 +154,25 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 	}
 
 	return results.report(logOut)
+}
+
+func logTestCaseInfo(testCaseLib *testCaseLibrary, logOut io.Writer) {
+	svrInstances := make([]serverInstance, 0, len(testCaseLib.casesByServer))
+	for svrInstance := range testCaseLib.casesByServer {
+		svrInstances = append(svrInstances, svrInstance)
+	}
+	sort.Slice(svrInstances, func(i, j int) bool { //nolint:varnamelen
+		if svrInstances[i].httpVersion != svrInstances[j].httpVersion {
+			return svrInstances[i].httpVersion < svrInstances[j].httpVersion
+		}
+		if svrInstances[i].protocol != svrInstances[j].protocol {
+			return svrInstances[i].protocol < svrInstances[j].protocol
+		}
+		return !svrInstances[i].useTLS || svrInstances[j].useTLS
+	})
+	for _, svrInstance := range svrInstances {
+		testCases := testCaseLib.casesByServer[svrInstance]
+		_, _ = fmt.Fprintf(logOut, "Running %d tests for server config {%s, %s, TLS:%v}...\n",
+			len(testCases), svrInstance.httpVersion, svrInstance.protocol, svrInstance.useTLS)
+	}
 }
