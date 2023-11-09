@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -128,6 +129,16 @@ func runTestCasesForServer(
 		req.Host = resp.Host
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
+		if isReferenceServer {
+			req.RequestHeaders = append(
+				req.RequestHeaders,
+				&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
+				&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
+				&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
+				&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
+				&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
+			)
+		}
 
 		wg.Add(1)
 		err := client.sendRequest(req, func(name string, resp *conformancev1alpha1.ClientCompatResponse, err error) {
