@@ -166,8 +166,8 @@ func (i *invoker) serverStream(
 func (i *invoker) clientStream(
 	ctx context.Context,
 	ccr *v1alpha1.ClientCompatRequest,
-) (result *v1alpha1.ClientResponseResult, retErr error) {
-	result = &v1alpha1.ClientResponseResult{
+) (*v1alpha1.ClientResponseResult, error) {
+	result := &v1alpha1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
 
@@ -205,13 +205,9 @@ func (i *invoker) clientStream(
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if result != nil {
-			// Set headers and trailers from the stream
-			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
-			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
-		}
-	}()
+	// Set headers and trailers from the stream
+	result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+	result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
 
 	return result, nil
 }
