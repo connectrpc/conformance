@@ -16,11 +16,8 @@ package grpcutil
 
 import (
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
-	"connectrpc.com/connect"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/anypb"
 )
 
 // ConvertProtoToGrpcError converts a proto Error into a gRPC error.
@@ -42,30 +39,11 @@ func ConvertGrpcToProtoError(err error) *v1alpha1.Error {
 	if err == nil {
 		return nil
 	}
-	status, ok := status.FromError(err)
-	if !ok {
-		// If the given error is not a gRPC error, return unknown
-		return &v1alpha1.Error{
-			Code:    int32(connect.CodeUnknown),
-			Message: "provided error is not a gRPC error",
-		}
+	stat, _ := status.FromError(err)
+	statProto := stat.Proto()
+	return &v1alpha1.Error{
+		Code:    int32(stat.Code()),
+		Message: stat.Message(),
+		Details: statProto.Details,
 	}
-	protoErr := &v1alpha1.Error{
-		Code:    int32(status.Code()),
-		Message: status.Message(),
-	}
-	details := make([]*anypb.Any, 0, len(status.Details()))
-	for _, any := range status.Details() {
-		// status.Details() returns a slice of 'any' instead of anypb.Any
-		// so, first convert to a proto message so that we can convert that to
-		// an anypb.Any
-		if pm, ok := any.(proto.Message); ok {
-			detail, err := anypb.New(pm)
-			if err != nil {
-				details = append(details, detail)
-			}
-		}
-	}
-	protoErr.Details = details
-	return protoErr
 }
