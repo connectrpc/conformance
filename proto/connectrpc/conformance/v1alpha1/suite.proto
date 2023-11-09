@@ -75,12 +75,16 @@ message TestSuite {
 
   // If true, the cases in this suite rely on TLS.
   bool relies_on_tls = 9;
+  // If true, the cases in this suite rely on the client using TLS
+  // certificates to authenticate with the server. (Should only be
+  // true if relies_on_tls is also true.)
+  bool relies_on_tls_client_certs = 10;
   // If true, the cases in this suite rely on the Connect GET protocol.
-  bool relies_on_connect_get = 10;
+  bool relies_on_connect_get = 11;
   // If true, the cases in this suite rely on support for limiting the
   // size of received messages. When true, mode should be set to indicate
   // whether it is the client or the server that must support the limit.
-  bool relies_on_message_receive_limit = 11;
+  bool relies_on_message_receive_limit = 12;
 }
 
 message TestCase {
