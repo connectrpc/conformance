@@ -44,27 +44,35 @@ message ClientCompatRequest {
   // server's PEM-encoded certificate, which the client should
   // verify and trust.
   bytes server_tls_cert = 8;
+  // If present, the client certificate credentials to use to
+  // authenticate with the server. This will only be present
+  // when server_tls_cert is non-empty.
+  TLSCreds client_tls_creds = 9;
+  message TLSCreds {
+    bytes cert = 1;
+    bytes key = 2;
+  }
   // If non-zero, indicates the maximum size in bytes for a message.
   // If the server sends anything larger, the client should reject it.
-  uint32 message_receive_limit = 9;
+  uint32 message_receive_limit = 10;
 
-  string service = 10;
-  string method = 11;
-  StreamType stream_type = 12;
+  string service = 11;
+  string method = 12;
+  StreamType stream_type = 13;
   // If protocol indicates Connect and stream type indicates
   // Unary, this instructs the client to use a GET HTTP method
   // when making the request.
-  bool use_get_http_method = 13;
-  repeated Header request_headers = 14;
+  bool use_get_http_method = 14;
+  repeated Header request_headers = 15;
   // There will be exactly one for unary and server-stream methods.
   // For client- and bidi-stream methods, all entries will have the
   // same type URL (which matches the request type of the method).
-  repeated google.protobuf.Any request_messages = 15;
-  optional uint32 timeout_ms = 16;
+  repeated google.protobuf.Any request_messages = 16;
+  optional uint32 timeout_ms = 17;
   // Wait this many milliseconds before sending a request message.
   // For client- or bidi-streaming requests, this delay should be
   // applied before each request sent.
-  uint32 request_delay_ms = 17;
+  uint32 request_delay_ms = 18;
 }
 
 // The outcome of one ClientCompatRequest.
