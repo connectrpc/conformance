@@ -44,23 +44,28 @@ message Features {
   repeated Codec codecs = 3;
   // If empty, "identity" and "gzip" are assumed.
   repeated Compression compressions = 4;
-  // If absent, true is assumed.
-  optional bool supports_h2c = 5;
-  // If absent, true is assumed.
-  optional bool supports_tls = 6;
-  // If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
-  optional bool supports_trailers = 7;
-  // If absent, false is assumed.
-  optional bool supports_half_duplex_bidi_over_http1 = 8;
-  // If absent, true is assumed.
-  optional bool supports_connect_get = 9;
-  // If absent, false is assumed.
-  optional bool requires_connect_version_header = 10;
   // If empty, all stream types are assumed. This is usually for
   // clients, since some client environments may not be able to
   // support certain kinds of streaming operations, especially
   // bidirectional streams.
-  repeated StreamType stream_types = 11;
+  repeated StreamType stream_types = 5;
+  // If absent, true is assumed.
+  optional bool supports_h2c = 6;
+  // If absent, true is assumed.
+  optional bool supports_tls = 7;
+  // If absent, false is assumed. This should not be set if
+  // supports_tls is false.
+  optional bool supports_client_certs = 8;
+  // If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
+  optional bool supports_trailers = 9;
+  // If absent, false is assumed.
+  optional bool supports_half_duplex_bidi_over_http1 = 10;
+  // If absent, true is assumed.
+  optional bool supports_connect_get = 11;
+  // If absent, false is assumed.
+  optional bool requires_connect_version_header = 12;
+  // If absent, true is assumed.
+  optional bool supports_message_receive_limit = 13;
 }
 
 message ConfigCase {

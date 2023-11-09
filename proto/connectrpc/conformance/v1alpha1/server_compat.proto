@@ -38,6 +38,17 @@ message ServerCompatRequest {
   // if true, generate a self-signed cert and include it in the
   // ServerCompatResponse along with the actual port
   bool use_tls = 4;
+  // If non-empty, the clients will use certificates to authenticate
+  // themselves. This value is a PEM-encoded cert that should be
+  // trusted by the server. When non-empty, the server should require
+  // that clients provide certificates and they should validate that
+  // the certificate presented is valid.
+  //
+  // This will always be empty if use_tls is false.
+  bytes client_tls_cert = 5;
+  // If non-zero, indicates the maximum size in bytes for a message.
+  // If the server sends anything larger, the client should reject it.
+  uint32 message_receive_limit = 6;
 }
 
 // The outcome of one ServerCompatRequest.
