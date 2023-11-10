@@ -67,7 +67,13 @@ func ConvertConnectToProtoError(err *connect.Error) *v1alpha1.Error {
 	details := make([]*anypb.Any, 0, len(err.Details()))
 	for _, detail := range err.Details() {
 		details = append(details, &anypb.Any{
-			TypeUrl: detail.Type(),
+			// Connect Go strips the prefix from the type when calling Type()
+			// but anypb.MarshalFrom adds the prefix explicitly. Since Protoyaml
+			// uses anypb.MarshalFrom when reading an Any type from a yaml file,
+			// it must be explicitly added back here so that we can successfully
+			// compare the expected response from the yaml file into what
+			// Connect Go returns.
+			TypeUrl: DefaultAnyResolverPrefix + detail.Type(),
 			Value:   detail.Bytes(),
 		})
 	}

@@ -24,4 +24,6 @@ const (
 	DefaultPort = 0
 	// The fully-qualified service name for the Conformance Service.
 	ConformanceServiceName = conformancev1alpha1connect.ConformanceServiceName
+	// The prefix for type URLs used in Any messages.
+	DefaultAnyResolverPrefix = "type.googleapis.com/"
 )
