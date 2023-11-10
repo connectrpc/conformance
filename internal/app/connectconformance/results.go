@@ -173,7 +173,7 @@ func (r *testResults) processServerSidebandInfoLocked() {
 	}
 }
 
-func (r *testResults) report(writer io.Writer) error {
+func (r *testResults) report(writer io.Writer) (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(r.serverSideband) > 0 {
@@ -204,27 +204,27 @@ func (r *testResults) report(writer io.Writer) error {
 			succeeded++
 		}
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 	if failed+expectedFailures > 0 {
 		// Add a blank line to separate summary from messages above
 		_, err := writer.Write([]byte{'\n'})
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 	_, err := fmt.Fprintf(writer, "Total cases: %d\n%d passed, %d failed\n", len(r.outcomes), succeeded, failed)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if expectedFailures > 0 {
 		_, err := fmt.Fprintf(writer, "(%d failed as expected due to being known failures.)\n", expectedFailures)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
-	return nil
+	return failed == 0, nil
 }
 
 type testOutcome struct {
