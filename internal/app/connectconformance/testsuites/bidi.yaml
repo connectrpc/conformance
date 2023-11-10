@@ -1,12 +1,13 @@
 name: Bidi
 relevantHttpVersions:
   - HTTP_VERSION_2
+  - HTTP_VERSION_3
 testCases:
 - request:
     testName: bidi full duplex stream success
     service: connectrpc.conformance.v1alpha1.ConformanceService
     method: BidiStream
-    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
@@ -30,10 +31,9 @@ testCases:
     - name: X-Custom-Header
       value: ["foo","bar","baz"]
     payloads:
-      # Success calls will return one payload for each requested response.
-      # The difference between full and half duplex is that full will show
-      # the info from the first request in the first response, second in the
-      # second, etc. (i.e. ping pong)
+      # The difference between expected payloads for full and half duplex is
+      # that full will show the info from the first request in the first
+      # response, second in the second, etc. (i.e. ping pong)
     - data: "dGVzdCByZXNwb25zZQ=="
       requestInfo:
         requestHeaders:
@@ -64,6 +64,90 @@ testCases:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
+    testName: bidi full duplex stream error
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    requestHeaders:
+      - name: X-Conformance-Test
+        value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+          - name: x-custom-header
+            value: ["foo","bar","baz"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        error:
+          code: 13
+          message: "bidi full duplex stream failed"
+          details:
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
+              name: "test error detail name"
+              value:
+                - "test error detail value"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  expectedResponse:
+    responseHeaders:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
+    payloads:
+      # The difference between expected payloads for full and half duplex is
+      # that full will show the info from the first request in the first
+      # response, second in the second, etc. (i.e. ping pong)
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          responseDefinition:
+            responseHeaders:
+            - name: x-custom-header
+              value: ["foo","bar","baz"]
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+              - "dGVzdCByZXNwb25zZQ=="
+            error:
+              code: 13
+              message: "bidi full duplex stream failed"
+              details:
+                - "@type": "connectrpc.conformance.v1alpha1.Header"
+                  name: "test error detail name"
+                  value:
+                    - "test error detail value"
+            responseTrailers:
+            - name: x-custom-trailer
+              value: ["bing","quux"]
+          fullDuplex: true
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 13
+      message: "bidi full duplex stream failed"
+      details:
+        - "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
+    responseTrailers:
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
+- request:
     testName: bidi half duplex stream success
     service: connectrpc.conformance.v1alpha1.ConformanceService
     method: BidiStream
@@ -90,10 +174,10 @@ testCases:
     - name: X-Custom-Header
       value: ["foo","bar","baz"]
     payloads:
-      # Success calls will return one payload for each requested response.
-      # The difference between full and half duplex is that half will show
-      # all request info in both payloads since its building the payloads
-      # and responses _after_ all requests have been received.
+      # The difference between expected payloads for full and half duplex is
+      # that half will show all request info in both payloads since it's
+      # building the payloads and responses _after_ all requests have been
+      # received.
     - data: "dGVzdCByZXNwb25zZQ=="
       requestInfo:
         requestHeaders:
@@ -132,6 +216,91 @@ testCases:
               value: ["bing","quux"]
         - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
+    responseTrailers:
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
+- request:
+    testName: bidi half duplex stream error
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestHeaders:
+      - name: X-Conformance-Test
+        value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+          - name: x-custom-header
+            value: ["foo","bar","baz"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        error:
+          code: 13
+          message: "bidi half duplex stream failed"
+          details:
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
+              name: "test error detail name"
+              value:
+                - "test error detail value"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  expectedResponse:
+    responseHeaders:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
+    payloads:
+      # The difference between expected payloads for full and half duplex is
+      # that half will show all request info in both payloads since it's
+      # building the payloads and responses _after_ all requests have been
+      # received.
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          responseDefinition:
+            responseHeaders:
+            - name: x-custom-header
+              value: ["foo","bar","baz"]
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+              - "dGVzdCByZXNwb25zZQ=="
+            error:
+              code: 13
+              message: "bidi half duplex stream failed"
+              details:
+                - "@type": "connectrpc.conformance.v1alpha1.Header"
+                  name: "test error detail name"
+                  value:
+                    - "test error detail value"
+            responseTrailers:
+            - name: x-custom-trailer
+              value: ["bing","quux"]
+          fullDuplex: true
+    - data: "dGVzdCByZXNwb25zZQ=="
+      requestInfo:
+        requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 13
+      message: "bidi half duplex stream failed"
+      details:
+        - "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
