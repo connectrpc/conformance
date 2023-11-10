@@ -192,6 +192,12 @@ func (s *conformanceServer) BidiStream(
 			responseDefinition = req.ResponseDefinition
 			fullDuplex = req.FullDuplex
 			firstRecv = false
+
+			// If a response definition was provided, add the headers and trailers
+			if responseDefinition != nil {
+				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
+				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+			}
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream

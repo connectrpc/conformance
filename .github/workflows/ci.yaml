@@ -30,6 +30,8 @@ jobs:
           restore-keys: ${{ runner.os }}-conformance-ci-
       - name: Test
         run: make test
+      - name: Run Conformance Tests
+        run: make runconformance
       - name: Lint
         # Often, lint & gofmt guidelines depend on the Go version. To prevent
         # conflicting guidance, run only on the most recent supported version.
