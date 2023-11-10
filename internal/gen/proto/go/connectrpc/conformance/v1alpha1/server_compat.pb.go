@@ -67,7 +67,7 @@ type ServerCompatRequest struct {
 	// This will always be empty if use_tls is false.
 	ClientTlsCert []byte `protobuf:"bytes,5,opt,name=client_tls_cert,json=clientTlsCert,proto3" json:"client_tls_cert,omitempty"`
 	// If non-zero, indicates the maximum size in bytes for a message.
-	// If the server sends anything larger, the client should reject it.
+	// If the client sends anything larger, the server should reject it.
 	MessageReceiveLimit uint32 `protobuf:"varint,6,opt,name=message_receive_limit,json=messageReceiveLimit,proto3" json:"message_receive_limit,omitempty"`
 }
 

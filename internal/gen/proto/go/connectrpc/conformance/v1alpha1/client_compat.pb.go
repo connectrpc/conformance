@@ -252,7 +252,7 @@ type ClientCompatResponse struct {
 	//	*ClientCompatResponse_Response
 	//	*ClientCompatResponse_Error
 	Result isClientCompatResponse_Result `protobuf_oneof:"result"`
-	// This field is used only be the reference client, and it can be used
+	// This field is used only by the reference client, and it can be used
 	// to provide additional feedback about problems observed in the server
 	// response. If non-empty, the test case is considered failed even if
 	// the result above matches all expectations.
