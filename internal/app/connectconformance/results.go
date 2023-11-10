@@ -129,8 +129,6 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1alp
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
 	if diff := cmp.Diff(expected.Error, actual.Error, protocmp.Transform()); diff != "" {
-		fmt.Printf("Actual %+v\n", actual.Error)
-		fmt.Printf("Expected %+v\n", expected.Error)
 		errs = append(errs, fmt.Errorf("actual error does not match expected error: - wanted, + got\n%s", diff))
 	}
 
