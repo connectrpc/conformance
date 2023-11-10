@@ -20,6 +20,7 @@ help: ## Describe useful make targets
 all: ## Build, test, and lint (default)
 	$(MAKE) test
 	$(MAKE) lint
+	$(MAKE) runconformance
 
 .PHONY: clean
 clean: ## Delete intermediate build artifacts
@@ -68,6 +69,9 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
+.PHONY: runconformance
+runconformance: runservertests runclienttests
+
 .PHONY: runservertests
 runservertests: $(BIN)/connectconformance $(BIN)/referenceserver
 	$(BIN)/connectconformance --mode server $(BIN)/referenceserver
@@ -77,19 +81,19 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient
 	$(BIN)/connectconformance --mode client $(BIN)/referenceclient
 
 $(BIN)/connectconformance: Makefile generate
-	go build -o $(@) cmd/connectconformance/
+	go build -o $(@) ./cmd/connectconformance/
 
 $(BIN)/referenceclient: Makefile generate
-	go build -o $(@) cmd/referenceclient/
+	go build -o $(@) ./cmd/referenceclient/
 
 $(BIN)/referenceserver: Makefile generate
-	go build -o $(@) cmd/referenceserver/
+	go build -o $(@) ./cmd/referenceserver/
 
 $(BIN)/grpcclient: Makefile generate
-	go build -o $(@) cmd/grpcclient/
+	go build -o $(@) ./cmd/grpcclient/
 
 $(BIN)/grpcserver: Makefile generate
-	go build -o $(@) cmd/grpcserver/
+	go build -o $(@) ./cmd/grpcserver/
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
