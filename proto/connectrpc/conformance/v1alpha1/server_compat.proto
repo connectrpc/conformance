@@ -47,7 +47,7 @@ message ServerCompatRequest {
   // This will always be empty if use_tls is false.
   bytes client_tls_cert = 5;
   // If non-zero, indicates the maximum size in bytes for a message.
-  // If the server sends anything larger, the client should reject it.
+  // If the client sends anything larger, the server should reject it.
   uint32 message_receive_limit = 6;
 }
 
