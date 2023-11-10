@@ -77,19 +77,19 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient
 	$(BIN)/connectconformance --mode client $(BIN)/referenceclient
 
 $(BIN)/connectconformance: Makefile generate
-	go build -o $(@) cmd/connectconformance/main.go
+	go build -o $(@) cmd/connectconformance/
 
 $(BIN)/referenceclient: Makefile generate
-	go build -o $(@) cmd/referenceclient/main.go
+	go build -o $(@) cmd/referenceclient/
 
 $(BIN)/referenceserver: Makefile generate
-	go build -o $(@) cmd/referenceserver/main.go
+	go build -o $(@) cmd/referenceserver/
 
 $(BIN)/grpcclient: Makefile generate
-	go build -o $(@) cmd/grpcclient/main.go
+	go build -o $(@) cmd/grpcclient/
 
 $(BIN)/grpcserver: Makefile generate
-	go build -o $(@) cmd/grpcserver/main.go
+	go build -o $(@) cmd/grpcserver/
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
