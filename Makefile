@@ -73,12 +73,14 @@ checkgenerate:
 runconformance: runservertests runclienttests
 
 .PHONY: runservertests
-runservertests: $(BIN)/connectconformance $(BIN)/referenceserver
-	$(BIN)/connectconformance --mode server $(BIN)/referenceserver
+runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserver
+	$(BIN)/connectconformance --conf ./testdata/reference-impls-config.yaml --mode server $(BIN)/referenceserver
+	$(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode server $(BIN)/grpcserver
 
 .PHONY: runclienttests
-runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient
-	$(BIN)/connectconformance --mode client $(BIN)/referenceclient
+runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient
+	$(BIN)/connectconformance --conf ./testdata/reference-impls-config.yaml --mode client $(BIN)/referenceclient
+	$(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode client $(BIN)/grpcclient
 
 $(BIN)/connectconformance: Makefile generate
 	go build -o $(@) ./cmd/connectconformance/
