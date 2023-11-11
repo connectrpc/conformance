@@ -222,6 +222,23 @@ func TestRunTestCasesForServer(t *testing.T) {
 				client.requestHookCount = testCase.svrKillAfter
 				expectedRequests = requests[:testCase.svrKillAfter]
 			}
+			if testCase.isReferenceServer {
+				copyOfRequests := make([]*conformancev1alpha1.ClientCompatRequest, len(expectedRequests))
+				// runner adds headers for the reference server
+				for i, req := range expectedRequests {
+					req = proto.Clone(req).(*conformancev1alpha1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
+					req.RequestHeaders = append(req.RequestHeaders,
+						&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{req.TestName}},
+						// we didn't set this above, so they're all zero/unspecified
+						&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{"0"}},
+						&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{"0"}},
+						&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{"0"}},
+						&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{"0"}},
+					)
+					copyOfRequests[i] = req
+				}
+				expectedRequests = copyOfRequests
+			}
 
 			responsesToSend := responses
 			if testCase.clientCloseAfter > 0 {
@@ -237,6 +254,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 
 			runTestCasesForServer(
 				context.Background(),
+				!testCase.isReferenceServer,
 				testCase.isReferenceServer,
 				svrInstance,
 				testCaseData,
@@ -257,7 +275,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				res := map[string]bool{}
 				results.mu.Lock()
 				defer results.mu.Unlock()
-				results.processServerSidebandInfoLocked()
+				results.processSidebandInfoLocked()
 				for name, outcome := range results.outcomes {
 					res[name] = outcome.actualFailure == nil
 				}
