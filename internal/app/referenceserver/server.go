@@ -111,6 +111,9 @@ type stdHTTPServer struct {
 }
 
 func (s *stdHTTPServer) Serve() error {
+	if s.svr.TLSConfig != nil {
+		return s.svr.ServeTLS(s.lis, "", "")
+	}
 	return s.svr.Serve(s.lis)
 }
 
@@ -127,12 +130,18 @@ func (s *stdHTTPServer) Addr() string {
 // Creates an HTTP server using the provided ServerCompatRequest.
 func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
-	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
-		&conformanceServer{},
+	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
 		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
+	}
+	if req.MessageReceiveLimit > 0 {
+		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
+	}
+	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
+		&conformanceServer{},
+		opts...,
 	))
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
@@ -164,7 +173,11 @@ func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpSer
 		if err != nil {
 			return nil, nil, fmt.Errorf("could not generate TLS cert: %w", err)
 		}
-		tlsConf, err = internal.NewServerTLSConfig(cert, tls.NoClientCert, nil)
+		clientCertMode := tls.NoClientCert
+		if len(req.ClientTlsCert) > 0 {
+			clientCertMode = tls.RequireAndVerifyClientCert
+		}
+		tlsConf, err = internal.NewServerTLSConfig(cert, clientCertMode, req.ClientTlsCert)
 		if err != nil {
 			return nil, nil, fmt.Errorf("could not create TLS configuration: %w", err)
 		}
@@ -191,9 +204,6 @@ func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpSer
 
 // newH1Server creates a new HTTP/1.1 server.
 func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
-	if tlsConf != nil {
-		tlsConf.NextProtos = []string{"http/1.1"}
-	}
 	h1Server := &http.Server{
 		Addr:              listenAddr,
 		Handler:           handler,
@@ -209,9 +219,7 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 
 // newH2Server creates a new HTTP/2 server.
 func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
-	if tlsConf != nil {
-		tlsConf.NextProtos = []string{"h2"}
-	} else {
+	if tlsConf == nil {
 		handler = h2c.NewHandler(handler, &http2.Server{})
 	}
 	h2Server := &http.Server{

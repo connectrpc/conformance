@@ -26,6 +26,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/encoding/gzip" // enables GZIP compression w/ gRPC
 )
 
 // Run runs the server according to server config read from the 'in' reader.

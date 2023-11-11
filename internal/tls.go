@@ -44,14 +44,14 @@ func NewClientTLSConfig(caCert, clientCert, clientKey []byte) (*tls.Config, erro
 
 	hasClientCert := len(clientCert) != 0
 	hasClientKey := len(clientKey) != 0
-	var certPair tls.Certificate
+	var certs []tls.Certificate
 	switch {
 	case hasClientCert && hasClientKey:
-		var err error
-		certPair, err = ParseServerCert(clientCert, clientKey)
+		certPair, err := ParseServerCert(clientCert, clientKey)
 		if err != nil {
 			return nil, err
 		}
+		certs = []tls.Certificate{certPair}
 	case hasClientCert:
 		return nil, fmt.Errorf("clientCert is not empty but clientKey is")
 	case hasClientKey:
@@ -60,7 +60,7 @@ func NewClientTLSConfig(caCert, clientCert, clientKey []byte) (*tls.Config, erro
 
 	return &tls.Config{
 		RootCAs:      caCertPool,
-		Certificates: []tls.Certificate{certPair},
+		Certificates: certs,
 		MinVersion:   tls.VersionTLS12,
 	}, nil
 }
@@ -138,7 +138,7 @@ func NewServerCert() (tls.Certificate, []byte, error) {
 		IPAddresses: []net.IP{net.IPv6loopback, net.IPv4(127, 0, 0, 1)},
 		DNSNames:    []string{"localhost"},
 	}
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, priv.PublicKey, priv)
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
 	if err != nil {
 		return tls.Certificate{}, nil, fmt.Errorf("failed to create certificate: %w", err)
 	}

@@ -143,18 +143,19 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1alp
 	r.setOutcome(testCase, false, errs.Result())
 }
 
-// recordServerSideband accepts an error message for a test that was sent
-// out-of-band by a reference server.
-func (r *testResults) recordServerSideband(testCase string, errMsg string) {
+// recordSideband accepts an error message for a test that was sent
+// out-of-band by a reference server or included as feedback in the
+// response from a reference client.
+func (r *testResults) recordSideband(testCase string, errMsg string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.serverSideband[testCase] = errMsg
 }
 
-// processServerSidebandInfoLocked merges the data recorded during calls
-// to recordServerSideband into the outcomes. This is done when a report
+// processSidebandInfoLocked merges the data recorded during calls
+// to recordSideband into the outcomes. This is done when a report
 // is created.
-func (r *testResults) processServerSidebandInfoLocked() {
+func (r *testResults) processSidebandInfoLocked() {
 	for name, msg := range r.serverSideband {
 		outcome, ok := r.outcomes[name]
 		if ok {
@@ -175,7 +176,7 @@ func (r *testResults) report(writer io.Writer) (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(r.serverSideband) > 0 {
-		r.processServerSidebandInfoLocked()
+		r.processSidebandInfoLocked()
 		r.serverSideband = map[string]string{}
 	}
 	testCaseNames := make([]string, 0, len(r.outcomes))

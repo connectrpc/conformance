@@ -27,13 +27,26 @@ type zstdDecompressor struct {
 }
 
 func (c *zstdDecompressor) Read(bytes []byte) (int, error) {
+	if c.decoder == nil {
+		return 0, io.EOF
+	}
 	return c.decoder.Read(bytes)
 }
 func (c *zstdDecompressor) Reset(rdr io.Reader) error {
+	if c.decoder == nil {
+		var err error
+		c.decoder, err = zstd.NewReader(rdr)
+		return err
+	}
 	return c.decoder.Reset(rdr)
 }
 func (c *zstdDecompressor) Close() error {
+	if c.decoder == nil {
+		return nil
+	}
 	c.decoder.Close()
+	// zstd.Decoder cannot be re-used after close, even via Reset
+	c.decoder = nil
 	return nil
 }
 

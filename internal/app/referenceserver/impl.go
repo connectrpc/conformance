@@ -55,8 +55,8 @@ func (s *conformanceServer) Unary(
 		[]*anypb.Any{msgAsAny},
 	)
 	if connectErr != nil {
-		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, connectErr.Meta())
-		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, connectErr.Meta())
+		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseHeaders(), connectErr.Meta())
+		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseTrailers(), connectErr.Meta())
 		return nil, connectErr
 	}
 
