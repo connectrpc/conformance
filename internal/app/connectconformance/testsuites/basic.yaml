@@ -134,7 +134,7 @@ testCases:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
-    testName: server stream error
+    testName: server stream error with responses
     service: connectrpc.conformance.v1alpha1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
