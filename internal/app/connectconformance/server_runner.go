@@ -45,6 +45,7 @@ func runTestCasesForServer(
 	isReferenceServer bool,
 	meta serverInstance,
 	testCases []*conformancev1alpha1.TestCase,
+	clientCertBytes []byte,
 	startServer processStarter,
 	results *testResults,
 	client clientRunner,
@@ -91,11 +92,20 @@ func runTestCasesForServer(
 		}()
 	}
 
+	if !meta.useTLSClientCerts {
+		// don't send client cert info if this instance won't use them
+		clientCertBytes = nil
+	}
+
 	// Write server request.
 	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev1alpha1.ServerCompatRequest{
-		Protocol:    meta.protocol,
-		HttpVersion: meta.httpVersion,
-		UseTls:      meta.useTLS,
+		Protocol:      meta.protocol,
+		HttpVersion:   meta.httpVersion,
+		UseTls:        meta.useTLS,
+		ClientTlsCert: clientCertBytes,
+		// We always set this. If server-under-test does not support it, we just
+		// won't run the test cases that verify that it's enforced.
+		MessageReceiveLimit: 200 * 1024, // 200 KB
 	})
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error writing server request: %w", err))

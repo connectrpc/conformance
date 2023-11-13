@@ -444,6 +444,13 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
 			expectedErr: "config features indicate full-duplex bidi streams are supported but neither HTTP/2 nor HTTP/3 included",
 		},
 		{
+			name: "features: TLS client certs without TLS",
+			config: `features:
+                        supportsTlsClientCerts: true
+                        supportsTls: false`,
+			expectedErr: "config features indicate TLS client certs are supported but not TLS",
+		},
+		{
 			name: "included case: HTTP/3 without TLS",
 			config: `
                      features:
@@ -549,6 +556,24 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
                       - version: HTTP_VERSION_1
                         streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
 			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex",
+		},
+		{
+			name: "included case: TLS client certs without TLS (a)",
+			config: `
+                     features:
+                     include_cases:
+                      - useTlsClientCerts: true
+                        useTls: false`,
+			expectedErr: "config case indicates use of TLS client certs but also indicates NOT using TLS",
+		},
+		{
+			name: "included case: TLS client certs without TLS (a)",
+			config: `
+                     features:
+                        supportsTls: false
+                     include_cases:
+                      - useTlsClientCerts: true`,
+			expectedErr: "config case indicates use of TLS client certs but TLS is not supported",
 		},
 	}
 

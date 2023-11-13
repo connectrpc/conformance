@@ -259,7 +259,7 @@ func resolveFeatures(features *conformancev1alpha1.Features) (supportedFeatures,
 
 // computeCasesFromFeatures expands the given features into all matching config
 // permutations.
-func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCertCases, msgRecvLimitCases []bool) map[configCase]struct{} {
+func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCertCases, msgRecvLimitCases []bool) map[configCase]struct{} { //nolint:gocyclo
 	// if tlsCases, tlsClientCertCases, and msgRecvLimitCases not explicitly provided, derive them from features
 	if len(tlsCases) == 0 {
 		if features.SupportsTLS {
@@ -437,6 +437,9 @@ func contains[T comparable, S ~[]T](slice S, find T) bool {
 }
 
 func only[T comparable, S ~[]T](slice S, find T) bool {
+	if len(slice) == 0 {
+		return false
+	}
 	for _, elem := range slice {
 		if elem != find {
 			return false
