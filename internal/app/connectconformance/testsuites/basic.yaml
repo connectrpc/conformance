@@ -43,6 +43,21 @@ testCases:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
+    testName: unary empty response
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+      responseDefinition:
+  expectedResponse:
+    payloads:
+    - data:
+      requestInfo:
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+          responseDefinition:
+- request:
     testName: client stream success
     service: connectrpc.conformance.v1alpha1.ConformanceService
     method: ClientStream
@@ -87,6 +102,21 @@ testCases:
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
+- request:
+    testName: client stream empty response
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+      responseDefinition:
+  expectedResponse:
+    payloads:
+    - data:
+      requestInfo:
+        requests:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+          responseDefinition:
 - request:
     testName: server stream success
     service: connectrpc.conformance.v1alpha1.ConformanceService
@@ -133,6 +163,15 @@ testCases:
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
+- request:
+    testName: server stream empty response
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest
+      responseDefinition:
+  expectedResponse:
 - request:
     testName: server stream error with responses
     service: connectrpc.conformance.v1alpha1.ConformanceService
