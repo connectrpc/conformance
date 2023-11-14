@@ -31,18 +31,6 @@ testCases:
         requestHeaders:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
-        requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
-          responseDefinition:
-            responseHeaders:
-            - name: x-custom-header
-              value: ["foo","bar","baz"]
-            responseData: "dGVzdCByZXNwb25zZQ=="
-            responseTrailers:
-            - name: x-custom-trailer
-              value: ["bing","quux"]
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
-          requestData: "dGVzdCByZXNwb25zZQ=="
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]

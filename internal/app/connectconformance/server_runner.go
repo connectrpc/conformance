@@ -28,6 +28,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+func popExp(testCase *conformancev1alpha1.TestCase) {
+	switch testCase.Request.StreamType {
+	case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+	case conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+	default:
+		testCase.ExpectedResponse.Payloads[0].RequestInfo.Requests = testCase.Request.RequestMessages
+	}
+}
+
 // runTestCasesForServer runs starts a server process and runs the given test cases while
 // it is active. The test cases are executed by serializing the request, writing to the
 // given requestWriter, and then awaiting a corresponding response to be read from the
@@ -51,6 +60,13 @@ func runTestCasesForServer(
 ) {
 	expectations := make(map[string]*conformancev1alpha1.ClientResponseResult, len(testCases))
 	for _, testCase := range testCases {
+
+		// for _, msg := range testCase.Request.RequestMessages {
+		// }
+		if testCase.Request.Method != "BidiStream" {
+			testCase.ExpectedResponse.Payloads[0].RequestInfo.Requests = testCase.Request.RequestMessages
+		}
+
 		expectations[testCase.Request.TestName] = testCase.ExpectedResponse
 	}
 
