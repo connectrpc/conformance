@@ -351,21 +351,10 @@ func (i *invoker) unimplemented(
 
 	request := connect.NewRequest(ur)
 
-	var protoErr *v1alpha1.Error
-
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
-	if err != nil {
-		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
-		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := internal.ConvertErrorToConnectError(err)
-		protoErr = internal.ConvertConnectToProtoError(connectErr)
-	}
-
 	return &v1alpha1.ClientResponseResult{
-		Error:           protoErr,
-		ConnectErrorRaw: nil, // TODO
+		Error: internal.ConvertErrorToProtoError(err),
 	}, nil
 }
 
