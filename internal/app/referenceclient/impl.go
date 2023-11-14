@@ -67,6 +67,12 @@ func (i *invoker) Invoke(
 			return nil, err
 		}
 		return resp, nil
+	case "Unimplemented":
+		resp, err := i.unimplemented(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 	default:
 		return nil, errors.New("method name " + req.Method + " does not exist")
 	}
@@ -331,6 +337,25 @@ func (i *invoker) bidiStream(
 	}
 
 	return result, nil
+}
+
+func (i *invoker) unimplemented(
+	ctx context.Context,
+	req *v1alpha1.ClientCompatRequest,
+) (*v1alpha1.ClientResponseResult, error) {
+	msg := req.RequestMessages[0]
+	ur := &v1alpha1.UnimplementedRequest{}
+	if err := msg.UnmarshalTo(ur); err != nil {
+		return nil, err
+	}
+
+	request := connect.NewRequest(ur)
+
+	// Invoke the Unary call
+	_, err := i.client.Unimplemented(ctx, request)
+	return &v1alpha1.ClientResponseResult{
+		Error: internal.ConvertErrorToProtoError(err),
+	}, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.

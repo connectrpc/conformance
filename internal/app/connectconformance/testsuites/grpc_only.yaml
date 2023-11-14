@@ -1,0 +1,166 @@
+# Tests designed for running only over the gRPC protocol.
+name: gRPC Only Tests
+relevantProtocols:
+  - PROTOCOL_GRPC
+testCases:
+- request:
+    # Tests a trailers-only error response to a unary request
+    testName: unary error trailers only response
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "unary failed"
+          details:
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
+              name: "test error detail name"
+              value:
+                - "test error detail value"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+  expectedResponse:
+    error:
+      code: 13
+      message: "unary failed"
+      details:
+        - "@type": "connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
+    responseTrailers:
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
+    - name: x-custom-header
+      value: ["foo","bar","baz"]
+- request:
+    testName: unary error trailers only response unicode
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
+          details:
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
+              name: "test error detail name"
+              value:
+                - "test error detail value"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+  expectedResponse:
+    error:
+      code: 13
+      message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
+      details:
+        - "@type": "connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
+    responseTrailers:
+    - name: x-custom-header
+      value: ["foo","bar","baz"]
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
+- request:
+    # Tests a trailers-only error response to a client stream request
+    testName: client stream error trailers only response
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "client stream failed"
+          details:
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
+              name: "test error detail name"
+              value:
+                - "test error detail value"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  expectedResponse:
+    error:
+      code: 13
+      message: "client stream failed"
+      details:
+        - "@type": "connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
+    responseTrailers:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
+- request:
+    testName: server stream error trailers only response
+    service: connectrpc.conformance.v1alpha1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "server stream failed"
+          details:
+            - "@type": "connectrpc.conformance.v1alpha1.Header"
+              name: "test error detail name"
+              value:
+                - "test error detail value"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+  expectedResponse:
+    responseHeaders:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
+    error:
+      code: 13
+      message: "server stream failed"
+      details:
+        - "@type": "connectrpc.conformance.v1alpha1.Header"
+          name: "test error detail name"
+          value:
+            - "test error detail value"
+    responseTrailers:
+    - name: X-Custom-Trailer
+      value: ["bing","quux"]
