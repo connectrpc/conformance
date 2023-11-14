@@ -39,9 +39,8 @@ func TestRunTestCasesForServer(t *testing.T) {
 
 	var svrResponseBuf bytes.Buffer
 	svrResponse := &conformancev1alpha1.ServerCompatResponse{
-		Host:    "127.0.0.1",
-		Port:    12345,
-		PemCert: []byte("some cert"),
+		Host: "127.0.0.1",
+		Port: 12345,
 	}
 	err := internal.WriteDelimitedMessage(&svrResponseBuf, svrResponse)
 	require.NoError(t, err)
@@ -233,9 +232,11 @@ func TestRunTestCasesForServer(t *testing.T) {
 						&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{req.TestName}},
 						// we didn't set this above, so they're all zero/unspecified
 						&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{"0"}},
+						&conformancev1alpha1.Header{Name: "x-expect-http-method", Value: []string{"POST"}},
 						&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{"0"}},
 						&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{"0"}},
 						&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{"0"}},
+						&conformancev1alpha1.Header{Name: "x-expect-tls", Value: []string{"false"}},
 					)
 					copyOfRequests[i] = req
 				}

@@ -21,11 +21,13 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding/gzip"
 )
 
 // Run runs the client according to a client config read from the 'in' reader. The result of the run
@@ -88,9 +90,21 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // the actual RPC invocation will be present in the returned ClientResponseResult.
 func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientResponseResult, error) {
 	transportCredentials := insecure.NewCredentials()
-	clientConn, err := grpc.Dial(
-		net.JoinHostPort(req.Host, strconv.FormatUint(uint64(req.Port), 10)),
+	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transportCredentials),
+		grpc.WithBlock(),
+		grpc.WithReturnConnectionError(),
+	}
+	if req.Compression == v1alpha1.Compression_COMPRESSION_GZIP {
+		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
+	}
+
+	dialCtx, dialCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer dialCancel()
+	clientConn, err := grpc.DialContext(
+		dialCtx,
+		net.JoinHostPort(req.Host, strconv.FormatUint(uint64(req.Port), 10)),
+		dialOpts...,
 	)
 	if err != nil {
 		return nil, err

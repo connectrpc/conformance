@@ -164,8 +164,15 @@ func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.C
 		return nil, errors.New("a protocol must be specified")
 	}
 
-	if req.Codec == v1alpha1.Codec_CODEC_JSON {
+	switch req.Codec {
+	case v1alpha1.Codec_CODEC_PROTO:
+		// this is the default, no option needed
+	case v1alpha1.Codec_CODEC_JSON:
 		clientOptions = append(clientOptions, connect.WithProtoJSON())
+	case v1alpha1.Codec_CODEC_TEXT:
+		clientOptions = append(clientOptions, connect.WithCodec(&internal.TextConnectCodec{}))
+	default:
+		return nil, errors.New("a codec must be specified")
 	}
 
 	switch req.Compression {

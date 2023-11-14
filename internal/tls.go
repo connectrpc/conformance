@@ -27,6 +27,11 @@ import (
 	"time"
 )
 
+const (
+	ClientCertName = "Conformance Client"
+	ServerCertName = "Conformance Server"
+)
+
 // NewClientTLSConfig returns a TLS configuration for an RPC client that uses
 // the given PEM-encoded certs/keys. The caCert parameter must not be empty, and
 // is the server certificate to trust (or a CA cert for the issuer of the server
@@ -153,10 +158,10 @@ func newCert(isClientCert bool) ([]byte, []byte, error) {
 		BasicConstraintsValid: true,
 	}
 	if isClientCert {
-		template.Subject.CommonName = "Conformance Client"
+		template.Subject.CommonName = ClientCertName
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
 	} else {
-		template.Subject.CommonName = "Conformance Server"
+		template.Subject.CommonName = ServerCertName
 		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
 		template.IPAddresses = []net.IP{net.IPv6loopback, net.IPv4(127, 0, 0, 1)}
 		template.DNSNames = []string{"localhost"}
