@@ -92,9 +92,6 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1alpha1.TestSuite, co
 		return fmt.Errorf("suite %q is misconfigured: it relies on Connect GET support, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
 	}
 	if suite.ConnectVersionMode == conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE && !only(suite.RelevantProtocols, conformancev1alpha1.Protocol_PROTOCOL_CONNECT) {
-		return fmt.Errorf("suite %q is misconfigured: it relies on Connect GET support, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
-	}
-	if suite.ConnectVersionMode == conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE && !only(suite.RelevantProtocols, conformancev1alpha1.Protocol_PROTOCOL_CONNECT) {
 		return fmt.Errorf("suite %q is misconfigured: it ignores Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
 	}
 	if suite.ConnectVersionMode == conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE && !only(suite.RelevantProtocols, conformancev1alpha1.Protocol_PROTOCOL_CONNECT) {
