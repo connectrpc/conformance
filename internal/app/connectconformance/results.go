@@ -108,19 +108,27 @@ func (r *testResults) failed(testCase string, err *conformancev1alpha1.ClientErr
 func (r *testResults) assert(testCase string, expected, actual *conformancev1alpha1.ClientResponseResult) {
 	var errs multiErrors
 
-	if len(expected.Payloads) == 0 && expected.Error != nil && (len(actual.ResponseHeaders) == 0 || len(actual.ResponseTrailers) == 0) {
+	if len(expected.Payloads) == 0 && expected.Error != nil {
 		// When there are no messages in the body, only an error, the server may send a
-		// trailers-only response. In that case, it is acceptable for the client the
-		// expected headers and trailers to be merged into one set, and it is acceptable
-		// for the client to interpret them as either headers or trailers.
-		merged := mergeHeaders(expected.ResponseHeaders, expected.ResponseTrailers)
-		var actualHeaders []*conformancev1alpha1.Header
-		if len(actual.ResponseHeaders) == 0 {
-			actualHeaders = actual.ResponseTrailers
-		} else {
-			actualHeaders = actual.ResponseHeaders
+		// trailers-only response. In that case, it is acceptable for the expected
+		// headers and trailers to be merged into one set, and it is acceptable for the
+		// client to interpret them as either headers or trailers.
+
+		// So first we see if normal attribute succeeds
+		metadataErrs := checkHeaders("response headers", expected.ResponseHeaders, actual.ResponseHeaders)
+		metadataErrs = append(metadataErrs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
+		if len(metadataErrs) > 0 {
+			// That did not work. So we test to see if client attributed them all as headers
+			// or all as trailers.
+			merged := mergeHeaders(expected.ResponseHeaders, expected.ResponseTrailers)
+			allHeadersErrs := checkHeaders("response metadata", merged, actual.ResponseHeaders)
+			allTrailersErrs := checkHeaders("response metadata", merged, actual.ResponseTrailers)
+			if len(allHeadersErrs) != 0 && len(allTrailersErrs) != 0 {
+				// These checks failed also. So the received headers/trailers are incorrect.
+				// Report the original errors computed above.
+				errs = append(errs, metadataErrs...)
+			}
 		}
-		errs = append(errs, checkHeaders("response metadata", merged, actualHeaders)...)
 	} else {
 		errs = append(errs, checkHeaders("response headers", expected.ResponseHeaders, actual.ResponseHeaders)...)
 		errs = append(errs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)

@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"connectrpc.com/conformance/internal/app/connectconformance"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -88,7 +87,7 @@ test cases which have actually been fixed.)
 }
 
 func bind(cmd *cobra.Command, flags *flags) {
-	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client' or 'server'")
+	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client', 'server', or 'both'")
 	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
 	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
@@ -100,40 +99,55 @@ func run(flags *flags, command []string) {
 		os.Exit(1)
 	}
 
-	var mode conformancev1alpha1.TestSuite_TestMode
+	if len(command) == 0 {
+		fatal(`Positional arguments are required to configure the command line of the client or server under test.`)
+	}
+
+	var clientCommand, serverCommand []string
 	switch flags.mode {
 	case "client":
-		mode = conformancev1alpha1.TestSuite_TEST_MODE_CLIENT
+		clientCommand = command
 	case "server":
-		mode = conformancev1alpha1.TestSuite_TEST_MODE_SERVER
+		serverCommand = command
+	case "both":
+		pos := positionOf(command, "----")
+		if pos < 0 {
+			fatal(`Command is missing "----" separator. In mode "both", positional args should include client command, "----", then server command.`)
+		}
+		clientCommand = command[:pos]
+		serverCommand = command[pos+1:]
+		if len(clientCommand) == 0 {
+			fatal(`Client command (before the "----") is empty.`)
+		}
+		if len(serverCommand) == 0 {
+			fatal(`Server command (after the "----") is empty.`)
+		}
 	default:
 		// TODO: support mode "both", which would allow the caller to supply both the
 		//       client and server commands, instead of using a reference impl?
-		fatal(`Invalid mode: expecting "client" or "server""; got %q`, flags.mode)
+		fatal(`Invalid mode: expecting "client", "server", or "both"; got %q`, flags.mode)
 	}
 
-	if len(command) == 0 {
-		fatal(`Positional arguments are required to configure the command line of the %s under test.`, flags.mode)
-	}
-	// Resolve command name, using PATH if need be.
-	resolvedCommand, err := exec.LookPath(command[0])
-	if err != nil {
-		if !strings.Contains(err.Error(), command[0]) {
-			// make sure error message includes file name
-			err = fmt.Errorf("%s: %w", command[0], err)
+	for _, cmd := range [][]string{clientCommand, serverCommand} {
+		if len(cmd) == 0 {
+			continue
 		}
-		fatal("%s", err)
+		// Resolve command name, using PATH if need be.
+		resolvedCommand, err := exec.LookPath(cmd[0])
+		if err != nil {
+			fatal("%s", errWithFilename(err, cmd[0]))
+		}
+		cmd[0] = resolvedCommand
 	}
-	command[0] = resolvedCommand
 
 	ok, err := connectconformance.Run(
 		&connectconformance.Flags{
-			Mode:             mode,
 			ConfigFile:       flags.configFile,
 			KnownFailingFile: flags.knownFailingFile,
 			Verbose:          flags.verbose,
+			ClientCommand:    clientCommand,
+			ServerCommand:    serverCommand,
 		},
-		command,
 		os.Stdout,
 	)
 	if err != nil {
@@ -142,4 +156,21 @@ func run(flags *flags, command []string) {
 	if !ok {
 		os.Exit(1)
 	}
+}
+
+func positionOf(slice []string, item string) int {
+	for i, str := range slice {
+		if str == item {
+			return i
+		}
+	}
+	return -1
+}
+
+func errWithFilename(err error, filename string) error {
+	if strings.Contains(err.Error(), filename) {
+		return err
+	}
+	// make sure error message includes file name
+	return fmt.Errorf("%s: %w", filename, err)
 }
