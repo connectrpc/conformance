@@ -30,6 +30,9 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
   expectedResponse:
+    responseHeaders:
+    - name: x-custom-header
+      value: ["foo","bar","baz"]
     error:
       code: 13
       message: "unary failed"
@@ -41,8 +44,6 @@ testCases:
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
-    - name: x-custom-header
-      value: ["foo","bar","baz"]
 - request:
     testName: unary error trailers only response unicode
     service: connectrpc.conformance.v1alpha1.ConformanceService
@@ -69,6 +70,9 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
   expectedResponse:
+    responseHeaders:
+    - name: x-custom-header
+      value: ["foo","bar","baz"]
     error:
       code: 13
       message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
@@ -78,8 +82,6 @@ testCases:
           value:
             - "test error detail value"
     responseTrailers:
-    - name: x-custom-header
-      value: ["foo","bar","baz"]
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
@@ -111,6 +113,9 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   expectedResponse:
+    responseHeaders:
+    - name: X-Custom-Header
+      value: ["foo","bar","baz"]
     error:
       code: 13
       message: "client stream failed"
@@ -120,8 +125,6 @@ testCases:
           value:
             - "test error detail value"
     responseTrailers:
-    - name: X-Custom-Header
-      value: ["foo","bar","baz"]
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
