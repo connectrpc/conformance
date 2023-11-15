@@ -131,16 +131,19 @@ func (s *conformanceServer) ServerStream(
 	if err != nil {
 		return err
 	}
-	requestInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
-	payload := &v1alpha1.ConformancePayload{
-		RequestInfo: requestInfo,
-	}
-
+	respNum := 0
 	for _, data := range responseDefinition.ResponseData {
-		payload.Data = data
-
 		resp := &v1alpha1.ServerStreamResponse{
-			Payload: payload,
+			Payload: &v1alpha1.ConformancePayload{
+				Data: data,
+			},
+		}
+
+		// Only set the request info if this is the first response being sent back
+		// because for server streams, nothing in the request info will change
+		// after the first response.
+		if respNum == 0 {
+			resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
 		}
 
 		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
@@ -148,9 +151,9 @@ func (s *conformanceServer) ServerStream(
 		if err := stream.Send(resp); err != nil {
 			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 		}
-		// Only echo back the request info in the first response
-		payload.RequestInfo = nil
+		respNum++
 	}
+
 	if responseDefinition.Error != nil {
 		return internal.ConvertProtoToConnectError(responseDefinition.Error)
 	}
@@ -208,13 +211,25 @@ func (s *conformanceServer) BidiStream(
 					errors.New("received more requests than desired responses on a full duplex stream"),
 				)
 			}
-			requestInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
 			resp := &v1alpha1.BidiStreamResponse{
 				Payload: &v1alpha1.ConformancePayload{
-					RequestInfo: requestInfo,
-					Data:        responseDefinition.ResponseData[respNum],
+					Data: responseDefinition.ResponseData[respNum],
 				},
 			}
+			var requestInfo *v1alpha1.ConformancePayload_RequestInfo
+			if respNum == 0 {
+				// Only send the full request info (including headers and timeouts)
+				// in the first response
+				requestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
+			} else {
+				// All responses after the first should only include the requests
+				// since that is the only thing that will change between responses
+				// for a full duplex stream
+				requestInfo = &v1alpha1.ConformancePayload_RequestInfo{
+					Requests: reqs,
+				}
+			}
+			resp.Payload.RequestInfo = requestInfo
 			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
 			if err := stream.Send(resp); err != nil {
@@ -229,12 +244,17 @@ func (s *conformanceServer) BidiStream(
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
 	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
-		requestInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
 		resp := &v1alpha1.BidiStreamResponse{
 			Payload: &v1alpha1.ConformancePayload{
-				RequestInfo: requestInfo,
-				Data:        responseDefinition.ResponseData[respNum],
+				Data: responseDefinition.ResponseData[respNum],
 			},
+		}
+		// Only set the request info if this is the first response being sent back
+		// because for half duplex streams, nothing in the request info will change
+		// after the first response (this includes the requests since they've all
+		// been received by this point)
+		if respNum == 0 {
+			resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
 		}
 		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 

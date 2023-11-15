@@ -83,11 +83,17 @@ type ConformanceServiceClient interface {
 	// duration after reading the request before sending the corresponding
 	// response.
 	//
-	// Response message data is specified as bytes. The service should echo back
-	// request properties, including all request messages *so far*, in the order
-	// they were received, in the ConformancePayload and then include the message
-	// data in the data field. The request headers and timeout only need to be
-	// included in the very first response message.
+	// Response message data is specified as bytes and should be included in the
+	// data field of the ConformancePayload in each response.
+	//
+	// If the full_duplex field is true, the service should echo back all request
+	// properties in the first response including the last received request.
+	// Subsequent responses should only echo back the last received request.
+	//
+	// If the full_duplex field is false, the service should echo back all request
+	// properties, including all request messages in the order they were
+	// received, in the ConformancePayload. Subsequent responses should only include
+	// the message data in the data field.
 	//
 	// If the input stream is empty, the server should send a single response
 	// message that includes no data and only the request properties (headers,
@@ -264,11 +270,17 @@ type ConformanceServiceServer interface {
 	// duration after reading the request before sending the corresponding
 	// response.
 	//
-	// Response message data is specified as bytes. The service should echo back
-	// request properties, including all request messages *so far*, in the order
-	// they were received, in the ConformancePayload and then include the message
-	// data in the data field. The request headers and timeout only need to be
-	// included in the very first response message.
+	// Response message data is specified as bytes and should be included in the
+	// data field of the ConformancePayload in each response.
+	//
+	// If the full_duplex field is true, the service should echo back all request
+	// properties in the first response including the last received request.
+	// Subsequent responses should only echo back the last received request.
+	//
+	// If the full_duplex field is false, the service should echo back all request
+	// properties, including all request messages in the order they were
+	// received, in the ConformancePayload. Subsequent responses should only include
+	// the message data in the data field.
 	//
 	// If the input stream is empty, the server should send a single response
 	// message that includes no data and only the request properties (headers,
