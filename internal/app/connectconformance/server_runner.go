@@ -26,15 +26,143 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func popExp(testCase *conformancev1alpha1.TestCase) {
-	switch testCase.Request.StreamType {
-	case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-	case conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
-	default:
-		testCase.ExpectedResponse.Payloads[0].RequestInfo.Requests = testCase.Request.RequestMessages
+// populateExpectedRequests populates the requests we expected to get back from the server
+// by examining the requests we sent.
+func populateExpectedRequests(testCase *conformancev1alpha1.TestCase) error {
+	// If an expected response was already provided, return and use that.
+	// This allows for overriding this function with explicit values in the yaml file.
+	if testCase.ExpectedResponse != nil {
+		return nil
 	}
+	if len(testCase.Request.RequestMessages) == 0 {
+		return errors.New("at least one request is required")
+	}
+
+	req := testCase.Request.RequestMessages[0]
+
+	switch testCase.Request.StreamType {
+	case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+		conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+		conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM:
+
+		// First, find the response definition that the client instructed the
+		// server to return
+		var def *conformancev1alpha1.StreamResponseDefinition
+		if testCase.Request.StreamType == conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM {
+			ur := &conformancev1alpha1.ServerStreamRequest{}
+			err := req.UnmarshalTo(ur)
+			if err != nil {
+				return err
+			}
+			def = ur.ResponseDefinition
+		} else {
+			ur := &conformancev1alpha1.BidiStreamRequest{}
+			err := req.UnmarshalTo(ur)
+			if err != nil {
+				return err
+			}
+			def = ur.ResponseDefinition
+		}
+
+		// Server should have echoed back all specified headers, trailers, and errors
+		expected := &conformancev1alpha1.ClientResponseResult{
+			ResponseHeaders:  def.ResponseHeaders,
+			ResponseTrailers: def.ResponseTrailers,
+			Error:            def.Error,
+		}
+
+		// There should be one payload for every ResponseData the client specified
+		expected.Payloads = make([]*conformancev1alpha1.ConformancePayload, len(def.ResponseData))
+
+		for idx, data := range def.ResponseData {
+			expected.Payloads[idx] = &conformancev1alpha1.ConformancePayload{
+				Data: data,
+			}
+			switch testCase.Request.StreamType { //nolint:exhaustive
+			case conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM:
+				// For server streams, only one request was sent. All request information specified
+				// should only be echoed back in the first response
+				if idx == 0 {
+					expected.Payloads[idx].RequestInfo = &conformancev1alpha1.ConformancePayload_RequestInfo{
+						RequestHeaders: testCase.Request.RequestHeaders,
+						Requests:       testCase.Request.RequestMessages,
+					}
+				}
+			case conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+				// For half-duplex streams, all request information should be echoed back in all
+				// responses. For example, if 3 requests were sent and we received 4 responses, the information
+				// for all 3 requests should be present in all 4 payload responses.
+				expected.Payloads[idx].RequestInfo = &conformancev1alpha1.ConformancePayload_RequestInfo{
+					RequestHeaders: testCase.Request.RequestHeaders,
+					Requests:       testCase.Request.RequestMessages,
+				}
+			case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+				// For a full duplex stream, the first request information should be echoed back in the first
+				// payload. The second should be echoed back in the second payload, etc. (i.e. a ping pong interaction)
+				expected.Payloads[idx].RequestInfo = &conformancev1alpha1.ConformancePayload_RequestInfo{
+					RequestHeaders: testCase.Request.RequestHeaders,
+					Requests:       []*anypb.Any{testCase.Request.RequestMessages[idx]},
+				}
+			}
+		}
+		testCase.ExpectedResponse = expected
+	case conformancev1alpha1.StreamType_STREAM_TYPE_UNARY, conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM:
+		// First, find the response definition that the client instructed the server to return
+		var def *conformancev1alpha1.UnaryResponseDefinition
+		if testCase.Request.StreamType == conformancev1alpha1.StreamType_STREAM_TYPE_UNARY {
+			ur := &conformancev1alpha1.UnaryRequest{}
+			err := req.UnmarshalTo(ur)
+			if err != nil {
+				return err
+			}
+			def = ur.ResponseDefinition
+		} else if testCase.Request.StreamType == conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM {
+			ur := &conformancev1alpha1.ClientStreamRequest{}
+			err := req.UnmarshalTo(ur)
+			if err != nil {
+				return err
+			}
+			def = ur.ResponseDefinition
+		}
+
+		// Server should have echoed back all specified headers and trailers
+		expected := &conformancev1alpha1.ClientResponseResult{
+			ResponseHeaders:  def.ResponseHeaders,
+			ResponseTrailers: def.ResponseTrailers,
+		}
+
+		switch respType := def.Response.(type) {
+		case *conformancev1alpha1.UnaryResponseDefinition_Error:
+			// If an error was specified, it should be returned in the response
+			expected.Error = respType.Error
+		case *conformancev1alpha1.UnaryResponseDefinition_ResponseData, nil:
+			// If response data was specified for the response (or nothing at all),
+			// the server should echo back the request message and headers in the response
+			payload := &conformancev1alpha1.ConformancePayload{
+				RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+					RequestHeaders: testCase.Request.RequestHeaders,
+					Requests:       testCase.Request.RequestMessages,
+				},
+			}
+			// If response data was specified for the response, it should be returned
+			if respType, ok := respType.(*conformancev1alpha1.UnaryResponseDefinition_ResponseData); ok {
+				payload.Data = respType.ResponseData
+			}
+			expected.Payloads = []*conformancev1alpha1.ConformancePayload{payload}
+		default:
+			return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
+		}
+
+		testCase.ExpectedResponse = expected
+	case conformancev1alpha1.StreamType_STREAM_TYPE_UNSPECIFIED:
+		return errors.New("stream type is required")
+	default:
+		return fmt.Errorf("stream type %s is not supported", testCase.Request.StreamType)
+	}
+	return nil
 }
 
 // runTestCasesForServer runs starts a server process and runs the given test cases while
@@ -60,13 +188,10 @@ func runTestCasesForServer(
 ) {
 	expectations := make(map[string]*conformancev1alpha1.ClientResponseResult, len(testCases))
 	for _, testCase := range testCases {
-
-		// for _, msg := range testCase.Request.RequestMessages {
-		// }
-		if testCase.Request.Method != "BidiStream" {
-			testCase.ExpectedResponse.Payloads[0].RequestInfo.Requests = testCase.Request.RequestMessages
+		err := populateExpectedRequests(testCase)
+		if err != nil {
+			results.recordSideband(testCase.Request.TestName, err.Error())
 		}
-
 		expectations[testCase.Request.TestName] = testCase.ExpectedResponse
 	}
 
