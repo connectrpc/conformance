@@ -40,8 +40,17 @@ import (
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-	_ = errWriter // TODO: send out-of-band messages about test cases to this writer
+	return run(ctx, false, args, inReader, outWriter, errWriter)
+}
 
+// RunInReferenceMode is just like Run except that it performs additional checks
+// that only the conformance reference server runs. These checks do not work if
+// the server is run as a server under test, only when run as a reference server.
+func RunInReferenceMode(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+	return run(ctx, true, args, inReader, outWriter, errWriter)
+}
+
+func run(ctx context.Context, referenceMode bool, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
@@ -61,7 +70,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 	}
 
 	// Create an HTTP server based on the request
-	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)))
+	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), referenceMode, errWriter)
 	if err != nil {
 		return err
 	}
@@ -128,24 +137,30 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpServer, []byte, error) {
+func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string, referenceMode bool, errWriter io.Writer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
 		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
+		connect.WithCodec(&internal.TextConnectCodec{}),
 	}
 	if req.MessageReceiveLimit > 0 {
 		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
 	}
+
 	mux.Handle(conformancev1alpha1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
 		opts...,
 	))
+	handler := http.Handler(mux)
+	if referenceMode {
+		handler = referenceServerChecks(handler, errWriter)
+	}
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
-	corsHandler := cors.New(cors.Options{
+	handler = cors.New(cors.Options{
 		AllowedMethods: []string{
 			http.MethodHead,
 			http.MethodGet,
@@ -161,7 +176,7 @@ func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpSer
 		AllowedHeaders: []string{"*"},
 		// Expose all headers
 		ExposedHeaders: []string{"*"},
-	}).Handler(mux)
+	}).Handler(handler)
 
 	// Create servers
 	var tlsConf *tls.Config
@@ -186,12 +201,11 @@ func createServer(req *v1alpha1.ServerCompatRequest, listenAddr string) (httpSer
 	var err error
 	switch req.HttpVersion {
 	case v1alpha1.HTTPVersion_HTTP_VERSION_1:
-		server, err = newH1Server(corsHandler, listenAddr, tlsConf)
+		server, err = newH1Server(handler, listenAddr, tlsConf)
 	case v1alpha1.HTTPVersion_HTTP_VERSION_2:
-		// TODO: Should we support CORS over HTTP/2, too?
-		server, err = newH2Server(mux, listenAddr, tlsConf)
+		server, err = newH2Server(handler, listenAddr, tlsConf)
 	case v1alpha1.HTTPVersion_HTTP_VERSION_3:
-		server, err = newH3Server(mux, listenAddr, tlsConf)
+		server, err = newH3Server(handler, listenAddr, tlsConf)
 	case v1alpha1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		err = errors.New("an HTTP version must be specified")
 	}

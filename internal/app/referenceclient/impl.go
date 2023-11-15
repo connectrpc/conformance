@@ -350,6 +350,7 @@ func (i *invoker) unimplemented(
 	}
 
 	request := connect.NewRequest(ur)
+	internal.AddHeaders(req.RequestHeaders, request.Header())
 
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)

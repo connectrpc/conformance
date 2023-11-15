@@ -36,7 +36,7 @@ func ConvertErrorToConnectError(err error) *connect.Error {
 	return connectErr
 }
 
-// ConvertErrorToConnectError converts the given error to a proto Error
+// ConvertErrorToProtoError converts the given error to a proto Error
 // If err is nil, function will also return nil. If err is not
 // of type connect.Error, a code representing Unknown is returned.
 func ConvertErrorToProtoError(err error) *v1alpha1.Error {

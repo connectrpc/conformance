@@ -147,7 +147,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 
 	var startServer processStarter
 	if isClient {
-		startServer = runInProcess("reference-server", referenceserver.Run)
+		startServer = runInProcess("reference-server", referenceserver.RunInReferenceMode)
 	} else {
 		startServer = runCommand(command)
 	}

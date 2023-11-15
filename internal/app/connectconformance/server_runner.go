@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -141,14 +142,26 @@ func runTestCasesForServer(
 		req.ServerTlsCert = resp.PemCert
 		req.ClientTlsCreds = clientCreds
 		if isReferenceServer {
+			httpMethod := http.MethodPost
+			if req.UseGetHttpMethod {
+				httpMethod = http.MethodGet
+			}
 			req.RequestHeaders = append(
 				req.RequestHeaders,
 				&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
 				&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
+				&conformancev1alpha1.Header{Name: "x-expect-http-method", Value: []string{httpMethod}},
 				&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
 				&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
 				&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
+				&conformancev1alpha1.Header{Name: "x-expect-tls", Value: []string{strconv.FormatBool(len(resp.PemCert) > 0)}},
 			)
+			if clientCreds != nil {
+				req.RequestHeaders = append(
+					req.RequestHeaders,
+					&conformancev1alpha1.Header{Name: "x-expect-client-cert", Value: []string{internal.ClientCertName}},
+				)
+			}
 		}
 
 		wg.Add(1)
