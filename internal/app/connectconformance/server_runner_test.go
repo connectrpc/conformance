@@ -54,9 +54,11 @@ func TestRunTestCasesForServer(t *testing.T) {
 	}
 	var expectedSvrReqBuf bytes.Buffer
 	err = internal.WriteDelimitedMessage(&expectedSvrReqBuf, &conformancev1alpha1.ServerCompatRequest{
-		Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
-		HttpVersion: conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-		UseTls:      false,
+		Protocol:            conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
+		HttpVersion:         conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+		UseTls:              false,
+		ClientTlsCert:       nil,
+		MessageReceiveLimit: 200 * 1024,
 	})
 	require.NoError(t, err)
 	expectedSvrReqData := expectedSvrReqBuf.Bytes()
@@ -258,6 +260,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				testCase.isReferenceServer,
 				svrInstance,
 				testCaseData,
+				nil, // TODO: client cert
 				hookedProcess,
 				results,
 				&client,

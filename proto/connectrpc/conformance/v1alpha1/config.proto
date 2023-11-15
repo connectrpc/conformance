@@ -80,11 +80,18 @@ message ConfigCase {
   Codec codec = 3;
   // If unspecified, indicates cases for all compression algorithms.
   Compression compression = 4;
+  // If unspecified, indicates cases for all stream types.
+  StreamType stream_type = 5;
   // If absent, indicates cases for plaintext (no TLS) but also for
   // TLS if features indicate that TLS is supported.
-  optional bool use_tls = 5;
-  // If unspecified, indicates cases for all stream types.
-  StreamType stream_type = 6;
+  optional bool use_tls = 6;
+  // If absent, indicates cases without client certs but also cases
+  // that use client certs if features indicate they are supported.
+  optional bool use_tls_client_certs = 7;
+  // If absent, indicates cases that do not test message receive
+  // limits but also cases that do test message receive limits if
+  // features indicate they are supported.
+  optional bool use_message_receive_limit = 8;
 }
 
 enum HTTPVersion {

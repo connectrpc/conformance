@@ -85,6 +85,18 @@ func newTestCaseLibrary(
 }
 
 func (lib *testCaseLibrary) expandSuite(suite *conformancev1alpha1.TestSuite, configCases map[configCase]struct{}) error {
+	if suite.ReliesOnTlsClientCerts && !suite.ReliesOnTls {
+		return fmt.Errorf("suite %q is misconfigured: it relies on TLS client certs but not TLS", suite.Name)
+	}
+	if suite.ReliesOnConnectGet && !only(suite.RelevantProtocols, conformancev1alpha1.Protocol_PROTOCOL_CONNECT) {
+		return fmt.Errorf("suite %q is misconfigured: it relies on Connect GET support, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
+	}
+	if suite.ConnectVersionMode == conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE && !only(suite.RelevantProtocols, conformancev1alpha1.Protocol_PROTOCOL_CONNECT) {
+		return fmt.Errorf("suite %q is misconfigured: it ignores Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
+	}
+	if suite.ConnectVersionMode == conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE && !only(suite.RelevantProtocols, conformancev1alpha1.Protocol_PROTOCOL_CONNECT) {
+		return fmt.Errorf("suite %q is misconfigured: it requires Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
+	}
 	protocols := suite.RelevantProtocols
 	if len(protocols) == 0 {
 		protocols = allProtocols
@@ -107,14 +119,16 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1alpha1.TestSuite, co
 				for _, compression := range compressions {
 					for _, streamType := range allStreamTypes {
 						cfgCase := configCase{
-							Version:            httpVersion,
-							Protocol:           protocol,
-							Codec:              codec,
-							Compression:        compression,
-							StreamType:         streamType,
-							UseTLS:             suite.ReliesOnTls,
-							UseConnectGET:      suite.ReliesOnConnectGet,
-							ConnectVersionMode: suite.ConnectVersionMode,
+							Version:                httpVersion,
+							Protocol:               protocol,
+							Codec:                  codec,
+							Compression:            compression,
+							StreamType:             streamType,
+							UseTLS:                 suite.ReliesOnTls,
+							UseTLSClientCerts:      suite.ReliesOnTlsClientCerts,
+							UseConnectGET:          suite.ReliesOnConnectGet,
+							ConnectVersionMode:     suite.ConnectVersionMode,
+							UseMessageReceiveLimit: suite.ReliesOnMessageReceiveLimit,
 						}
 						if _, ok := configCases[cfgCase]; ok {
 							namePrefix := generateTestCasePrefix(suite, cfgCase)
@@ -144,11 +158,28 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		if cfgCase.UseTLS {
 			// to be replaced with actual cert provided by server
 			testCase.Request.ServerTlsCert = []byte("PLACEHOLDER")
+			if cfgCase.UseTLSClientCerts {
+				testCase.Request.ClientTlsCreds = &conformancev1alpha1.ClientCompatRequest_TLSCreds{
+					Key:  []byte("PLACEHOLDER"),
+					Cert: []byte("PLACEHOLDER"),
+				}
+			} else {
+				testCase.Request.ClientTlsCreds = nil
+			}
+		} else {
+			testCase.Request.ServerTlsCert = nil
+			testCase.Request.ClientTlsCreds = nil
 		}
 		testCase.Request.HttpVersion = cfgCase.Version
 		testCase.Request.Protocol = cfgCase.Protocol
 		testCase.Request.Codec = cfgCase.Codec
 		testCase.Request.Compression = cfgCase.Compression
+		// We always set this. If client-under-test does not support it, we just
+		// won't run the test cases that verify that it's enforced.
+		// Note that we always use a larger limit on the client so that when
+		// we test the server limit, even when close to the server's limit, the
+		// response (which echoes back the request data) won't exceed client limit.
+		testCase.Request.MessageReceiveLimit = 1024 * 1024 // 1 MB
 		lib.testCases[name] = testCase
 	}
 	return nil
@@ -165,16 +196,18 @@ func (lib *testCaseLibrary) groupTestCases() {
 // serverInstance identifies the properties of a server process, so tests
 // can be grouped by target server process.
 type serverInstance struct {
-	protocol    conformancev1alpha1.Protocol
-	httpVersion conformancev1alpha1.HTTPVersion
-	useTLS      bool
+	protocol          conformancev1alpha1.Protocol
+	httpVersion       conformancev1alpha1.HTTPVersion
+	useTLS            bool
+	useTLSClientCerts bool
 }
 
 func serverInstanceForCase(testCase *conformancev1alpha1.TestCase) serverInstance {
 	return serverInstance{
-		protocol:    testCase.Request.Protocol,
-		httpVersion: testCase.Request.HttpVersion,
-		useTLS:      len(testCase.Request.ServerTlsCert) > 0,
+		protocol:          testCase.Request.Protocol,
+		httpVersion:       testCase.Request.HttpVersion,
+		useTLS:            len(testCase.Request.ServerTlsCert) > 0,
+		useTLSClientCerts: testCase.Request.ClientTlsCreds != nil,
 	}
 }
 

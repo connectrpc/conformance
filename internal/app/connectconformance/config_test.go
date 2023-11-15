@@ -62,7 +62,9 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 						conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 					},
 					[]bool{true, false}, // Use TLS modes: default to supporting TLS
+					[]bool{false},       // Use TLS client cert modes: default to NOT supporting TLS client certs
 					[]bool{true, false}, // Use Connect GET modes: default to supporting GET
+					[]bool{true, false}, // Use message receive limit modes: default to supporting limits
 					[]conformancev1alpha1.TestSuite_ConnectVersionMode{
 						conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
 						// default to not requiring version
@@ -80,7 +82,9 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                         compressions: [COMPRESSION_IDENTITY]	# no compression
                         streamTypes: [STREAM_TYPE_UNARY,STREAM_TYPE_SERVER_STREAM]
                         supportsH2c: false
+                        supportsTlsClientCerts: true
                         supportsHalfDuplexBidiOverHttp1: true
+                        supportsMessageReceiveLimit: false
                         supportsConnectGet: false
                         requiresConnectVersionHeader: true`,
 			expectedCases: excludeDisallowed(
@@ -104,6 +108,8 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 						conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
 					},
 					[]bool{true, false},
+					[]bool{true, false},
+					[]bool{false},
 					[]bool{false},
 					[]conformancev1alpha1.TestSuite_ConnectVersionMode{
 						conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
@@ -130,11 +136,14 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                         codec: CODEC_PROTO
                         streamType: STREAM_TYPE_UNARY
                         useTls: true
+                        useTlsClientCerts: true
+                        useMessageReceiveLimit: true
                       - version: HTTP_VERSION_2
                         protocol: PROTOCOL_GRPC
                         codec: CODEC_PROTO
                         streamType: STREAM_TYPE_SERVER_STREAM
-                        useTls: true`,
+                        useTls: true
+                        useMessageReceiveLimit: false`,
 			expectedCases: union(
 				excludeDisallowed(
 					computePermutations(
@@ -155,7 +164,9 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
 						},
 						[]bool{false},       // no TLS
+						[]bool{false},       // ... so no TLS client certs either
 						[]bool{true, false}, // but Connect GET supported
+						[]bool{true, false}, // supports message receive limit
 						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
@@ -166,20 +177,22 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 				),
 				[]configCase{
 					{
-						Version:     conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
-						Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC,
-						Codec:       conformancev1alpha1.Codec_CODEC_PROTO,
-						Compression: conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
-						UseTLS:      true,
-						StreamType:  conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+						Version:                conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+						Protocol:               conformancev1alpha1.Protocol_PROTOCOL_GRPC,
+						Codec:                  conformancev1alpha1.Codec_CODEC_PROTO,
+						Compression:            conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+						StreamType:             conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+						UseTLS:                 true,
+						UseTLSClientCerts:      true,
+						UseMessageReceiveLimit: true,
 					},
 					{
 						Version:     conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
 						Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC,
 						Codec:       conformancev1alpha1.Codec_CODEC_PROTO,
 						Compression: conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
-						UseTLS:      true,
 						StreamType:  conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
+						UseTLS:      true,
 					},
 				},
 			),
@@ -190,6 +203,7 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                       features:
                         compressions: [COMPRESSION_IDENTITY]
                         supportsConnectGet: false
+                        supportsTlsClientCerts: true
                       include_cases:
                       # Since HTTP versions and codecs not specified, this will be expanded
                       # to include all supported versions and codecs.
@@ -223,7 +237,9 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 							conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 						},
 						[]bool{true, false}, // TLS supported
+						[]bool{true, false}, // TLS client certs supported
 						[]bool{false},       // but Connect GET is not
+						[]bool{true, false}, // message receive limits supported
 						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
@@ -252,7 +268,9 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
 						},
 						[]bool{true, false}, // TLS supported
+						[]bool{true, false}, // TLS client certs supported
 						[]bool{false},       // but Connect GET is not
+						[]bool{true, false}, // message receive limits supported
 						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
@@ -298,6 +316,8 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 							conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 						},
 						[]bool{true, false},
+						[]bool{false},
+						[]bool{true, false},
 						[]bool{true, false},
 						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
 							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
@@ -326,6 +346,8 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 						[]conformancev1alpha1.StreamType{
 							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
 						},
+						[]bool{true, false},
+						[]bool{false},
 						[]bool{true, false},
 						[]bool{true, false},
 						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
@@ -420,6 +442,13 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
                         - STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
                         supportsHalfDuplexBidiOverHttp1: true`,
 			expectedErr: "config features indicate full-duplex bidi streams are supported but neither HTTP/2 nor HTTP/3 included",
+		},
+		{
+			name: "features: TLS client certs without TLS",
+			config: `features:
+                        supportsTlsClientCerts: true
+                        supportsTls: false`,
+			expectedErr: "config features indicate TLS client certs are supported but not TLS",
 		},
 		{
 			name: "included case: HTTP/3 without TLS",
@@ -528,6 +557,24 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
                         streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
 			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex",
 		},
+		{
+			name: "included case: TLS client certs without TLS (a)",
+			config: `
+                     features:
+                     include_cases:
+                      - useTlsClientCerts: true
+                        useTls: false`,
+			expectedErr: "config case indicates use of TLS client certs but also indicates NOT using TLS",
+		},
+		{
+			name: "included case: TLS client certs without TLS (a)",
+			config: `
+                     features:
+                        supportsTls: false
+                     include_cases:
+                      - useTlsClientCerts: true`,
+			expectedErr: "config case indicates use of TLS client certs but TLS is not supported",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -548,7 +595,9 @@ func computePermutations(
 	compressions []conformancev1alpha1.Compression,
 	streamTypes []conformancev1alpha1.StreamType,
 	useTLSOptions []bool,
+	useTLSClientCertOptions []bool,
 	useConnectGETOptions []bool,
+	useMaxRecvLimitOptions []bool,
 	connectVersionModes []conformancev1alpha1.TestSuite_ConnectVersionMode,
 ) []configCase {
 	size := len(versions) * len(protocols) * len(codecs) * len(compressions) * len(streamTypes) * len(useTLSOptions) * len(useConnectGETOptions) * len(connectVersionModes)
@@ -559,18 +608,24 @@ func computePermutations(
 				for _, compression := range compressions {
 					for _, streamType := range streamTypes {
 						for _, useTLS := range useTLSOptions {
-							for _, useConnectGET := range useConnectGETOptions {
-								for _, connectVersionMode := range connectVersionModes {
-									results = append(results, configCase{
-										Version:            version,
-										Protocol:           protocol,
-										Codec:              codec,
-										Compression:        compression,
-										StreamType:         streamType,
-										UseTLS:             useTLS,
-										UseConnectGET:      useConnectGET,
-										ConnectVersionMode: connectVersionMode,
-									})
+							for _, useTLSClientCerts := range useTLSClientCertOptions {
+								for _, useConnectGET := range useConnectGETOptions {
+									for _, useMaxRecvLimit := range useMaxRecvLimitOptions {
+										for _, connectVersionMode := range connectVersionModes {
+											results = append(results, configCase{
+												Version:                version,
+												Protocol:               protocol,
+												Codec:                  codec,
+												Compression:            compression,
+												StreamType:             streamType,
+												UseTLS:                 useTLS,
+												UseTLSClientCerts:      useTLSClientCerts,
+												UseConnectGET:          useConnectGET,
+												UseMessageReceiveLimit: useMaxRecvLimit,
+												ConnectVersionMode:     connectVersionMode,
+											})
+										}
+									}
 								}
 							}
 						}
@@ -591,6 +646,9 @@ func excludeDisallowed(cases []configCase, supportsH2C, supportsHalfDuplexBidiHT
 			disallowed[i] = struct{}{}
 		case !cfgCase.UseTLS && cfgCase.Version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_2 && !supportsH2C:
 			// can't use HTTP/2 w/out TLS unless H2C is supported
+			disallowed[i] = struct{}{}
+		case !cfgCase.UseTLS && cfgCase.UseTLSClientCerts:
+			// can't use client certs w/out TLS
 			disallowed[i] = struct{}{}
 		case cfgCase.Protocol == conformancev1alpha1.Protocol_PROTOCOL_GRPC && cfgCase.Version != conformancev1alpha1.HTTPVersion_HTTP_VERSION_2:
 			// can't use gRPC w/out HTTP/2

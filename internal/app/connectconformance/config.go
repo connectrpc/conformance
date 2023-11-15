@@ -26,14 +26,16 @@ import (
 // ConfigCase protobuf message, but includes additional de-normalized
 // fields.
 type configCase struct {
-	Version            conformancev1alpha1.HTTPVersion
-	Protocol           conformancev1alpha1.Protocol
-	Codec              conformancev1alpha1.Codec
-	Compression        conformancev1alpha1.Compression
-	StreamType         conformancev1alpha1.StreamType
-	UseTLS             bool
-	UseConnectGET      bool
-	ConnectVersionMode conformancev1alpha1.TestSuite_ConnectVersionMode
+	Version                conformancev1alpha1.HTTPVersion
+	Protocol               conformancev1alpha1.Protocol
+	Codec                  conformancev1alpha1.Codec
+	Compression            conformancev1alpha1.Compression
+	StreamType             conformancev1alpha1.StreamType
+	UseTLS                 bool
+	UseTLSClientCerts      bool
+	UseConnectGET          bool
+	UseMessageReceiveLimit bool
+	ConnectVersionMode     conformancev1alpha1.TestSuite_ConnectVersionMode
 }
 
 // supportedFeatures is a resolved set of features. This mirrors
@@ -47,9 +49,11 @@ type supportedFeatures struct {
 	StreamTypes                     []conformancev1alpha1.StreamType
 	SupportsH2C                     bool
 	SupportsTLS                     bool
+	SupportsTLSClientCerts          bool
 	SupportsTrailers                bool
 	SupportsHalfDuplexBidiOverHTTP1 bool
 	SupportsConnectGet              bool
+	SupportsMessageReceiveLimit     bool
 	RequiresConnectVersionHeader    bool
 }
 
@@ -72,7 +76,7 @@ func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", configFileName, err)
 	}
-	cases := computeCasesFromFeatures(features, nil)
+	cases := computeCasesFromFeatures(features, nil, nil, nil)
 	for i, includeCase := range config.IncludeCases {
 		resolvedIncludes, err := resolveCase(features, includeCase)
 		if err != nil {
@@ -113,9 +117,11 @@ func resolveFeatures(features *conformancev1alpha1.Features) (supportedFeatures,
 		StreamTypes:                     features.StreamTypes,
 		SupportsH2C:                     features.GetSupportsH2C(),
 		SupportsTLS:                     features.GetSupportsTls(),
+		SupportsTLSClientCerts:          features.GetSupportsTlsClientCerts(),
 		SupportsTrailers:                features.GetSupportsTrailers(),
 		SupportsHalfDuplexBidiOverHTTP1: features.GetSupportsHalfDuplexBidiOverHttp1(),
 		SupportsConnectGet:              features.GetSupportsConnectGet(),
+		SupportsMessageReceiveLimit:     features.GetSupportsMessageReceiveLimit(),
 		RequiresConnectVersionHeader:    features.GetRequiresConnectVersionHeader(),
 	}
 
@@ -131,6 +137,13 @@ func resolveFeatures(features *conformancev1alpha1.Features) (supportedFeatures,
 	}
 	if features.SupportsConnectGet == nil {
 		result.SupportsConnectGet = true
+	}
+	if features.SupportsMessageReceiveLimit == nil {
+		result.SupportsMessageReceiveLimit = true
+	}
+
+	if result.SupportsTLSClientCerts && !result.SupportsTLS {
+		return result, errors.New("config features indicate TLS client certs are supported but not TLS")
 	}
 
 	if len(result.Versions) == 0 {
@@ -246,13 +259,27 @@ func resolveFeatures(features *conformancev1alpha1.Features) (supportedFeatures,
 
 // computeCasesFromFeatures expands the given features into all matching config
 // permutations.
-func computeCasesFromFeatures(features supportedFeatures, tlsCases []bool) map[configCase]struct{} {
+func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCertCases, msgRecvLimitCases []bool) map[configCase]struct{} { //nolint:gocyclo
+	// if tlsCases, tlsClientCertCases, and msgRecvLimitCases not explicitly provided, derive them from features
 	if len(tlsCases) == 0 {
-		// if tlsCases not explicitly provided, derive them from features
 		if features.SupportsTLS {
 			tlsCases = []bool{false, true}
 		} else {
 			tlsCases = []bool{false}
+		}
+	}
+	if len(tlsClientCertCases) == 0 {
+		if features.SupportsTLSClientCerts {
+			tlsClientCertCases = []bool{false, true}
+		} else {
+			tlsClientCertCases = []bool{false}
+		}
+	}
+	if len(msgRecvLimitCases) == 0 {
+		if features.SupportsMessageReceiveLimit {
+			msgRecvLimitCases = []bool{false, true}
+		} else {
+			msgRecvLimitCases = []bool{false}
 		}
 	}
 	cases := map[configCase]struct{}{}
@@ -263,51 +290,61 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases []bool) map[c
 					(version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_2 && !features.SupportsH2C)) {
 				continue // TLS required
 			}
-			for _, protocol := range features.Protocols {
-				if protocol == conformancev1alpha1.Protocol_PROTOCOL_GRPC &&
-					version != conformancev1alpha1.HTTPVersion_HTTP_VERSION_2 {
-					continue // gRPC requires HTTP/2
+			for _, tlsClientCertCase := range tlsClientCertCases {
+				if tlsClientCertCase && !tlsCase {
+					// can't use client certs w/out TLS
+					continue
 				}
-
-				connectGetCases := []bool{false}
-				if protocol == conformancev1alpha1.Protocol_PROTOCOL_CONNECT && features.SupportsConnectGet {
-					connectGetCases = []bool{false, true}
-				}
-				validateConnectVersionCases := []conformancev1alpha1.TestSuite_ConnectVersionMode{conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED}
-				if protocol == conformancev1alpha1.Protocol_PROTOCOL_CONNECT {
-					if features.RequiresConnectVersionHeader {
-						validateConnectVersionCases = append(validateConnectVersionCases, conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE)
-					} else {
-						validateConnectVersionCases = append(validateConnectVersionCases, conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE)
+				for _, protocol := range features.Protocols {
+					if protocol == conformancev1alpha1.Protocol_PROTOCOL_GRPC &&
+						version != conformancev1alpha1.HTTPVersion_HTTP_VERSION_2 {
+						continue // gRPC requires HTTP/2
 					}
-				}
 
-				for _, streamType := range features.StreamTypes {
-					switch streamType { //nolint:exhaustive
-					case conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
-						if !features.SupportsHalfDuplexBidiOverHTTP1 && version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_1 {
-							continue
-						}
-					case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-						if version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_1 {
-							continue // HTTP/1.1 can't do full duplex
+					connectGetCases := []bool{false}
+					if protocol == conformancev1alpha1.Protocol_PROTOCOL_CONNECT && features.SupportsConnectGet {
+						connectGetCases = []bool{false, true}
+					}
+					validateConnectVersionCases := []conformancev1alpha1.TestSuite_ConnectVersionMode{conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED}
+					if protocol == conformancev1alpha1.Protocol_PROTOCOL_CONNECT {
+						if features.RequiresConnectVersionHeader {
+							validateConnectVersionCases = append(validateConnectVersionCases, conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE)
+						} else {
+							validateConnectVersionCases = append(validateConnectVersionCases, conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE)
 						}
 					}
 
-					for _, codec := range features.Codecs {
-						for _, compression := range features.Compressions {
-							for _, connectGetCase := range connectGetCases {
-								for _, validateConnectVersionCase := range validateConnectVersionCases {
-									cases[configCase{
-										Version:            version,
-										Protocol:           protocol,
-										Codec:              codec,
-										Compression:        compression,
-										StreamType:         streamType,
-										UseTLS:             tlsCase,
-										UseConnectGET:      connectGetCase,
-										ConnectVersionMode: validateConnectVersionCase,
-									}] = struct{}{}
+					for _, streamType := range features.StreamTypes {
+						switch streamType { //nolint:exhaustive
+						case conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+							if !features.SupportsHalfDuplexBidiOverHTTP1 && version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_1 {
+								continue
+							}
+						case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+							if version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_1 {
+								continue // HTTP/1.1 can't do full duplex
+							}
+						}
+
+						for _, codec := range features.Codecs {
+							for _, compression := range features.Compressions {
+								for _, connectGetCase := range connectGetCases {
+									for _, validateConnectVersionCase := range validateConnectVersionCases {
+										for _, msgRecvLimitCase := range msgRecvLimitCases {
+											cases[configCase{
+												Version:                version,
+												Protocol:               protocol,
+												Codec:                  codec,
+												Compression:            compression,
+												StreamType:             streamType,
+												UseTLS:                 tlsCase,
+												UseTLSClientCerts:      tlsClientCertCase,
+												UseConnectGET:          connectGetCase,
+												UseMessageReceiveLimit: msgRecvLimitCase,
+												ConnectVersionMode:     validateConnectVersionCase,
+											}] = struct{}{}
+										}
+									}
 								}
 							}
 						}
@@ -369,11 +406,25 @@ func resolveCase(features supportedFeatures, unresolvedCase *conformancev1alpha1
 		}
 		impliedFeatures.StreamTypes = []conformancev1alpha1.StreamType{unresolvedCase.StreamType}
 	}
-	var tlsCases []bool
+	var tlsCases, tlsClientCertCases, msgReceiveLimitCases []bool
 	if unresolvedCase.UseTls != nil {
 		tlsCases = []bool{unresolvedCase.GetUseTls()}
 	}
-	return computeCasesFromFeatures(impliedFeatures, tlsCases), nil
+	if unresolvedCase.UseTlsClientCerts != nil {
+		if unresolvedCase.UseTls != nil && !unresolvedCase.GetUseTls() {
+			// use_tls explicitly set to false for this case?
+			return nil, errors.New("config case indicates use of TLS client certs but also indicates NOT using TLS")
+		}
+		if !contains(tlsCases, true) && !features.SupportsTLS {
+			// TLS not supported?
+			return nil, errors.New("config case indicates use of TLS client certs but TLS is not supported")
+		}
+		tlsClientCertCases = []bool{unresolvedCase.GetUseTlsClientCerts()}
+	}
+	if unresolvedCase.UseMessageReceiveLimit != nil {
+		msgReceiveLimitCases = []bool{unresolvedCase.GetUseMessageReceiveLimit()}
+	}
+	return computeCasesFromFeatures(impliedFeatures, tlsCases, tlsClientCertCases, msgReceiveLimitCases), nil
 }
 
 func contains[T comparable, S ~[]T](slice S, find T) bool {
@@ -386,6 +437,9 @@ func contains[T comparable, S ~[]T](slice S, find T) bool {
 }
 
 func only[T comparable, S ~[]T](slice S, find T) bool {
+	if len(slice) == 0 {
+		return false
+	}
 	for _, elem := range slice {
 		if elem != find {
 			return false

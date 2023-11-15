@@ -59,6 +59,14 @@ func TestNewTestCaseLibrary(t *testing.T) {
                       - request:
                             testName: tls-bidi-stream
                             streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
+		"tls-client-certs.yaml": `
+                    name: TLS Client Certs
+                    reliesOnTls: true
+                    reliesOnTlsClientCerts: true
+                    testCases:
+                      - request:
+                            testName: tls-client-cert-unary
+                            streamType: STREAM_TYPE_UNARY`,
 		"connect-get.yaml": `
                     name: Connect GET
                     relevantProtocols: [PROTOCOL_CONNECT]
@@ -103,6 +111,14 @@ func TestNewTestCaseLibrary(t *testing.T) {
                       - request:
                             testName: unary-without-connect-version-header
                             streamType: STREAM_TYPE_UNARY`,
+		"max-receive-limit": `
+                    name: Max Receive Size (server)
+                    mode: TEST_MODE_SERVER
+                    reliesOnMessageReceiveLimit: true
+                    testCases:
+                      - request:
+                            testName: unary-exceeds-limit
+                            streamType: STREAM_TYPE_UNARY`,
 	}
 	testSuiteData := make(map[string][]byte, len(testData))
 	for k, v := range testData {
@@ -139,6 +155,15 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					UseTLS:      true,
 				},
 				{
+					Version:           conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:          conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					Codec:             conformancev1alpha1.Codec_CODEC_PROTO,
+					Compression:       conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+					StreamType:        conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+					UseTLS:            true,
+					UseTLSClientCerts: true,
+				},
+				{
 					Version:       conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
 					Protocol:      conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
 					Codec:         conformancev1alpha1.Codec_CODEC_PROTO,
@@ -153,6 +178,14 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					Compression:        conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
 					StreamType:         conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
 					ConnectVersionMode: conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE,
+				},
+				{
+					Version:                conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:               conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					Codec:                  conformancev1alpha1.Codec_CODEC_PROTO,
+					Compression:            conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+					StreamType:             conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+					UseMessageReceiveLimit: true,
 				},
 				{
 					Version:     conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
@@ -179,6 +212,14 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					useTLS:      true,
 				}: {
 					"TLS/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-unary",
+				},
+				{
+					protocol:          conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					httpVersion:       conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+					useTLS:            true,
+					useTLSClientCerts: true,
+				}: {
+					"TLS Client Certs/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-client-cert-unary",
 				},
 				{
 					protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC,
@@ -209,6 +250,15 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					UseTLS:      true,
 				},
 				{
+					Version:           conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:          conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					Codec:             conformancev1alpha1.Codec_CODEC_PROTO,
+					Compression:       conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+					StreamType:        conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+					UseTLS:            true,
+					UseTLSClientCerts: true,
+				},
+				{
 					Version:       conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
 					Protocol:      conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
 					Codec:         conformancev1alpha1.Codec_CODEC_PROTO,
@@ -223,6 +273,14 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					Compression:        conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
 					StreamType:         conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
 					ConnectVersionMode: conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+				},
+				{
+					Version:                conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:               conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					Codec:                  conformancev1alpha1.Codec_CODEC_PROTO,
+					Compression:            conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+					StreamType:             conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+					UseMessageReceiveLimit: true,
 				},
 				{
 					Version:     conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
@@ -242,6 +300,7 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-unary",
 					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/connect-get-unary",
 					"Connect Version Optional (server)/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-without-connect-version-header",
+					"Max Receive Size (server)/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-exceeds-limit",
 				},
 				{
 					protocol:    conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
@@ -249,6 +308,14 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					useTLS:      true,
 				}: {
 					"TLS/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-unary",
+				},
+				{
+					protocol:          conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					httpVersion:       conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+					useTLS:            true,
+					useTLSClientCerts: true,
+				}: {
+					"TLS Client Certs/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-client-cert-unary",
 				},
 				{
 					protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC,

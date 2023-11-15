@@ -23,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
@@ -111,6 +112,21 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 			flags.KnownFailingFile, strings.Join(unmatchedSlice, "\n"))
 	}
 
+	var clientCreds *conformancev1alpha1.ClientCompatRequest_TLSCreds
+	for svrInstance := range testCaseLib.casesByServer {
+		if svrInstance.useTLSClientCerts {
+			clientCertBytes, clientKeyBytes, err := internal.NewClientCert()
+			if err != nil {
+				return false, fmt.Errorf("failed to generate client certificate: %w", err)
+			}
+			clientCreds = &conformancev1alpha1.ClientCompatRequest_TLSCreds{
+				Cert: clientCertBytes,
+				Key:  clientKeyBytes,
+			}
+			break
+		}
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -137,7 +153,7 @@ func Run(flags *Flags, command []string, logOut io.Writer) (bool, error) {
 	}
 	// TODO: start servers in parallel (up to a limit) to allow parallelism and faster test execution
 	for svrInstance, testCases := range testCaseLib.casesByServer {
-		runTestCasesForServer(ctx, !isClient, isClient, svrInstance, testCases, startServer, results, clientProcess)
+		runTestCasesForServer(ctx, !isClient, isClient, svrInstance, testCases, clientCreds, startServer, results, clientProcess)
 		if !clientProcess.isRunning() {
 			err := clientProcess.waitForResponses()
 			if err == nil {
