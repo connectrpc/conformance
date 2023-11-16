@@ -32,7 +32,7 @@
     "@types/caseless": "^0.12.4",
     "@types/google-protobuf": "^3.15.10",
     "@types/jasmine": "^5.1.1",
-    "@types/karma": "^6.3.6",
+    "@types/karma": "^6.3.7",
     "@typescript-eslint/eslint-plugin": "^6.10.0",
     "@typescript-eslint/parser": "^6.10.0",
     "eslint": "^8.53.0",
