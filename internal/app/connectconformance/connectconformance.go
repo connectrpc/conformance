@@ -30,7 +30,7 @@ import (
 	"connectrpc.com/conformance/internal/app/grpcserver"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -92,16 +92,16 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		}
 		_, _ = fmt.Fprintf(logOut, "Loaded %d test suites, %d test case templates.\n", len(allSuites), numCases)
 	}
-	mode := conformancev1alpha1.TestSuite_TEST_MODE_UNSPECIFIED
+	mode := conformancev2.TestSuite_TEST_MODE_UNSPECIFIED
 	var useReferenceClient, useReferenceServer bool
 	switch {
 	case len(flags.ClientCommand) > 0 && len(flags.ServerCommand) == 0:
 		// Client mode uses a reference server to test a client
-		mode = conformancev1alpha1.TestSuite_TEST_MODE_CLIENT
+		mode = conformancev2.TestSuite_TEST_MODE_CLIENT
 		useReferenceServer = true
 	case len(flags.ClientCommand) == 0 && len(flags.ServerCommand) > 0:
 		// Server mode uses a reference client to test a server
-		mode = conformancev1alpha1.TestSuite_TEST_MODE_SERVER
+		mode = conformancev2.TestSuite_TEST_MODE_SERVER
 		useReferenceClient = true
 	default:
 		// Otherwise, no reference server or client is used, so
@@ -133,14 +133,14 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			flags.KnownFailingFile, strings.Join(unmatchedSlice, "\n"))
 	}
 
-	var clientCreds *conformancev1alpha1.ClientCompatRequest_TLSCreds
+	var clientCreds *conformancev2.ClientCompatRequest_TLSCreds
 	for svrInstance := range testCaseLib.casesByServer {
 		if svrInstance.useTLSClientCerts {
 			clientCertBytes, clientKeyBytes, err := internal.NewClientCert()
 			if err != nil {
 				return false, fmt.Errorf("failed to generate client certificate: %w", err)
 			}
-			clientCreds = &conformancev1alpha1.ClientCompatRequest_TLSCreds{
+			clientCreds = &conformancev2.ClientCompatRequest_TLSCreds{
 				Cert: clientCertBytes,
 				Key:  clientKeyBytes,
 			}
@@ -258,28 +258,28 @@ type processInfo struct {
 	isGrpcImpl      bool
 }
 
-func filterGRPCImplTestCases(testCases []*conformancev1alpha1.TestCase) []*conformancev1alpha1.TestCase {
+func filterGRPCImplTestCases(testCases []*conformancev2.TestCase) []*conformancev2.TestCase {
 	// The gRPC reference impl does not support everything that the main reference impl does. So
 	// we must filter away any test cases that aren't applicable to the gRPC impls.
-	filtered := make([]*conformancev1alpha1.TestCase, 0, len(testCases))
+	filtered := make([]*conformancev2.TestCase, 0, len(testCases))
 	for _, testCase := range testCases {
-		if testCase.Request.HttpVersion != conformancev1alpha1.HTTPVersion_HTTP_VERSION_2 {
+		if testCase.Request.HttpVersion != conformancev2.HTTPVersion_HTTP_VERSION_2 {
 			continue
 		}
-		if testCase.Request.Protocol != conformancev1alpha1.Protocol_PROTOCOL_GRPC {
+		if testCase.Request.Protocol != conformancev2.Protocol_PROTOCOL_GRPC {
 			continue
 		}
-		if testCase.Request.Codec != conformancev1alpha1.Codec_CODEC_PROTO {
+		if testCase.Request.Codec != conformancev2.Codec_CODEC_PROTO {
 			continue
 		}
-		if testCase.Request.Compression != conformancev1alpha1.Compression_COMPRESSION_IDENTITY &&
-			testCase.Request.Compression != conformancev1alpha1.Compression_COMPRESSION_GZIP {
+		if testCase.Request.Compression != conformancev2.Compression_COMPRESSION_IDENTITY &&
+			testCase.Request.Compression != conformancev2.Compression_COMPRESSION_GZIP {
 			continue
 		}
 		if len(testCase.Request.ServerTlsCert) > 0 {
 			continue
 		}
-		filteredCase := proto.Clone(testCase).(*conformancev1alpha1.TestCase) //nolint:errcheck,forcetypeassert
+		filteredCase := proto.Clone(testCase).(*conformancev2.TestCase) //nolint:errcheck,forcetypeassert
 		// Insert a path in the test name to indicate that this is against the gRPC impl.
 		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
 		filteredCase.Request.TestName = path.Join(dir, "(grpc impl)", base)

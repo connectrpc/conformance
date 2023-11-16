@@ -24,7 +24,7 @@ import (
 	"strings"
 	"sync"
 
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -74,7 +74,7 @@ func (r *testResults) setOutcomeLocked(testCase string, setupError bool, err err
 // failedToStart marks all the given test cases with the given setup error.
 // This convenience method is to mark many tests in a batch when the relevant
 // server process could not be started.
-func (r *testResults) failedToStart(testCases []*conformancev1alpha1.TestCase, err error) {
+func (r *testResults) failedToStart(testCases []*conformancev2.TestCase, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, testCase := range testCases {
@@ -85,7 +85,7 @@ func (r *testResults) failedToStart(testCases []*conformancev1alpha1.TestCase, e
 // failRemaining marks any of the given test cases that do not yet have an outcome
 // as failing with the given error. This is typically called when the server or client
 // process fails, so we can mark any pending test.
-func (r *testResults) failRemaining(testCases []*conformancev1alpha1.TestCase, err error) {
+func (r *testResults) failRemaining(testCases []*conformancev2.TestCase, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, testCase := range testCases {
@@ -99,13 +99,13 @@ func (r *testResults) failRemaining(testCases []*conformancev1alpha1.TestCase, e
 
 // failed marks the given test case as having failed with the given error
 // message received from the client.
-func (r *testResults) failed(testCase string, err *conformancev1alpha1.ClientErrorResult) {
+func (r *testResults) failed(testCase string, err *conformancev2.ClientErrorResult) {
 	r.setOutcome(testCase, false, errors.New(err.Message))
 }
 
 // assert will examine the actual and expected RPC result and mark the test
 // case as successful or failed accordingly.
-func (r *testResults) assert(testCase string, expected, actual *conformancev1alpha1.ClientResponseResult) {
+func (r *testResults) assert(testCase string, expected, actual *conformancev2.ClientResponseResult) {
 	var errs multiErrors
 
 	if len(expected.Payloads) == 0 && expected.Error != nil {
@@ -271,7 +271,7 @@ func (e multiErrors) Result() error {
 	}
 }
 
-func mergeHeaders(a, b []*conformancev1alpha1.Header) []*conformancev1alpha1.Header {
+func mergeHeaders(a, b []*conformancev2.Header) []*conformancev2.Header {
 	mergedMap := map[string][]string{}
 	for _, hdr := range a {
 		mergedMap[strings.ToLower(hdr.Name)] = hdr.Value
@@ -279,14 +279,14 @@ func mergeHeaders(a, b []*conformancev1alpha1.Header) []*conformancev1alpha1.Hea
 	for _, hdr := range b {
 		mergedMap[strings.ToLower(hdr.Name)] = append(mergedMap[strings.ToLower(hdr.Name)], hdr.Value...)
 	}
-	results := make([]*conformancev1alpha1.Header, 0, len(mergedMap))
+	results := make([]*conformancev2.Header, 0, len(mergedMap))
 	for k, v := range mergedMap {
-		results = append(results, &conformancev1alpha1.Header{Name: k, Value: v})
+		results = append(results, &conformancev2.Header{Name: k, Value: v})
 	}
 	return results
 }
 
-func checkHeaders(what string, expected, actual []*conformancev1alpha1.Header) multiErrors {
+func checkHeaders(what string, expected, actual []*conformancev2.Header) multiErrors {
 	var errs multiErrors
 	actualHeaders := map[string][]string{}
 	for _, hdr := range actual {
@@ -319,7 +319,7 @@ func headerValsToString(vals []string) string {
 	return buf.String()
 }
 
-func checkPayloads(expected, actual []*conformancev1alpha1.ConformancePayload) multiErrors {
+func checkPayloads(expected, actual []*conformancev2.ConformancePayload) multiErrors {
 	var errs multiErrors
 	if len(actual) != len(expected) {
 		errs = append(errs, fmt.Errorf("expecting %d response messages but instead got %d", len(expected), len(actual)))

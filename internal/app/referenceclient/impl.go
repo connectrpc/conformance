@@ -23,19 +23,19 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v1alpha1/conformancev1alpha1connect"
-	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v2/conformancev2connect"
+	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"connectrpc.com/connect"
 )
 
 type invoker struct {
-	client conformancev1alpha1connect.ConformanceServiceClient
+	client conformancev2connect.ConformanceServiceClient
 }
 
 func (i *invoker) Invoke(
 	ctx context.Context,
-	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+	req *v2.ClientCompatRequest,
+) (*v2.ClientResponseResult, error) {
 	switch req.Method {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
@@ -80,10 +80,10 @@ func (i *invoker) Invoke(
 
 func (i *invoker) unary(
 	ctx context.Context,
-	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+	req *v2.ClientCompatRequest,
+) (*v2.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ur := &v1alpha1.UnaryRequest{}
+	ur := &v2.UnaryRequest{}
 	if err := msg.UnmarshalTo(ur); err != nil {
 		return nil, err
 	}
@@ -93,10 +93,10 @@ func (i *invoker) unary(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	var protoErr *v1alpha1.Error
-	var headers []*v1alpha1.Header
-	var trailers []*v1alpha1.Header
-	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
+	var protoErr *v2.Error
+	var headers []*v2.Header
+	var trailers []*v2.Header
+	payloads := make([]*v2.ConformancePayload, 0, 1)
 
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
@@ -115,7 +115,7 @@ func (i *invoker) unary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	return &v1alpha1.ClientResponseResult{
+	return &v2.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -126,10 +126,10 @@ func (i *invoker) unary(
 
 func (i *invoker) serverStream(
 	ctx context.Context,
-	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+	req *v2.ClientCompatRequest,
+) (*v2.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ssr := &v1alpha1.ServerStreamRequest{}
+	ssr := &v2.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(ssr); err != nil {
 		return nil, err
 	}
@@ -143,10 +143,10 @@ func (i *invoker) serverStream(
 	if err != nil {
 		return nil, err
 	}
-	var protoErr *v1alpha1.Error
-	var headers []*v1alpha1.Header
-	var trailers []*v1alpha1.Header
-	payloads := make([]*v1alpha1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
+	var protoErr *v2.Error
+	var headers []*v2.Header
+	var trailers []*v2.Header
+	payloads := make([]*v2.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	for stream.Receive() {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
@@ -165,7 +165,7 @@ func (i *invoker) serverStream(
 	if err != nil {
 		return nil, err
 	}
-	return &v1alpha1.ClientResponseResult{
+	return &v2.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -176,15 +176,15 @@ func (i *invoker) serverStream(
 
 func (i *invoker) clientStream(
 	ctx context.Context,
-	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+	req *v2.ClientCompatRequest,
+) (*v2.ClientResponseResult, error) {
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
 	for _, msg := range req.RequestMessages {
-		csr := &v1alpha1.ClientStreamRequest{}
+		csr := &v2.ClientStreamRequest{}
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
 		}
@@ -197,10 +197,10 @@ func (i *invoker) clientStream(
 		}
 	}
 
-	var protoErr *v1alpha1.Error
-	var headers []*v1alpha1.Header
-	var trailers []*v1alpha1.Header
-	payloads := make([]*v1alpha1.ConformancePayload, 0, 1)
+	var protoErr *v2.Error
+	var headers []*v2.Header
+	var trailers []*v2.Header
+	payloads := make([]*v2.ConformancePayload, 0, 1)
 
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
@@ -218,7 +218,7 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	return &v1alpha1.ClientResponseResult{
+	return &v2.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -229,9 +229,9 @@ func (i *invoker) clientStream(
 
 func (i *invoker) bidiStream(
 	ctx context.Context,
-	req *v1alpha1.ClientCompatRequest,
-) (result *v1alpha1.ClientResponseResult, retErr error) {
-	result = &v1alpha1.ClientResponseResult{
+	req *v2.ClientCompatRequest,
+) (result *v2.ClientResponseResult, retErr error) {
+	result = &v2.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
 
@@ -247,16 +247,16 @@ func (i *invoker) bidiStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
-	fullDuplex := req.StreamType == v1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+	fullDuplex := req.StreamType == v2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
-	var protoErr *v1alpha1.Error
+	var protoErr *v2.Error
 	for _, msg := range req.RequestMessages {
 		if err := ctx.Err(); err != nil {
 			// If an error was returned, convert it to a proto Error
 			protoErr = internal.ConvertErrorToProtoError(err)
 			break
 		}
-		bsr := &v1alpha1.BidiStreamRequest{}
+		bsr := &v2.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
 			// unmarshalling error unrelated to the RPC
@@ -341,10 +341,10 @@ func (i *invoker) bidiStream(
 
 func (i *invoker) unimplemented(
 	ctx context.Context,
-	req *v1alpha1.ClientCompatRequest,
-) (*v1alpha1.ClientResponseResult, error) {
+	req *v2.ClientCompatRequest,
+) (*v2.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ur := &v1alpha1.UnimplementedRequest{}
+	ur := &v2.UnimplementedRequest{}
 	if err := msg.UnmarshalTo(ur); err != nil {
 		return nil, err
 	}
@@ -354,14 +354,14 @@ func (i *invoker) unimplemented(
 
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
-	return &v1alpha1.ClientResponseResult{
+	return &v2.ClientResponseResult{
 		Error: internal.ConvertErrorToProtoError(err),
 	}, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
-	client := conformancev1alpha1connect.NewConformanceServiceClient(
+	client := conformancev2connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
 		url.String(),
 		opts...,

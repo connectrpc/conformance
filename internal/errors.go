@@ -17,7 +17,7 @@ package internal
 import (
 	"errors"
 
-	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -39,13 +39,13 @@ func ConvertErrorToConnectError(err error) *connect.Error {
 // ConvertErrorToProtoError converts the given error to a proto Error
 // If err is nil, function will also return nil. If err is not
 // of type connect.Error, a code representing Unknown is returned.
-func ConvertErrorToProtoError(err error) *v1alpha1.Error {
+func ConvertErrorToProtoError(err error) *v2.Error {
 	if err == nil {
 		return nil
 	}
 	connectErr := new(connect.Error)
 	if !errors.As(err, &connectErr) {
-		return &v1alpha1.Error{
+		return &v2.Error{
 			Code:    int32(connect.CodeUnknown),
 			Message: err.Error(),
 		}
@@ -56,11 +56,11 @@ func ConvertErrorToProtoError(err error) *v1alpha1.Error {
 // ConvertConnectToProtoError converts the given Connect error to a
 // proto Error message. If err is nil, the function will also
 // return nil.
-func ConvertConnectToProtoError(err *connect.Error) *v1alpha1.Error {
+func ConvertConnectToProtoError(err *connect.Error) *v2.Error {
 	if err == nil {
 		return nil
 	}
-	protoErr := &v1alpha1.Error{
+	protoErr := &v2.Error{
 		Code:    int32(err.Code()),
 		Message: err.Message(),
 	}
@@ -82,7 +82,7 @@ func ConvertConnectToProtoError(err *connect.Error) *v1alpha1.Error {
 }
 
 // ConvertProtoToConnectError creates a Connect error from the given proto Error message.
-func ConvertProtoToConnectError(err *v1alpha1.Error) *connect.Error {
+func ConvertProtoToConnectError(err *v2.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}

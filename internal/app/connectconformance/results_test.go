@@ -20,7 +20,7 @@ import (
 	"strings"
 	"testing"
 
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -53,9 +53,9 @@ func TestResults_SetOutcome(t *testing.T) {
 func TestResults_FailedToStart(t *testing.T) {
 	t.Parallel()
 	results := newResults(makeKnownFailing())
-	results.failedToStart([]*conformancev1alpha1.TestCase{
-		{Request: &conformancev1alpha1.ClientCompatRequest{TestName: "foo/bar/1"}},
-		{Request: &conformancev1alpha1.ClientCompatRequest{TestName: "known-to-fail/1"}},
+	results.failedToStart([]*conformancev2.TestCase{
+		{Request: &conformancev2.ClientCompatRequest{TestName: "foo/bar/1"}},
+		{Request: &conformancev2.ClientCompatRequest{TestName: "known-to-fail/1"}},
 	}, errors.New("fail"))
 
 	logger := &lineWriter{}
@@ -74,11 +74,11 @@ func TestResults_FailRemaining(t *testing.T) {
 	results := newResults(makeKnownFailing())
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("known-to-fail/1", false, errors.New("fail"))
-	results.failRemaining([]*conformancev1alpha1.TestCase{
-		{Request: &conformancev1alpha1.ClientCompatRequest{TestName: "foo/bar/1"}},
-		{Request: &conformancev1alpha1.ClientCompatRequest{TestName: "foo/bar/2"}},
-		{Request: &conformancev1alpha1.ClientCompatRequest{TestName: "known-to-fail/1"}},
-		{Request: &conformancev1alpha1.ClientCompatRequest{TestName: "known-to-fail/2"}},
+	results.failRemaining([]*conformancev2.TestCase{
+		{Request: &conformancev2.ClientCompatRequest{TestName: "foo/bar/1"}},
+		{Request: &conformancev2.ClientCompatRequest{TestName: "foo/bar/2"}},
+		{Request: &conformancev2.ClientCompatRequest{TestName: "known-to-fail/1"}},
+		{Request: &conformancev2.ClientCompatRequest{TestName: "known-to-fail/2"}},
 	}, errors.New("something went wrong"))
 
 	logger := &lineWriter{}
@@ -98,8 +98,8 @@ func TestResults_FailRemaining(t *testing.T) {
 func TestResults_Failed(t *testing.T) {
 	t.Parallel()
 	results := newResults(makeKnownFailing())
-	results.failed("foo/bar/1", &conformancev1alpha1.ClientErrorResult{Message: "fail"})
-	results.failed("known-to-fail/1", &conformancev1alpha1.ClientErrorResult{Message: "fail"})
+	results.failed("foo/bar/1", &conformancev2.ClientErrorResult{Message: "fail"})
+	results.failed("known-to-fail/1", &conformancev2.ClientErrorResult{Message: "fail"})
 
 	logger := &lineWriter{}
 	success, err := results.report(logger)
@@ -114,13 +114,13 @@ func TestResults_Failed(t *testing.T) {
 func TestResults_Assert(t *testing.T) {
 	t.Parallel()
 	results := newResults(makeKnownFailing())
-	payload1 := &conformancev1alpha1.ClientResponseResult{
-		Payloads: []*conformancev1alpha1.ConformancePayload{
+	payload1 := &conformancev2.ClientResponseResult{
+		Payloads: []*conformancev2.ConformancePayload{
 			{Data: []byte{0, 1, 2, 3, 4}},
 		},
 	}
-	payload2 := &conformancev1alpha1.ClientResponseResult{
-		Error: &conformancev1alpha1.Error{Code: int32(connect.CodeAborted), Message: "oops"},
+	payload2 := &conformancev2.ClientResponseResult{
+		Error: &conformancev2.Error{Code: int32(connect.CodeAborted), Message: "oops"},
 	}
 	results.assert("foo/bar/1", payload1, payload2)
 	results.assert("foo/bar/2", payload2, payload1)
@@ -687,11 +687,11 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 			t.Parallel()
 			results := newResults(&knownFailingTrie{})
 
-			expected := &conformancev1alpha1.ClientResponseResult{}
+			expected := &conformancev2.ClientResponseResult{}
 			err := protojson.Unmarshal(([]byte)(testCase.expected), expected)
 			require.NoError(t, err)
 
-			actual := &conformancev1alpha1.ClientResponseResult{}
+			actual := &conformancev2.ClientResponseResult{}
 			actualJSON := testCase.actual
 			if actualJSON == "" {
 				actualJSON = testCase.expected
