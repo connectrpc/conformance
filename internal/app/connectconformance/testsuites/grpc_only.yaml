@@ -9,9 +9,6 @@ testCases:
     service: connectrpc.conformance.v2.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v2.UnaryRequest
       responseDefinition:
@@ -29,6 +26,7 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
+  # Override
   expectedResponse:
     responseHeaders:
     - name: x-custom-header
@@ -49,9 +47,6 @@ testCases:
     service: connectrpc.conformance.v2.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v2.UnaryRequest
       responseDefinition:
@@ -69,6 +64,7 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
+  # Override
   expectedResponse:
     responseHeaders:
     - name: x-custom-header
@@ -90,9 +86,6 @@ testCases:
     service: connectrpc.conformance.v2.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       responseDefinition:
@@ -112,6 +105,7 @@ testCases:
           value: ["bing","quux"]
     - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
   expectedResponse:
     responseHeaders:
     - name: X-Custom-Header
@@ -132,9 +126,6 @@ testCases:
     service: connectrpc.conformance.v2.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest
       responseDefinition:
@@ -152,6 +143,7 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
+  # Override
   expectedResponse:
     responseHeaders:
     - name: X-Custom-Header
