@@ -219,6 +219,7 @@ func runTestCasesForServer(
 	isReferenceServer bool,
 	meta serverInstance,
 	testCases []*conformancev2.TestCase,
+	clientCreds *conformancev2.ClientCompatRequest_TLSCreds,
 	startServer processStarter,
 	results *testResults,
 	client clientRunner,
