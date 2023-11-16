@@ -252,7 +252,7 @@ func populateExpectedResponse(testCase *conformancev2.TestCase) error {
 	// message in this situation, where the response data value is some fixed string (such as "no response definition")
 	// and whose request info will still be present, but we expect it to indicate zero request messages.
 	if len(testCase.Request.RequestMessages) == 0 {
-		return errors.New("at least one request is required")
+		return nil
 	}
 
 	switch testCase.Request.StreamType {
