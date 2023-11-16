@@ -16,9 +16,9 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             (unknown)
-// source: connectrpc/conformance/v1alpha1/service.proto
+// source: connectrpc/conformance/v2/service.proto
 
-package conformancev1alpha1
+package conformancev2
 
 import (
 	context "context"
@@ -33,11 +33,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ConformanceService_Unary_FullMethodName         = "/connectrpc.conformance.v1alpha1.ConformanceService/Unary"
-	ConformanceService_ServerStream_FullMethodName  = "/connectrpc.conformance.v1alpha1.ConformanceService/ServerStream"
-	ConformanceService_ClientStream_FullMethodName  = "/connectrpc.conformance.v1alpha1.ConformanceService/ClientStream"
-	ConformanceService_BidiStream_FullMethodName    = "/connectrpc.conformance.v1alpha1.ConformanceService/BidiStream"
-	ConformanceService_Unimplemented_FullMethodName = "/connectrpc.conformance.v1alpha1.ConformanceService/Unimplemented"
+	ConformanceService_Unary_FullMethodName         = "/connectrpc.conformance.v2.ConformanceService/Unary"
+	ConformanceService_ServerStream_FullMethodName  = "/connectrpc.conformance.v2.ConformanceService/ServerStream"
+	ConformanceService_ClientStream_FullMethodName  = "/connectrpc.conformance.v2.ConformanceService/ClientStream"
+	ConformanceService_BidiStream_FullMethodName    = "/connectrpc.conformance.v2.ConformanceService/BidiStream"
+	ConformanceService_Unimplemented_FullMethodName = "/connectrpc.conformance.v2.ConformanceService/Unimplemented"
 )
 
 // ConformanceServiceClient is the client API for ConformanceService service.
@@ -425,7 +425,7 @@ func _ConformanceService_Unimplemented_Handler(srv interface{}, ctx context.Cont
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ConformanceService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "connectrpc.conformance.v1alpha1.ConformanceService",
+	ServiceName: "connectrpc.conformance.v2.ConformanceService",
 	HandlerType: (*ConformanceServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -455,5 +455,5 @@ var ConformanceService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 	},
-	Metadata: "connectrpc/conformance/v1alpha1/service.proto",
+	Metadata: "connectrpc/conformance/v2/service.proto",
 }

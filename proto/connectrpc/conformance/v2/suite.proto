@@ -14,10 +14,10 @@
 
 syntax = "proto3";
 
-package connectrpc.conformance.v1alpha1;
+package connectrpc.conformance.v2;
 
-import "connectrpc/conformance/v1alpha1/client_compat.proto";
-import "connectrpc/conformance/v1alpha1/config.proto";
+import "connectrpc/conformance/v2/client_compat.proto";
+import "connectrpc/conformance/v2/config.proto";
 
 // TestSuite represents a set of conformance test cases. This is also the schema
 // used for the structure of a YAML test file. Each YAML file represents a test

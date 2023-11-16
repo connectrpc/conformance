@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package connectrpc.conformance.v1alpha1;
+package connectrpc.conformance.v2;
 
 // Config defines the configuration for running conformance tests.
 // This enumerates all of the "flavors" of the test suite to run.

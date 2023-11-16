@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package connectrpc.conformance.v1alpha1;
+package connectrpc.conformance.v2;
 
-import "connectrpc/conformance/v1alpha1/config.proto";
+import "connectrpc/conformance/v2/config.proto";
 
 // Describes one configuration for an RPC server. The server is
 // expected to expose the connectrpc.conformance.v1alpha1.ConformanceService
