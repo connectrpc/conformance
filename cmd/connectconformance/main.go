@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"connectrpc.com/conformance/internal/app/connectconformance"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
 	"github.com/spf13/cobra"
 )
 
@@ -51,21 +50,21 @@ the given command must be either a conformance client or a conformance server.
 A conformance client tests a client implementation: the command reads test cases
 from stdin. Each test case describes an RPC to make. The command then records
 the result of each operation to stdout. The input is a sequence of binary-encoded
-Protobuf messages of type connectrpc.conformance.v1alpha1.ClientCompatRequest,
+Protobuf messages of type connectrpc.conformance.v2.ClientCompatRequest,
 each prefixed with a varint-encoded length. The output is expected to be similar:
 a sequence of varint-encoded-length-prefixed messages, but the results are of
-type connectrpc.conformance.v1alpha1.ClientCompatResponse. The command should exit
+type connectrpc.conformance.v2.ClientCompatResponse. The command should exit
 when it has read all test cases (i.e reached EOF of stdin) and then issued RPCs
 and recorded all results to stdout. The command should also exit and abort any
 in-progress RPCs if it receives a SIGTERM signal.
 
 A conformance server tests a server implementation: the command reads the required
 server properties from stdin. This comes in the form of a binary-encoded Protobuf
-message of type connectrpc.conformance.v1alpha1.ServerCompatRequest. The command
+message of type connectrpc.conformance.v2.ServerCompatRequest. The command
 should then start a server process and write its properties to stdout in the form
-of a binary-encoded connectrpc.conformance.v1alpha1.ServerCompatResponse message.
+of a binary-encoded connectrpc.conformance.v2.ServerCompatResponse message.
 The server process should provide an implementation of the test service defined
-by connectrpc.conformance.v1alpha1.ConformanceService. The command should exit
+by connectrpc.conformance.v2.ConformanceService. The command should exit
 upon receiving a SIGTERM signal. The command maybe invoked repeatedly, to start
 and test servers with different properties.
 
@@ -88,7 +87,7 @@ test cases which have actually been fixed.)
 }
 
 func bind(cmd *cobra.Command, flags *flags) {
-	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client' or 'server'")
+	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client', 'server', or 'both'")
 	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
 	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
@@ -100,40 +99,55 @@ func run(flags *flags, command []string) {
 		os.Exit(1)
 	}
 
-	var mode conformancev1alpha1.TestSuite_TestMode
+	if len(command) == 0 {
+		fatal(`Positional arguments are required to configure the command line of the client or server under test.`)
+	}
+
+	var clientCommand, serverCommand []string
 	switch flags.mode {
 	case "client":
-		mode = conformancev1alpha1.TestSuite_TEST_MODE_CLIENT
+		clientCommand = command
 	case "server":
-		mode = conformancev1alpha1.TestSuite_TEST_MODE_SERVER
+		serverCommand = command
+	case "both":
+		pos := positionOf(command, "----")
+		if pos < 0 {
+			fatal(`Command is missing "----" separator. In mode "both", positional args should include client command, "----", then server command.`)
+		}
+		clientCommand = command[:pos]
+		serverCommand = command[pos+1:]
+		if len(clientCommand) == 0 {
+			fatal(`Client command (before the "----") is empty.`)
+		}
+		if len(serverCommand) == 0 {
+			fatal(`Server command (after the "----") is empty.`)
+		}
 	default:
 		// TODO: support mode "both", which would allow the caller to supply both the
 		//       client and server commands, instead of using a reference impl?
-		fatal(`Invalid mode: expecting "client" or "server""; got %q`, flags.mode)
+		fatal(`Invalid mode: expecting "client", "server", or "both"; got %q`, flags.mode)
 	}
 
-	if len(command) == 0 {
-		fatal(`Positional arguments are required to configure the command line of the %s under test.`, flags.mode)
-	}
-	// Resolve command name, using PATH if need be.
-	resolvedCommand, err := exec.LookPath(command[0])
-	if err != nil {
-		if !strings.Contains(err.Error(), command[0]) {
-			// make sure error message includes file name
-			err = fmt.Errorf("%s: %w", command[0], err)
+	for _, cmd := range [][]string{clientCommand, serverCommand} {
+		if len(cmd) == 0 {
+			continue
 		}
-		fatal("%s", err)
+		// Resolve command name, using PATH if need be.
+		resolvedCommand, err := exec.LookPath(cmd[0])
+		if err != nil {
+			fatal("%s", errWithFilename(err, cmd[0]))
+		}
+		cmd[0] = resolvedCommand
 	}
-	command[0] = resolvedCommand
 
 	ok, err := connectconformance.Run(
 		&connectconformance.Flags{
-			Mode:             mode,
 			ConfigFile:       flags.configFile,
 			KnownFailingFile: flags.knownFailingFile,
 			Verbose:          flags.verbose,
+			ClientCommand:    clientCommand,
+			ServerCommand:    serverCommand,
 		},
-		command,
 		os.Stdout,
 	)
 	if err != nil {
@@ -142,4 +156,21 @@ func run(flags *flags, command []string) {
 	if !ok {
 		os.Exit(1)
 	}
+}
+
+func positionOf(slice []string, item string) int {
+	for i, str := range slice {
+		if str == item {
+			return i
+		}
+	}
+	return -1
+}
+
+func errWithFilename(err error, filename string) error {
+	if strings.Contains(err.Error(), filename) {
+		return err
+	}
+	// make sure error message includes file name
+	return fmt.Errorf("%s: %w", filename, err)
 }

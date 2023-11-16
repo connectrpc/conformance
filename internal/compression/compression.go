@@ -16,8 +16,10 @@ package compression
 
 // The IANA names for supported compression algorithms.
 const (
-	Brotli  = "br"
-	Deflate = "deflate"
-	Snappy  = "snappy"
-	Zstd    = "zstd"
+	Identity = "identity"
+	Gzip     = "gzip"
+	Brotli   = "br"
+	Deflate  = "deflate"
+	Snappy   = "snappy"
+	Zstd     = "zstd"
 )

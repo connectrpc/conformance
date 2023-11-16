@@ -23,7 +23,7 @@ import (
 	"testing"
 
 	"connectrpc.com/conformance/internal"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,7 +32,7 @@ import (
 func TestRunClient(t *testing.T) {
 	t.Parallel()
 
-	testReqs := []*conformancev1alpha1.ClientCompatRequest{
+	testReqs := []*conformancev2.ClientCompatRequest{
 		{
 			TestName: "TestSuite1/testcase1",
 		},
@@ -108,7 +108,7 @@ func TestRunClient(t *testing.T) {
 			actualResults := make(map[string]bool, len(testReqs))
 			var actualFailedToSend int
 			for i, req := range testReqs {
-				err := runner.sendRequest(req, func(name string, _ *conformancev1alpha1.ClientCompatResponse, err error) {
+				err := runner.sendRequest(req, func(name string, _ *conformancev2.ClientCompatResponse, err error) {
 					if err != nil {
 						t.Logf("error for %s: %v", name, err)
 					}
@@ -142,18 +142,18 @@ type testClientProcess struct {
 func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser, out, _ io.WriteCloser) error {
 	var count int
 	for {
-		req := &conformancev1alpha1.ClientCompatRequest{}
+		req := &conformancev2.ClientCompatRequest{}
 		if err := internal.ReadDelimitedMessage(in, req); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
 			return err
 		}
-		resp := &conformancev1alpha1.ClientCompatResponse{
+		resp := &conformancev2.ClientCompatResponse{
 			TestName: req.TestName,
-			Result: &conformancev1alpha1.ClientCompatResponse_Response{
-				Response: &conformancev1alpha1.ClientResponseResult{
-					Payloads: []*conformancev1alpha1.ConformancePayload{
+			Result: &conformancev2.ClientCompatResponse_Response{
+				Response: &conformancev2.ClientResponseResult{
+					Payloads: []*conformancev2.ConformancePayload{
 						{Data: []byte{0, 1, 2, 3, 4}},
 					},
 				},
@@ -172,7 +172,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out, _ io.WriteCloser) error {
 	var allCases []string
 	for {
-		req := &conformancev1alpha1.ClientCompatRequest{}
+		req := &conformancev2.ClientCompatRequest{}
 		if err := internal.ReadDelimitedMessage(in, req); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
@@ -197,11 +197,11 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 	}
 
 	for _, name := range allCases {
-		resp := &conformancev1alpha1.ClientCompatResponse{
+		resp := &conformancev2.ClientCompatResponse{
 			TestName: name,
-			Result: &conformancev1alpha1.ClientCompatResponse_Response{
-				Response: &conformancev1alpha1.ClientResponseResult{
-					Payloads: []*conformancev1alpha1.ConformancePayload{
+			Result: &conformancev2.ClientCompatResponse_Response{
+				Response: &conformancev2.ClientResponseResult{
+					Payloads: []*conformancev2.ConformancePayload{
 						{Data: []byte{0, 1, 2, 3, 4}},
 					},
 				},

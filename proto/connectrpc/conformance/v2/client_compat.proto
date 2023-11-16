@@ -1,0 +1,117 @@
+// Copyright 2023 The Connect Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package connectrpc.conformance.v2;
+
+import "connectrpc/conformance/v2/config.proto";
+import "connectrpc/conformance/v2/service.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+
+// Describes one call the client should make. The client reads
+// these from stdin and, for each one, invokes an RPC as directed
+// and writes the results (in the form of a ClientCompatResponse
+// message) to stdout.
+message ClientCompatRequest {
+  string test_name = 1;
+
+  // Test suite YAML definitions should NOT set values for these first
+  // eight fields. They are automatically populated by the test runner.
+  // If a test is specific to one of these values, it should instead be
+  // indicated in the test suite itself (where it defines the required
+  // features and relevant values for these fields).
+
+  HTTPVersion http_version = 2;
+  Protocol protocol = 3;
+  Codec codec = 4;
+  Compression compression = 5;
+  string host = 6;
+  uint32 port = 7;
+  // If non-empty, the server is using TLS. The bytes are the
+  // server's PEM-encoded certificate, which the client should
+  // verify and trust.
+  bytes server_tls_cert = 8;
+  // If present, the client certificate credentials to use to
+  // authenticate with the server. This will only be present
+  // when server_tls_cert is non-empty.
+  TLSCreds client_tls_creds = 9;
+  message TLSCreds {
+    bytes cert = 1;
+    bytes key = 2;
+  }
+  // If non-zero, indicates the maximum size in bytes for a message.
+  // If the server sends anything larger, the client should reject it.
+  uint32 message_receive_limit = 10;
+
+  string service = 11;
+  string method = 12;
+  StreamType stream_type = 13;
+  // If protocol indicates Connect and stream type indicates
+  // Unary, this instructs the client to use a GET HTTP method
+  // when making the request.
+  bool use_get_http_method = 14;
+  repeated Header request_headers = 15;
+  // There will be exactly one for unary and server-stream methods.
+  // For client- and bidi-stream methods, all entries will have the
+  // same type URL (which matches the request type of the method).
+  repeated google.protobuf.Any request_messages = 16;
+  optional uint32 timeout_ms = 17;
+  // Wait this many milliseconds before sending a request message.
+  // For client- or bidi-streaming requests, this delay should be
+  // applied before each request sent.
+  uint32 request_delay_ms = 18;
+}
+
+// The outcome of one ClientCompatRequest.
+message ClientCompatResponse {
+  string test_name = 1;
+  oneof result {
+    ClientResponseResult response = 2;
+    ClientErrorResult error = 3;
+  }
+
+  // This field is used only by the reference client, and it can be used
+  // to provide additional feedback about problems observed in the server
+  // response. If non-empty, the test case is considered failed even if
+  // the result above matches all expectations.
+  repeated string feedback = 4;
+}
+
+// The result of a ClientCompatRequest, which may or may bot be successful.
+message ClientResponseResult {
+  repeated Header response_headers = 1;
+  repeated ConformancePayload payloads = 2;
+  // The error received from the actual RPC invocation. Note this is not representative
+  // of a runtime error and should always be the proto equivalent of a Connect error.
+  Error error = 3;
+  repeated Header response_trailers = 4;
+  // When processing an error from a Connect server, this should contain
+  // the actual JSON received on the wire. Clients under test do not need
+  // to populate this field. It is primarily used by the reference client,
+  // so that a server-under-test's on-the-wire error can be examined and
+  // validated.
+  google.protobuf.Struct connect_error_raw = 5;
+  // TODO - We should probably add a field to indicate the number of messages that were
+  // in the test case request definition but that couldn't be sent, due to an error
+  // occurring before finishing the upload.
+}
+
+// The client is not able to fulfill the ClientCompatRequest. This may be due
+// to a runtime error or an unexpected internal error such as the requested protocol
+// not being supported. This is completely independent of the actual RPC invocation.
+message ClientErrorResult {
+  string message = 1;
+}

@@ -3,14 +3,14 @@ name: Basic
 testCases:
 - request:
     testName: unary success
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.UnaryRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -21,22 +21,22 @@ testCases:
           value: ["bing","quux"]
 - request:
     testName: unary empty response
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.UnaryRequest
       responseDefinition:
 - request:
     testName: client stream success
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -45,26 +45,26 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: client stream empty response
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       responseDefinition:
 - request:
     testName: server stream success
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -77,22 +77,22 @@ testCases:
           value: ["bing","quux"]
 - request:
     testName: server stream empty response
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest
       responseDefinition:
 - request:
     testName: server stream error with responses
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -104,7 +104,7 @@ testCases:
           code: 13
           message: "server stream failed"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"

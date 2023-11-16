@@ -21,41 +21,41 @@ import (
 	"sort"
 	"strings"
 
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 )
 
 //nolint:gochecknoglobals
 var (
-	allProtocols    = allValues[conformancev1alpha1.Protocol](conformancev1alpha1.Protocol_name)
-	allHTTPVersions = allValues[conformancev1alpha1.HTTPVersion](conformancev1alpha1.HTTPVersion_name)
-	allCodecs       = allValues[conformancev1alpha1.Codec](conformancev1alpha1.Codec_name)
-	allCompressions = allValues[conformancev1alpha1.Compression](conformancev1alpha1.Compression_name)
-	allStreamTypes  = allValues[conformancev1alpha1.StreamType](conformancev1alpha1.StreamType_name)
+	allProtocols    = allValues[conformancev2.Protocol](conformancev2.Protocol_name)
+	allHTTPVersions = allValues[conformancev2.HTTPVersion](conformancev2.HTTPVersion_name)
+	allCodecs       = allValues[conformancev2.Codec](conformancev2.Codec_name)
+	allCompressions = allValues[conformancev2.Compression](conformancev2.Compression_name)
+	allStreamTypes  = allValues[conformancev2.StreamType](conformancev2.StreamType_name)
 )
 
 // testCaseLibrary is the set of all applicable test cases for a run
 // of the conformance tests.
 type testCaseLibrary struct {
-	testCases     map[string]*conformancev1alpha1.TestCase
-	casesByServer map[serverInstance][]*conformancev1alpha1.TestCase
+	testCases     map[string]*conformancev2.TestCase
+	casesByServer map[serverInstance][]*conformancev2.TestCase
 }
 
 // newTestCaseLibrary creates a new resolved set of test cases by applying
 // the given test suite configuration to the given config cases that are
 // applicable to the current run of conformance tests.
 func newTestCaseLibrary(
-	allSuites map[string]*conformancev1alpha1.TestSuite,
+	allSuites map[string]*conformancev2.TestSuite,
 	configCases []configCase,
-	mode conformancev1alpha1.TestSuite_TestMode,
+	mode conformancev2.TestSuite_TestMode,
 ) (*testCaseLibrary, error) {
 	configCaseSet := make(map[configCase]struct{}, len(configCases))
 	for _, c := range configCases {
 		configCaseSet[c] = struct{}{}
 	}
 	lib := &testCaseLibrary{
-		testCases: map[string]*conformancev1alpha1.TestCase{},
+		testCases: map[string]*conformancev2.TestCase{},
 	}
 	suitesIndex := make(map[string]string, len(allSuites))
 	for file, suite := range allSuites {
@@ -69,7 +69,7 @@ func newTestCaseLibrary(
 			return nil, fmt.Errorf("both %s and %s define a suite named %s", file, existingFile, suite.Name)
 		}
 		suitesIndex[suite.Name] = file
-		if suite.Mode != conformancev1alpha1.TestSuite_TEST_MODE_UNSPECIFIED && suite.Mode != mode {
+		if suite.Mode != conformancev2.TestSuite_TEST_MODE_UNSPECIFIED && suite.Mode != mode {
 			continue // skip it
 		}
 		if err := lib.expandSuite(suite, configCaseSet); err != nil {
@@ -84,7 +84,19 @@ func newTestCaseLibrary(
 	return lib, nil
 }
 
-func (lib *testCaseLibrary) expandSuite(suite *conformancev1alpha1.TestSuite, configCases map[configCase]struct{}) error {
+func (lib *testCaseLibrary) expandSuite(suite *conformancev2.TestSuite, configCases map[configCase]struct{}) error {
+	if suite.ReliesOnTlsClientCerts && !suite.ReliesOnTls {
+		return fmt.Errorf("suite %q is misconfigured: it relies on TLS client certs but not TLS", suite.Name)
+	}
+	if suite.ReliesOnConnectGet && !only(suite.RelevantProtocols, conformancev2.Protocol_PROTOCOL_CONNECT) {
+		return fmt.Errorf("suite %q is misconfigured: it relies on Connect GET support, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
+	}
+	if suite.ConnectVersionMode == conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE && !only(suite.RelevantProtocols, conformancev2.Protocol_PROTOCOL_CONNECT) {
+		return fmt.Errorf("suite %q is misconfigured: it ignores Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
+	}
+	if suite.ConnectVersionMode == conformancev2.TestSuite_CONNECT_VERSION_MODE_REQUIRE && !only(suite.RelevantProtocols, conformancev2.Protocol_PROTOCOL_CONNECT) {
+		return fmt.Errorf("suite %q is misconfigured: it requires Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
+	}
 	protocols := suite.RelevantProtocols
 	if len(protocols) == 0 {
 		protocols = allProtocols
@@ -107,14 +119,16 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1alpha1.TestSuite, co
 				for _, compression := range compressions {
 					for _, streamType := range allStreamTypes {
 						cfgCase := configCase{
-							Version:            httpVersion,
-							Protocol:           protocol,
-							Codec:              codec,
-							Compression:        compression,
-							StreamType:         streamType,
-							UseTLS:             suite.ReliesOnTls,
-							UseConnectGET:      suite.ReliesOnConnectGet,
-							ConnectVersionMode: suite.ConnectVersionMode,
+							Version:                httpVersion,
+							Protocol:               protocol,
+							Codec:                  codec,
+							Compression:            compression,
+							StreamType:             streamType,
+							UseTLS:                 suite.ReliesOnTls,
+							UseTLSClientCerts:      suite.ReliesOnTlsClientCerts,
+							UseConnectGET:          suite.ReliesOnConnectGet,
+							ConnectVersionMode:     suite.ConnectVersionMode,
+							UseMessageReceiveLimit: suite.ReliesOnMessageReceiveLimit,
 						}
 						if _, ok := configCases[cfgCase]; ok {
 							namePrefix := generateTestCasePrefix(suite, cfgCase)
@@ -130,7 +144,7 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1alpha1.TestSuite, co
 	return nil
 }
 
-func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev1alpha1.TestCase) error {
+func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev2.TestCase) error {
 	for _, testCase := range testCases {
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
@@ -139,23 +153,40 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		if _, exists := lib.testCases[name]; exists {
 			return fmt.Errorf("test case library includes duplicate definition for %v", name)
 		}
-		testCase := proto.Clone(testCase).(*conformancev1alpha1.TestCase) //nolint:errcheck,forcetypeassert
+		testCase := proto.Clone(testCase).(*conformancev2.TestCase) //nolint:errcheck,forcetypeassert
 		testCase.Request.TestName = name
 		if cfgCase.UseTLS {
 			// to be replaced with actual cert provided by server
 			testCase.Request.ServerTlsCert = []byte("PLACEHOLDER")
+			if cfgCase.UseTLSClientCerts {
+				testCase.Request.ClientTlsCreds = &conformancev2.ClientCompatRequest_TLSCreds{
+					Key:  []byte("PLACEHOLDER"),
+					Cert: []byte("PLACEHOLDER"),
+				}
+			} else {
+				testCase.Request.ClientTlsCreds = nil
+			}
+		} else {
+			testCase.Request.ServerTlsCert = nil
+			testCase.Request.ClientTlsCreds = nil
 		}
 		testCase.Request.HttpVersion = cfgCase.Version
 		testCase.Request.Protocol = cfgCase.Protocol
 		testCase.Request.Codec = cfgCase.Codec
 		testCase.Request.Compression = cfgCase.Compression
+		// We always set this. If client-under-test does not support it, we just
+		// won't run the test cases that verify that it's enforced.
+		// Note that we always use a larger limit on the client so that when
+		// we test the server limit, even when close to the server's limit, the
+		// response (which echoes back the request data) won't exceed client limit.
+		testCase.Request.MessageReceiveLimit = 1024 * 1024 // 1 MB
 		lib.testCases[name] = testCase
 	}
 	return nil
 }
 
 func (lib *testCaseLibrary) groupTestCases() {
-	lib.casesByServer = map[serverInstance][]*conformancev1alpha1.TestCase{}
+	lib.casesByServer = map[serverInstance][]*conformancev2.TestCase{}
 	for _, testCase := range lib.testCases {
 		svr := serverInstanceForCase(testCase)
 		lib.casesByServer[svr] = append(lib.casesByServer[svr], testCase)
@@ -165,16 +196,18 @@ func (lib *testCaseLibrary) groupTestCases() {
 // serverInstance identifies the properties of a server process, so tests
 // can be grouped by target server process.
 type serverInstance struct {
-	protocol    conformancev1alpha1.Protocol
-	httpVersion conformancev1alpha1.HTTPVersion
-	useTLS      bool
+	protocol          conformancev2.Protocol
+	httpVersion       conformancev2.HTTPVersion
+	useTLS            bool
+	useTLSClientCerts bool
 }
 
-func serverInstanceForCase(testCase *conformancev1alpha1.TestCase) serverInstance {
+func serverInstanceForCase(testCase *conformancev2.TestCase) serverInstance {
 	return serverInstance{
-		protocol:    testCase.Request.Protocol,
-		httpVersion: testCase.Request.HttpVersion,
-		useTLS:      len(testCase.Request.ServerTlsCert) > 0,
+		protocol:          testCase.Request.Protocol,
+		httpVersion:       testCase.Request.HttpVersion,
+		useTLS:            len(testCase.Request.ServerTlsCert) > 0,
+		useTLSClientCerts: testCase.Request.ClientTlsCreds != nil,
 	}
 }
 
@@ -182,13 +215,13 @@ func serverInstanceForCase(testCase *conformancev1alpha1.TestCase) serverInstanc
 // by test file name. Each entry's value is the contents of the named file.
 // The given argument often represents the embedded test suite data. Also
 // see testsuites.LoadTestSuites.
-func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1alpha1.TestSuite, error) {
-	allSuites := make(map[string]*conformancev1alpha1.TestSuite, len(testFileData))
+func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev2.TestSuite, error) {
+	allSuites := make(map[string]*conformancev2.TestSuite, len(testFileData))
 	for testFilePath, data := range testFileData {
 		opts := protoyaml.UnmarshalOptions{
 			Path: testFilePath,
 		}
-		suite := &conformancev1alpha1.TestSuite{}
+		suite := &conformancev2.TestSuite{}
 		if err := opts.Unmarshal(data, suite); err != nil {
 			return nil, ensureFileName(err, testFilePath)
 		}
@@ -197,7 +230,7 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1a
 	return allSuites, nil
 }
 
-func generateTestCasePrefix(suite *conformancev1alpha1.TestSuite, cfgCase configCase) []string {
+func generateTestCasePrefix(suite *conformancev2.TestSuite, cfgCase configCase) []string {
 	components := make([]string, 1, 5)
 	components = append(components, suite.Name)
 	if len(suite.RelevantHttpVersions) != 1 {

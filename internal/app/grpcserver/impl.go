@@ -21,7 +21,7 @@ import (
 	"io"
 	"time"
 
-	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -32,18 +32,18 @@ import (
 )
 
 // NewConformanceServiceServer creates a new Conformance Service server.
-func NewConformanceServiceServer() v1alpha1.ConformanceServiceServer {
+func NewConformanceServiceServer() v2.ConformanceServiceServer {
 	return &conformanceServiceServer{}
 }
 
 type conformanceServiceServer struct {
-	v1alpha1.UnimplementedConformanceServiceServer
+	v2.UnimplementedConformanceServiceServer
 }
 
 func (c *conformanceServiceServer) Unary(
 	ctx context.Context,
-	req *v1alpha1.UnaryRequest,
-) (*v1alpha1.UnaryResponse, error) {
+	req *v2.UnaryRequest,
+) (*v2.UnaryResponse, error) {
 	msgAsAny, err := asAny(req)
 	if err != nil {
 		return nil, err
@@ -71,15 +71,15 @@ func (c *conformanceServiceServer) Unary(
 		return nil, grpcErr
 	}
 
-	return &v1alpha1.UnaryResponse{
+	return &v2.UnaryResponse{
 		Payload: payload,
 	}, nil
 }
 
 func (c *conformanceServiceServer) ClientStream(
-	stream v1alpha1.ConformanceService_ClientStreamServer,
+	stream v2.ConformanceService_ClientStreamServer,
 ) error {
-	var responseDefinition *v1alpha1.UnaryResponseDefinition
+	var responseDefinition *v2.UnaryResponseDefinition
 	firstRecv := true
 	var reqs []*anypb.Any
 
@@ -124,14 +124,14 @@ func (c *conformanceServiceServer) ClientStream(
 		return err
 	}
 
-	return stream.SendAndClose(&v1alpha1.ClientStreamResponse{
+	return stream.SendAndClose(&v2.ClientStreamResponse{
 		Payload: payload,
 	})
 }
 
 func (c *conformanceServiceServer) ServerStream(
-	req *v1alpha1.ServerStreamRequest,
-	stream v1alpha1.ConformanceService_ServerStreamServer,
+	req *v2.ServerStreamRequest,
+	stream v2.ConformanceService_ServerStreamServer,
 ) error {
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil {
@@ -152,8 +152,8 @@ func (c *conformanceServiceServer) ServerStream(
 
 	respNum := 0
 	for _, data := range responseDefinition.ResponseData {
-		resp := &v1alpha1.ServerStreamResponse{
-			Payload: &v1alpha1.ConformancePayload{
+		resp := &v2.ServerStreamResponse{
+			Payload: &v2.ConformancePayload{
 				Data: data,
 			},
 		}
@@ -180,9 +180,9 @@ func (c *conformanceServiceServer) ServerStream(
 }
 
 func (c *conformanceServiceServer) BidiStream(
-	stream v1alpha1.ConformanceService_BidiStreamServer,
+	stream v2.ConformanceService_BidiStreamServer,
 ) error {
-	var responseDefinition *v1alpha1.StreamResponseDefinition
+	var responseDefinition *v2.StreamResponseDefinition
 	fullDuplex := false
 	firstRecv := true
 	respNum := 0
@@ -233,12 +233,12 @@ func (c *conformanceServiceServer) BidiStream(
 					"received more requests than desired responses on a full duplex stream",
 				)
 			}
-			resp := &v1alpha1.BidiStreamResponse{
-				Payload: &v1alpha1.ConformancePayload{
+			resp := &v2.BidiStreamResponse{
+				Payload: &v2.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],
 				},
 			}
-			var requestInfo *v1alpha1.ConformancePayload_RequestInfo
+			var requestInfo *v2.ConformancePayload_RequestInfo
 			if respNum == 0 {
 				// Only send the full request info (including headers and timeouts)
 				// in the first response
@@ -248,7 +248,7 @@ func (c *conformanceServiceServer) BidiStream(
 				// All responses after the first should only include the requests
 				// since that is the only thing that will change between responses
 				// for a full duplex stream
-				requestInfo = &v1alpha1.ConformancePayload_RequestInfo{
+				requestInfo = &v2.ConformancePayload_RequestInfo{
 					Requests: reqs,
 				}
 			}
@@ -267,8 +267,8 @@ func (c *conformanceServiceServer) BidiStream(
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
 	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
-		resp := &v1alpha1.BidiStreamResponse{
-			Payload: &v1alpha1.ConformancePayload{
+		resp := &v2.BidiStreamResponse{
+			Payload: &v2.ConformancePayload{
 				Data: responseDefinition.ResponseData[respNum],
 			},
 		}
@@ -296,23 +296,23 @@ func (c *conformanceServiceServer) BidiStream(
 // Parses the given unary response definition and returns either
 // a built payload or a gRPC error based on the definition.
 func parseUnaryResponseDefinition(
-	def *v1alpha1.UnaryResponseDefinition,
+	def *v2.UnaryResponseDefinition,
 	metadata metadata.MD,
 	reqs []*anypb.Any,
-) (*v1alpha1.ConformancePayload, error) {
+) (*v2.ConformancePayload, error) {
 	if def != nil {
 		switch respType := def.Response.(type) {
-		case *v1alpha1.UnaryResponseDefinition_Error:
+		case *v2.UnaryResponseDefinition_Error:
 			return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
 
-		case *v1alpha1.UnaryResponseDefinition_ResponseData, nil:
+		case *v2.UnaryResponseDefinition_ResponseData, nil:
 			requestInfo := createRequestInfo(metadata, reqs)
-			payload := &v1alpha1.ConformancePayload{
+			payload := &v2.ConformancePayload{
 				RequestInfo: requestInfo,
 			}
 
 			// If response data was provided, set that in the payload response
-			if respType, ok := respType.(*v1alpha1.UnaryResponseDefinition_ResponseData); ok {
+			if respType, ok := respType.(*v2.UnaryResponseDefinition_ResponseData); ok {
 				payload.Data = respType.ResponseData
 			}
 			return payload, nil
@@ -328,11 +328,11 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-func createRequestInfo(metadata metadata.MD, reqs []*anypb.Any) *v1alpha1.ConformancePayload_RequestInfo {
+func createRequestInfo(metadata metadata.MD, reqs []*anypb.Any) *v2.ConformancePayload_RequestInfo {
 	headerInfo := grpcutil.ConvertMetadataToProtoHeader(metadata)
 
 	// Set all observed request headers and requests in the response payload
-	return &v1alpha1.ConformancePayload_RequestInfo{
+	return &v2.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
 		Requests:       reqs,
 	}

@@ -21,11 +21,13 @@ import (
 	"io"
 	"net"
 	"strconv"
+	"time"
 
 	"connectrpc.com/conformance/internal"
-	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/encoding/gzip"
 )
 
 // Run runs the client according to a client config read from the 'in' reader. The result of the run
@@ -46,7 +48,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 	encoder := codec.NewEncoder(outWriter)
 
 	for {
-		var req v1alpha1.ClientCompatRequest
+		var req v2.ClientCompatRequest
 		err := decoder.DecodeNext(&req)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -57,20 +59,20 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 		result, err := invoke(ctx, &req)
 
 		// Build the result for the out writer.
-		resp := &v1alpha1.ClientCompatResponse{
+		resp := &v2.ClientCompatResponse{
 			TestName: req.TestName,
 		}
 		// If an error was returned, it was a runtime / unexpected internal error so
 		// the written response should contain an error result, not a response with
 		// any RPC information
 		if err != nil {
-			resp.Result = &v1alpha1.ClientCompatResponse_Error{
-				Error: &v1alpha1.ClientErrorResult{
+			resp.Result = &v2.ClientCompatResponse_Error{
+				Error: &v2.ClientErrorResult{
 					Message: err.Error(),
 				},
 			}
 		} else {
-			resp.Result = &v1alpha1.ClientCompatResponse_Response{
+			resp.Result = &v2.ClientCompatResponse_Response{
 				Response: result,
 			}
 		}
@@ -86,11 +88,23 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // gRPC error returned from calling an RPC. Any error (i.e. a gRPC error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *v1alpha1.ClientCompatRequest) (*v1alpha1.ClientResponseResult, error) {
+func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientResponseResult, error) {
 	transportCredentials := insecure.NewCredentials()
-	clientConn, err := grpc.Dial(
-		net.JoinHostPort(req.Host, strconv.FormatUint(uint64(req.Port), 10)),
+	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transportCredentials),
+		grpc.WithBlock(),
+		grpc.WithReturnConnectionError(),
+	}
+	if req.Compression == v2.Compression_COMPRESSION_GZIP {
+		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
+	}
+
+	dialCtx, dialCancel := context.WithTimeout(ctx, 5*time.Second)
+	defer dialCancel()
+	clientConn, err := grpc.DialContext(
+		dialCtx,
+		net.JoinHostPort(req.Host, strconv.FormatUint(uint64(req.Port), 10)),
+		dialOpts...,
 	)
 	if err != nil {
 		return nil, err

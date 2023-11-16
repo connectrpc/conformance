@@ -19,7 +19,7 @@ import (
 	"sort"
 	"testing"
 
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 )
@@ -37,36 +37,38 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 			// Compute permutations for all of the default supported features.
 			expectedCases: excludeDisallowed(
 				computePermutations(
-					[]conformancev1alpha1.HTTPVersion{
-						conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-						conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+					[]conformancev2.HTTPVersion{
+						conformancev2.HTTPVersion_HTTP_VERSION_1,
+						conformancev2.HTTPVersion_HTTP_VERSION_2,
 					},
-					[]conformancev1alpha1.Protocol{
-						conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
-						conformancev1alpha1.Protocol_PROTOCOL_GRPC,
-						conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
+					[]conformancev2.Protocol{
+						conformancev2.Protocol_PROTOCOL_CONNECT,
+						conformancev2.Protocol_PROTOCOL_GRPC,
+						conformancev2.Protocol_PROTOCOL_GRPC_WEB,
 					},
-					[]conformancev1alpha1.Codec{
-						conformancev1alpha1.Codec_CODEC_PROTO,
-						conformancev1alpha1.Codec_CODEC_JSON,
+					[]conformancev2.Codec{
+						conformancev2.Codec_CODEC_PROTO,
+						conformancev2.Codec_CODEC_JSON,
 					},
-					[]conformancev1alpha1.Compression{
-						conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
-						conformancev1alpha1.Compression_COMPRESSION_GZIP,
+					[]conformancev2.Compression{
+						conformancev2.Compression_COMPRESSION_IDENTITY,
+						conformancev2.Compression_COMPRESSION_GZIP,
 					},
-					[]conformancev1alpha1.StreamType{
-						conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
-						conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
-						conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
-						conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-						conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+					[]conformancev2.StreamType{
+						conformancev2.StreamType_STREAM_TYPE_UNARY,
+						conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+						conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+						conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+						conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 					},
 					[]bool{true, false}, // Use TLS modes: default to supporting TLS
+					[]bool{false},       // Use TLS client cert modes: default to NOT supporting TLS client certs
 					[]bool{true, false}, // Use Connect GET modes: default to supporting GET
-					[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-						conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+					[]bool{true, false}, // Use message receive limit modes: default to supporting limits
+					[]conformancev2.TestSuite_ConnectVersionMode{
+						conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
 						// default to not requiring version
-						conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+						conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 					},
 				),
 				true,  // default to supporting H2C
@@ -80,34 +82,38 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                         compressions: [COMPRESSION_IDENTITY]	# no compression
                         streamTypes: [STREAM_TYPE_UNARY,STREAM_TYPE_SERVER_STREAM]
                         supportsH2c: false
+                        supportsTlsClientCerts: true
                         supportsHalfDuplexBidiOverHttp1: true
+                        supportsMessageReceiveLimit: false
                         supportsConnectGet: false
                         requiresConnectVersionHeader: true`,
 			expectedCases: excludeDisallowed(
 				computePermutations(
-					[]conformancev1alpha1.HTTPVersion{
-						conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-						conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+					[]conformancev2.HTTPVersion{
+						conformancev2.HTTPVersion_HTTP_VERSION_1,
+						conformancev2.HTTPVersion_HTTP_VERSION_2,
 					},
-					[]conformancev1alpha1.Protocol{
-						conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+					[]conformancev2.Protocol{
+						conformancev2.Protocol_PROTOCOL_CONNECT,
 					},
-					[]conformancev1alpha1.Codec{
-						conformancev1alpha1.Codec_CODEC_PROTO,
-						conformancev1alpha1.Codec_CODEC_JSON,
+					[]conformancev2.Codec{
+						conformancev2.Codec_CODEC_PROTO,
+						conformancev2.Codec_CODEC_JSON,
 					},
-					[]conformancev1alpha1.Compression{
-						conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+					[]conformancev2.Compression{
+						conformancev2.Compression_COMPRESSION_IDENTITY,
 					},
-					[]conformancev1alpha1.StreamType{
-						conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
-						conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
+					[]conformancev2.StreamType{
+						conformancev2.StreamType_STREAM_TYPE_UNARY,
+						conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
 					},
 					[]bool{true, false},
+					[]bool{true, false},
 					[]bool{false},
-					[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-						conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-						conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_REQUIRE,
+					[]bool{false},
+					[]conformancev2.TestSuite_ConnectVersionMode{
+						conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+						conformancev2.TestSuite_CONNECT_VERSION_MODE_REQUIRE,
 					},
 				),
 				false,
@@ -130,35 +136,40 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                         codec: CODEC_PROTO
                         streamType: STREAM_TYPE_UNARY
                         useTls: true
+                        useTlsClientCerts: true
+                        useMessageReceiveLimit: true
                       - version: HTTP_VERSION_2
                         protocol: PROTOCOL_GRPC
                         codec: CODEC_PROTO
                         streamType: STREAM_TYPE_SERVER_STREAM
-                        useTls: true`,
+                        useTls: true
+                        useMessageReceiveLimit: false`,
 			expectedCases: union(
 				excludeDisallowed(
 					computePermutations(
-						[]conformancev1alpha1.HTTPVersion{
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+						[]conformancev2.HTTPVersion{
+							conformancev2.HTTPVersion_HTTP_VERSION_1,
 						},
-						[]conformancev1alpha1.Protocol{
-							conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+						[]conformancev2.Protocol{
+							conformancev2.Protocol_PROTOCOL_CONNECT,
 						},
-						[]conformancev1alpha1.Codec{
-							conformancev1alpha1.Codec_CODEC_PROTO,
-							conformancev1alpha1.Codec_CODEC_JSON,
+						[]conformancev2.Codec{
+							conformancev2.Codec_CODEC_PROTO,
+							conformancev2.Codec_CODEC_JSON,
 						},
-						[]conformancev1alpha1.Compression{
-							conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+						[]conformancev2.Compression{
+							conformancev2.Compression_COMPRESSION_IDENTITY,
 						},
-						[]conformancev1alpha1.StreamType{
-							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+						[]conformancev2.StreamType{
+							conformancev2.StreamType_STREAM_TYPE_UNARY,
 						},
 						[]bool{false},       // no TLS
+						[]bool{false},       // ... so no TLS client certs either
 						[]bool{true, false}, // but Connect GET supported
-						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+						[]bool{true, false}, // supports message receive limit
+						[]conformancev2.TestSuite_ConnectVersionMode{
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 						},
 					),
 					false,
@@ -166,20 +177,22 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 				),
 				[]configCase{
 					{
-						Version:     conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
-						Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC,
-						Codec:       conformancev1alpha1.Codec_CODEC_PROTO,
-						Compression: conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
-						UseTLS:      true,
-						StreamType:  conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+						Version:                conformancev2.HTTPVersion_HTTP_VERSION_2,
+						Protocol:               conformancev2.Protocol_PROTOCOL_GRPC,
+						Codec:                  conformancev2.Codec_CODEC_PROTO,
+						Compression:            conformancev2.Compression_COMPRESSION_IDENTITY,
+						StreamType:             conformancev2.StreamType_STREAM_TYPE_UNARY,
+						UseTLS:                 true,
+						UseTLSClientCerts:      true,
+						UseMessageReceiveLimit: true,
 					},
 					{
-						Version:     conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
-						Protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC,
-						Codec:       conformancev1alpha1.Codec_CODEC_PROTO,
-						Compression: conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+						Version:     conformancev2.HTTPVersion_HTTP_VERSION_2,
+						Protocol:    conformancev2.Protocol_PROTOCOL_GRPC,
+						Codec:       conformancev2.Codec_CODEC_PROTO,
+						Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
+						StreamType:  conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
 						UseTLS:      true,
-						StreamType:  conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
 					},
 				},
 			),
@@ -190,6 +203,7 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                       features:
                         compressions: [COMPRESSION_IDENTITY]
                         supportsConnectGet: false
+                        supportsTlsClientCerts: true
                       include_cases:
                       # Since HTTP versions and codecs not specified, this will be expanded
                       # to include all supported versions and codecs.
@@ -199,34 +213,36 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 			expectedCases: union(
 				excludeDisallowed(
 					computePermutations(
-						[]conformancev1alpha1.HTTPVersion{
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+						[]conformancev2.HTTPVersion{
+							conformancev2.HTTPVersion_HTTP_VERSION_1,
+							conformancev2.HTTPVersion_HTTP_VERSION_2,
 						},
-						[]conformancev1alpha1.Protocol{
-							conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
-							conformancev1alpha1.Protocol_PROTOCOL_GRPC,
-							conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
+						[]conformancev2.Protocol{
+							conformancev2.Protocol_PROTOCOL_CONNECT,
+							conformancev2.Protocol_PROTOCOL_GRPC,
+							conformancev2.Protocol_PROTOCOL_GRPC_WEB,
 						},
-						[]conformancev1alpha1.Codec{
-							conformancev1alpha1.Codec_CODEC_PROTO,
-							conformancev1alpha1.Codec_CODEC_JSON,
+						[]conformancev2.Codec{
+							conformancev2.Codec_CODEC_PROTO,
+							conformancev2.Codec_CODEC_JSON,
 						},
-						[]conformancev1alpha1.Compression{
-							conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+						[]conformancev2.Compression{
+							conformancev2.Compression_COMPRESSION_IDENTITY,
 						},
-						[]conformancev1alpha1.StreamType{
-							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
-							conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
-							conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
-							conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-							conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+						[]conformancev2.StreamType{
+							conformancev2.StreamType_STREAM_TYPE_UNARY,
+							conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+							conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+							conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+							conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 						},
 						[]bool{true, false}, // TLS supported
+						[]bool{true, false}, // TLS client certs supported
 						[]bool{false},       // but Connect GET is not
-						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+						[]bool{true, false}, // message receive limits supported
+						[]conformancev2.TestSuite_ConnectVersionMode{
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 						},
 					),
 					true,
@@ -234,28 +250,30 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 				),
 				excludeDisallowed(
 					computePermutations(
-						[]conformancev1alpha1.HTTPVersion{
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+						[]conformancev2.HTTPVersion{
+							conformancev2.HTTPVersion_HTTP_VERSION_1,
+							conformancev2.HTTPVersion_HTTP_VERSION_2,
 						},
-						[]conformancev1alpha1.Protocol{
-							conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+						[]conformancev2.Protocol{
+							conformancev2.Protocol_PROTOCOL_CONNECT,
 						},
-						[]conformancev1alpha1.Codec{
-							conformancev1alpha1.Codec_CODEC_PROTO,
-							conformancev1alpha1.Codec_CODEC_JSON,
+						[]conformancev2.Codec{
+							conformancev2.Codec_CODEC_PROTO,
+							conformancev2.Codec_CODEC_JSON,
 						},
-						[]conformancev1alpha1.Compression{
-							conformancev1alpha1.Compression_COMPRESSION_GZIP,
+						[]conformancev2.Compression{
+							conformancev2.Compression_COMPRESSION_GZIP,
 						},
-						[]conformancev1alpha1.StreamType{
-							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+						[]conformancev2.StreamType{
+							conformancev2.StreamType_STREAM_TYPE_UNARY,
 						},
 						[]bool{true, false}, // TLS supported
+						[]bool{true, false}, // TLS client certs supported
 						[]bool{false},       // but Connect GET is not
-						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+						[]bool{true, false}, // message receive limits supported
+						[]conformancev2.TestSuite_ConnectVersionMode{
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 						},
 					),
 					true,
@@ -274,34 +292,36 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 			expectedCases: minus(
 				excludeDisallowed(
 					computePermutations(
-						[]conformancev1alpha1.HTTPVersion{
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+						[]conformancev2.HTTPVersion{
+							conformancev2.HTTPVersion_HTTP_VERSION_1,
+							conformancev2.HTTPVersion_HTTP_VERSION_2,
 						},
-						[]conformancev1alpha1.Protocol{
-							conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
-							conformancev1alpha1.Protocol_PROTOCOL_GRPC,
-							conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
+						[]conformancev2.Protocol{
+							conformancev2.Protocol_PROTOCOL_CONNECT,
+							conformancev2.Protocol_PROTOCOL_GRPC,
+							conformancev2.Protocol_PROTOCOL_GRPC_WEB,
 						},
-						[]conformancev1alpha1.Codec{
-							conformancev1alpha1.Codec_CODEC_PROTO,
-							conformancev1alpha1.Codec_CODEC_JSON,
+						[]conformancev2.Codec{
+							conformancev2.Codec_CODEC_PROTO,
+							conformancev2.Codec_CODEC_JSON,
 						},
-						[]conformancev1alpha1.Compression{
-							conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+						[]conformancev2.Compression{
+							conformancev2.Compression_COMPRESSION_IDENTITY,
 						},
-						[]conformancev1alpha1.StreamType{
-							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
-							conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
-							conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
-							conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-							conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+						[]conformancev2.StreamType{
+							conformancev2.StreamType_STREAM_TYPE_UNARY,
+							conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+							conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+							conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+							conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 						},
 						[]bool{true, false},
+						[]bool{false},
 						[]bool{true, false},
-						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+						[]bool{true, false},
+						[]conformancev2.TestSuite_ConnectVersionMode{
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 						},
 					),
 					true,
@@ -309,28 +329,30 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 				),
 				excludeDisallowed(
 					computePermutations(
-						[]conformancev1alpha1.HTTPVersion{
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
-							conformancev1alpha1.HTTPVersion_HTTP_VERSION_2,
+						[]conformancev2.HTTPVersion{
+							conformancev2.HTTPVersion_HTTP_VERSION_1,
+							conformancev2.HTTPVersion_HTTP_VERSION_2,
 						},
-						[]conformancev1alpha1.Protocol{
-							conformancev1alpha1.Protocol_PROTOCOL_CONNECT,
+						[]conformancev2.Protocol{
+							conformancev2.Protocol_PROTOCOL_CONNECT,
 						},
-						[]conformancev1alpha1.Codec{
-							conformancev1alpha1.Codec_CODEC_PROTO,
-							conformancev1alpha1.Codec_CODEC_JSON,
+						[]conformancev2.Codec{
+							conformancev2.Codec_CODEC_PROTO,
+							conformancev2.Codec_CODEC_JSON,
 						},
-						[]conformancev1alpha1.Compression{
-							conformancev1alpha1.Compression_COMPRESSION_IDENTITY,
+						[]conformancev2.Compression{
+							conformancev2.Compression_COMPRESSION_IDENTITY,
 						},
-						[]conformancev1alpha1.StreamType{
-							conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+						[]conformancev2.StreamType{
+							conformancev2.StreamType_STREAM_TYPE_UNARY,
 						},
 						[]bool{true, false},
+						[]bool{false},
 						[]bool{true, false},
-						[]conformancev1alpha1.TestSuite_ConnectVersionMode{
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-							conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+						[]bool{true, false},
+						[]conformancev2.TestSuite_ConnectVersionMode{
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+							conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 						},
 					),
 					true,
@@ -420,6 +442,13 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
                         - STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
                         supportsHalfDuplexBidiOverHttp1: true`,
 			expectedErr: "config features indicate full-duplex bidi streams are supported but neither HTTP/2 nor HTTP/3 included",
+		},
+		{
+			name: "features: TLS client certs without TLS",
+			config: `features:
+                        supportsTlsClientCerts: true
+                        supportsTls: false`,
+			expectedErr: "config features indicate TLS client certs are supported but not TLS",
 		},
 		{
 			name: "included case: HTTP/3 without TLS",
@@ -528,6 +557,24 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
                         streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
 			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex",
 		},
+		{
+			name: "included case: TLS client certs without TLS (a)",
+			config: `
+                     features:
+                     include_cases:
+                      - useTlsClientCerts: true
+                        useTls: false`,
+			expectedErr: "config case indicates use of TLS client certs but also indicates NOT using TLS",
+		},
+		{
+			name: "included case: TLS client certs without TLS (a)",
+			config: `
+                     features:
+                        supportsTls: false
+                     include_cases:
+                      - useTlsClientCerts: true`,
+			expectedErr: "config case indicates use of TLS client certs but TLS is not supported",
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -542,14 +589,16 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
 }
 
 func computePermutations(
-	versions []conformancev1alpha1.HTTPVersion,
-	protocols []conformancev1alpha1.Protocol,
-	codecs []conformancev1alpha1.Codec,
-	compressions []conformancev1alpha1.Compression,
-	streamTypes []conformancev1alpha1.StreamType,
+	versions []conformancev2.HTTPVersion,
+	protocols []conformancev2.Protocol,
+	codecs []conformancev2.Codec,
+	compressions []conformancev2.Compression,
+	streamTypes []conformancev2.StreamType,
 	useTLSOptions []bool,
+	useTLSClientCertOptions []bool,
 	useConnectGETOptions []bool,
-	connectVersionModes []conformancev1alpha1.TestSuite_ConnectVersionMode,
+	useMaxRecvLimitOptions []bool,
+	connectVersionModes []conformancev2.TestSuite_ConnectVersionMode,
 ) []configCase {
 	size := len(versions) * len(protocols) * len(codecs) * len(compressions) * len(streamTypes) * len(useTLSOptions) * len(useConnectGETOptions) * len(connectVersionModes)
 	results := make([]configCase, 0, size)
@@ -559,18 +608,24 @@ func computePermutations(
 				for _, compression := range compressions {
 					for _, streamType := range streamTypes {
 						for _, useTLS := range useTLSOptions {
-							for _, useConnectGET := range useConnectGETOptions {
-								for _, connectVersionMode := range connectVersionModes {
-									results = append(results, configCase{
-										Version:            version,
-										Protocol:           protocol,
-										Codec:              codec,
-										Compression:        compression,
-										StreamType:         streamType,
-										UseTLS:             useTLS,
-										UseConnectGET:      useConnectGET,
-										ConnectVersionMode: connectVersionMode,
-									})
+							for _, useTLSClientCerts := range useTLSClientCertOptions {
+								for _, useConnectGET := range useConnectGETOptions {
+									for _, useMaxRecvLimit := range useMaxRecvLimitOptions {
+										for _, connectVersionMode := range connectVersionModes {
+											results = append(results, configCase{
+												Version:                version,
+												Protocol:               protocol,
+												Codec:                  codec,
+												Compression:            compression,
+												StreamType:             streamType,
+												UseTLS:                 useTLS,
+												UseTLSClientCerts:      useTLSClientCerts,
+												UseConnectGET:          useConnectGET,
+												UseMessageReceiveLimit: useMaxRecvLimit,
+												ConnectVersionMode:     connectVersionMode,
+											})
+										}
+									}
 								}
 							}
 						}
@@ -586,25 +641,28 @@ func excludeDisallowed(cases []configCase, supportsH2C, supportsHalfDuplexBidiHT
 	disallowed := map[int]struct{}{}
 	for i, cfgCase := range cases {
 		switch {
-		case !cfgCase.UseTLS && cfgCase.Version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_3:
+		case !cfgCase.UseTLS && cfgCase.Version == conformancev2.HTTPVersion_HTTP_VERSION_3:
 			// can't use HTTP/3 w/out TLS
 			disallowed[i] = struct{}{}
-		case !cfgCase.UseTLS && cfgCase.Version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_2 && !supportsH2C:
+		case !cfgCase.UseTLS && cfgCase.Version == conformancev2.HTTPVersion_HTTP_VERSION_2 && !supportsH2C:
 			// can't use HTTP/2 w/out TLS unless H2C is supported
 			disallowed[i] = struct{}{}
-		case cfgCase.Protocol == conformancev1alpha1.Protocol_PROTOCOL_GRPC && cfgCase.Version != conformancev1alpha1.HTTPVersion_HTTP_VERSION_2:
+		case !cfgCase.UseTLS && cfgCase.UseTLSClientCerts:
+			// can't use client certs w/out TLS
+			disallowed[i] = struct{}{}
+		case cfgCase.Protocol == conformancev2.Protocol_PROTOCOL_GRPC && cfgCase.Version != conformancev2.HTTPVersion_HTTP_VERSION_2:
 			// can't use gRPC w/out HTTP/2
 			disallowed[i] = struct{}{}
-		case cfgCase.UseConnectGET && cfgCase.Protocol != conformancev1alpha1.Protocol_PROTOCOL_CONNECT:
+		case cfgCase.UseConnectGET && cfgCase.Protocol != conformancev2.Protocol_PROTOCOL_CONNECT:
 			// GET is only for the Connect protocol
 			disallowed[i] = struct{}{}
-		case cfgCase.StreamType == conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM && cfgCase.Version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_1:
+		case cfgCase.StreamType == conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM && cfgCase.Version == conformancev2.HTTPVersion_HTTP_VERSION_1:
 			// Can't do full-duplex streams w/ HTTP 1.1
 			disallowed[i] = struct{}{}
-		case cfgCase.StreamType == conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM && cfgCase.Version == conformancev1alpha1.HTTPVersion_HTTP_VERSION_1 && !supportsHalfDuplexBidiHTTP1:
+		case cfgCase.StreamType == conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM && cfgCase.Version == conformancev2.HTTPVersion_HTTP_VERSION_1 && !supportsHalfDuplexBidiHTTP1:
 			// Can't do half-duplex streams w/ HTTP 1.1 either if impl doesn't support that
 			disallowed[i] = struct{}{}
-		case cfgCase.ConnectVersionMode != conformancev1alpha1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED && cfgCase.Protocol != conformancev1alpha1.Protocol_PROTOCOL_CONNECT:
+		case cfgCase.ConnectVersionMode != conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED && cfgCase.Protocol != conformancev2.Protocol_PROTOCOL_CONNECT:
 			// Connect version requirement only applies to Connect protocol
 			disallowed[i] = struct{}{}
 		default:

@@ -5,7 +5,7 @@
   "codec": "CODEC_PROTO",
   "host": "127.0.0.1",
   "port": 23458,
-  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
+  "service": "connectrpc.conformance.v2.ConformanceService",
   "method": "ClientStream",
   "streamType": "STREAM_TYPE_CLIENT_STREAM",
   "requestDelayMs": 500,
@@ -20,14 +20,14 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
       "responseDefinition": {
         "error": {
           "code": 13,
           "message": "client stream failed",
           "details": [
             {
-              "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header",
+              "@type": "type.googleapis.com/connectrpc.conformance.v2.Header",
               "name": "test error detail name",
               "value": ["test error detail value"]
             }
@@ -55,7 +55,7 @@
       }
     },
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
       "requestData": "dGVzdCByZXNwb25zZQ=="
     }
   ]

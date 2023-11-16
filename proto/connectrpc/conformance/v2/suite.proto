@@ -1,0 +1,119 @@
+// Copyright 2023 The Connect Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package connectrpc.conformance.v2;
+
+import "connectrpc/conformance/v2/client_compat.proto";
+import "connectrpc/conformance/v2/config.proto";
+
+// TestSuite represents a set of conformance test cases. This is also the schema
+// used for the structure of a YAML test file. Each YAML file represents a test
+// suite, which can contain numerous cases. Each test suite has various properties
+// that indicate the kinds of features that are tested. Test suites may be skipped
+// based on whether the client or server under test implements these features.
+message TestSuite {
+  string name = 1;
+
+  TestMode mode = 2;
+  enum TestMode {
+    // Used when the test suite does not apply to a particular mode. Such tests
+    // are run, regardless of the current test mode, to verify both clients and
+    // servers under test.
+    TEST_MODE_UNSPECIFIED = 0;
+    // Indicates tests that are intended to be used only for a client-under-test.
+    // These cases can induce very particular and/or aberrant responses from the
+    // reference server, to verify how the client reacts to such responses.
+    TEST_MODE_CLIENT = 1;
+    // Indicates tests that are intended to be used only for a server-under-test.
+    // These cases can induce very particular and/or aberrant requests from the
+    // reference client, to verify how the server reacts to such requests.
+    TEST_MODE_SERVER = 2;
+  }
+
+  repeated TestCase test_cases = 3;
+
+  // If non-empty, the protocols to which this suite applies. If empty,
+  // this suite applies to all protocols.
+  repeated Protocol relevant_protocols = 4;
+  // If non-empty, the HTTP versions to which this suite applies. If empty,
+  // this suite applies to all HTTP versions.
+  repeated HTTPVersion relevant_http_versions = 5;
+  // If non-empty, the codecs to which this suite applies. If empty, this
+  // suite applies to all codecs.
+  repeated Codec relevant_codecs = 6;
+  // If non-empty, the compression encodings to which this suite applies.
+  // If empty, this suite applies to all encodings.
+  repeated Compression relevant_compressions = 7;
+
+  // Indicates the Connect version validation behavior that this suite
+  // relies on.
+  ConnectVersionMode connect_version_mode = 8;
+  enum ConnectVersionMode {
+    // Used when the suite is agnostic to the server's validation
+    // behavior.
+    CONNECT_VERSION_MODE_UNSPECIFIED = 0;
+    // Used when the suite relies on the server validating the presence
+    // and correctness of the Connect version header or query param.
+    CONNECT_VERSION_MODE_REQUIRE = 1;
+    // Used when the suite relies on the server ignore any Connect
+    // header or query param.
+    CONNECT_VERSION_MODE_IGNORE = 2;
+  }
+
+  // If true, the cases in this suite rely on TLS.
+  bool relies_on_tls = 9;
+  // If true, the cases in this suite rely on the client using TLS
+  // certificates to authenticate with the server. (Should only be
+  // true if relies_on_tls is also true.)
+  bool relies_on_tls_client_certs = 10;
+  // If true, the cases in this suite rely on the Connect GET protocol.
+  bool relies_on_connect_get = 11;
+  // If true, the cases in this suite rely on support for limiting the
+  // size of received messages. When true, mode should be set to indicate
+  // whether it is the client or the server that must support the limit.
+  bool relies_on_message_receive_limit = 12;
+}
+
+message TestCase {
+  // Defines the RPC that the client should invoke. The first eight fields
+  // are not fully specified. Instead the first field, test_name, must be
+  // present but is a prefix -- other characteristics that identify one
+  // permutation of the test case will be appended to this name. The next
+  // seven fields (http_version, protocol, codec, compression, host, port,
+  // and server_tls_cert) must not be present. They are all populated by
+  // the test harness based on the test environment (e.g. actual server and
+  //  port to use) and characteristics of a single permutation.
+  ClientCompatRequest request = 1;
+
+  // To support extremely large messages, as well as very precisely-sized
+  // messages, without having to encode them fully or perfectly in YAML
+  // test cases, this value can be specified. When non-empty, this value
+  // should have no more entries than there are messages in the request
+  // stream. The first value is applied to the first request message, and
+  // so on. For each entry, if the size is present, it is used to expand
+  // the data field in the request (which is actually part of the response
+  // definition). The specified size is added to the current limit on
+  // message size that the server will accept. That sum is the size of the
+  // the serialized message that will be sent, and the data field will be
+  // padded as needed to reach that size.
+  repeated ExpandedSize expand_requests = 2;
+  message ExpandedSize {
+    optional int32 size_relative_to_limit = 1;
+  }
+
+  // Defines the expected response to the above RPC. Many
+  ClientResponseResult expected_response = 3;
+}

@@ -24,12 +24,12 @@ import (
 	"sync"
 
 	"connectrpc.com/conformance/internal"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func populateExpectedUnaryResponse(testCase *conformancev1alpha1.TestCase) error {
+func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
 	// First, find the response definition that the client instructed the server to return
 	concreteReq, err := req.UnmarshalNew()
@@ -37,7 +37,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1alpha1.TestCase) error
 		return err
 	}
 	type unaryResponseDefiner interface {
-		GetResponseDefinition() *conformancev1alpha1.UnaryResponseDefinition
+		GetResponseDefinition() *conformancev2.UnaryResponseDefinition
 	}
 
 	definer, ok := concreteReq.(unaryResponseDefiner)
@@ -55,10 +55,10 @@ func populateExpectedUnaryResponse(testCase *conformancev1alpha1.TestCase) error
 	// ClientResponseResult if no response definition is provided
 	def := definer.GetResponseDefinition()
 	if def == nil {
-		testCase.ExpectedResponse = &conformancev1alpha1.ClientResponseResult{
-			Payloads: []*conformancev1alpha1.ConformancePayload{
+		testCase.ExpectedResponse = &conformancev2.ClientResponseResult{
+			Payloads: []*conformancev2.ConformancePayload{
 				{
-					RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+					RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
 						RequestHeaders: testCase.Request.RequestHeaders,
 						Requests:       testCase.Request.RequestMessages,
 					},
@@ -69,29 +69,29 @@ func populateExpectedUnaryResponse(testCase *conformancev1alpha1.TestCase) error
 	}
 
 	// Server should have echoed back all specified headers and trailers
-	expected := &conformancev1alpha1.ClientResponseResult{
+	expected := &conformancev2.ClientResponseResult{
 		ResponseHeaders:  def.ResponseHeaders,
 		ResponseTrailers: def.ResponseTrailers,
 	}
 
 	switch respType := def.Response.(type) {
-	case *conformancev1alpha1.UnaryResponseDefinition_Error:
+	case *conformancev2.UnaryResponseDefinition_Error:
 		// If an error was specified, it should be returned in the response
 		expected.Error = respType.Error
-	case *conformancev1alpha1.UnaryResponseDefinition_ResponseData, nil:
+	case *conformancev2.UnaryResponseDefinition_ResponseData, nil:
 		// If response data was specified for the response (or nothing at all),
 		// the server should echo back the request message and headers in the response
-		payload := &conformancev1alpha1.ConformancePayload{
-			RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+		payload := &conformancev2.ConformancePayload{
+			RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
 				RequestHeaders: testCase.Request.RequestHeaders,
 				Requests:       testCase.Request.RequestMessages,
 			},
 		}
 		// If response data was specified for the response, it should be returned
-		if respType, ok := respType.(*conformancev1alpha1.UnaryResponseDefinition_ResponseData); ok {
+		if respType, ok := respType.(*conformancev2.UnaryResponseDefinition_ResponseData); ok {
 			payload.Data = respType.ResponseData
 		}
-		expected.Payloads = []*conformancev1alpha1.ConformancePayload{payload}
+		expected.Payloads = []*conformancev2.ConformancePayload{payload}
 	default:
 		return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 	}
@@ -100,7 +100,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1alpha1.TestCase) error
 	return nil
 }
 
-func populateExpectedStreamResponse(testCase *conformancev1alpha1.TestCase) error {
+func populateExpectedStreamResponse(testCase *conformancev2.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
 	// First, find the response definition that the client instructed the
 	// server to return
@@ -109,7 +109,7 @@ func populateExpectedStreamResponse(testCase *conformancev1alpha1.TestCase) erro
 		return err
 	}
 	type streamResponseDefiner interface {
-		GetResponseDefinition() *conformancev1alpha1.StreamResponseDefinition
+		GetResponseDefinition() *conformancev2.StreamResponseDefinition
 	}
 
 	definer, ok := concreteReq.(streamResponseDefiner)
@@ -123,39 +123,39 @@ func populateExpectedStreamResponse(testCase *conformancev1alpha1.TestCase) erro
 
 	def := definer.GetResponseDefinition()
 	if def == nil {
-		testCase.ExpectedResponse = &conformancev1alpha1.ClientResponseResult{}
+		testCase.ExpectedResponse = &conformancev2.ClientResponseResult{}
 		return nil
 	}
 
 	// Server should have echoed back all specified headers, trailers, and errors
-	expected := &conformancev1alpha1.ClientResponseResult{
+	expected := &conformancev2.ClientResponseResult{
 		ResponseHeaders:  def.ResponseHeaders,
 		ResponseTrailers: def.ResponseTrailers,
 		Error:            def.Error,
 	}
 
 	// There should be one payload for every ResponseData the client specified
-	expected.Payloads = make([]*conformancev1alpha1.ConformancePayload, len(def.ResponseData))
+	expected.Payloads = make([]*conformancev2.ConformancePayload, len(def.ResponseData))
 
 	for idx, data := range def.ResponseData {
-		expected.Payloads[idx] = &conformancev1alpha1.ConformancePayload{
+		expected.Payloads[idx] = &conformancev2.ConformancePayload{
 			Data: data,
 		}
 		switch testCase.Request.StreamType { //nolint:exhaustive
-		case conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
-			conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+		case conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+			conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
 			// For server streams and half duplex bidi streams, all request information
 			// specified should only be echoed back in the first response
 			if idx == 0 {
-				expected.Payloads[idx].RequestInfo = &conformancev1alpha1.ConformancePayload_RequestInfo{
+				expected.Payloads[idx].RequestInfo = &conformancev2.ConformancePayload_RequestInfo{
 					RequestHeaders: testCase.Request.RequestHeaders,
 					Requests:       testCase.Request.RequestMessages,
 				}
 			}
-		case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+		case conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
 			// For a full duplex stream, the first request should be echoed back in the first
 			// payload. The second should be echoed back in the second payload, etc. (i.e. a ping pong interaction)
-			expected.Payloads[idx].RequestInfo = &conformancev1alpha1.ConformancePayload_RequestInfo{
+			expected.Payloads[idx].RequestInfo = &conformancev2.ConformancePayload_RequestInfo{
 				// RequestHeaders: testCase.Request.RequestHeaders,
 				Requests: []*anypb.Any{testCase.Request.RequestMessages[idx]},
 			}
@@ -170,7 +170,7 @@ func populateExpectedStreamResponse(testCase *conformancev1alpha1.TestCase) erro
 
 // populateExpectedResponse populates the response we expected to get back from the server
 // by examining the requests we sent.
-func populateExpectedResponse(testCase *conformancev1alpha1.TestCase) error {
+func populateExpectedResponse(testCase *conformancev2.TestCase) error {
 	// If an expected response was already provided, return and use that.
 	// This allows for overriding this function with explicit values in the yaml file.
 	if testCase.ExpectedResponse != nil {
@@ -186,16 +186,16 @@ func populateExpectedResponse(testCase *conformancev1alpha1.TestCase) error {
 	}
 
 	switch testCase.Request.StreamType {
-	case conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
-		conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-		conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM:
+	case conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+		conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+		conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM:
 		return populateExpectedStreamResponse(testCase)
 
-	case conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
-		conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM:
+	case conformancev2.StreamType_STREAM_TYPE_UNARY,
+		conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM:
 		return populateExpectedUnaryResponse(testCase)
 
-	case conformancev1alpha1.StreamType_STREAM_TYPE_UNSPECIFIED:
+	case conformancev2.StreamType_STREAM_TYPE_UNSPECIFIED:
 		return errors.New("stream type is required")
 	default:
 		return fmt.Errorf("stream type %s is not supported", testCase.Request.StreamType)
@@ -218,12 +218,12 @@ func runTestCasesForServer(
 	isReferenceClient bool,
 	isReferenceServer bool,
 	meta serverInstance,
-	testCases []*conformancev1alpha1.TestCase,
+	testCases []*conformancev2.TestCase,
 	startServer processStarter,
 	results *testResults,
 	client clientRunner,
 ) {
-	expectations := make(map[string]*conformancev1alpha1.ClientResponseResult, len(testCases))
+	expectations := make(map[string]*conformancev2.ClientResponseResult, len(testCases))
 	for _, testCase := range testCases {
 		err := populateExpectedResponse(testCase)
 		if err != nil {
@@ -270,7 +270,7 @@ func runTestCasesForServer(
 	}
 
 	// Write server request.
-	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev1alpha1.ServerCompatRequest{
+	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev2.ServerCompatRequest{
 		Protocol:    meta.protocol,
 		HttpVersion: meta.httpVersion,
 		UseTls:      meta.useTLS,
@@ -285,7 +285,7 @@ func runTestCasesForServer(
 	}
 
 	// Read response.
-	var resp conformancev1alpha1.ServerCompatResponse
+	var resp conformancev2.ServerCompatResponse
 	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp)
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
@@ -303,23 +303,23 @@ func runTestCasesForServer(
 			}
 			return
 		}
-		req := proto.Clone(testCase.Request).(*conformancev1alpha1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
+		req := proto.Clone(testCase.Request).(*conformancev2.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 		req.Host = resp.Host
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
 		if isReferenceServer {
 			req.RequestHeaders = append(
 				req.RequestHeaders,
-				&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
-				&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
-				&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
-				&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
-				&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
+				&conformancev2.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
+				&conformancev2.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
+				&conformancev2.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
+				&conformancev2.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
+				&conformancev2.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
 			)
 		}
 
 		wg.Add(1)
-		err := client.sendRequest(req, func(name string, resp *conformancev1alpha1.ClientCompatResponse, err error) {
+		err := client.sendRequest(req, func(name string, resp *conformancev2.ClientCompatResponse, err error) {
 			defer wg.Done()
 			switch {
 			case err != nil:

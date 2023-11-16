@@ -27,6 +27,11 @@ import (
 	"time"
 )
 
+const (
+	ClientCertName = "Conformance Client"
+	ServerCertName = "Conformance Server"
+)
+
 // NewClientTLSConfig returns a TLS configuration for an RPC client that uses
 // the given PEM-encoded certs/keys. The caCert parameter must not be empty, and
 // is the server certificate to trust (or a CA cert for the issuer of the server
@@ -113,42 +118,60 @@ func ParseServerCert(cert, key []byte) (tls.Certificate, error) {
 // to trust the server. Both will be zero values if the returned error
 // is not nil.
 func NewServerCert() (tls.Certificate, []byte, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	certBytes, keyBytes, err := newCert(false)
 	if err != nil {
-		return tls.Certificate{}, nil, fmt.Errorf("failed to generated RSA key: %w", err)
+		return tls.Certificate{}, nil, err
 	}
-	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
-	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
-	if err != nil {
-		return tls.Certificate{}, nil, fmt.Errorf("failed to generate serial number: %w", err)
-	}
-	template := x509.Certificate{
-		SerialNumber: serialNumber,
-		Subject: pkix.Name{
-			Organization: []string{"ConnectRPC"},
-			CommonName:   "Conformance Server",
-		},
-		NotBefore: time.Now().Add(-time.Hour * 24),
-		NotAfter:  time.Now().Add(time.Hour * 24 * 7),
-
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-
-		IPAddresses: []net.IP{net.IPv6loopback, net.IPv4(127, 0, 0, 1)},
-		DNSNames:    []string{"localhost"},
-	}
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
-	if err != nil {
-		return tls.Certificate{}, nil, fmt.Errorf("failed to create certificate: %w", err)
-	}
-
-	certBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
-	keyBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
-
 	cert, err := ParseServerCert(certBytes, keyBytes)
 	if err != nil {
 		return tls.Certificate{}, nil, fmt.Errorf("failed to parse new certificate: %w", err)
 	}
 	return cert, certBytes, nil
+}
+
+// NewClientCert is like NewServerCert, but it produces a certificate that
+// is intended for client authentication. It also returns the encoded bytes
+// of the private key.
+func NewClientCert() (certBytes []byte, keyBytes []byte, err error) {
+	return newCert(true)
+}
+
+func newCert(isClientCert bool) ([]byte, []byte, error) {
+	priv, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generated RSA key: %w", err)
+	}
+	serialNumberLimit := new(big.Int).Lsh(big.NewInt(1), 128)
+	serialNumber, err := rand.Int(rand.Reader, serialNumberLimit)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate serial number: %w", err)
+	}
+	template := x509.Certificate{
+		SerialNumber: serialNumber,
+		Subject: pkix.Name{
+			Organization: []string{"ConnectRPC"},
+		},
+		NotBefore: time.Now().Add(-time.Hour * 24),
+		NotAfter:  time.Now().Add(time.Hour * 24 * 7),
+
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
+		BasicConstraintsValid: true,
+	}
+	if isClientCert {
+		template.Subject.CommonName = ClientCertName
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}
+	} else {
+		template.Subject.CommonName = ServerCertName
+		template.ExtKeyUsage = []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}
+		template.IPAddresses = []net.IP{net.IPv6loopback, net.IPv4(127, 0, 0, 1)}
+		template.DNSNames = []string{"localhost"}
+	}
+	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to create certificate: %w", err)
+	}
+
+	certBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: derBytes})
+	keyBytes := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(priv)})
+	return certBytes, keyBytes, nil
 }
