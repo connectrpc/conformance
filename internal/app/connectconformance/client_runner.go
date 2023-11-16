@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 )
 
 const testCaseTimeout = 20 * time.Second
@@ -33,7 +33,7 @@ var errClosed = errors.New("send-to-client is closed")
 var errDuplicate = errors.New("duplicate test case")
 
 type clientRunner interface {
-	sendRequest(req *conformancev1alpha1.ClientCompatRequest, whenDone func(string, *conformancev1alpha1.ClientCompatResponse, error)) error
+	sendRequest(req *conformancev2.ClientCompatRequest, whenDone func(string, *conformancev2.ClientCompatResponse, error)) error
 	closeSend()
 	waitForResponses() error
 
@@ -49,7 +49,7 @@ func runClient(ctx context.Context, start processStarter) (clientRunner, error) 
 	result := &clientProcessRunner{
 		proc:       proc,
 		done:       make(chan struct{}),
-		pendingOps: map[string]func(string, *conformancev1alpha1.ClientCompatResponse, error){},
+		pendingOps: map[string]func(string, *conformancev2.ClientCompatResponse, error){},
 	}
 	proc.whenDone(func(_ error) {
 		result.terminated.Store(false)
@@ -73,10 +73,10 @@ type clientProcessRunner struct {
 	// trivially lead to deadlock).
 	// If acquiring both sendMu and pendingMu, *always* acquire sendMu first.
 	pendingMu  sync.Mutex
-	pendingOps map[string]func(string, *conformancev1alpha1.ClientCompatResponse, error)
+	pendingOps map[string]func(string, *conformancev2.ClientCompatResponse, error)
 }
 
-func (c *clientProcessRunner) sendRequest(req *conformancev1alpha1.ClientCompatRequest, whenDone func(string, *conformancev1alpha1.ClientCompatResponse, error)) (err error) {
+func (c *clientProcessRunner) sendRequest(req *conformancev2.ClientCompatRequest, whenDone func(string, *conformancev2.ClientCompatResponse, error)) (err error) {
 	if err := c.err.Load(); err != nil && *err != nil {
 		return *err
 	}
@@ -200,7 +200,7 @@ func (c *clientProcessRunner) consumeOutput() {
 
 	testCaseNames := map[string]struct{}{}
 	for {
-		resp := &conformancev1alpha1.ClientCompatResponse{}
+		resp := &conformancev2.ClientCompatResponse{}
 		var readErr error
 		readDone := make(chan struct{})
 		go func() {

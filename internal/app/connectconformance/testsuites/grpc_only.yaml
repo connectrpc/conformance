@@ -6,14 +6,14 @@ testCases:
 - request:
     # Tests a trailers-only error response to a unary request
     testName: unary error trailers only response
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.UnaryRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -22,7 +22,7 @@ testCases:
           code: 13
           message: "unary failed"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
@@ -37,7 +37,7 @@ testCases:
       code: 13
       message: "unary failed"
       details:
-        - "@type": "connectrpc.conformance.v1alpha1.Header"
+        - "@type": "connectrpc.conformance.v2.Header"
           name: "test error detail name"
           value:
             - "test error detail value"
@@ -46,14 +46,14 @@ testCases:
       value: ["bing","quux"]
 - request:
     testName: unary error trailers only response unicode
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.UnaryRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -62,7 +62,7 @@ testCases:
           code: 13
           message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
@@ -77,7 +77,7 @@ testCases:
       code: 13
       message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
       details:
-        - "@type": "connectrpc.conformance.v1alpha1.Header"
+        - "@type": "connectrpc.conformance.v2.Header"
           name: "test error detail name"
           value:
             - "test error detail value"
@@ -87,14 +87,14 @@ testCases:
 - request:
     # Tests a trailers-only error response to a client stream request
     testName: client stream error trailers only response
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -103,14 +103,14 @@ testCases:
           code: 13
           message: "client stream failed"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ClientStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   expectedResponse:
     responseHeaders:
@@ -120,7 +120,7 @@ testCases:
       code: 13
       message: "client stream failed"
       details:
-        - "@type": "connectrpc.conformance.v1alpha1.Header"
+        - "@type": "connectrpc.conformance.v2.Header"
           name: "test error detail name"
           value:
             - "test error detail value"
@@ -129,14 +129,14 @@ testCases:
       value: ["bing","quux"]
 - request:
     testName: server stream error trailers only response
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.ServerStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -145,7 +145,7 @@ testCases:
           code: 13
           message: "server stream failed"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
@@ -160,7 +160,7 @@ testCases:
       code: 13
       message: "server stream failed"
       details:
-        - "@type": "connectrpc.conformance.v1alpha1.Header"
+        - "@type": "connectrpc.conformance.v2.Header"
           name: "test error detail name"
           value:
             - "test error detail value"

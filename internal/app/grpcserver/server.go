@@ -24,7 +24,7 @@ import (
 	"strconv"
 
 	"connectrpc.com/conformance/internal"
-	v1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // enables GZIP compression w/ gRPC
 )
@@ -44,7 +44,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	codec := internal.NewCodec(*json)
 
 	// Read the server config from  the in reader
-	req := &v1alpha1.ServerCompatRequest{}
+	req := &v2.ServerCompatRequest{}
 	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
@@ -66,7 +66,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 		return errors.New("unable to determine tcp address from listener")
 	}
 
-	resp := &v1alpha1.ServerCompatResponse{
+	resp := &v2.ServerCompatResponse{
 		Host: fmt.Sprint(tcpAddr.IP),
 		Port: uint32(tcpAddr.Port),
 	}
@@ -92,6 +92,6 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 
 func createServer() (*grpc.Server, error) { //nolint:unparam
 	server := grpc.NewServer()
-	v1alpha1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
+	v2.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
 	return server, nil
 }

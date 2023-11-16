@@ -35,7 +35,7 @@ const (
 )
 
 // Describes one configuration for an RPC server. The server is
-// expected to expose the connectrpc.conformance.v1alpha1.ConformanceService
+// expected to expose the connectrpc.conformance.v2.ConformanceService
 // RPC service. The configuration does not include a port. The
 // process should pick an available port, which is typically
 // done by using port zero (0) when creating a network listener

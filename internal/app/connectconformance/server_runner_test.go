@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"connectrpc.com/conformance/internal"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -38,7 +38,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 	t.Parallel()
 
 	var svrResponseBuf bytes.Buffer
-	svrResponse := &conformancev1alpha1.ServerCompatResponse{
+	svrResponse := &conformancev2.ServerCompatResponse{
 		Host: "127.0.0.1",
 		Port: 12345,
 	}
@@ -47,14 +47,14 @@ func TestRunTestCasesForServer(t *testing.T) {
 	svrResponseData := svrResponseBuf.Bytes()
 
 	svrInstance := serverInstance{
-		protocol:    conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
-		httpVersion: conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+		protocol:    conformancev2.Protocol_PROTOCOL_GRPC_WEB,
+		httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_1,
 		useTLS:      false,
 	}
 	var expectedSvrReqBuf bytes.Buffer
-	err = internal.WriteDelimitedMessage(&expectedSvrReqBuf, &conformancev1alpha1.ServerCompatRequest{
-		Protocol:            conformancev1alpha1.Protocol_PROTOCOL_GRPC_WEB,
-		HttpVersion:         conformancev1alpha1.HTTPVersion_HTTP_VERSION_1,
+	err = internal.WriteDelimitedMessage(&expectedSvrReqBuf, &conformancev2.ServerCompatRequest{
+		Protocol:            conformancev2.Protocol_PROTOCOL_GRPC_WEB,
+		HttpVersion:         conformancev2.HTTPVersion_HTTP_VERSION_1,
 		UseTls:              false,
 		ClientTlsCert:       nil,
 		MessageReceiveLimit: 200 * 1024,
@@ -62,62 +62,62 @@ func TestRunTestCasesForServer(t *testing.T) {
 	require.NoError(t, err)
 	expectedSvrReqData := expectedSvrReqBuf.Bytes()
 
-	testCaseData := []*conformancev1alpha1.TestCase{
+	testCaseData := []*conformancev2.TestCase{
 		{
-			Request: &conformancev1alpha1.ClientCompatRequest{
+			Request: &conformancev2.ClientCompatRequest{
 				TestName: "TestSuite1/testcase1",
 			},
-			ExpectedResponse: &conformancev1alpha1.ClientResponseResult{
-				Payloads: []*conformancev1alpha1.ConformancePayload{{Data: []byte("data")}},
+			ExpectedResponse: &conformancev2.ClientResponseResult{
+				Payloads: []*conformancev2.ConformancePayload{{Data: []byte("data")}},
 			},
 		},
 		{
-			Request: &conformancev1alpha1.ClientCompatRequest{
+			Request: &conformancev2.ClientCompatRequest{
 				TestName: "TestSuite1/testcase2",
 			},
-			ExpectedResponse: &conformancev1alpha1.ClientResponseResult{
-				Payloads: []*conformancev1alpha1.ConformancePayload{{Data: []byte("data")}},
+			ExpectedResponse: &conformancev2.ClientResponseResult{
+				Payloads: []*conformancev2.ConformancePayload{{Data: []byte("data")}},
 			},
 		},
 		{
-			Request: &conformancev1alpha1.ClientCompatRequest{
+			Request: &conformancev2.ClientCompatRequest{
 				TestName: "TestSuite2/testcase1",
 			},
-			ExpectedResponse: &conformancev1alpha1.ClientResponseResult{
-				Error: &conformancev1alpha1.Error{Code: int32(connect.CodeAborted), Message: "ruh roh"},
+			ExpectedResponse: &conformancev2.ClientResponseResult{
+				Error: &conformancev2.Error{Code: int32(connect.CodeAborted), Message: "ruh roh"},
 			},
 		},
 		{
-			Request: &conformancev1alpha1.ClientCompatRequest{
+			Request: &conformancev2.ClientCompatRequest{
 				TestName: "TestSuite2/testcase2",
 			},
-			ExpectedResponse: &conformancev1alpha1.ClientResponseResult{
-				Payloads: []*conformancev1alpha1.ConformancePayload{{Data: []byte("data")}},
+			ExpectedResponse: &conformancev2.ClientResponseResult{
+				Payloads: []*conformancev2.ConformancePayload{{Data: []byte("data")}},
 			},
 		},
 	}
 
-	requests := make([]*conformancev1alpha1.ClientCompatRequest, len(testCaseData))
-	responses := make([]*conformancev1alpha1.ClientCompatResponse, len(testCaseData))
+	requests := make([]*conformancev2.ClientCompatRequest, len(testCaseData))
+	responses := make([]*conformancev2.ClientCompatResponse, len(testCaseData))
 	for i, testCase := range testCaseData {
-		requests[i] = proto.Clone(testCase.Request).(*conformancev1alpha1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
+		requests[i] = proto.Clone(testCase.Request).(*conformancev2.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 		requests[i].Host = svrResponse.Host
 		requests[i].Port = svrResponse.Port
 		requests[i].ServerTlsCert = svrResponse.PemCert
 
 		if i == 2 {
-			responses[i] = &conformancev1alpha1.ClientCompatResponse{
+			responses[i] = &conformancev2.ClientCompatResponse{
 				TestName: testCase.Request.TestName,
-				Result: &conformancev1alpha1.ClientCompatResponse_Error{
-					Error: &conformancev1alpha1.ClientErrorResult{
+				Result: &conformancev2.ClientCompatResponse_Error{
+					Error: &conformancev2.ClientErrorResult{
 						Message: "whoopsy daisy",
 					},
 				},
 			}
 		} else {
-			responses[i] = &conformancev1alpha1.ClientCompatResponse{
+			responses[i] = &conformancev2.ClientCompatResponse{
 				TestName: testCase.Request.TestName,
-				Result: &conformancev1alpha1.ClientCompatResponse_Response{
+				Result: &conformancev2.ClientCompatResponse_Response{
 					Response: testCase.ExpectedResponse,
 				},
 			}
@@ -224,19 +224,19 @@ func TestRunTestCasesForServer(t *testing.T) {
 				expectedRequests = requests[:testCase.svrKillAfter]
 			}
 			if testCase.isReferenceServer {
-				copyOfRequests := make([]*conformancev1alpha1.ClientCompatRequest, len(expectedRequests))
+				copyOfRequests := make([]*conformancev2.ClientCompatRequest, len(expectedRequests))
 				// runner adds headers for the reference server
 				for i, req := range expectedRequests {
-					req = proto.Clone(req).(*conformancev1alpha1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
+					req = proto.Clone(req).(*conformancev2.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 					req.RequestHeaders = append(req.RequestHeaders,
-						&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{req.TestName}},
+						&conformancev2.Header{Name: "x-test-case-name", Value: []string{req.TestName}},
 						// we didn't set this above, so they're all zero/unspecified
-						&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{"0"}},
-						&conformancev1alpha1.Header{Name: "x-expect-http-method", Value: []string{"POST"}},
-						&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{"0"}},
-						&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{"0"}},
-						&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{"0"}},
-						&conformancev1alpha1.Header{Name: "x-expect-tls", Value: []string{"false"}},
+						&conformancev2.Header{Name: "x-expect-http-version", Value: []string{"0"}},
+						&conformancev2.Header{Name: "x-expect-http-method", Value: []string{"POST"}},
+						&conformancev2.Header{Name: "x-expect-protocol", Value: []string{"0"}},
+						&conformancev2.Header{Name: "x-expect-codec", Value: []string{"0"}},
+						&conformancev2.Header{Name: "x-expect-compression", Value: []string{"0"}},
+						&conformancev2.Header{Name: "x-expect-tls", Value: []string{"false"}},
 					)
 					copyOfRequests[i] = req
 				}
@@ -250,7 +250,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				}
 				responsesToSend = responses[:testCase.clientCloseAfter]
 			}
-			client.responses = make(map[string]*conformancev1alpha1.ClientCompatResponse, len(responsesToSend))
+			client.responses = make(map[string]*conformancev2.ClientCompatResponse, len(responsesToSend))
 			for _, resp := range responsesToSend {
 				client.responses[resp.TestName] = resp
 			}
@@ -438,13 +438,13 @@ func (h *hookReader) Read(data []byte) (n int, err error) {
 // is non-nil, requestHook will be invoked after sendRequest is called requestHookCount
 // times.
 type fakeClient struct {
-	actualRequests   []*conformancev1alpha1.ClientCompatRequest
-	responses        map[string]*conformancev1alpha1.ClientCompatResponse
+	actualRequests   []*conformancev2.ClientCompatRequest
+	responses        map[string]*conformancev2.ClientCompatResponse
 	requestHookCount int
 	requestHook      func()
 }
 
-func (f *fakeClient) sendRequest(req *conformancev1alpha1.ClientCompatRequest, whenDone func(string, *conformancev1alpha1.ClientCompatResponse, error)) error {
+func (f *fakeClient) sendRequest(req *conformancev2.ClientCompatRequest, whenDone func(string, *conformancev2.ClientCompatResponse, error)) error {
 	if len(f.responses) == 0 {
 		return errors.New("no more")
 	}

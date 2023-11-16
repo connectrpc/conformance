@@ -25,7 +25,7 @@ import (
 	"sync"
 
 	"connectrpc.com/conformance/internal"
-	conformancev1alpha1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1alpha1"
+	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -45,13 +45,13 @@ func runTestCasesForServer(
 	isReferenceClient bool,
 	isReferenceServer bool,
 	meta serverInstance,
-	testCases []*conformancev1alpha1.TestCase,
-	clientCreds *conformancev1alpha1.ClientCompatRequest_TLSCreds,
+	testCases []*conformancev2.TestCase,
+	clientCreds *conformancev2.ClientCompatRequest_TLSCreds,
 	startServer processStarter,
 	results *testResults,
 	client clientRunner,
 ) {
-	expectations := make(map[string]*conformancev1alpha1.ClientResponseResult, len(testCases))
+	expectations := make(map[string]*conformancev2.ClientResponseResult, len(testCases))
 	for _, testCase := range testCases {
 		expectations[testCase.Request.TestName] = testCase.ExpectedResponse
 	}
@@ -99,7 +99,7 @@ func runTestCasesForServer(
 	}
 
 	// Write server request.
-	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev1alpha1.ServerCompatRequest{
+	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev2.ServerCompatRequest{
 		Protocol:      meta.protocol,
 		HttpVersion:   meta.httpVersion,
 		UseTls:        meta.useTLS,
@@ -118,7 +118,7 @@ func runTestCasesForServer(
 	}
 
 	// Read response.
-	var resp conformancev1alpha1.ServerCompatResponse
+	var resp conformancev2.ServerCompatResponse
 	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp)
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
@@ -136,7 +136,7 @@ func runTestCasesForServer(
 			}
 			return
 		}
-		req := proto.Clone(testCase.Request).(*conformancev1alpha1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
+		req := proto.Clone(testCase.Request).(*conformancev2.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 		req.Host = resp.Host
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
@@ -148,24 +148,24 @@ func runTestCasesForServer(
 			}
 			req.RequestHeaders = append(
 				req.RequestHeaders,
-				&conformancev1alpha1.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
-				&conformancev1alpha1.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
-				&conformancev1alpha1.Header{Name: "x-expect-http-method", Value: []string{httpMethod}},
-				&conformancev1alpha1.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
-				&conformancev1alpha1.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
-				&conformancev1alpha1.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
-				&conformancev1alpha1.Header{Name: "x-expect-tls", Value: []string{strconv.FormatBool(len(resp.PemCert) > 0)}},
+				&conformancev2.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
+				&conformancev2.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
+				&conformancev2.Header{Name: "x-expect-http-method", Value: []string{httpMethod}},
+				&conformancev2.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
+				&conformancev2.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
+				&conformancev2.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
+				&conformancev2.Header{Name: "x-expect-tls", Value: []string{strconv.FormatBool(len(resp.PemCert) > 0)}},
 			)
 			if clientCreds != nil {
 				req.RequestHeaders = append(
 					req.RequestHeaders,
-					&conformancev1alpha1.Header{Name: "x-expect-client-cert", Value: []string{internal.ClientCertName}},
+					&conformancev2.Header{Name: "x-expect-client-cert", Value: []string{internal.ClientCertName}},
 				)
 			}
 		}
 
 		wg.Add(1)
-		err := client.sendRequest(req, func(name string, resp *conformancev1alpha1.ClientCompatResponse, err error) {
+		err := client.sendRequest(req, func(name string, resp *conformancev2.ClientCompatResponse, err error) {
 			defer wg.Done()
 			switch {
 			case err != nil:

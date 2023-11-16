@@ -5,14 +5,14 @@ relevantHttpVersions:
 testCases:
 - request:
     testName: bidi full duplex stream success
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -24,7 +24,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
       fullDuplex: true
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   expectedResponse:
     responseHeaders:
@@ -40,7 +40,7 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           responseDefinition:
             responseHeaders:
             - name: x-custom-header
@@ -58,21 +58,21 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
     testName: bidi full duplex stream error
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test
         value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       responseDefinition:
         responseHeaders:
           - name: x-custom-header
@@ -84,7 +84,7 @@ testCases:
           code: 13
           message: "bidi full duplex stream failed"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
@@ -92,7 +92,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
       fullDuplex: true
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   expectedResponse:
     responseHeaders:
@@ -108,7 +108,7 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           responseDefinition:
             responseHeaders:
             - name: x-custom-header
@@ -120,7 +120,7 @@ testCases:
               code: 13
               message: "bidi full duplex stream failed"
               details:
-                - "@type": "connectrpc.conformance.v1alpha1.Header"
+                - "@type": "connectrpc.conformance.v2.Header"
                   name: "test error detail name"
                   value:
                     - "test error detail value"
@@ -134,13 +134,13 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
     error:
       code: 13
       message: "bidi full duplex stream failed"
       details:
-        - "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
+        - "@type": "type.googleapis.com/connectrpc.conformance.v2.Header"
           name: "test error detail name"
           value:
             - "test error detail value"
@@ -149,14 +149,14 @@ testCases:
       value: ["bing","quux"]
 - request:
     testName: bidi half duplex stream success
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
@@ -167,7 +167,7 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   expectedResponse:
     responseHeaders:
@@ -184,7 +184,7 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           responseDefinition:
             responseHeaders:
             - name: x-custom-header
@@ -195,7 +195,7 @@ testCases:
             responseTrailers:
             - name: x-custom-trailer
               value: ["bing","quux"]
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
     - data: "dGVzdCByZXNwb25zZQ=="
       requestInfo:
@@ -203,7 +203,7 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           responseDefinition:
             responseHeaders:
             - name: x-custom-header
@@ -214,21 +214,21 @@ testCases:
             responseTrailers:
             - name: x-custom-trailer
               value: ["bing","quux"]
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
     responseTrailers:
     - name: X-Custom-Trailer
       value: ["bing","quux"]
 - request:
     testName: bidi half duplex stream error
-    service: connectrpc.conformance.v1alpha1.ConformanceService
+    service: connectrpc.conformance.v2.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test
         value: ["Value1","Value2"]
     requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       responseDefinition:
         responseHeaders:
           - name: x-custom-header
@@ -240,7 +240,7 @@ testCases:
           code: 13
           message: "bidi half duplex stream failed"
           details:
-            - "@type": "connectrpc.conformance.v1alpha1.Header"
+            - "@type": "connectrpc.conformance.v2.Header"
               name: "test error detail name"
               value:
                 - "test error detail value"
@@ -248,7 +248,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
       fullDuplex: true
-    - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+    - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   expectedResponse:
     responseHeaders:
@@ -265,7 +265,7 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           responseDefinition:
             responseHeaders:
             - name: x-custom-header
@@ -277,7 +277,7 @@ testCases:
               code: 13
               message: "bidi half duplex stream failed"
               details:
-                - "@type": "connectrpc.conformance.v1alpha1.Header"
+                - "@type": "connectrpc.conformance.v2.Header"
                   name: "test error detail name"
                   value:
                     - "test error detail value"
@@ -291,13 +291,13 @@ testCases:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
         requests:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1alpha1.BidiStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
     error:
       code: 13
       message: "bidi half duplex stream failed"
       details:
-        - "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.Header"
+        - "@type": "type.googleapis.com/connectrpc.conformance.v2.Header"
           name: "test error detail name"
           value:
             - "test error detail value"
