@@ -106,7 +106,7 @@ func runTestCasesForServer(
 		ClientTlsCert: clientCreds.GetCert(),
 		// We always set this. If server-under-test does not support it, we just
 		// won't run the test cases that verify that it's enforced.
-		MessageReceiveLimit: 200 * 1024, // 200 KB
+		MessageReceiveLimit: serverReceiveLimit,
 	})
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error writing server request: %w", err))

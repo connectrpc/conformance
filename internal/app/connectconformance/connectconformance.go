@@ -75,8 +75,8 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		_, _ = fmt.Fprintf(logOut, "Loaded %d known failing test cases/patterns.\n", knownFailing.length())
 	}
 
-	// TODO: allow test suite files to indicate on command-line to override use
-	//       of built-in, embedded test suite data
+	// TODO: allow test suite files to be indicated on command-line to override
+	//       use of built-in, embedded test suite data
 	testSuiteData, err := testsuites.LoadTestSuites()
 	if err != nil {
 		return false, fmt.Errorf("failed to load embedded test suite data: %w", err)

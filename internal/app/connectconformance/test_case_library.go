@@ -17,6 +17,7 @@ package connectconformance
 import (
 	"errors"
 	"fmt"
+	"math"
 	"path"
 	"sort"
 	"strings"
@@ -24,7 +25,16 @@ import (
 	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
+)
+
+const (
+	// Note that we always use a larger limit on the client so that when
+	// we test the server limit, even when close to the server's limit, the
+	// response (which echoes back the request data) won't exceed client limit.
+	clientReceiveLimit = 1024 * 1024 // 1 MB
+	serverReceiveLimit = 200 * 1024  // 200 KB
 )
 
 //nolint:gochecknoglobals
@@ -177,10 +187,7 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		testCase.Request.Compression = cfgCase.Compression
 		// We always set this. If client-under-test does not support it, we just
 		// won't run the test cases that verify that it's enforced.
-		// Note that we always use a larger limit on the client so that when
-		// we test the server limit, even when close to the server's limit, the
-		// response (which echoes back the request data) won't exceed client limit.
-		testCase.Request.MessageReceiveLimit = 1024 * 1024 // 1 MB
+		testCase.Request.MessageReceiveLimit = clientReceiveLimit
 		lib.testCases[name] = testCase
 	}
 	return nil
@@ -227,8 +234,11 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev2.
 			return nil, ensureFileName(err, testFilePath)
 		}
 		for _, testCase := range suite.TestCases {
-			err := populateExpectedResponse(testCase)
-			if err != nil {
+			if err := expandRequestData(testCase); err != nil {
+				return nil, fmt.Errorf("%s: failed to expand request sizes as directed for test case %q: %w",
+					testFilePath, testCase.Request.TestName, err)
+			}
+			if err := populateExpectedResponse(testCase); err != nil {
 				return nil, fmt.Errorf("%s: failed to compute expected response for test case %q: %w",
 					testFilePath, testCase.Request.TestName, err)
 			}
@@ -236,6 +246,76 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev2.
 		allSuites[testFilePath] = suite
 	}
 	return allSuites, nil
+}
+
+// expandRequestData expands the request_data field of RPC requests in the
+// given test case, per directives in the expand_requests test case field.
+func expandRequestData(testCase *conformancev2.TestCase) error {
+	if len(testCase.ExpandRequests) == 0 {
+		return nil // nothing to do...
+	}
+
+	if len(testCase.ExpandRequests) > len(testCase.Request.RequestMessages) {
+		return fmt.Errorf("expand directives indicate %d messages, but there are only %d requests",
+			len(testCase.ExpandRequests), len(testCase.Request.RequestMessages))
+	}
+
+	for i, expandSz := range testCase.ExpandRequests {
+		if expandSz.SizeRelativeToLimit == nil {
+			// Absent size means do not expand this one.
+			continue
+		}
+		totalSize := serverReceiveLimit + int64(expandSz.GetSizeRelativeToLimit())
+		if totalSize < 0 || totalSize > math.MaxUint32 {
+			return fmt.Errorf("expand directive #%d (%d) results in an invalid request size: %d",
+				i+1, expandSz.GetSizeRelativeToLimit(), totalSize)
+		}
+		concreteReq, err := testCase.Request.RequestMessages[i].UnmarshalNew()
+		if err != nil {
+			return fmt.Errorf("request message #%d: %w", i+1, err)
+		}
+		reflectReq := concreteReq.ProtoReflect()
+		field := reflectReq.Descriptor().Fields().ByName("request_data")
+		if field == nil {
+			return fmt.Errorf("request message #%d: message type %s has no request_data field for padding",
+				i+1, reflectReq.Descriptor().FullName())
+		}
+		if field.Cardinality() != protoreflect.Optional || field.Kind() != protoreflect.BytesKind {
+			return fmt.Errorf("request message #%d: message type %s has invalid request_data field",
+				i+1, reflectReq.Descriptor().FullName())
+		}
+
+		var adjustCount int
+		for {
+			size := proto.Size(concreteReq)
+			delta := totalSize - int64(size)
+			if delta == 0 {
+				// it's the right size
+				break
+			}
+			if adjustCount >= 2 {
+				// Oof. If we have to adjust it more than 2x, then we're at a weird boundary
+				// condition that can't easily be expanded to the exact size. This is highly
+				// unlikely, but can happen if adding the one byte of padding causes the data
+				// length to suddenly require one more byte to encode as a varint. In that
+				// case, adding one byte of data adds two bytes to the size. So if we were
+				// only one byte away from the desired size, the padded size pushes us one
+				// byte over.
+				return fmt.Errorf("request message #%d: can't pad to exactly %d bytes; closest we can get is %d",
+					i+1, totalSize, size)
+			}
+			// TODO: Do we care if the padding is highly compressible? We'll assume not
+			//       and use zero values for now.
+			padding := make([]byte, delta)
+			reflectReq.Set(field, protoreflect.ValueOfBytes(append(reflectReq.Get(field).Bytes(), padding...)))
+			adjustCount++
+		}
+
+		if err := testCase.Request.RequestMessages[i].MarshalFrom(concreteReq); err != nil {
+			return fmt.Errorf("request message #%d: %w", i+1, err)
+		}
+	}
+	return nil
 }
 
 // populateExpectedResponse populates the response we expected to get back from the server
