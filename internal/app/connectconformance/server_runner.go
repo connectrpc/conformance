@@ -19,6 +19,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -29,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
+// populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
 	// First, find the response definition that the client instructed the server to return
@@ -100,6 +102,7 @@ func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 	return nil
 }
 
+// populates the expected response for a streaming test case.
 func populateExpectedStreamResponse(testCase *conformancev2.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
 	// First, find the response definition that the client instructed the
@@ -270,11 +273,20 @@ func runTestCasesForServer(
 		}()
 	}
 
+	if !meta.useTLSClientCerts {
+		// don't send client cert info if these tests don't use them
+		clientCreds = nil
+	}
+
 	// Write server request.
 	err = internal.WriteDelimitedMessage(serverProcess.stdin, &conformancev2.ServerCompatRequest{
-		Protocol:    meta.protocol,
-		HttpVersion: meta.httpVersion,
-		UseTls:      meta.useTLS,
+		Protocol:      meta.protocol,
+		HttpVersion:   meta.httpVersion,
+		UseTls:        meta.useTLS,
+		ClientTlsCert: clientCreds.GetCert(),
+		// We always set this. If server-under-test does not support it, we just
+		// won't run the test cases that verify that it's enforced.
+		MessageReceiveLimit: 200 * 1024, // 200 KB
 	})
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error writing server request: %w", err))
@@ -308,15 +320,28 @@ func runTestCasesForServer(
 		req.Host = resp.Host
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
+		req.ClientTlsCreds = clientCreds
 		if isReferenceServer {
+			httpMethod := http.MethodPost
+			if req.UseGetHttpMethod {
+				httpMethod = http.MethodGet
+			}
 			req.RequestHeaders = append(
 				req.RequestHeaders,
 				&conformancev2.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
 				&conformancev2.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
+				&conformancev2.Header{Name: "x-expect-http-method", Value: []string{httpMethod}},
 				&conformancev2.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
 				&conformancev2.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
 				&conformancev2.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
+				&conformancev2.Header{Name: "x-expect-tls", Value: []string{strconv.FormatBool(len(resp.PemCert) > 0)}},
 			)
+			if clientCreds != nil {
+				req.RequestHeaders = append(
+					req.RequestHeaders,
+					&conformancev2.Header{Name: "x-expect-client-cert", Value: []string{internal.ClientCertName}},
+				)
+			}
 		}
 
 		wg.Add(1)

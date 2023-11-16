@@ -525,7 +525,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 		},
 		{
-			testName: "half duplex bidi stream stream no definition set",
+			testName: "half duplex bidi stream no definition set",
 			request: &conformancev2.ClientCompatRequest{
 				StreamType:      conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoDefReq},
@@ -601,7 +601,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 		},
 		{
-			testName: "full duplex bidi stream stream no definition set",
+			testName: "full duplex bidi stream no definition set",
 			request: &conformancev2.ClientCompatRequest{
 				StreamType:      conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoDefReq},
@@ -616,7 +616,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		t.Run(testCase.testName, func(t *testing.T) {
 			t.Parallel()
 
-			tc := &conformancev2.TestCase{
+			tc := &conformancev2.TestCase{ //nolint:varnamelen
 				Request: testCase.request,
 			}
 			err := populateExpectedResponse(tc)
