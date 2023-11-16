@@ -39,10 +39,34 @@ func populateExpectedUnaryResponse(testCase *conformancev1alpha1.TestCase) error
 	type unaryResponseDefiner interface {
 		GetResponseDefinition() *conformancev1alpha1.UnaryResponseDefinition
 	}
-	var def *conformancev1alpha1.UnaryResponseDefinition
 
-	//nolint:forcetypeassert
-	def = concreteReq.(unaryResponseDefiner).GetResponseDefinition()
+	definer, ok := concreteReq.(unaryResponseDefiner)
+	if !ok {
+		return fmt.Errorf("%T is not a unary test case", concreteReq)
+	}
+
+	// TODO - Need to define this better in the protos and tests as to how services should
+	// behave if no responses are specified. The behavior right now differs for unary vs. streaming
+	// If no responses are specified for unary, the service will still return a response with the
+	// request information inside (but none of the response information since it wasn't provided)
+	// But streaming endpoints don't return a single response and instead return responses via sending
+	// on a stream. But if no responses are specified in the request, the streams don't send anything outbound
+	// so there's no way to relay this to a client. So right now, streaming endpoints simply expect an empty
+	// ClientResponseResult if no response definition is provided
+	def := definer.GetResponseDefinition()
+	if def == nil {
+		testCase.ExpectedResponse = &conformancev1alpha1.ClientResponseResult{
+			Payloads: []*conformancev1alpha1.ConformancePayload{
+				{
+					RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+						RequestHeaders: testCase.Request.RequestHeaders,
+						Requests:       testCase.Request.RequestMessages,
+					},
+				},
+			},
+		}
+		return nil
+	}
 
 	// Server should have echoed back all specified headers and trailers
 	expected := &conformancev1alpha1.ClientResponseResult{
@@ -87,10 +111,21 @@ func populateExpectedStreamResponse(testCase *conformancev1alpha1.TestCase) erro
 	type streamResponseDefiner interface {
 		GetResponseDefinition() *conformancev1alpha1.StreamResponseDefinition
 	}
-	var def *conformancev1alpha1.StreamResponseDefinition
 
-	//nolint:forcetypeassert
-	def = concreteReq.(streamResponseDefiner).GetResponseDefinition()
+	definer, ok := concreteReq.(streamResponseDefiner)
+	if !ok {
+		return fmt.Errorf(
+			"TestCase %s contains a request message of type %T, which is not a streaming request",
+			testCase.Request.TestName,
+			concreteReq,
+		)
+	}
+
+	def := definer.GetResponseDefinition()
+	if def == nil {
+		testCase.ExpectedResponse = &conformancev1alpha1.ClientResponseResult{}
+		return nil
+	}
 
 	// Server should have echoed back all specified headers, trailers, and errors
 	expected := &conformancev1alpha1.ClientResponseResult{

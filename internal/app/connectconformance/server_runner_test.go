@@ -32,7 +32,605 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/anypb"
 )
+
+func TestPopulateExpectedResponse(t *testing.T) {
+	t.Parallel()
+
+	requestHeaders := []*conformancev1alpha1.Header{
+		{
+			Name:  "reqHeader",
+			Value: []string{"reqHeaderVal"},
+		},
+	}
+
+	responseHeaders := []*conformancev1alpha1.Header{
+		{
+			Name:  "fooHeader",
+			Value: []string{"fooHeaderVal"},
+		},
+		{
+			Name:  "barHeader",
+			Value: []string{"barHeaderVal1", "barHeaderVal2"},
+		},
+	}
+
+	responseTrailers := []*conformancev1alpha1.Header{
+		{
+			Name:  "fooTrailer",
+			Value: []string{"fooTrailerVal"},
+		},
+		{
+			Name:  "barTrailer",
+			Value: []string{"barTrailerVal1", "barTrailerVal2"},
+		},
+	}
+	data1 := []byte("data1")
+	data2 := []byte("data2")
+
+	errorDef := &conformancev1alpha1.Error{
+		Code:    int32(connect.CodeResourceExhausted),
+		Message: "all resources exhausted",
+	}
+
+	// Unary Response Definitions
+	unaryErrorResp := &conformancev1alpha1.UnaryResponseDefinition_Error{
+		Error: errorDef,
+	}
+	unarySuccessDef := &conformancev1alpha1.UnaryResponseDefinition{
+		ResponseHeaders: responseHeaders,
+		Response: &conformancev1alpha1.UnaryResponseDefinition_ResponseData{
+			ResponseData: data1,
+		},
+		ResponseTrailers: responseTrailers,
+	}
+	unaryErrorDef := &conformancev1alpha1.UnaryResponseDefinition{
+		ResponseHeaders:  responseHeaders,
+		Response:         unaryErrorResp,
+		ResponseTrailers: responseTrailers,
+	}
+	unaryNoResponseDef := &conformancev1alpha1.UnaryResponseDefinition{
+		ResponseHeaders:  responseHeaders,
+		ResponseTrailers: responseTrailers,
+	}
+	// Stream Response Definitions
+	streamSuccessDef := &conformancev1alpha1.StreamResponseDefinition{
+		ResponseHeaders:  responseHeaders,
+		ResponseData:     [][]byte{data1, data2},
+		ResponseDelayMs:  1000,
+		ResponseTrailers: responseTrailers,
+	}
+	streamErrorDef := &conformancev1alpha1.StreamResponseDefinition{
+		ResponseHeaders:  responseHeaders,
+		ResponseData:     [][]byte{data1, data2},
+		ResponseDelayMs:  1000,
+		Error:            errorDef,
+		ResponseTrailers: responseTrailers,
+	}
+	streamNoResponseDef := &conformancev1alpha1.StreamResponseDefinition{
+		ResponseHeaders:  responseHeaders,
+		ResponseDelayMs:  1000,
+		ResponseTrailers: responseTrailers,
+	}
+
+	// Requests
+
+	// Unary Requests
+	unarySuccessReq, err := anypb.New(&conformancev1alpha1.UnaryRequest{
+		ResponseDefinition: unarySuccessDef,
+	})
+	require.NoError(t, err)
+
+	unaryErrorReq, err := anypb.New(&conformancev1alpha1.UnaryRequest{
+		ResponseDefinition: unaryErrorDef,
+	})
+	require.NoError(t, err)
+
+	unaryNoResponseReq, err := anypb.New(&conformancev1alpha1.UnaryRequest{
+		ResponseDefinition: unaryNoResponseDef,
+	})
+	require.NoError(t, err)
+
+	unaryNoDefReq, err := anypb.New(&conformancev1alpha1.UnaryRequest{})
+	require.NoError(t, err)
+
+	// Client Stream Requests
+	clientStreamSuccessReq, err := anypb.New(&conformancev1alpha1.ClientStreamRequest{
+		ResponseDefinition: unarySuccessDef,
+		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	clientStreamErrorReq, err := anypb.New(&conformancev1alpha1.ClientStreamRequest{
+		ResponseDefinition: unaryErrorDef,
+		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	clientStreamNoResponseReq, err := anypb.New(&conformancev1alpha1.ClientStreamRequest{
+		ResponseDefinition: unaryNoResponseDef,
+		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	clientStreamNoDefReq, err := anypb.New(&conformancev1alpha1.ClientStreamRequest{
+		RequestData: data1,
+	})
+	require.NoError(t, err)
+
+	clientStreamReq2, err := anypb.New(&conformancev1alpha1.ClientStreamRequest{
+		RequestData: data1,
+	})
+	require.NoError(t, err)
+
+	// Server Stream Requests
+	serverStreamSuccessReq, err := anypb.New(&conformancev1alpha1.ServerStreamRequest{
+		ResponseDefinition: streamSuccessDef,
+	})
+	require.NoError(t, err)
+
+	serverStreamErrorReq, err := anypb.New(&conformancev1alpha1.ServerStreamRequest{
+		ResponseDefinition: streamErrorDef,
+	})
+	require.NoError(t, err)
+
+	serverStreamNoResponseReq, err := anypb.New(&conformancev1alpha1.ServerStreamRequest{
+		ResponseDefinition: streamNoResponseDef,
+	})
+	require.NoError(t, err)
+
+	serverStreamNoDefReq, err := anypb.New(&conformancev1alpha1.ServerStreamRequest{})
+	require.NoError(t, err)
+
+	// Bidi Stream Requests
+	bidiStreamHalfDuplexSuccessReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		ResponseDefinition: streamSuccessDef,
+		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	bidiStreamReq2, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		RequestData: data2,
+	})
+	require.NoError(t, err)
+
+	bidiStreamHalfDuplexErrorReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		ResponseDefinition: streamErrorDef,
+		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	bidiStreamHalfDuplexNoResponseReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		ResponseDefinition: streamNoResponseDef,
+		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	bidiStreamHalfDuplexNoDefReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		RequestData: data1,
+	})
+	require.NoError(t, err)
+
+	bidiStreamFullDuplexSuccessReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		ResponseDefinition: streamSuccessDef,
+		RequestData:        data1,
+		FullDuplex:         true,
+	})
+	require.NoError(t, err)
+
+	bidiStreamFullDuplexErrorReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		ResponseDefinition: streamErrorDef,
+		RequestData:        data1,
+		FullDuplex:         true,
+	})
+	require.NoError(t, err)
+
+	bidiStreamFullDuplexNoResponseReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		ResponseDefinition: streamNoResponseDef,
+		RequestData:        data1,
+		FullDuplex:         true,
+	})
+	require.NoError(t, err)
+
+	bidiStreamFullDuplexNoDefReq, err := anypb.New(&conformancev1alpha1.BidiStreamRequest{
+		RequestData: data1,
+		FullDuplex:  true,
+	})
+	require.NoError(t, err)
+
+	testCases := []struct {
+		testName   string
+		request    *conformancev1alpha1.ClientCompatRequest
+		expected   *conformancev1alpha1.ClientResponseResult
+		requireErr bool
+	}{
+		{
+			testName: "unary success",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: []*anypb.Any{unarySuccessReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unarySuccessReq},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "unary error",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: []*anypb.Any{unaryErrorReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				// TODO - Payloads will be in error detail for unary response errors
+				// Payloads: []*conformancev1alpha1.ConformancePayload{{}}
+				Error:            unaryErrorResp.Error,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "unary no response set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: []*anypb.Any{unaryNoResponseReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unaryNoResponseReq},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "unary no definition set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: []*anypb.Any{unaryNoDefReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unaryNoDefReq},
+						},
+					},
+				},
+			},
+		},
+		{
+			testName: "client stream success",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				RequestMessages: []*anypb.Any{clientStreamSuccessReq, clientStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{clientStreamSuccessReq, clientStreamReq2},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "client stream error",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				RequestMessages: []*anypb.Any{clientStreamErrorReq, clientStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				// TODO - Payloads will be in error detail for unary response errors
+				// Payloads: []*conformancev1alpha1.ConformancePayload{{}}
+				Error:            unaryErrorResp.Error,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "client stream no response set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				RequestMessages: []*anypb.Any{clientStreamNoResponseReq, clientStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{clientStreamNoResponseReq, clientStreamReq2},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "client stream no definition set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				RequestMessages: []*anypb.Any{clientStreamNoDefReq, clientStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{clientStreamNoDefReq, clientStreamReq2},
+						},
+					},
+				},
+			},
+		},
+		{
+			testName: "server stream success",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: []*anypb.Any{serverStreamSuccessReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{serverStreamSuccessReq},
+						},
+					},
+					{
+						Data: data2,
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "server stream error",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: []*anypb.Any{serverStreamErrorReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{serverStreamErrorReq},
+						},
+					},
+					{
+						Data: data2,
+					},
+				},
+				Error:            errorDef,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "server stream no response set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: []*anypb.Any{serverStreamNoResponseReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders:  responseHeaders,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "server stream no definition set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: []*anypb.Any{serverStreamNoDefReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{},
+		},
+		{
+			testName: "half duplex bidi stream success",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexSuccessReq, bidiStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{bidiStreamHalfDuplexSuccessReq, bidiStreamReq2},
+						},
+					},
+					{
+						Data: data2,
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "half duplex bidi stream error",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexErrorReq, bidiStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{bidiStreamHalfDuplexErrorReq, bidiStreamReq2},
+						},
+					},
+					{
+						Data: data2,
+					},
+				},
+				Error:            errorDef,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "half duplex bidi stream no response set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoResponseReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders:  responseHeaders,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "half duplex bidi stream stream no definition set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoDefReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{},
+		},
+		{
+			testName: "full duplex bidi stream success",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamFullDuplexSuccessReq, bidiStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{bidiStreamFullDuplexSuccessReq},
+						},
+					},
+					{
+						Data: data2,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							Requests: []*anypb.Any{bidiStreamReq2},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "full duplex bidi stream error",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamFullDuplexErrorReq, bidiStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1alpha1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{bidiStreamFullDuplexErrorReq},
+						},
+					},
+					{
+						Data: data2,
+						RequestInfo: &conformancev1alpha1.ConformancePayload_RequestInfo{
+							Requests: []*anypb.Any{bidiStreamReq2},
+						},
+					},
+				},
+				Error:            errorDef,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "full duplex bidi stream no response set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoResponseReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{
+				ResponseHeaders:  responseHeaders,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "full duplex bidi stream stream no definition set",
+			request: &conformancev1alpha1.ClientCompatRequest{
+				StreamType:      conformancev1alpha1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoDefReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1alpha1.ClientResponseResult{},
+		},
+	}
+
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.testName, func(t *testing.T) {
+			t.Parallel()
+
+			tc := &conformancev1alpha1.TestCase{
+				Request: testCase.request,
+			}
+			err := populateExpectedResponse(tc)
+			require.NoError(t, err)
+			if testCase.requireErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+
+				assert.Empty(t, cmp.Diff(testCase.expected, tc.ExpectedResponse, protocmp.Transform()))
+			}
+		})
+	}
+}
 
 func TestRunTestCasesForServer(t *testing.T) {
 	t.Parallel()
