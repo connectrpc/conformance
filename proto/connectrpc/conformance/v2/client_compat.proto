@@ -19,6 +19,7 @@ package connectrpc.conformance.v2;
 import "connectrpc/conformance/v2/config.proto";
 import "connectrpc/conformance/v2/service.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/struct.proto";
 
 // Describes one call the client should make. The client reads
@@ -73,6 +74,40 @@ message ClientCompatRequest {
   // For client- or bidi-streaming requests, this delay should be
   // applied before each request sent.
   uint32 request_delay_ms = 18;
+  // If present, the client should cancel the RPC instead of
+  // allowing to complete normally.
+  Cancel cancel = 19;
+  message Cancel {
+    // These fields determine the timing of cancellation.
+    // If none are present, the client should cancel immediately
+    // after all request messages are sent and the send side is
+    // closed (as if the after_close_send_ms field were present
+    // and zero).
+    oneof cancel_timing {
+      // When present, the client should cancel *instead of*
+      // closing the send side of the stream, after all requests
+      // have been sent. This applies only to client and bidi
+      // stream RPCs.
+      google.protobuf.Empty before_close_send = 1;
+      // When present, the client should delay for this many
+      // milliseconds after closing the send side of the stream
+      // and then cancel.
+      uint32 after_close_send_ms = 2;
+      // When present, the client should cancel right after
+      // reading this number of response messages from the stream.
+      // This applies only to server and bidi stream RPCs.
+      uint32 after_num_responses = 3;
+    }
+  }
+
+  // The following field is only used by the reference client. If
+  // you are implementing a client under test, you may ignore it
+  // or respond with an error if the client receives a request where
+  // it is set.
+  //
+  // The raw request may be specified instead of the above group
+  // of fields for defining the request to send.
+  RawHTTPRequest raw_request = 20;
 }
 
 // The outcome of one ClientCompatRequest.
@@ -90,7 +125,7 @@ message ClientCompatResponse {
   repeated string feedback = 4;
 }
 
-// The result of a ClientCompatRequest, which may or may bot be successful.
+// The result of a ClientCompatRequest, which may or may not be successful.
 message ClientResponseResult {
   repeated Header response_headers = 1;
   repeated ConformancePayload payloads = 2;
@@ -98,15 +133,25 @@ message ClientResponseResult {
   // of a runtime error and should always be the proto equivalent of a Connect error.
   Error error = 3;
   repeated Header response_trailers = 4;
+
+  // The number of messages that were present in the request but that could not be
+  // sent because an error occurred before finishing the upload.
+  int32 num_unsent_requests = 5;
+
+  // The following fields are only used by the reference client. If
+  // you are implementing a client under test, you may ignore these
+  // fields and do not need to populate them. If your client does
+  // populate them, the conformance test runner will ignore them.
+
+  // The HTTP status code of the response.
+  int32 actual_status_code = 6;
   // When processing an error from a Connect server, this should contain
-  // the actual JSON received on the wire. Clients under test do not need
-  // to populate this field. It is primarily used by the reference client,
-  // so that a server-under-test's on-the-wire error can be examined and
-  // validated.
-  google.protobuf.Struct connect_error_raw = 5;
-  // TODO - We should probably add a field to indicate the number of messages that were
-  // in the test case request definition but that couldn't be sent, due to an error
-  // occurring before finishing the upload.
+  // the actual JSON received on the wire.
+  google.protobuf.Struct connect_error_raw = 7;
+  // Any HTTP trailers observed after the response body. These do NOT
+  // include trailers that conveyed via the body, as done in the gRPC-Web
+  // and Connect streaming protocols.
+  repeated Header actual_http_trailers = 8;
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due
