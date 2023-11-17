@@ -19,6 +19,7 @@ import (
 
 	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -47,7 +48,7 @@ func ConvertErrorToProtoError(err error) *v2.Error {
 	if !errors.As(err, &connectErr) {
 		return &v2.Error{
 			Code:    int32(connect.CodeUnknown),
-			Message: err.Error(),
+			Message: proto.String(err.Error()),
 		}
 	}
 	return ConvertConnectToProtoError(connectErr)
@@ -62,7 +63,7 @@ func ConvertConnectToProtoError(err *connect.Error) *v2.Error {
 	}
 	protoErr := &v2.Error{
 		Code:    int32(err.Code()),
-		Message: err.Message(),
+		Message: proto.String(err.Message()),
 	}
 	details := make([]*anypb.Any, 0, len(err.Details()))
 	for _, detail := range err.Details() {
@@ -86,7 +87,7 @@ func ConvertProtoToConnectError(err *v2.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}
-	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.Message))
+	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.GetMessage()))
 	for _, detail := range err.Details {
 		connectDetail, err := connect.NewErrorDetail(detail)
 		if err != nil {

@@ -84,7 +84,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				TestName: "TestSuite2/testcase1",
 			},
 			ExpectedResponse: &conformancev2.ClientResponseResult{
-				Error: &conformancev2.Error{Code: int32(connect.CodeAborted), Message: "ruh roh"},
+				Error: &conformancev2.Error{Code: int32(connect.CodeAborted), Message: proto.String("ruh roh")},
 			},
 		},
 		{

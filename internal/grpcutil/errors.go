@@ -18,6 +18,7 @@ import (
 	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 // ConvertProtoToGrpcError converts a proto Error into a gRPC error.
@@ -27,7 +28,7 @@ func ConvertProtoToGrpcError(err *v2.Error) error {
 	}
 	return status.ErrorProto(&statuspb.Status{
 		Code:    err.Code,
-		Message: err.Message,
+		Message: err.GetMessage(),
 		Details: err.Details,
 	})
 }
@@ -43,7 +44,7 @@ func ConvertGrpcToProtoError(err error) *v2.Error {
 	statProto := stat.Proto()
 	return &v2.Error{
 		Code:    int32(stat.Code()),
-		Message: stat.Message(),
+		Message: proto.String(stat.Message()),
 		Details: statProto.Details,
 	}
 }
