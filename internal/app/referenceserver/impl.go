@@ -280,6 +280,18 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v2.UnaryResponseDefinition_Error:
+			requestInfo := createRequestInfo(ctx, hdrs, reqs)
+			// details:
+			//   - "@type": "connectrpc.conformance.v2.Header"
+			//     name: "test error detail name"
+			//     value:
+			//       - "test error detail value"
+			reqInfoAny, err := anypb.New(requestInfo)
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, err)
+			}
+			respType.Error.Details = []*anypb.Any{reqInfoAny}
+
 			return nil, internal.ConvertProtoToConnectError(respType.Error)
 
 		case *v2.UnaryResponseDefinition_ResponseData, nil:
