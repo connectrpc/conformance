@@ -5,7 +5,7 @@
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
   "port": 23456,
-  "service": "connectrpc.conformance.v2.ConformanceService",
+  "service": "connectrpc.conformance.v1.ConformanceService",
   "method": "ClientStream",
   "streamType": "STREAM_TYPE_CLIENT_STREAM",
   "requestHeaders": [
@@ -19,14 +19,14 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
       "responseDefinition": {
         "error": {
           "code": 13,
           "message": "client stream failed",
           "details": [
             {
-              "@type": "type.googleapis.com/connectrpc.conformance.v2.Header",
+              "@type": "type.googleapis.com/connectrpc.conformance.v1.Header",
               "name": "test error detail name",
               "value": ["test error detail value"]
             }
@@ -54,7 +54,7 @@
       }
     },
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
       "requestData": "dGVzdCByZXNwb25zZQ=="
     }
   ]

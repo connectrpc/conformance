@@ -24,7 +24,8 @@ import (
 	"strings"
 	"sync"
 
-	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -74,7 +75,7 @@ func (r *testResults) setOutcomeLocked(testCase string, setupError bool, err err
 // failedToStart marks all the given test cases with the given setup error.
 // This convenience method is to mark many tests in a batch when the relevant
 // server process could not be started.
-func (r *testResults) failedToStart(testCases []*conformancev2.TestCase, err error) {
+func (r *testResults) failedToStart(testCases []*conformancev1.TestCase, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, testCase := range testCases {
@@ -85,7 +86,7 @@ func (r *testResults) failedToStart(testCases []*conformancev2.TestCase, err err
 // failRemaining marks any of the given test cases that do not yet have an outcome
 // as failing with the given error. This is typically called when the server or client
 // process fails, so we can mark any pending test.
-func (r *testResults) failRemaining(testCases []*conformancev2.TestCase, err error) {
+func (r *testResults) failRemaining(testCases []*conformancev1.TestCase, err error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	for _, testCase := range testCases {
@@ -99,13 +100,13 @@ func (r *testResults) failRemaining(testCases []*conformancev2.TestCase, err err
 
 // failed marks the given test case as having failed with the given error
 // message received from the client.
-func (r *testResults) failed(testCase string, err *conformancev2.ClientErrorResult) {
+func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResult) {
 	r.setOutcome(testCase, false, errors.New(err.Message))
 }
 
 // assert will examine the actual and expected RPC result and mark the test
 // case as successful or failed accordingly.
-func (r *testResults) assert(testCase string, expected, actual *conformancev2.ClientResponseResult) {
+func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
 	var errs multiErrors
 
 	if len(expected.Payloads) == 0 && expected.Error != nil {
@@ -135,10 +136,7 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev2.Cl
 	}
 
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
-
-	if diff := cmp.Diff(expected.Error, actual.Error, protocmp.Transform()); diff != "" {
-		errs = append(errs, fmt.Errorf("actual error does not match expected error: - wanted, + got\n%s", diff))
-	}
+	errs = append(errs, checkError(expected.Error, actual.Error)...)
 
 	// If client didn't provide actual raw error, we skip this check.
 	if expected.ConnectErrorRaw != nil && actual.ConnectErrorRaw != nil {
@@ -271,7 +269,7 @@ func (e multiErrors) Result() error {
 	}
 }
 
-func mergeHeaders(a, b []*conformancev2.Header) []*conformancev2.Header {
+func mergeHeaders(a, b []*conformancev1.Header) []*conformancev1.Header {
 	mergedMap := map[string][]string{}
 	for _, hdr := range a {
 		mergedMap[strings.ToLower(hdr.Name)] = hdr.Value
@@ -279,14 +277,14 @@ func mergeHeaders(a, b []*conformancev2.Header) []*conformancev2.Header {
 	for _, hdr := range b {
 		mergedMap[strings.ToLower(hdr.Name)] = append(mergedMap[strings.ToLower(hdr.Name)], hdr.Value...)
 	}
-	results := make([]*conformancev2.Header, 0, len(mergedMap))
+	results := make([]*conformancev1.Header, 0, len(mergedMap))
 	for k, v := range mergedMap {
-		results = append(results, &conformancev2.Header{Name: k, Value: v})
+		results = append(results, &conformancev1.Header{Name: k, Value: v})
 	}
 	return results
 }
 
-func checkHeaders(what string, expected, actual []*conformancev2.Header) multiErrors {
+func checkHeaders(what string, expected, actual []*conformancev1.Header) multiErrors {
 	var errs multiErrors
 	actualHeaders := map[string][]string{}
 	for _, hdr := range actual {
@@ -319,7 +317,7 @@ func headerValsToString(vals []string) string {
 	return buf.String()
 }
 
-func checkPayloads(expected, actual []*conformancev2.ConformancePayload) multiErrors {
+func checkPayloads(expected, actual []*conformancev1.ConformancePayload) multiErrors {
 	var errs multiErrors
 	if len(actual) != len(expected) {
 		errs = append(errs, fmt.Errorf("expecting %d response messages but instead got %d", len(expected), len(actual)))
@@ -380,5 +378,49 @@ func checkPayloads(expected, actual []*conformancev2.ConformancePayload) multiEr
 		}
 	}
 
+	return errs
+}
+
+func checkError(expected, actual *conformancev1.Error) multiErrors {
+	switch {
+	case expected == nil && actual == nil:
+		// nothing to do
+		return nil
+	case expected == nil && actual != nil:
+		return multiErrors{fmt.Errorf("received an unexpected error:\n%v", actual.String())}
+	case expected != nil && actual == nil:
+		return multiErrors{errors.New("expecting an error but received none")}
+	}
+
+	var errs multiErrors
+	if expected.Code != actual.Code {
+		errs = append(errs, fmt.Errorf("actual error code %d (%s) does not match expected code %d (%s)",
+			actual.Code, connect.Code(actual.Code).String(), expected.Code, connect.Code(expected.Code).String()))
+	}
+	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() {
+		errs = append(errs, fmt.Errorf("actual error message %q does not match expected message %q",
+			actual.GetMessage(), expected.GetMessage()))
+	}
+	if len(expected.Details) != len(actual.Details) {
+		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
+		//       error details transparently (such that the expected details would be a *subset* of
+		//       the actual details)?
+		errs = append(errs, fmt.Errorf("actual error contain %d details; expecing %d",
+			len(actual.Details), len(expected.Details)))
+	}
+	// Check as many as we can
+	length := len(expected.Details)
+	if len(actual.Details) < length {
+		length = len(actual.Details)
+	}
+	for i := 0; i < length; i++ {
+		// TODO: Should this be more lenient? Are we okay with details getting re-ordered?
+		//       An alternative might be to create a map keyed by type, and for each type
+		//       remove expected messages as they are matched against actual ones.
+		if diff := cmp.Diff(expected.Details[i], actual.Details[i], protocmp.Transform()); diff != "" {
+			errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",
+				i+1, diff))
+		}
+	}
 	return errs
 }

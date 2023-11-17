@@ -17,8 +17,9 @@ package internal
 import (
 	"errors"
 
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -39,15 +40,15 @@ func ConvertErrorToConnectError(err error) *connect.Error {
 // ConvertErrorToProtoError converts the given error to a proto Error
 // If err is nil, function will also return nil. If err is not
 // of type connect.Error, a code representing Unknown is returned.
-func ConvertErrorToProtoError(err error) *v2.Error {
+func ConvertErrorToProtoError(err error) *v1.Error {
 	if err == nil {
 		return nil
 	}
 	connectErr := new(connect.Error)
 	if !errors.As(err, &connectErr) {
-		return &v2.Error{
+		return &v1.Error{
 			Code:    int32(connect.CodeUnknown),
-			Message: err.Error(),
+			Message: proto.String(err.Error()),
 		}
 	}
 	return ConvertConnectToProtoError(connectErr)
@@ -56,13 +57,13 @@ func ConvertErrorToProtoError(err error) *v2.Error {
 // ConvertConnectToProtoError converts the given Connect error to a
 // proto Error message. If err is nil, the function will also
 // return nil.
-func ConvertConnectToProtoError(err *connect.Error) *v2.Error {
+func ConvertConnectToProtoError(err *connect.Error) *v1.Error {
 	if err == nil {
 		return nil
 	}
-	protoErr := &v2.Error{
+	protoErr := &v1.Error{
 		Code:    int32(err.Code()),
-		Message: err.Message(),
+		Message: proto.String(err.Message()),
 	}
 	details := make([]*anypb.Any, 0, len(err.Details()))
 	for _, detail := range err.Details() {
@@ -82,11 +83,11 @@ func ConvertConnectToProtoError(err *connect.Error) *v2.Error {
 }
 
 // ConvertProtoToConnectError creates a Connect error from the given proto Error message.
-func ConvertProtoToConnectError(err *v2.Error) *connect.Error {
+func ConvertProtoToConnectError(err *v1.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}
-	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.Message))
+	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.GetMessage()))
 	for _, detail := range err.Details {
 		connectDetail, err := connect.NewErrorDetail(detail)
 		if err != nil {

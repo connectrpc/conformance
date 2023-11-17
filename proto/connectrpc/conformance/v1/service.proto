@@ -14,8 +14,9 @@
 
 syntax = "proto3";
 
-package connectrpc.conformance.v2;
+package connectrpc.conformance.v1;
 
+import "connectrpc/conformance/v1/config.proto";
 import "google/protobuf/any.proto";
 
 // The service implemented by conformance test servers. This is implemented by
@@ -106,7 +107,7 @@ message UnaryResponseDefinition {
   repeated Header response_headers = 1;
 
   oneof response {
-    // Response message to send
+    // Response data to send
     bytes response_data = 2;
     // Error to raise instead of response message
     Error error = 3;
@@ -114,6 +115,13 @@ message UnaryResponseDefinition {
 
   // Response trailers to send - together with the error if present
   repeated Header response_trailers = 4;
+
+  // This field is only used by the reference server. If you are implementing a
+  // server under test, you can ignore this field or respond with an error if the
+  // server receives a request where it is set.
+  //
+  // For test definitions, this field should be used instead of the above fields.
+  RawHTTPResponse raw_response = 5;
 }
 
 // A definition of responses to be sent from a streaming endpoint.
@@ -122,7 +130,7 @@ message StreamResponseDefinition {
   // Response headers to send
   repeated Header response_headers = 1;
 
-  // Response messages to send
+  // Response data to send
   repeated bytes response_data = 2;
 
   // Wait this many milliseconds before sending each response message
@@ -133,11 +141,21 @@ message StreamResponseDefinition {
 
   // Response trailers to send - together with the error if present
   repeated Header response_trailers = 5;
+
+  // This field is only used by the reference server. If you are implementing a
+  // server under test, you can ignore this field or respond with an error if the
+  // server receives a request where it is set.
+  //
+  // For test definitions, this field should be used instead of the above fields.
+  RawHTTPResponse raw_response = 6;
 }
 
 message UnaryRequest {
   // The response definition which should be returned in the conformance payload
   UnaryResponseDefinition response_definition = 1;
+
+  // Additional data. Only used to pad the request size to test large request messages.
+  bytes request_data = 2;
 }
 
 message UnaryResponse {
@@ -148,6 +166,9 @@ message UnaryResponse {
 message ServerStreamRequest {
   // The response definition which should be returned in the conformance payload.
   StreamResponseDefinition response_definition = 1;
+
+  // Additional data. Only used to pad the request size to test large request messages.
+  bytes request_data = 2;
 }
 
 message ServerStreamResponse {
@@ -161,7 +182,8 @@ message ClientStreamRequest {
   // should be ignored in subsequent messages.
   UnaryResponseDefinition response_definition = 1;
 
-  // Additional data for subsequent messages in the stream.
+  // Additional data for subsequent messages in the stream. Also
+  // used to pad the request size to test large request messages.
   bytes request_data = 2;
 }
 
@@ -174,19 +196,24 @@ message BidiStreamRequest {
   // Tells the server how to reply; required in the first message
   // in the stream. Should be ignored in subsequent messages.
   StreamResponseDefinition response_definition = 1;
+
   // Tells the server whether it should wait for each request
   // before sending a response.
+  //
   // If true, it indicates the server should effectively interleave the
   // stream so messages are sent in request->response pairs.
+  //
   // If false, then the response stream will be sent once all request messages
   // are finished sending with the only delays between messages
   // being the optional fixed milliseconds defined in the response
   // definition.
+  //
   // This field is only relevant in the first message in the stream
   // and should be ignored in subsequent messages.
   bool full_duplex = 2;
 
-  // Additional data for subsequent messages in the stream.
+  // Additional data for subsequent messages in the stream. Also
+  // used to pad the request size to test large request messages.
   bytes request_data = 3;
 }
 
@@ -234,7 +261,11 @@ message ConformancePayload {
 // An error definition used for specifying a desired error response
 message Error {
   int32 code = 1;
-  string message = 2;
+  // If this value is absent in a test case response definition, the contents of the
+  // actual error message will not be checked. This is useful for certain kinds of
+  // error conditions where the exact message to be used is not specified, only the
+  // code.
+  optional string message = 2;
   repeated google.protobuf.Any details = 3;
 }
 
@@ -242,4 +273,79 @@ message Error {
 message Header {
   string name = 1;
   repeated string value = 2;
+}
+
+// RawHTTPRequest models a raw HTTP request. This can be used to craft
+// custom requests with odd properties (including certain kinds of
+// malformed requests) to test edge cases in servers.
+message RawHTTPRequest {
+  string verb = 1;
+  string uri = 2;
+  repeated Header headers = 3;
+
+  // These query params will be encoded and added to the uri before
+  // the request is sent.
+  repeated Header raw_query_params = 4;
+  repeated EncodedQueryParam encoded_query_params = 5;
+  // This provides an easier way to define a complex binary query param
+  // than having to write literal base64-encoded bytes in raw_query_params.
+  message EncodedQueryParam {
+    string name = 1;
+    MessageContents value = 2;
+    // If true, the message contents will be base64-encoded and the
+    // resulting string used as the query parameter value.
+    bool base64_encode = 3;
+  }
+
+  oneof body {
+    // The body is a single message.
+    MessageContents unary = 6;
+    // The body is a stream, encoded using a five-byte
+    // prefix before each item in the stream.
+    StreamContents stream = 7;
+  }
+}
+
+// MessageContents represents a message in a request body.
+message MessageContents {
+  // The message data can be defined in one of three ways.
+  oneof data {
+    // Arbitrary bytes.
+    bytes binary = 1;
+    // Arbitrary text.
+    string text = 2;
+    // An actual message. The message inside the Any will be
+    // serialized to the protobuf binary formats, and the
+    // resulting bytes will be the contents.
+    google.protobuf.Any binary_message = 3;
+  }
+  // If specified and not identity, the above data will be
+  // compressed using the given algorithm.
+  Compression compression = 4;
+}
+
+// StreamContents represents a sequence of messages in a request body.
+message StreamContents {
+  repeated StreamItem items = 1;
+  message StreamItem {
+    uint32 flags = 1; // must be in the range 0 to 255.
+    optional int32 length = 2; // if absent use actual length of payload
+    MessageContents payload = 3;
+  }
+}
+
+// RawHTTPResponse models a raw HTTP response. This can be used to craft
+// custom responses with odd properties (including certain kinds of
+// malformed responses) to test edge cases in clients.
+message RawHTTPResponse {
+  uint32 status_code = 1;
+  repeated Header headers = 2;
+  oneof body {
+    // The body is a single message.
+    MessageContents unary = 3;
+    // The body is a stream, encoded using a five-byte
+    // prefix before each item in the stream.
+    StreamContents stream = 4;
+  }
+  repeated Header trailers = 5;
 }

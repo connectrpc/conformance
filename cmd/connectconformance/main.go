@@ -50,21 +50,21 @@ the given command must be either a conformance client or a conformance server.
 A conformance client tests a client implementation: the command reads test cases
 from stdin. Each test case describes an RPC to make. The command then records
 the result of each operation to stdout. The input is a sequence of binary-encoded
-Protobuf messages of type connectrpc.conformance.v2.ClientCompatRequest,
+Protobuf messages of type connectrpc.conformance.v1.ClientCompatRequest,
 each prefixed with a varint-encoded length. The output is expected to be similar:
 a sequence of varint-encoded-length-prefixed messages, but the results are of
-type connectrpc.conformance.v2.ClientCompatResponse. The command should exit
+type connectrpc.conformance.v1.ClientCompatResponse. The command should exit
 when it has read all test cases (i.e reached EOF of stdin) and then issued RPCs
 and recorded all results to stdout. The command should also exit and abort any
 in-progress RPCs if it receives a SIGTERM signal.
 
 A conformance server tests a server implementation: the command reads the required
 server properties from stdin. This comes in the form of a binary-encoded Protobuf
-message of type connectrpc.conformance.v2.ServerCompatRequest. The command
+message of type connectrpc.conformance.v1.ServerCompatRequest. The command
 should then start a server process and write its properties to stdout in the form
-of a binary-encoded connectrpc.conformance.v2.ServerCompatResponse message.
+of a binary-encoded connectrpc.conformance.v1.ServerCompatResponse message.
 The server process should provide an implementation of the test service defined
-by connectrpc.conformance.v2.ConformanceService. The command should exit
+by connectrpc.conformance.v1.ConformanceService. The command should exit
 upon receiving a SIGTERM signal. The command maybe invoked repeatedly, to start
 and test servers with different properties.
 

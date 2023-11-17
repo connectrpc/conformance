@@ -20,20 +20,20 @@ import (
 	"io"
 	"time"
 
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
 type invoker struct {
-	client v2.ConformanceServiceClient
+	client v1.ConformanceServiceClient
 }
 
 func (i *invoker) Invoke(
 	ctx context.Context,
-	req *v2.ClientCompatRequest,
-) (*v2.ClientResponseResult, error) {
+	req *v1.ClientCompatRequest,
+) (*v1.ClientResponseResult, error) {
 	switch req.Method {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
@@ -72,10 +72,10 @@ func (i *invoker) Invoke(
 
 func (i *invoker) unary(
 	ctx context.Context,
-	ccr *v2.ClientCompatRequest,
-) (*v2.ClientResponseResult, error) {
+	ccr *v1.ClientCompatRequest,
+) (*v1.ClientResponseResult, error) {
 	msg := ccr.RequestMessages[0]
-	req := &v2.UnaryRequest{}
+	req := &v1.UnaryRequest{}
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
@@ -83,8 +83,8 @@ func (i *invoker) unary(
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
-	var protoErr *v2.Error
-	payloads := make([]*v2.ConformancePayload, 0, 1)
+	var protoErr *v1.Error
+	payloads := make([]*v1.ConformancePayload, 0, 1)
 
 	var headerMD, trailerMD metadata.MD
 
@@ -105,7 +105,7 @@ func (i *invoker) unary(
 		payloads = append(payloads, resp.Payload)
 	}
 
-	return &v2.ClientResponseResult{
+	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -116,14 +116,14 @@ func (i *invoker) unary(
 
 func (i *invoker) serverStream(
 	ctx context.Context,
-	ccr *v2.ClientCompatRequest,
-) (result *v2.ClientResponseResult, retErr error) {
-	result = &v2.ClientResponseResult{
+	ccr *v1.ClientCompatRequest,
+) (result *v1.ClientResponseResult, retErr error) {
+	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
 
 	msg := ccr.RequestMessages[0]
-	req := &v2.ServerStreamRequest{}
+	req := &v1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
@@ -165,9 +165,9 @@ func (i *invoker) serverStream(
 
 func (i *invoker) clientStream(
 	ctx context.Context,
-	ccr *v2.ClientCompatRequest,
-) (*v2.ClientResponseResult, error) {
-	result := &v2.ClientResponseResult{
+	ccr *v1.ClientCompatRequest,
+) (*v1.ClientResponseResult, error) {
+	result := &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
 
@@ -180,7 +180,7 @@ func (i *invoker) clientStream(
 	}
 
 	for _, msg := range ccr.RequestMessages {
-		csr := &v2.ClientStreamRequest{}
+		csr := &v1.ClientStreamRequest{}
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
 		}
@@ -214,9 +214,9 @@ func (i *invoker) clientStream(
 
 func (i *invoker) bidiStream(
 	ctx context.Context,
-	ccr *v2.ClientCompatRequest,
-) (result *v2.ClientResponseResult, retErr error) {
-	result = &v2.ClientResponseResult{
+	ccr *v1.ClientCompatRequest,
+) (result *v1.ClientResponseResult, retErr error) {
+	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
 
@@ -228,16 +228,16 @@ func (i *invoker) bidiStream(
 		return nil, err
 	}
 
-	fullDuplex := ccr.StreamType == v2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+	fullDuplex := ccr.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
-	var protoErr *v2.Error
+	var protoErr *v1.Error
 	for _, msg := range ccr.RequestMessages {
 		if err := ctx.Err(); err != nil {
 			// If an error was returned, convert it to a proto Error
 			protoErr = grpcutil.ConvertGrpcToProtoError(err)
 			break
 		}
-		bsr := &v2.BidiStreamRequest{}
+		bsr := &v1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
 			// unmarshalling error unrelated to the RPC
@@ -331,7 +331,7 @@ func (i *invoker) bidiStream(
 
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(clientConn grpc.ClientConnInterface) *invoker {
-	client := v2.NewConformanceServiceClient(clientConn)
+	client := v1.NewConformanceServiceClient(clientConn)
 	return &invoker{
 		client: client,
 	}

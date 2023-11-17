@@ -28,8 +28,8 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
-	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v2/conformancev2connect"
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	connect "connectrpc.com/connect"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -64,7 +64,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	codec := internal.NewCodec(*json)
 
 	// Read the server config from the in reader
-	req := &v2.ServerCompatRequest{}
+	req := &v1.ServerCompatRequest{}
 	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 		return err
 	}
 
-	resp := &v2.ServerCompatResponse{
+	resp := &v1.ServerCompatResponse{
 		Host:    actualHost,
 		Port:    uint32(actualPort),
 		PemCert: certBytes,
@@ -137,7 +137,7 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *v2.ServerCompatRequest, listenAddr string, referenceMode bool, errWriter io.Writer) (httpServer, []byte, error) {
+func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode bool, errWriter io.Writer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
@@ -150,7 +150,7 @@ func createServer(req *v2.ServerCompatRequest, listenAddr string, referenceMode 
 		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
 	}
 
-	mux.Handle(conformancev2connect.NewConformanceServiceHandler(
+	mux.Handle(conformancev1connect.NewConformanceServiceHandler(
 		&conformanceServer{},
 		opts...,
 	))
@@ -200,13 +200,13 @@ func createServer(req *v2.ServerCompatRequest, listenAddr string, referenceMode 
 	var server httpServer
 	var err error
 	switch req.HttpVersion {
-	case v2.HTTPVersion_HTTP_VERSION_1:
+	case v1.HTTPVersion_HTTP_VERSION_1:
 		server, err = newH1Server(handler, listenAddr, tlsConf)
-	case v2.HTTPVersion_HTTP_VERSION_2:
+	case v1.HTTPVersion_HTTP_VERSION_2:
 		server, err = newH2Server(handler, listenAddr, tlsConf)
-	case v2.HTTPVersion_HTTP_VERSION_3:
+	case v1.HTTPVersion_HTTP_VERSION_3:
 		server, err = newH3Server(handler, listenAddr, tlsConf)
-	case v2.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
+	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		err = errors.New("an HTTP version must be specified")
 	}
 	if err != nil {
