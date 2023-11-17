@@ -306,8 +306,14 @@ func expandRequestData(testCase *conformancev2.TestCase) error {
 			}
 			// TODO: Do we care if the padding is highly compressible? We'll assume not
 			//       and use zero values for now.
-			padding := make([]byte, delta)
-			reflectReq.Set(field, protoreflect.ValueOfBytes(append(reflectReq.Get(field).Bytes(), padding...)))
+			bytesVal := reflectReq.Get(field).Bytes()
+			if delta > 0 {
+				padding := make([]byte, delta)
+				bytesVal = append(bytesVal, padding...)
+			} else {
+				bytesVal = bytesVal[:len(bytesVal)+int(delta)]
+			}
+			reflectReq.Set(field, protoreflect.ValueOfBytes(bytesVal))
 			adjustCount++
 		}
 

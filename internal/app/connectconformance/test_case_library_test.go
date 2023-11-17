@@ -24,6 +24,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -360,6 +361,235 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 	require.NoError(t, err)
 	_ = allSuites
 	// TODO: basic assertions about the embedded test suites?
+}
+
+func TestExpandRequestData(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name         string
+		testCaseJSON string
+		expectErr    string
+		expectSizes  []int
+	}{
+		{
+			name: "unary-no-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.UnaryRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[]
+			}`,
+			/* negative means size is unchanged */
+			expectSizes: []int{-1},
+		},
+		{
+			name: "unary-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.UnaryRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[{"size_relative_to_limit":123}]
+			}`,
+			expectSizes: []int{200*1024 + 123},
+		},
+		{
+			name: "server-stream-no-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[]
+			}`,
+			expectSizes: []int{-1},
+		},
+		{
+			name: "server-stream-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[{"size_relative_to_limit":123}]
+			}`,
+			expectSizes: []int{200*1024 + 123},
+		},
+		{
+			name: "client-stream-no-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[]
+			}`,
+			expectSizes: []int{-1, -1, -1},
+		},
+		{
+			name: "client-stream-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[
+					{"size_relative_to_limit":123},
+					{"size_relative_to_limit":null},
+					{"size_relative_to_limit":-123}
+				]
+			}`,
+			expectSizes: []int{200*1024 + 123, -1, 200*1024 - 123, -1},
+		},
+		{
+			name: "bidi-stream-no-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[]
+			}`,
+			expectSizes: []int{-1, -1},
+		},
+		{
+			name: "bidi-stream-expand",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"request_data": "abcdefgh"
+						},
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[
+					{"size_relative_to_limit":null},
+					{"size_relative_to_limit":null},
+					{"size_relative_to_limit":0}
+				]
+			}`,
+			expectSizes: []int{-1, -1, 200 * 1024},
+		},
+		{
+			name: "too-many-expand-directives",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[]
+				},
+				"expandRequests":[
+					{"size_relative_to_limit":null},
+					{"size_relative_to_limit":123}
+				]
+			}`,
+			expectErr: "expand directives indicate 2 messages, but there are only 0 requests",
+		},
+		{
+			name: "invalid-adjustment",
+			testCaseJSON: `{
+				"request": {
+					"requestMessages":[
+						{
+							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"request_data": "abcdefgh"
+						}
+					]
+				},
+				"expandRequests":[
+					{"size_relative_to_limit":-300000}
+				]
+			}`,
+			expectErr: "expand directive #1 (-300000) results in an invalid request size: -95200",
+		},
+	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			var testCaseProto conformancev2.TestCase
+			err := protojson.Unmarshal([]byte(testCase.testCaseJSON), &testCaseProto)
+			require.NoError(t, err)
+			reqs := testCaseProto.Request.RequestMessages
+			initialSizes := make([]int, len(reqs))
+			for i, req := range reqs {
+				initialSizes[i] = len(req.Value)
+			}
+			err = expandRequestData(&testCaseProto)
+			if testCase.expectErr != "" {
+				require.ErrorContains(t, err, testCase.expectErr)
+				return
+			}
+			require.NoError(t, err)
+			for i, req := range reqs {
+				expectedSize := testCase.expectSizes[i]
+				if expectedSize < 0 {
+					expectedSize = initialSizes[i]
+				}
+				require.Len(t, req.Value, expectedSize)
+			}
+		})
+	}
 }
 
 func TestPopulateExpectedResponse(t *testing.T) {
