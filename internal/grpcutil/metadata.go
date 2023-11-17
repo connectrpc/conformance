@@ -18,17 +18,17 @@ import (
 	"context"
 	"strings"
 
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"google.golang.org/grpc/metadata"
 )
 
 // ConvertMetadataToProtoHeader converts gRPC metadata into proto Headers.
 func ConvertMetadataToProtoHeader(
 	src metadata.MD,
-) []*v2.Header {
-	headerInfo := make([]*v2.Header, 0, len(src))
+) []*v1.Header {
+	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
-		hdr := &v2.Header{
+		hdr := &v1.Header{
 			Name:  key,
 			Value: value,
 		}
@@ -39,7 +39,7 @@ func ConvertMetadataToProtoHeader(
 
 // ConvertProtoHeaderToMetadata converts a slice of proto Headers into gRPC metadata.
 func ConvertProtoHeaderToMetadata(
-	src []*v2.Header,
+	src []*v1.Header,
 ) metadata.MD {
 	md := make(metadata.MD, len(src))
 	for _, hdr := range src {
@@ -51,7 +51,7 @@ func ConvertProtoHeaderToMetadata(
 
 // Appends the given headers to the outgoing context. Used for sending metadata
 // from the client side.
-func AppendToOutgoingContext(ctx context.Context, src []*v2.Header) context.Context {
+func AppendToOutgoingContext(ctx context.Context, src []*v1.Header) context.Context {
 	for _, hdr := range src {
 		for _, val := range hdr.Value {
 			ctx = metadata.AppendToOutgoingContext(ctx, hdr.Name, val)

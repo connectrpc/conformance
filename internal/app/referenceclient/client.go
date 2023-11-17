@@ -27,8 +27,8 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
-	"connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v2/conformancev2connect"
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/net/http2"
@@ -52,7 +52,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 	encoder := codec.NewEncoder(outWriter)
 
 	for {
-		var req v2.ClientCompatRequest
+		var req v1.ClientCompatRequest
 		err := decoder.DecodeNext(&req)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -63,20 +63,20 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 		result, err := invoke(ctx, &req)
 
 		// Build the result for the out writer.
-		resp := &v2.ClientCompatResponse{
+		resp := &v1.ClientCompatResponse{
 			TestName: req.TestName,
 		}
 		// If an error was returned, it was a runtime / unexpected internal error so
 		// the written response should contain an error result, not a response with
 		// any RPC information
 		if err != nil {
-			resp.Result = &v2.ClientCompatResponse_Error{
-				Error: &v2.ClientErrorResult{
+			resp.Result = &v1.ClientCompatResponse_Error{
+				Error: &v1.ClientErrorResult{
 					Message: err.Error(),
 				},
 			}
 		} else {
-			resp.Result = &v2.ClientCompatResponse_Response{
+			resp.Result = &v1.ClientCompatResponse_Response{
 				Response: result,
 			}
 		}
@@ -92,7 +92,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientResponseResult, error) {
+func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientResponseResult, error) {
 	tlsConf, err := createTLSConfig(req)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 	// test case
 	var transport http.RoundTripper
 	switch req.HttpVersion {
-	case v2.HTTPVersion_HTTP_VERSION_1:
+	case v1.HTTPVersion_HTTP_VERSION_1:
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"http/1.1"}
 		}
@@ -121,7 +121,7 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 			DisableCompression: true,
 			TLSClientConfig:    tlsConf,
 		}
-	case v2.HTTPVersion_HTTP_VERSION_2:
+	case v1.HTTPVersion_HTTP_VERSION_2:
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"h2"}
 			transport = &http.Transport{
@@ -138,7 +138,7 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 				},
 			}
 		}
-	case v2.HTTPVersion_HTTP_VERSION_3:
+	case v1.HTTPVersion_HTTP_VERSION_3:
 		if tlsConf == nil {
 			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
 		}
@@ -147,36 +147,36 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 			EnableDatagrams:    true,
 			TLSClientConfig:    tlsConf,
 		}
-	case v2.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
+	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
 	// Create client options based on protocol of the implementation
 	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
 	switch req.Protocol {
-	case v2.Protocol_PROTOCOL_GRPC:
+	case v1.Protocol_PROTOCOL_GRPC:
 		clientOptions = append(clientOptions, connect.WithGRPC())
-	case v2.Protocol_PROTOCOL_GRPC_WEB:
+	case v1.Protocol_PROTOCOL_GRPC_WEB:
 		clientOptions = append(clientOptions, connect.WithGRPCWeb())
-	case v2.Protocol_PROTOCOL_CONNECT:
+	case v1.Protocol_PROTOCOL_CONNECT:
 		// Do nothing
-	case v2.Protocol_PROTOCOL_UNSPECIFIED:
+	case v1.Protocol_PROTOCOL_UNSPECIFIED:
 		return nil, errors.New("a protocol must be specified")
 	}
 
 	switch req.Codec {
-	case v2.Codec_CODEC_PROTO:
+	case v1.Codec_CODEC_PROTO:
 		// this is the default, no option needed
-	case v2.Codec_CODEC_JSON:
+	case v1.Codec_CODEC_JSON:
 		clientOptions = append(clientOptions, connect.WithProtoJSON())
-	case v2.Codec_CODEC_TEXT:
+	case v1.Codec_CODEC_TEXT:
 		clientOptions = append(clientOptions, connect.WithCodec(&internal.TextConnectCodec{}))
 	default:
 		return nil, errors.New("a codec must be specified")
 	}
 
 	switch req.Compression {
-	case v2.Compression_COMPRESSION_BR:
+	case v1.Compression_COMPRESSION_BR:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -186,7 +186,7 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 			),
 			connect.WithSendCompression(compression.Brotli),
 		)
-	case v2.Compression_COMPRESSION_DEFLATE:
+	case v1.Compression_COMPRESSION_DEFLATE:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -196,12 +196,12 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 			),
 			connect.WithSendCompression(compression.Deflate),
 		)
-	case v2.Compression_COMPRESSION_GZIP:
+	case v1.Compression_COMPRESSION_GZIP:
 		// Connect clients send uncompressed requests and ask for gzipped responses by default
 		// As a result, specifying a compression of gzip for a client indicates it should also
 		// send gzipped requests
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v2.Compression_COMPRESSION_SNAPPY:
+	case v1.Compression_COMPRESSION_SNAPPY:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -211,7 +211,7 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 			),
 			connect.WithSendCompression(compression.Snappy),
 		)
-	case v2.Compression_COMPRESSION_ZSTD:
+	case v1.Compression_COMPRESSION_ZSTD:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -221,7 +221,7 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 			),
 			connect.WithSendCompression(compression.Zstd),
 		)
-	case v2.Compression_COMPRESSION_IDENTITY, v2.Compression_COMPRESSION_UNSPECIFIED:
+	case v1.Compression_COMPRESSION_IDENTITY, v1.Compression_COMPRESSION_UNSPECIFIED:
 		// Do nothing
 	}
 
@@ -230,14 +230,14 @@ func invoke(ctx context.Context, req *v2.ClientCompatRequest) (*v2.ClientRespons
 	}
 
 	switch req.Service {
-	case conformancev2connect.ConformanceServiceName:
+	case conformancev1connect.ConformanceServiceName:
 		return newInvoker(transport, serverURL, clientOptions).Invoke(ctx, req)
 	default:
 		return nil, errors.New("service name " + req.Service + " is not a valid service")
 	}
 }
 
-func createTLSConfig(req *v2.ClientCompatRequest) (*tls.Config, error) {
+func createTLSConfig(req *v1.ClientCompatRequest) (*tls.Config, error) {
 	if req.ServerTlsCert == nil {
 		if req.ClientTlsCreds != nil {
 			return nil, errors.New("request indicated TLS client credentials but not server TLS cert provided")

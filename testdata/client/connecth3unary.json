@@ -1,0 +1,48 @@
+{
+  "testName": "Unary Happy Path",
+  "httpVersion": "HTTP_VERSION_3",
+  "protocol": "PROTOCOL_CONNECT",
+  "codec": "CODEC_JSON",
+  "host": "127.0.0.1",
+  "port": 51996,
+  "serverTlsCert": "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURVakNDQWpxZ0F3SUJBZ0lSQUtRb3lTYlZKR2dhNlBHeGdFUHF1Y2d3RFFZSktvWklodmNOQVFFTEJRQXcKTWpFVE1CRUdBMVVFQ2hNS1EyOXVibVZqZEZKUVF6RWJNQmtHQTFVRUF4TVNRMjl1Wm05eWJXRnVZMlVnVTJWeQpkbVZ5TUI0WERUSXpNVEV3T1RFME5UVXhORm9YRFRJek1URXhOekUwTlRVeE5Gb3dNakVUTUJFR0ExVUVDaE1LClEyOXVibVZqZEZKUVF6RWJNQmtHQTFVRUF4TVNRMjl1Wm05eWJXRnVZMlVnVTJWeWRtVnlNSUlCSWpBTkJna3EKaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUFyY1paM3lUSDR4L2Q1ZUg4ZDlyY0Z2N010UzZHcE9tcQo0ZWZlWldheGozYzl1UlJrNEx1REZuQ2FVWXQyaTk4dmhKak1MTktmQ1VkT2FodHh5dkZjOXB3RnVxRStUSWJBCm5EdU9RREVJSGpBK0VNVE5LUzVFRXRSckU0NFRvZG4rZXR1Q2czU0l1eitEK2RzdGpVanZ1VU15d3prcTlDMjQKWEdPRmhDVkR5aW5NL0pTQzZlTyt0alA2dTlDYXh4QndycEN1bkcwR3BQb0FuMU10UTlFTnVoMVZid0xMZHNtaQpUdEVtQU41Mi9leFgyK3ZyTlRTZ1RtZEI0WUpFODlOY0x5TExsaytPclh4K1dmanV3am0yeFBET3pJNmZuVkppCmJtN0lzTHJPRHZtMVh0WXhobndjekUrQlBTdXovN25tZ2V0TlRLTXgwUEpHNTNObUFQZU9WUUlEQVFBQm8yTXcKWVRBT0JnTlZIUThCQWY4RUJBTUNCYUF3RXdZRFZSMGxCQXd3Q2dZSUt3WUJCUVVIQXdFd0RBWURWUjBUQVFILwpCQUl3QURBc0JnTlZIUkVFSlRBamdnbHNiMk5oYkdodmMzU0hFQUFBQUFBQUFBQUFBQUFBQUFBQUFBR0hCSDhBCkFBRXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBQlEya0Jrd1pPNjJMR3J6YmxRWFZXSlFpUEF3WkdVMWtMeVQKd0wyRGhycnhSTkl3VU5UakU2MmFaVlBuMGNEUXFWeC9oUzdoMm5lM2Y3NkdobHY5SnRBYld1cTVTWTJqckF5dwpLdUdVWGlOaml1WjErWElaejJTMno5SzVpMytoYzFBYU1OdnZ3eTRNRVJLd3E4RkxyN0ZybzBpNE1VZk1aRGZDCldhVU5USXVTUjdwdmovNElvOVhNMVMxb0poZlNuZlRGWU13cDByNjdNVXNNcDlCSlA3eml6bnpHOWx2RFpNYkUKdndjeTRlZGxvRGk1SjBYdFcrOUFVNzE3QmF5SWtzOFpZYUgydkltT25NZlB3elNQS0RSQWFSbEczamdGRklmLwpzZGZyRXVtK2xMOHhXM0YxMHZSbDhxK2dPdjZSUUtMcUZyT0ljQWkwcDNxci95eHpHY009Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K",
+  "service": "connectrpc.conformance.v1alpha1.ConformanceService",
+  "method": "Unary",
+  "streamType": "STREAM_TYPE_UNARY",
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1alpha1.UnaryRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": "dGVzdCByZXNwb25zZQ==",
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

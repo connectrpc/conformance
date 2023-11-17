@@ -15,14 +15,14 @@
 package grpcutil
 
 import (
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 )
 
 // ConvertProtoToGrpcError converts a proto Error into a gRPC error.
-func ConvertProtoToGrpcError(err *v2.Error) error {
+func ConvertProtoToGrpcError(err *v1.Error) error {
 	if err == nil {
 		return nil
 	}
@@ -36,13 +36,13 @@ func ConvertProtoToGrpcError(err *v2.Error) error {
 // ConvertGrpcToProtoError converts the given gRPC error to a
 // proto Error message. If err is nil, the function will also
 // return nil.
-func ConvertGrpcToProtoError(err error) *v2.Error {
+func ConvertGrpcToProtoError(err error) *v1.Error {
 	if err == nil {
 		return nil
 	}
 	stat, _ := status.FromError(err)
 	statProto := stat.Proto()
-	return &v2.Error{
+	return &v1.Error{
 		Code:    int32(stat.Code()),
 		Message: proto.String(stat.Message()),
 		Details: statProto.Details,

@@ -16,9 +16,9 @@
 // versions:
 // 	protoc-gen-go v1.31.0
 // 	protoc        (unknown)
-// source: connectrpc/conformance/v2/server_compat.proto
+// source: connectrpc/conformance/v1/server_compat.proto
 
-package conformancev2
+package conformancev1
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -35,7 +35,7 @@ const (
 )
 
 // Describes one configuration for an RPC server. The server is
-// expected to expose the connectrpc.conformance.v2.ConformanceService
+// expected to expose the connectrpc.conformance.v1.ConformanceService
 // RPC service. The configuration does not include a port. The
 // process should pick an available port, which is typically
 // done by using port zero (0) when creating a network listener
@@ -53,8 +53,8 @@ type ServerCompatRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Protocol    Protocol    `protobuf:"varint,1,opt,name=protocol,proto3,enum=connectrpc.conformance.v2.Protocol" json:"protocol,omitempty"`
-	HttpVersion HTTPVersion `protobuf:"varint,2,opt,name=http_version,json=httpVersion,proto3,enum=connectrpc.conformance.v2.HTTPVersion" json:"http_version,omitempty"`
+	Protocol    Protocol    `protobuf:"varint,1,opt,name=protocol,proto3,enum=connectrpc.conformance.v1.Protocol" json:"protocol,omitempty"`
+	HttpVersion HTTPVersion `protobuf:"varint,2,opt,name=http_version,json=httpVersion,proto3,enum=connectrpc.conformance.v1.HTTPVersion" json:"http_version,omitempty"`
 	// if true, generate a self-signed cert and include it in the
 	// ServerCompatResponse along with the actual port
 	UseTls bool `protobuf:"varint,4,opt,name=use_tls,json=useTls,proto3" json:"use_tls,omitempty"`
@@ -74,7 +74,7 @@ type ServerCompatRequest struct {
 func (x *ServerCompatRequest) Reset() {
 	*x = ServerCompatRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_connectrpc_conformance_v2_server_compat_proto_msgTypes[0]
+		mi := &file_connectrpc_conformance_v1_server_compat_proto_msgTypes[0]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -87,7 +87,7 @@ func (x *ServerCompatRequest) String() string {
 func (*ServerCompatRequest) ProtoMessage() {}
 
 func (x *ServerCompatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_connectrpc_conformance_v2_server_compat_proto_msgTypes[0]
+	mi := &file_connectrpc_conformance_v1_server_compat_proto_msgTypes[0]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -100,7 +100,7 @@ func (x *ServerCompatRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerCompatRequest.ProtoReflect.Descriptor instead.
 func (*ServerCompatRequest) Descriptor() ([]byte, []int) {
-	return file_connectrpc_conformance_v2_server_compat_proto_rawDescGZIP(), []int{0}
+	return file_connectrpc_conformance_v1_server_compat_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ServerCompatRequest) GetProtocol() Protocol {
@@ -154,7 +154,7 @@ type ServerCompatResponse struct {
 func (x *ServerCompatResponse) Reset() {
 	*x = ServerCompatResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_connectrpc_conformance_v2_server_compat_proto_msgTypes[1]
+		mi := &file_connectrpc_conformance_v1_server_compat_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -167,7 +167,7 @@ func (x *ServerCompatResponse) String() string {
 func (*ServerCompatResponse) ProtoMessage() {}
 
 func (x *ServerCompatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_connectrpc_conformance_v2_server_compat_proto_msgTypes[1]
+	mi := &file_connectrpc_conformance_v1_server_compat_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -180,7 +180,7 @@ func (x *ServerCompatResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerCompatResponse.ProtoReflect.Descriptor instead.
 func (*ServerCompatResponse) Descriptor() ([]byte, []int) {
-	return file_connectrpc_conformance_v2_server_compat_proto_rawDescGZIP(), []int{1}
+	return file_connectrpc_conformance_v1_server_compat_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *ServerCompatResponse) GetHost() string {
@@ -217,7 +217,7 @@ type ServerErrorResult struct {
 func (x *ServerErrorResult) Reset() {
 	*x = ServerErrorResult{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_connectrpc_conformance_v2_server_compat_proto_msgTypes[2]
+		mi := &file_connectrpc_conformance_v1_server_compat_proto_msgTypes[2]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -230,7 +230,7 @@ func (x *ServerErrorResult) String() string {
 func (*ServerErrorResult) ProtoMessage() {}
 
 func (x *ServerErrorResult) ProtoReflect() protoreflect.Message {
-	mi := &file_connectrpc_conformance_v2_server_compat_proto_msgTypes[2]
+	mi := &file_connectrpc_conformance_v1_server_compat_proto_msgTypes[2]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -243,7 +243,7 @@ func (x *ServerErrorResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerErrorResult.ProtoReflect.Descriptor instead.
 func (*ServerErrorResult) Descriptor() ([]byte, []int) {
-	return file_connectrpc_conformance_v2_server_compat_proto_rawDescGZIP(), []int{2}
+	return file_connectrpc_conformance_v1_server_compat_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ServerErrorResult) GetMessage() string {
@@ -253,25 +253,25 @@ func (x *ServerErrorResult) GetMessage() string {
 	return ""
 }
 
-var File_connectrpc_conformance_v2_server_compat_proto protoreflect.FileDescriptor
+var File_connectrpc_conformance_v1_server_compat_proto protoreflect.FileDescriptor
 
-var file_connectrpc_conformance_v2_server_compat_proto_rawDesc = []byte{
+var file_connectrpc_conformance_v1_server_compat_proto_rawDesc = []byte{
 	0x0a, 0x2d, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2f, 0x63, 0x6f, 0x6e,
-	0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2f, 0x76, 0x32, 0x2f, 0x73, 0x65, 0x72, 0x76,
+	0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x73, 0x65, 0x72, 0x76,
 	0x65, 0x72, 0x5f, 0x63, 0x6f, 0x6d, 0x70, 0x61, 0x74, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x12,
 	0x19, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x63, 0x6f, 0x6e, 0x66,
-	0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x32, 0x1a, 0x26, 0x63, 0x6f, 0x6e, 0x6e,
+	0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x1a, 0x26, 0x63, 0x6f, 0x6e, 0x6e,
 	0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e,
-	0x63, 0x65, 0x2f, 0x76, 0x32, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f,
+	0x63, 0x65, 0x2f, 0x76, 0x31, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x69, 0x67, 0x2e, 0x70, 0x72, 0x6f,
 	0x74, 0x6f, 0x22, 0x96, 0x02, 0x0a, 0x13, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x43, 0x6f, 0x6d,
 	0x70, 0x61, 0x74, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3f, 0x0a, 0x08, 0x70, 0x72,
 	0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x23, 0x2e, 0x63,
 	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x6f, 0x72,
-	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x32, 0x2e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
+	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f,
 	0x6c, 0x52, 0x08, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x63, 0x6f, 0x6c, 0x12, 0x49, 0x0a, 0x0c, 0x68,
 	0x74, 0x74, 0x70, 0x5f, 0x76, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x18, 0x02, 0x20, 0x01, 0x28,
 	0x0e, 0x32, 0x26, 0x2e, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x63,
-	0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x32, 0x2e, 0x48, 0x54,
+	0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x48, 0x54,
 	0x54, 0x50, 0x56, 0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x52, 0x0b, 0x68, 0x74, 0x74, 0x70, 0x56,
 	0x65, 0x72, 0x73, 0x69, 0x6f, 0x6e, 0x12, 0x17, 0x0a, 0x07, 0x75, 0x73, 0x65, 0x5f, 0x74, 0x6c,
 	0x73, 0x18, 0x04, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x75, 0x73, 0x65, 0x54, 0x6c, 0x73, 0x12,
@@ -291,48 +291,48 @@ var file_connectrpc_conformance_v2_server_compat_proto_rawDesc = []byte{
 	0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65,
 	0x73, 0x73, 0x61, 0x67, 0x65, 0x42, 0x92, 0x02, 0x0a, 0x1d, 0x63, 0x6f, 0x6d, 0x2e, 0x63, 0x6f,
 	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x63, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d,
-	0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x32, 0x42, 0x11, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x43,
+	0x61, 0x6e, 0x63, 0x65, 0x2e, 0x76, 0x31, 0x42, 0x11, 0x53, 0x65, 0x72, 0x76, 0x65, 0x72, 0x43,
 	0x6f, 0x6d, 0x70, 0x61, 0x74, 0x50, 0x72, 0x6f, 0x74, 0x6f, 0x50, 0x01, 0x5a, 0x58, 0x63, 0x6f,
 	0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x63, 0x6f, 0x6e,
 	0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61,
 	0x6c, 0x2f, 0x67, 0x65, 0x6e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x2f, 0x67, 0x6f, 0x2f, 0x63,
 	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2f, 0x63, 0x6f, 0x6e, 0x66, 0x6f, 0x72,
-	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2f, 0x76, 0x32, 0x3b, 0x63, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d,
-	0x61, 0x6e, 0x63, 0x65, 0x76, 0x32, 0xa2, 0x02, 0x03, 0x43, 0x43, 0x58, 0xaa, 0x02, 0x19, 0x43,
+	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2f, 0x76, 0x31, 0x3b, 0x63, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d,
+	0x61, 0x6e, 0x63, 0x65, 0x76, 0x31, 0xa2, 0x02, 0x03, 0x43, 0x43, 0x58, 0xaa, 0x02, 0x19, 0x43,
 	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x2e, 0x43, 0x6f, 0x6e, 0x66, 0x6f, 0x72,
-	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x56, 0x32, 0xca, 0x02, 0x19, 0x43, 0x6f, 0x6e, 0x6e, 0x65,
+	0x6d, 0x61, 0x6e, 0x63, 0x65, 0x2e, 0x56, 0x31, 0xca, 0x02, 0x19, 0x43, 0x6f, 0x6e, 0x6e, 0x65,
 	0x63, 0x74, 0x72, 0x70, 0x63, 0x5c, 0x43, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63,
-	0x65, 0x5c, 0x56, 0x32, 0xe2, 0x02, 0x25, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70,
-	0x63, 0x5c, 0x43, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x5c, 0x56, 0x32,
+	0x65, 0x5c, 0x56, 0x31, 0xe2, 0x02, 0x25, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70,
+	0x63, 0x5c, 0x43, 0x6f, 0x6e, 0x66, 0x6f, 0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x5c, 0x56, 0x31,
 	0x5c, 0x47, 0x50, 0x42, 0x4d, 0x65, 0x74, 0x61, 0x64, 0x61, 0x74, 0x61, 0xea, 0x02, 0x1b, 0x43,
 	0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x72, 0x70, 0x63, 0x3a, 0x3a, 0x43, 0x6f, 0x6e, 0x66, 0x6f,
-	0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x3a, 0x3a, 0x56, 0x32, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x72, 0x6d, 0x61, 0x6e, 0x63, 0x65, 0x3a, 0x3a, 0x56, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x33,
 }
 
 var (
-	file_connectrpc_conformance_v2_server_compat_proto_rawDescOnce sync.Once
-	file_connectrpc_conformance_v2_server_compat_proto_rawDescData = file_connectrpc_conformance_v2_server_compat_proto_rawDesc
+	file_connectrpc_conformance_v1_server_compat_proto_rawDescOnce sync.Once
+	file_connectrpc_conformance_v1_server_compat_proto_rawDescData = file_connectrpc_conformance_v1_server_compat_proto_rawDesc
 )
 
-func file_connectrpc_conformance_v2_server_compat_proto_rawDescGZIP() []byte {
-	file_connectrpc_conformance_v2_server_compat_proto_rawDescOnce.Do(func() {
-		file_connectrpc_conformance_v2_server_compat_proto_rawDescData = protoimpl.X.CompressGZIP(file_connectrpc_conformance_v2_server_compat_proto_rawDescData)
+func file_connectrpc_conformance_v1_server_compat_proto_rawDescGZIP() []byte {
+	file_connectrpc_conformance_v1_server_compat_proto_rawDescOnce.Do(func() {
+		file_connectrpc_conformance_v1_server_compat_proto_rawDescData = protoimpl.X.CompressGZIP(file_connectrpc_conformance_v1_server_compat_proto_rawDescData)
 	})
-	return file_connectrpc_conformance_v2_server_compat_proto_rawDescData
+	return file_connectrpc_conformance_v1_server_compat_proto_rawDescData
 }
 
-var file_connectrpc_conformance_v2_server_compat_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
-var file_connectrpc_conformance_v2_server_compat_proto_goTypes = []interface{}{
-	(*ServerCompatRequest)(nil),  // 0: connectrpc.conformance.v2.ServerCompatRequest
-	(*ServerCompatResponse)(nil), // 1: connectrpc.conformance.v2.ServerCompatResponse
-	(*ServerErrorResult)(nil),    // 2: connectrpc.conformance.v2.ServerErrorResult
-	(Protocol)(0),                // 3: connectrpc.conformance.v2.Protocol
-	(HTTPVersion)(0),             // 4: connectrpc.conformance.v2.HTTPVersion
+var file_connectrpc_conformance_v1_server_compat_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_connectrpc_conformance_v1_server_compat_proto_goTypes = []interface{}{
+	(*ServerCompatRequest)(nil),  // 0: connectrpc.conformance.v1.ServerCompatRequest
+	(*ServerCompatResponse)(nil), // 1: connectrpc.conformance.v1.ServerCompatResponse
+	(*ServerErrorResult)(nil),    // 2: connectrpc.conformance.v1.ServerErrorResult
+	(Protocol)(0),                // 3: connectrpc.conformance.v1.Protocol
+	(HTTPVersion)(0),             // 4: connectrpc.conformance.v1.HTTPVersion
 }
-var file_connectrpc_conformance_v2_server_compat_proto_depIdxs = []int32{
-	3, // 0: connectrpc.conformance.v2.ServerCompatRequest.protocol:type_name -> connectrpc.conformance.v2.Protocol
-	4, // 1: connectrpc.conformance.v2.ServerCompatRequest.http_version:type_name -> connectrpc.conformance.v2.HTTPVersion
+var file_connectrpc_conformance_v1_server_compat_proto_depIdxs = []int32{
+	3, // 0: connectrpc.conformance.v1.ServerCompatRequest.protocol:type_name -> connectrpc.conformance.v1.Protocol
+	4, // 1: connectrpc.conformance.v1.ServerCompatRequest.http_version:type_name -> connectrpc.conformance.v1.HTTPVersion
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
@@ -340,14 +340,14 @@ var file_connectrpc_conformance_v2_server_compat_proto_depIdxs = []int32{
 	0, // [0:2] is the sub-list for field type_name
 }
 
-func init() { file_connectrpc_conformance_v2_server_compat_proto_init() }
-func file_connectrpc_conformance_v2_server_compat_proto_init() {
-	if File_connectrpc_conformance_v2_server_compat_proto != nil {
+func init() { file_connectrpc_conformance_v1_server_compat_proto_init() }
+func file_connectrpc_conformance_v1_server_compat_proto_init() {
+	if File_connectrpc_conformance_v1_server_compat_proto != nil {
 		return
 	}
-	file_connectrpc_conformance_v2_config_proto_init()
+	file_connectrpc_conformance_v1_config_proto_init()
 	if !protoimpl.UnsafeEnabled {
-		file_connectrpc_conformance_v2_server_compat_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
+		file_connectrpc_conformance_v1_server_compat_proto_msgTypes[0].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ServerCompatRequest); i {
 			case 0:
 				return &v.state
@@ -359,7 +359,7 @@ func file_connectrpc_conformance_v2_server_compat_proto_init() {
 				return nil
 			}
 		}
-		file_connectrpc_conformance_v2_server_compat_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
+		file_connectrpc_conformance_v1_server_compat_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ServerCompatResponse); i {
 			case 0:
 				return &v.state
@@ -371,7 +371,7 @@ func file_connectrpc_conformance_v2_server_compat_proto_init() {
 				return nil
 			}
 		}
-		file_connectrpc_conformance_v2_server_compat_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
+		file_connectrpc_conformance_v1_server_compat_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ServerErrorResult); i {
 			case 0:
 				return &v.state
@@ -388,18 +388,18 @@ func file_connectrpc_conformance_v2_server_compat_proto_init() {
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: file_connectrpc_conformance_v2_server_compat_proto_rawDesc,
+			RawDescriptor: file_connectrpc_conformance_v1_server_compat_proto_rawDesc,
 			NumEnums:      0,
 			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
-		GoTypes:           file_connectrpc_conformance_v2_server_compat_proto_goTypes,
-		DependencyIndexes: file_connectrpc_conformance_v2_server_compat_proto_depIdxs,
-		MessageInfos:      file_connectrpc_conformance_v2_server_compat_proto_msgTypes,
+		GoTypes:           file_connectrpc_conformance_v1_server_compat_proto_goTypes,
+		DependencyIndexes: file_connectrpc_conformance_v1_server_compat_proto_depIdxs,
+		MessageInfos:      file_connectrpc_conformance_v1_server_compat_proto_msgTypes,
 	}.Build()
-	File_connectrpc_conformance_v2_server_compat_proto = out.File
-	file_connectrpc_conformance_v2_server_compat_proto_rawDesc = nil
-	file_connectrpc_conformance_v2_server_compat_proto_goTypes = nil
-	file_connectrpc_conformance_v2_server_compat_proto_depIdxs = nil
+	File_connectrpc_conformance_v1_server_compat_proto = out.File
+	file_connectrpc_conformance_v1_server_compat_proto_rawDesc = nil
+	file_connectrpc_conformance_v1_server_compat_proto_goTypes = nil
+	file_connectrpc_conformance_v1_server_compat_proto_depIdxs = nil
 }
