@@ -14,7 +14,7 @@
 
 package internal
 
-import "connectrpc.com/conformance/internal/gen/proto/connect/connectrpc/conformance/v2/conformancev2connect"
+import "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 
 const (
 	// DefaultHost is the default host to use for the server.
@@ -23,7 +23,7 @@ const (
 	// an ephemeral port is selected by the OS if no port is specified.
 	DefaultPort = 0
 	// The fully-qualified service name for the Conformance Service.
-	ConformanceServiceName = conformancev2connect.ConformanceServiceName
+	ConformanceServiceName = conformancev1connect.ConformanceServiceName
 	// The prefix for type URLs used in Any messages.
 	DefaultAnyResolverPrefix = "type.googleapis.com/"
 )

@@ -5,7 +5,7 @@
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
   "port": 23456,
-  "service": "connectrpc.conformance.v2.ConformanceService",
+  "service": "connectrpc.conformance.v1.ConformanceService",
   "method": "Unary",
   "streamType": "STREAM_TYPE_UNARY",
   "requestHeaders": [
@@ -19,7 +19,7 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v2.UnaryRequest",
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
       "responseDefinition": {
         "responseHeaders": [
           {

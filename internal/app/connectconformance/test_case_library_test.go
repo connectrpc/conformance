@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
-	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -139,73 +139,73 @@ func TestNewTestCaseLibrary(t *testing.T) {
 	testCases := []struct {
 		name   string
 		config []configCase
-		mode   conformancev2.TestSuite_TestMode
+		mode   conformancev1.TestSuite_TestMode
 		cases  map[serverInstance][]string
 	}{
 		{
 			name: "client mode",
 			config: []configCase{
 				{
-					Version:     conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:       conformancev2.Codec_CODEC_PROTO,
-					Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:  conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:     conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:       conformancev1.Codec_CODEC_PROTO,
+					Compression: conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:  conformancev1.StreamType_STREAM_TYPE_UNARY,
 				},
 				{
-					Version:     conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:       conformancev2.Codec_CODEC_PROTO,
-					Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:  conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:     conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:       conformancev1.Codec_CODEC_PROTO,
+					Compression: conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:  conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseTLS:      true,
 				},
 				{
-					Version:           conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:          conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:             conformancev2.Codec_CODEC_PROTO,
-					Compression:       conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:        conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:           conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:          conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:             conformancev1.Codec_CODEC_PROTO,
+					Compression:       conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:        conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseTLS:            true,
 					UseTLSClientCerts: true,
 				},
 				{
-					Version:       conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:      conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:         conformancev2.Codec_CODEC_PROTO,
-					Compression:   conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:    conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:       conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:      conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:         conformancev1.Codec_CODEC_PROTO,
+					Compression:   conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:    conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseConnectGET: true,
 				},
 				{
-					Version:            conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:           conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:              conformancev2.Codec_CODEC_PROTO,
-					Compression:        conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:         conformancev2.StreamType_STREAM_TYPE_UNARY,
-					ConnectVersionMode: conformancev2.TestSuite_CONNECT_VERSION_MODE_REQUIRE,
+					Version:            conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:           conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:              conformancev1.Codec_CODEC_PROTO,
+					Compression:        conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:         conformancev1.StreamType_STREAM_TYPE_UNARY,
+					ConnectVersionMode: conformancev1.TestSuite_CONNECT_VERSION_MODE_REQUIRE,
 				},
 				{
-					Version:                conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:               conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:                  conformancev2.Codec_CODEC_PROTO,
-					Compression:            conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:             conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:                conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:               conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:                  conformancev1.Codec_CODEC_PROTO,
+					Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseMessageReceiveLimit: true,
 				},
 				{
-					Version:     conformancev2.HTTPVersion_HTTP_VERSION_2,
-					Protocol:    conformancev2.Protocol_PROTOCOL_GRPC,
-					Codec:       conformancev2.Codec_CODEC_PROTO,
-					Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:  conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+					Version:     conformancev1.HTTPVersion_HTTP_VERSION_2,
+					Protocol:    conformancev1.Protocol_PROTOCOL_GRPC,
+					Codec:       conformancev1.Codec_CODEC_PROTO,
+					Compression: conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:  conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				},
 			},
-			mode: conformancev2.TestSuite_TEST_MODE_CLIENT,
+			mode: conformancev1.TestSuite_TEST_MODE_CLIENT,
 			cases: map[serverInstance][]string{
 				{
-					protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_1,
+					protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      false,
 				}: {
 					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-unary",
@@ -213,23 +213,23 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					"Connect Version Required (client)/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-without-connect-version-header",
 				},
 				{
-					protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_1,
+					protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      true,
 				}: {
 					"TLS/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-unary",
 				},
 				{
-					protocol:          conformancev2.Protocol_PROTOCOL_CONNECT,
-					httpVersion:       conformancev2.HTTPVersion_HTTP_VERSION_1,
+					protocol:          conformancev1.Protocol_PROTOCOL_CONNECT,
+					httpVersion:       conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:            true,
 					useTLSClientCerts: true,
 				}: {
 					"TLS Client Certs/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-client-cert-unary",
 				},
 				{
-					protocol:    conformancev2.Protocol_PROTOCOL_GRPC,
-					httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_2,
+					protocol:    conformancev1.Protocol_PROTOCOL_GRPC,
+					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_2,
 					useTLS:      false,
 				}: {
 					"Basic/HTTPVersion:2/Protocol:PROTOCOL_GRPC/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-bidi-stream",
@@ -241,66 +241,66 @@ func TestNewTestCaseLibrary(t *testing.T) {
 			name: "server mode",
 			config: []configCase{
 				{
-					Version:     conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:       conformancev2.Codec_CODEC_PROTO,
-					Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:  conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:     conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:       conformancev1.Codec_CODEC_PROTO,
+					Compression: conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:  conformancev1.StreamType_STREAM_TYPE_UNARY,
 				},
 				{
-					Version:     conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:       conformancev2.Codec_CODEC_PROTO,
-					Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:  conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:     conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:       conformancev1.Codec_CODEC_PROTO,
+					Compression: conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:  conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseTLS:      true,
 				},
 				{
-					Version:           conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:          conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:             conformancev2.Codec_CODEC_PROTO,
-					Compression:       conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:        conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:           conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:          conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:             conformancev1.Codec_CODEC_PROTO,
+					Compression:       conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:        conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseTLS:            true,
 					UseTLSClientCerts: true,
 				},
 				{
-					Version:       conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:      conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:         conformancev2.Codec_CODEC_PROTO,
-					Compression:   conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:    conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:       conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:      conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:         conformancev1.Codec_CODEC_PROTO,
+					Compression:   conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:    conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseConnectGET: true,
 				},
 				{
-					Version:            conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:           conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:              conformancev2.Codec_CODEC_PROTO,
-					Compression:        conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:         conformancev2.StreamType_STREAM_TYPE_UNARY,
-					ConnectVersionMode: conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE,
+					Version:            conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:           conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:              conformancev1.Codec_CODEC_PROTO,
+					Compression:        conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:         conformancev1.StreamType_STREAM_TYPE_UNARY,
+					ConnectVersionMode: conformancev1.TestSuite_CONNECT_VERSION_MODE_IGNORE,
 				},
 				{
-					Version:                conformancev2.HTTPVersion_HTTP_VERSION_1,
-					Protocol:               conformancev2.Protocol_PROTOCOL_CONNECT,
-					Codec:                  conformancev2.Codec_CODEC_PROTO,
-					Compression:            conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:             conformancev2.StreamType_STREAM_TYPE_UNARY,
+					Version:                conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:               conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:                  conformancev1.Codec_CODEC_PROTO,
+					Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
 					UseMessageReceiveLimit: true,
 				},
 				{
-					Version:     conformancev2.HTTPVersion_HTTP_VERSION_2,
-					Protocol:    conformancev2.Protocol_PROTOCOL_GRPC,
-					Codec:       conformancev2.Codec_CODEC_PROTO,
-					Compression: conformancev2.Compression_COMPRESSION_IDENTITY,
-					StreamType:  conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+					Version:     conformancev1.HTTPVersion_HTTP_VERSION_2,
+					Protocol:    conformancev1.Protocol_PROTOCOL_GRPC,
+					Codec:       conformancev1.Codec_CODEC_PROTO,
+					Compression: conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:  conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				},
 			},
-			mode: conformancev2.TestSuite_TEST_MODE_SERVER,
+			mode: conformancev1.TestSuite_TEST_MODE_SERVER,
 			cases: map[serverInstance][]string{
 				{
-					protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_1,
+					protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      false,
 				}: {
 					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-unary",
@@ -309,23 +309,23 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					"Max Receive Size (server)/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-exceeds-limit",
 				},
 				{
-					protocol:    conformancev2.Protocol_PROTOCOL_CONNECT,
-					httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_1,
+					protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
+					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      true,
 				}: {
 					"TLS/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-unary",
 				},
 				{
-					protocol:          conformancev2.Protocol_PROTOCOL_CONNECT,
-					httpVersion:       conformancev2.HTTPVersion_HTTP_VERSION_1,
+					protocol:          conformancev1.Protocol_PROTOCOL_CONNECT,
+					httpVersion:       conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:            true,
 					useTLSClientCerts: true,
 				}: {
 					"TLS Client Certs/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-client-cert-unary",
 				},
 				{
-					protocol:    conformancev2.Protocol_PROTOCOL_GRPC,
-					httpVersion: conformancev2.HTTPVersion_HTTP_VERSION_2,
+					protocol:    conformancev1.Protocol_PROTOCOL_GRPC,
+					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_2,
 					useTLS:      false,
 				}: {
 					"Basic/HTTPVersion:2/Protocol:PROTOCOL_GRPC/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-bidi-stream",
@@ -378,7 +378,7 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.UnaryRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -394,7 +394,7 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.UnaryRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -409,7 +409,7 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -424,7 +424,7 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ServerStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -439,15 +439,15 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -462,19 +462,19 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.ClientStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -493,11 +493,11 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -512,15 +512,15 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
 							"request_data": "abcdefgh"
 						},
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -552,7 +552,7 @@ func TestExpandRequestData(t *testing.T) {
 				"request": {
 					"requestMessages":[
 						{
-							"@type": "type.googleapis.com/connectrpc.conformance.v2.BidiStreamRequest",
+							"@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
 							"request_data": "abcdefgh"
 						}
 					]
@@ -568,7 +568,7 @@ func TestExpandRequestData(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			var testCaseProto conformancev2.TestCase
+			var testCaseProto conformancev1.TestCase
 			err := protojson.Unmarshal([]byte(testCase.testCaseJSON), &testCaseProto)
 			require.NoError(t, err)
 			reqs := testCaseProto.Request.RequestMessages
@@ -596,14 +596,14 @@ func TestExpandRequestData(t *testing.T) {
 func TestPopulateExpectedResponse(t *testing.T) {
 	t.Parallel()
 
-	requestHeaders := []*conformancev2.Header{
+	requestHeaders := []*conformancev1.Header{
 		{
 			Name:  "reqHeader",
 			Value: []string{"reqHeaderVal"},
 		},
 	}
 
-	responseHeaders := []*conformancev2.Header{
+	responseHeaders := []*conformancev1.Header{
 		{
 			Name:  "fooHeader",
 			Value: []string{"fooHeaderVal"},
@@ -614,7 +614,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 	}
 
-	responseTrailers := []*conformancev2.Header{
+	responseTrailers := []*conformancev1.Header{
 		{
 			Name:  "fooTrailer",
 			Value: []string{"fooTrailerVal"},
@@ -627,46 +627,46 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	data1 := []byte("data1")
 	data2 := []byte("data2")
 
-	errorDef := &conformancev2.Error{
+	errorDef := &conformancev1.Error{
 		Code:    int32(connect.CodeResourceExhausted),
 		Message: proto.String("all resources exhausted"),
 	}
 
 	// Unary Response Definitions
-	unaryErrorResp := &conformancev2.UnaryResponseDefinition_Error{
+	unaryErrorResp := &conformancev1.UnaryResponseDefinition_Error{
 		Error: errorDef,
 	}
-	unarySuccessDef := &conformancev2.UnaryResponseDefinition{
+	unarySuccessDef := &conformancev1.UnaryResponseDefinition{
 		ResponseHeaders: responseHeaders,
-		Response: &conformancev2.UnaryResponseDefinition_ResponseData{
+		Response: &conformancev1.UnaryResponseDefinition_ResponseData{
 			ResponseData: data1,
 		},
 		ResponseTrailers: responseTrailers,
 	}
-	unaryErrorDef := &conformancev2.UnaryResponseDefinition{
+	unaryErrorDef := &conformancev1.UnaryResponseDefinition{
 		ResponseHeaders:  responseHeaders,
 		Response:         unaryErrorResp,
 		ResponseTrailers: responseTrailers,
 	}
-	unaryNoResponseDef := &conformancev2.UnaryResponseDefinition{
+	unaryNoResponseDef := &conformancev1.UnaryResponseDefinition{
 		ResponseHeaders:  responseHeaders,
 		ResponseTrailers: responseTrailers,
 	}
 	// Stream Response Definitions
-	streamSuccessDef := &conformancev2.StreamResponseDefinition{
+	streamSuccessDef := &conformancev1.StreamResponseDefinition{
 		ResponseHeaders:  responseHeaders,
 		ResponseData:     [][]byte{data1, data2},
 		ResponseDelayMs:  1000,
 		ResponseTrailers: responseTrailers,
 	}
-	streamErrorDef := &conformancev2.StreamResponseDefinition{
+	streamErrorDef := &conformancev1.StreamResponseDefinition{
 		ResponseHeaders:  responseHeaders,
 		ResponseData:     [][]byte{data1, data2},
 		ResponseDelayMs:  1000,
 		Error:            errorDef,
 		ResponseTrailers: responseTrailers,
 	}
-	streamNoResponseDef := &conformancev2.StreamResponseDefinition{
+	streamNoResponseDef := &conformancev1.StreamResponseDefinition{
 		ResponseHeaders:  responseHeaders,
 		ResponseDelayMs:  1000,
 		ResponseTrailers: responseTrailers,
@@ -675,123 +675,123 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	// Requests
 
 	// Unary Requests
-	unarySuccessReq, err := anypb.New(&conformancev2.UnaryRequest{
+	unarySuccessReq, err := anypb.New(&conformancev1.UnaryRequest{
 		ResponseDefinition: unarySuccessDef,
 	})
 	require.NoError(t, err)
 
-	unaryErrorReq, err := anypb.New(&conformancev2.UnaryRequest{
+	unaryErrorReq, err := anypb.New(&conformancev1.UnaryRequest{
 		ResponseDefinition: unaryErrorDef,
 	})
 	require.NoError(t, err)
 
-	unaryNoResponseReq, err := anypb.New(&conformancev2.UnaryRequest{
+	unaryNoResponseReq, err := anypb.New(&conformancev1.UnaryRequest{
 		ResponseDefinition: unaryNoResponseDef,
 	})
 	require.NoError(t, err)
 
-	unaryNoDefReq, err := anypb.New(&conformancev2.UnaryRequest{})
+	unaryNoDefReq, err := anypb.New(&conformancev1.UnaryRequest{})
 	require.NoError(t, err)
 
 	// Client Stream Requests
-	clientStreamSuccessReq, err := anypb.New(&conformancev2.ClientStreamRequest{
+	clientStreamSuccessReq, err := anypb.New(&conformancev1.ClientStreamRequest{
 		ResponseDefinition: unarySuccessDef,
 		RequestData:        data1,
 	})
 	require.NoError(t, err)
 
-	clientStreamErrorReq, err := anypb.New(&conformancev2.ClientStreamRequest{
+	clientStreamErrorReq, err := anypb.New(&conformancev1.ClientStreamRequest{
 		ResponseDefinition: unaryErrorDef,
 		RequestData:        data1,
 	})
 	require.NoError(t, err)
 
-	clientStreamNoResponseReq, err := anypb.New(&conformancev2.ClientStreamRequest{
+	clientStreamNoResponseReq, err := anypb.New(&conformancev1.ClientStreamRequest{
 		ResponseDefinition: unaryNoResponseDef,
 		RequestData:        data1,
 	})
 	require.NoError(t, err)
 
-	clientStreamNoDefReq, err := anypb.New(&conformancev2.ClientStreamRequest{
+	clientStreamNoDefReq, err := anypb.New(&conformancev1.ClientStreamRequest{
 		RequestData: data1,
 	})
 	require.NoError(t, err)
 
-	clientStreamReq2, err := anypb.New(&conformancev2.ClientStreamRequest{
+	clientStreamReq2, err := anypb.New(&conformancev1.ClientStreamRequest{
 		RequestData: data1,
 	})
 	require.NoError(t, err)
 
 	// Server Stream Requests
-	serverStreamSuccessReq, err := anypb.New(&conformancev2.ServerStreamRequest{
+	serverStreamSuccessReq, err := anypb.New(&conformancev1.ServerStreamRequest{
 		ResponseDefinition: streamSuccessDef,
 	})
 	require.NoError(t, err)
 
-	serverStreamErrorReq, err := anypb.New(&conformancev2.ServerStreamRequest{
+	serverStreamErrorReq, err := anypb.New(&conformancev1.ServerStreamRequest{
 		ResponseDefinition: streamErrorDef,
 	})
 	require.NoError(t, err)
 
-	serverStreamNoResponseReq, err := anypb.New(&conformancev2.ServerStreamRequest{
+	serverStreamNoResponseReq, err := anypb.New(&conformancev1.ServerStreamRequest{
 		ResponseDefinition: streamNoResponseDef,
 	})
 	require.NoError(t, err)
 
-	serverStreamNoDefReq, err := anypb.New(&conformancev2.ServerStreamRequest{})
+	serverStreamNoDefReq, err := anypb.New(&conformancev1.ServerStreamRequest{})
 	require.NoError(t, err)
 
 	// Bidi Stream Requests
-	bidiStreamHalfDuplexSuccessReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamHalfDuplexSuccessReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: streamSuccessDef,
 		RequestData:        data1,
 	})
 	require.NoError(t, err)
 
-	bidiStreamReq2, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamReq2, err := anypb.New(&conformancev1.BidiStreamRequest{
 		RequestData: data2,
 	})
 	require.NoError(t, err)
 
-	bidiStreamHalfDuplexErrorReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamHalfDuplexErrorReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: streamErrorDef,
 		RequestData:        data1,
 	})
 	require.NoError(t, err)
 
-	bidiStreamHalfDuplexNoResponseReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamHalfDuplexNoResponseReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: streamNoResponseDef,
 		RequestData:        data1,
 	})
 	require.NoError(t, err)
 
-	bidiStreamHalfDuplexNoDefReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamHalfDuplexNoDefReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		RequestData: data1,
 	})
 	require.NoError(t, err)
 
-	bidiStreamFullDuplexSuccessReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamFullDuplexSuccessReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: streamSuccessDef,
 		RequestData:        data1,
 		FullDuplex:         true,
 	})
 	require.NoError(t, err)
 
-	bidiStreamFullDuplexErrorReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamFullDuplexErrorReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: streamErrorDef,
 		RequestData:        data1,
 		FullDuplex:         true,
 	})
 	require.NoError(t, err)
 
-	bidiStreamFullDuplexNoResponseReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamFullDuplexNoResponseReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: streamNoResponseDef,
 		RequestData:        data1,
 		FullDuplex:         true,
 	})
 	require.NoError(t, err)
 
-	bidiStreamFullDuplexNoDefReq, err := anypb.New(&conformancev2.BidiStreamRequest{
+	bidiStreamFullDuplexNoDefReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		RequestData: data1,
 		FullDuplex:  true,
 	})
@@ -799,23 +799,23 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	testCases := []struct {
 		testName   string
-		request    *conformancev2.ClientCompatRequest
-		expected   *conformancev2.ClientResponseResult
+		request    *conformancev1.ClientCompatRequest
+		expected   *conformancev1.ClientResponseResult
 		requireErr bool
 	}{
 		{
 			testName: "unary success",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_UNARY,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
 				RequestMessages: []*anypb.Any{unarySuccessReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{unarySuccessReq},
 						},
@@ -826,31 +826,31 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "unary error",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_UNARY,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
 				RequestMessages: []*anypb.Any{unaryErrorReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
 				// TODO - Payloads will be in error detail for unary response errors
-				// Payloads: []*conformancev2.ConformancePayload{{}}
+				// Payloads: []*conformancev1.ConformancePayload{{}}
 				Error:            unaryErrorResp.Error,
 				ResponseTrailers: responseTrailers,
 			},
 		},
 		{
 			testName: "unary no response set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_UNARY,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
 				RequestMessages: []*anypb.Any{unaryNoResponseReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{unaryNoResponseReq},
 						},
@@ -861,15 +861,15 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "unary no definition set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_UNARY,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
 				RequestMessages: []*anypb.Any{unaryNoDefReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
-				Payloads: []*conformancev2.ConformancePayload{
+			expected: &conformancev1.ClientResponseResult{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{unaryNoDefReq},
 						},
@@ -879,17 +879,17 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "client stream success",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
 				RequestMessages: []*anypb.Any{clientStreamSuccessReq, clientStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{clientStreamSuccessReq, clientStreamReq2},
 						},
@@ -900,31 +900,31 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "client stream error",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
 				RequestMessages: []*anypb.Any{clientStreamErrorReq, clientStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
 				// TODO - Payloads will be in error detail for unary response errors
-				// Payloads: []*conformancev2.ConformancePayload{{}}
+				// Payloads: []*conformancev1.ConformancePayload{{}}
 				Error:            unaryErrorResp.Error,
 				ResponseTrailers: responseTrailers,
 			},
 		},
 		{
 			testName: "client stream no response set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
 				RequestMessages: []*anypb.Any{clientStreamNoResponseReq, clientStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{clientStreamNoResponseReq, clientStreamReq2},
 						},
@@ -935,15 +935,15 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "client stream no definition set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
 				RequestMessages: []*anypb.Any{clientStreamNoDefReq, clientStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
-				Payloads: []*conformancev2.ConformancePayload{
+			expected: &conformancev1.ClientResponseResult{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{clientStreamNoDefReq, clientStreamReq2},
 						},
@@ -953,17 +953,17 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "server stream success",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				RequestMessages: []*anypb.Any{serverStreamSuccessReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{serverStreamSuccessReq},
 						},
@@ -977,17 +977,17 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "server stream error",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				RequestMessages: []*anypb.Any{serverStreamErrorReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{serverStreamErrorReq},
 						},
@@ -1002,38 +1002,38 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "server stream no response set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				RequestMessages: []*anypb.Any{serverStreamNoResponseReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders:  responseHeaders,
 				ResponseTrailers: responseTrailers,
 			},
 		},
 		{
 			testName: "server stream no definition set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				RequestMessages: []*anypb.Any{serverStreamNoDefReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{},
+			expected: &conformancev1.ClientResponseResult{},
 		},
 		{
 			testName: "half duplex bidi stream success",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexSuccessReq, bidiStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{bidiStreamHalfDuplexSuccessReq, bidiStreamReq2},
 						},
@@ -1047,17 +1047,17 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "half duplex bidi stream error",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexErrorReq, bidiStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{bidiStreamHalfDuplexErrorReq, bidiStreamReq2},
 						},
@@ -1072,45 +1072,45 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "half duplex bidi stream no response set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoResponseReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders:  responseHeaders,
 				ResponseTrailers: responseTrailers,
 			},
 		},
 		{
 			testName: "half duplex bidi stream no definition set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoDefReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{},
+			expected: &conformancev1.ClientResponseResult{},
 		},
 		{
 			testName: "full duplex bidi stream success",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamFullDuplexSuccessReq, bidiStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{bidiStreamFullDuplexSuccessReq},
 						},
 					},
 					{
 						Data: data2,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							Requests: []*anypb.Any{bidiStreamReq2},
 						},
 					},
@@ -1120,24 +1120,24 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "full duplex bidi stream error",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamFullDuplexErrorReq, bidiStreamReq2},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				Payloads: []*conformancev2.ConformancePayload{
+				Payloads: []*conformancev1.ConformancePayload{
 					{
 						Data: data1,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{bidiStreamFullDuplexErrorReq},
 						},
 					},
 					{
 						Data: data2,
-						RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							Requests: []*anypb.Any{bidiStreamReq2},
 						},
 					},
@@ -1148,24 +1148,24 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		},
 		{
 			testName: "full duplex bidi stream no response set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoResponseReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{
+			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders:  responseHeaders,
 				ResponseTrailers: responseTrailers,
 			},
 		},
 		{
 			testName: "full duplex bidi stream no definition set",
-			request: &conformancev2.ClientCompatRequest{
-				StreamType:      conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoDefReq},
 				RequestHeaders:  requestHeaders,
 			},
-			expected: &conformancev2.ClientResponseResult{},
+			expected: &conformancev1.ClientResponseResult{},
 		},
 	}
 
@@ -1174,7 +1174,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		t.Run(testCase.testName, func(t *testing.T) {
 			t.Parallel()
 
-			tc := &conformancev2.TestCase{ //nolint:varnamelen
+			tc := &conformancev1.TestCase{ //nolint:varnamelen
 				Request: testCase.request,
 			}
 			err := populateExpectedResponse(tc)

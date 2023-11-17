@@ -17,12 +17,12 @@ package internal
 import (
 	"net/http"
 
-	v2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 )
 
 // AddHeaders adds all header values in src to dest.
 func AddHeaders(
-	src []*v2.Header,
+	src []*v1.Header,
 	dest http.Header,
 ) {
 	for _, header := range src {
@@ -35,10 +35,10 @@ func AddHeaders(
 // ConvertToProtoHeader converts HTTP headers to a slice of proto Headers.
 func ConvertToProtoHeader(
 	src http.Header,
-) []*v2.Header {
-	headerInfo := make([]*v2.Header, 0, len(src))
+) []*v1.Header {
+	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
-		hdr := &v2.Header{
+		hdr := &v1.Header{
 			Name:  key,
 			Value: value,
 		}

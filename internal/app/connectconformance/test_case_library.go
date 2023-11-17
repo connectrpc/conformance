@@ -22,7 +22,7 @@ import (
 	"sort"
 	"strings"
 
-	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -39,34 +39,34 @@ const (
 
 //nolint:gochecknoglobals
 var (
-	allProtocols    = allValues[conformancev2.Protocol](conformancev2.Protocol_name)
-	allHTTPVersions = allValues[conformancev2.HTTPVersion](conformancev2.HTTPVersion_name)
-	allCodecs       = allValues[conformancev2.Codec](conformancev2.Codec_name)
-	allCompressions = allValues[conformancev2.Compression](conformancev2.Compression_name)
-	allStreamTypes  = allValues[conformancev2.StreamType](conformancev2.StreamType_name)
+	allProtocols    = allValues[conformancev1.Protocol](conformancev1.Protocol_name)
+	allHTTPVersions = allValues[conformancev1.HTTPVersion](conformancev1.HTTPVersion_name)
+	allCodecs       = allValues[conformancev1.Codec](conformancev1.Codec_name)
+	allCompressions = allValues[conformancev1.Compression](conformancev1.Compression_name)
+	allStreamTypes  = allValues[conformancev1.StreamType](conformancev1.StreamType_name)
 )
 
 // testCaseLibrary is the set of all applicable test cases for a run
 // of the conformance tests.
 type testCaseLibrary struct {
-	testCases     map[string]*conformancev2.TestCase
-	casesByServer map[serverInstance][]*conformancev2.TestCase
+	testCases     map[string]*conformancev1.TestCase
+	casesByServer map[serverInstance][]*conformancev1.TestCase
 }
 
 // newTestCaseLibrary creates a new resolved set of test cases by applying
 // the given test suite configuration to the given config cases that are
 // applicable to the current run of conformance tests.
 func newTestCaseLibrary(
-	allSuites map[string]*conformancev2.TestSuite,
+	allSuites map[string]*conformancev1.TestSuite,
 	configCases []configCase,
-	mode conformancev2.TestSuite_TestMode,
+	mode conformancev1.TestSuite_TestMode,
 ) (*testCaseLibrary, error) {
 	configCaseSet := make(map[configCase]struct{}, len(configCases))
 	for _, c := range configCases {
 		configCaseSet[c] = struct{}{}
 	}
 	lib := &testCaseLibrary{
-		testCases: map[string]*conformancev2.TestCase{},
+		testCases: map[string]*conformancev1.TestCase{},
 	}
 	suitesIndex := make(map[string]string, len(allSuites))
 	for file, suite := range allSuites {
@@ -80,7 +80,7 @@ func newTestCaseLibrary(
 			return nil, fmt.Errorf("both %s and %s define a suite named %s", file, existingFile, suite.Name)
 		}
 		suitesIndex[suite.Name] = file
-		if suite.Mode != conformancev2.TestSuite_TEST_MODE_UNSPECIFIED && suite.Mode != mode {
+		if suite.Mode != conformancev1.TestSuite_TEST_MODE_UNSPECIFIED && suite.Mode != mode {
 			continue // skip it
 		}
 		if err := lib.expandSuite(suite, configCaseSet); err != nil {
@@ -95,17 +95,17 @@ func newTestCaseLibrary(
 	return lib, nil
 }
 
-func (lib *testCaseLibrary) expandSuite(suite *conformancev2.TestSuite, configCases map[configCase]struct{}) error {
+func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCases map[configCase]struct{}) error {
 	if suite.ReliesOnTlsClientCerts && !suite.ReliesOnTls {
 		return fmt.Errorf("suite %q is misconfigured: it relies on TLS client certs but not TLS", suite.Name)
 	}
-	if suite.ReliesOnConnectGet && !only(suite.RelevantProtocols, conformancev2.Protocol_PROTOCOL_CONNECT) {
+	if suite.ReliesOnConnectGet && !only(suite.RelevantProtocols, conformancev1.Protocol_PROTOCOL_CONNECT) {
 		return fmt.Errorf("suite %q is misconfigured: it relies on Connect GET support, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
 	}
-	if suite.ConnectVersionMode == conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE && !only(suite.RelevantProtocols, conformancev2.Protocol_PROTOCOL_CONNECT) {
+	if suite.ConnectVersionMode == conformancev1.TestSuite_CONNECT_VERSION_MODE_IGNORE && !only(suite.RelevantProtocols, conformancev1.Protocol_PROTOCOL_CONNECT) {
 		return fmt.Errorf("suite %q is misconfigured: it ignores Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
 	}
-	if suite.ConnectVersionMode == conformancev2.TestSuite_CONNECT_VERSION_MODE_REQUIRE && !only(suite.RelevantProtocols, conformancev2.Protocol_PROTOCOL_CONNECT) {
+	if suite.ConnectVersionMode == conformancev1.TestSuite_CONNECT_VERSION_MODE_REQUIRE && !only(suite.RelevantProtocols, conformancev1.Protocol_PROTOCOL_CONNECT) {
 		return fmt.Errorf("suite %q is misconfigured: it requires Connect Version headers, but has unexpected relevant protocols: %v", suite.Name, suite.RelevantProtocols)
 	}
 	protocols := suite.RelevantProtocols
@@ -155,7 +155,7 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev2.TestSuite, configCa
 	return nil
 }
 
-func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev2.TestCase) error {
+func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev1.TestCase) error {
 	for _, testCase := range testCases {
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
@@ -164,13 +164,13 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		if _, exists := lib.testCases[name]; exists {
 			return fmt.Errorf("test case library includes duplicate definition for %v", name)
 		}
-		testCase := proto.Clone(testCase).(*conformancev2.TestCase) //nolint:errcheck,forcetypeassert
+		testCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
 		testCase.Request.TestName = name
 		if cfgCase.UseTLS {
 			// to be replaced with actual cert provided by server
 			testCase.Request.ServerTlsCert = []byte("PLACEHOLDER")
 			if cfgCase.UseTLSClientCerts {
-				testCase.Request.ClientTlsCreds = &conformancev2.ClientCompatRequest_TLSCreds{
+				testCase.Request.ClientTlsCreds = &conformancev1.ClientCompatRequest_TLSCreds{
 					Key:  []byte("PLACEHOLDER"),
 					Cert: []byte("PLACEHOLDER"),
 				}
@@ -194,7 +194,7 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 }
 
 func (lib *testCaseLibrary) groupTestCases() {
-	lib.casesByServer = map[serverInstance][]*conformancev2.TestCase{}
+	lib.casesByServer = map[serverInstance][]*conformancev1.TestCase{}
 	for _, testCase := range lib.testCases {
 		svr := serverInstanceForCase(testCase)
 		lib.casesByServer[svr] = append(lib.casesByServer[svr], testCase)
@@ -204,13 +204,13 @@ func (lib *testCaseLibrary) groupTestCases() {
 // serverInstance identifies the properties of a server process, so tests
 // can be grouped by target server process.
 type serverInstance struct {
-	protocol          conformancev2.Protocol
-	httpVersion       conformancev2.HTTPVersion
+	protocol          conformancev1.Protocol
+	httpVersion       conformancev1.HTTPVersion
 	useTLS            bool
 	useTLSClientCerts bool
 }
 
-func serverInstanceForCase(testCase *conformancev2.TestCase) serverInstance {
+func serverInstanceForCase(testCase *conformancev1.TestCase) serverInstance {
 	return serverInstance{
 		protocol:          testCase.Request.Protocol,
 		httpVersion:       testCase.Request.HttpVersion,
@@ -223,13 +223,13 @@ func serverInstanceForCase(testCase *conformancev2.TestCase) serverInstance {
 // by test file name. Each entry's value is the contents of the named file.
 // The given argument often represents the embedded test suite data. Also
 // see testsuites.LoadTestSuites.
-func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev2.TestSuite, error) {
-	allSuites := make(map[string]*conformancev2.TestSuite, len(testFileData))
+func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.TestSuite, error) {
+	allSuites := make(map[string]*conformancev1.TestSuite, len(testFileData))
 	for testFilePath, data := range testFileData {
 		opts := protoyaml.UnmarshalOptions{
 			Path: testFilePath,
 		}
-		suite := &conformancev2.TestSuite{}
+		suite := &conformancev1.TestSuite{}
 		if err := opts.Unmarshal(data, suite); err != nil {
 			return nil, ensureFileName(err, testFilePath)
 		}
@@ -250,7 +250,7 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev2.
 
 // expandRequestData expands the request_data field of RPC requests in the
 // given test case, per directives in the expand_requests test case field.
-func expandRequestData(testCase *conformancev2.TestCase) error {
+func expandRequestData(testCase *conformancev1.TestCase) error {
 	if len(testCase.ExpandRequests) == 0 {
 		return nil // nothing to do...
 	}
@@ -326,7 +326,7 @@ func expandRequestData(testCase *conformancev2.TestCase) error {
 
 // populateExpectedResponse populates the response we expected to get back from the server
 // by examining the requests we sent.
-func populateExpectedResponse(testCase *conformancev2.TestCase) error {
+func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 	// If an expected response was already provided, return and use that.
 	// This allows for overriding this function with explicit values in the yaml file.
 	if testCase.ExpectedResponse != nil {
@@ -342,16 +342,16 @@ func populateExpectedResponse(testCase *conformancev2.TestCase) error {
 	}
 
 	switch testCase.Request.StreamType {
-	case conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
-		conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-		conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM:
+	case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+		conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+		conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM:
 		return populateExpectedStreamResponse(testCase)
 
-	case conformancev2.StreamType_STREAM_TYPE_UNARY,
-		conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM:
+	case conformancev1.StreamType_STREAM_TYPE_UNARY,
+		conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM:
 		return populateExpectedUnaryResponse(testCase)
 
-	case conformancev2.StreamType_STREAM_TYPE_UNSPECIFIED:
+	case conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED:
 		return errors.New("stream type is required")
 	default:
 		return fmt.Errorf("stream type %s is not supported", testCase.Request.StreamType)
@@ -359,7 +359,7 @@ func populateExpectedResponse(testCase *conformancev2.TestCase) error {
 }
 
 // populates the expected response for a unary test case.
-func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
+func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
 	// First, find the response definition that the client instructed the server to return
 	concreteReq, err := req.UnmarshalNew()
@@ -367,7 +367,7 @@ func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 		return err
 	}
 	type unaryResponseDefiner interface {
-		GetResponseDefinition() *conformancev2.UnaryResponseDefinition
+		GetResponseDefinition() *conformancev1.UnaryResponseDefinition
 	}
 
 	definer, ok := concreteReq.(unaryResponseDefiner)
@@ -385,10 +385,10 @@ func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 	// ClientResponseResult if no response definition is provided
 	def := definer.GetResponseDefinition()
 	if def == nil {
-		testCase.ExpectedResponse = &conformancev2.ClientResponseResult{
-			Payloads: []*conformancev2.ConformancePayload{
+		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
+			Payloads: []*conformancev1.ConformancePayload{
 				{
-					RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+					RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: testCase.Request.RequestHeaders,
 						Requests:       testCase.Request.RequestMessages,
 					},
@@ -399,29 +399,29 @@ func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 	}
 
 	// Server should have echoed back all specified headers and trailers
-	expected := &conformancev2.ClientResponseResult{
+	expected := &conformancev1.ClientResponseResult{
 		ResponseHeaders:  def.ResponseHeaders,
 		ResponseTrailers: def.ResponseTrailers,
 	}
 
 	switch respType := def.Response.(type) {
-	case *conformancev2.UnaryResponseDefinition_Error:
+	case *conformancev1.UnaryResponseDefinition_Error:
 		// If an error was specified, it should be returned in the response
 		expected.Error = respType.Error
-	case *conformancev2.UnaryResponseDefinition_ResponseData, nil:
+	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
 		// If response data was specified for the response (or nothing at all),
 		// the server should echo back the request message and headers in the response
-		payload := &conformancev2.ConformancePayload{
-			RequestInfo: &conformancev2.ConformancePayload_RequestInfo{
+		payload := &conformancev1.ConformancePayload{
+			RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 				RequestHeaders: testCase.Request.RequestHeaders,
 				Requests:       testCase.Request.RequestMessages,
 			},
 		}
 		// If response data was specified for the response, it should be returned
-		if respType, ok := respType.(*conformancev2.UnaryResponseDefinition_ResponseData); ok {
+		if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
 			payload.Data = respType.ResponseData
 		}
-		expected.Payloads = []*conformancev2.ConformancePayload{payload}
+		expected.Payloads = []*conformancev1.ConformancePayload{payload}
 	default:
 		return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 	}
@@ -431,7 +431,7 @@ func populateExpectedUnaryResponse(testCase *conformancev2.TestCase) error {
 }
 
 // populates the expected response for a streaming test case.
-func populateExpectedStreamResponse(testCase *conformancev2.TestCase) error {
+func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
 	// First, find the response definition that the client instructed the
 	// server to return
@@ -440,7 +440,7 @@ func populateExpectedStreamResponse(testCase *conformancev2.TestCase) error {
 		return err
 	}
 	type streamResponseDefiner interface {
-		GetResponseDefinition() *conformancev2.StreamResponseDefinition
+		GetResponseDefinition() *conformancev1.StreamResponseDefinition
 	}
 
 	definer, ok := concreteReq.(streamResponseDefiner)
@@ -454,39 +454,39 @@ func populateExpectedStreamResponse(testCase *conformancev2.TestCase) error {
 
 	def := definer.GetResponseDefinition()
 	if def == nil {
-		testCase.ExpectedResponse = &conformancev2.ClientResponseResult{}
+		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{}
 		return nil
 	}
 
 	// Server should have echoed back all specified headers, trailers, and errors
-	expected := &conformancev2.ClientResponseResult{
+	expected := &conformancev1.ClientResponseResult{
 		ResponseHeaders:  def.ResponseHeaders,
 		ResponseTrailers: def.ResponseTrailers,
 		Error:            def.Error,
 	}
 
 	// There should be one payload for every ResponseData the client specified
-	expected.Payloads = make([]*conformancev2.ConformancePayload, len(def.ResponseData))
+	expected.Payloads = make([]*conformancev1.ConformancePayload, len(def.ResponseData))
 
 	for idx, data := range def.ResponseData {
-		expected.Payloads[idx] = &conformancev2.ConformancePayload{
+		expected.Payloads[idx] = &conformancev1.ConformancePayload{
 			Data: data,
 		}
 		switch testCase.Request.StreamType { //nolint:exhaustive
-		case conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
-			conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+		case conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+			conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
 			// For server streams and half duplex bidi streams, all request information
 			// specified should only be echoed back in the first response
 			if idx == 0 {
-				expected.Payloads[idx].RequestInfo = &conformancev2.ConformancePayload_RequestInfo{
+				expected.Payloads[idx].RequestInfo = &conformancev1.ConformancePayload_RequestInfo{
 					RequestHeaders: testCase.Request.RequestHeaders,
 					Requests:       testCase.Request.RequestMessages,
 				}
 			}
-		case conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+		case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
 			// For a full duplex stream, the first request should be echoed back in the first
 			// payload. The second should be echoed back in the second payload, etc. (i.e. a ping pong interaction)
-			expected.Payloads[idx].RequestInfo = &conformancev2.ConformancePayload_RequestInfo{
+			expected.Payloads[idx].RequestInfo = &conformancev1.ConformancePayload_RequestInfo{
 				// RequestHeaders: testCase.Request.RequestHeaders,
 				Requests: []*anypb.Any{testCase.Request.RequestMessages[idx]},
 			}
@@ -499,7 +499,7 @@ func populateExpectedStreamResponse(testCase *conformancev2.TestCase) error {
 	return nil
 }
 
-func generateTestCasePrefix(suite *conformancev2.TestSuite, cfgCase configCase) []string {
+func generateTestCasePrefix(suite *conformancev1.TestSuite, cfgCase configCase) []string {
 	components := make([]string, 1, 5)
 	components = append(components, suite.Name)
 	if len(suite.RelevantHttpVersions) != 1 {

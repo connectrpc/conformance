@@ -18,7 +18,7 @@ import (
 	"errors"
 	"fmt"
 
-	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/bufbuild/protoyaml-go"
 )
 
@@ -26,27 +26,27 @@ import (
 // ConfigCase protobuf message, but includes additional de-normalized
 // fields.
 type configCase struct {
-	Version                conformancev2.HTTPVersion
-	Protocol               conformancev2.Protocol
-	Codec                  conformancev2.Codec
-	Compression            conformancev2.Compression
-	StreamType             conformancev2.StreamType
+	Version                conformancev1.HTTPVersion
+	Protocol               conformancev1.Protocol
+	Codec                  conformancev1.Codec
+	Compression            conformancev1.Compression
+	StreamType             conformancev1.StreamType
 	UseTLS                 bool
 	UseTLSClientCerts      bool
 	UseConnectGET          bool
 	UseMessageReceiveLimit bool
-	ConnectVersionMode     conformancev2.TestSuite_ConnectVersionMode
+	ConnectVersionMode     conformancev1.TestSuite_ConnectVersionMode
 }
 
 // supportedFeatures is a resolved set of features. This mirrors
 // the Features protobuf message, but without pointers/optional
 // values.
 type supportedFeatures struct {
-	Versions                        []conformancev2.HTTPVersion
-	Protocols                       []conformancev2.Protocol
-	Codecs                          []conformancev2.Codec
-	Compressions                    []conformancev2.Compression
-	StreamTypes                     []conformancev2.StreamType
+	Versions                        []conformancev1.HTTPVersion
+	Protocols                       []conformancev1.Protocol
+	Codecs                          []conformancev1.Codec
+	Compressions                    []conformancev1.Compression
+	StreamTypes                     []conformancev1.StreamType
 	SupportsH2C                     bool
 	SupportsTLS                     bool
 	SupportsTLSClientCerts          bool
@@ -60,7 +60,7 @@ type supportedFeatures struct {
 // parseConfig loads all config cases from the given file name. If the given
 // file name is blank, it returns all config cases based on default features.
 func parseConfig(configFileName string, data []byte) ([]configCase, error) {
-	var config conformancev2.Config
+	var config conformancev1.Config
 	if len(data) > 0 {
 		opts := protoyaml.UnmarshalOptions{
 			Path: configFileName,
@@ -70,7 +70,7 @@ func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 		}
 	}
 	if config.Features == nil {
-		config.Features = &conformancev2.Features{}
+		config.Features = &conformancev1.Features{}
 	}
 	features, err := resolveFeatures(config.Features)
 	if err != nil {
@@ -108,7 +108,7 @@ func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 // resolveFeatures resolves all unspecified fields in the given features from the
 // config file. It returns an error if the given features are invalid due to
 // impossible or contradictory settings.
-func resolveFeatures(features *conformancev2.Features) (supportedFeatures, error) { //nolint:gocyclo
+func resolveFeatures(features *conformancev1.Features) (supportedFeatures, error) { //nolint:gocyclo
 	result := supportedFeatures{
 		Versions:                        features.Versions,
 		Protocols:                       features.Protocols,
@@ -148,24 +148,24 @@ func resolveFeatures(features *conformancev2.Features) (supportedFeatures, error
 
 	if len(result.Versions) == 0 {
 		if result.SupportsTLS || result.SupportsH2C {
-			result.Versions = []conformancev2.HTTPVersion{
-				conformancev2.HTTPVersion_HTTP_VERSION_1,
-				conformancev2.HTTPVersion_HTTP_VERSION_2,
+			result.Versions = []conformancev1.HTTPVersion{
+				conformancev1.HTTPVersion_HTTP_VERSION_1,
+				conformancev1.HTTPVersion_HTTP_VERSION_2,
 			}
 		} else {
-			result.Versions = []conformancev2.HTTPVersion{
-				conformancev2.HTTPVersion_HTTP_VERSION_1,
+			result.Versions = []conformancev1.HTTPVersion{
+				conformancev1.HTTPVersion_HTTP_VERSION_1,
 			}
 		}
-	} else if features.SupportsH2C != nil && features.GetSupportsH2C() && !contains(result.Versions, conformancev2.HTTPVersion_HTTP_VERSION_2) {
+	} else if features.SupportsH2C != nil && features.GetSupportsH2C() && !contains(result.Versions, conformancev1.HTTPVersion_HTTP_VERSION_2) {
 		return result, errors.New("config features indicate H2C is supported but HTTP/2 is not a supported HTTP version")
 	}
 
-	includesHTTP3 := contains(result.Versions, conformancev2.HTTPVersion_HTTP_VERSION_3)
+	includesHTTP3 := contains(result.Versions, conformancev1.HTTPVersion_HTTP_VERSION_3)
 	if includesHTTP3 && !result.SupportsTLS {
 		return result, errors.New("config features indicate HTTP/3 is supported but TLS is not")
 	}
-	includesHTTP2 := contains(result.Versions, conformancev2.HTTPVersion_HTTP_VERSION_2)
+	includesHTTP2 := contains(result.Versions, conformancev1.HTTPVersion_HTTP_VERSION_2)
 	canUseHTTP2 := result.SupportsH2C || result.SupportsTLS
 	if includesHTTP2 && !canUseHTTP2 {
 		return result, errors.New("config features indicate HTTP/2 is supported but neither H2C nor TLS are supported")
@@ -173,16 +173,16 @@ func resolveFeatures(features *conformancev2.Features) (supportedFeatures, error
 	if len(result.Versions) == 0 {
 		if canUseHTTP2 {
 			includesHTTP2 = true
-			result.Versions = []conformancev2.HTTPVersion{
-				conformancev2.HTTPVersion_HTTP_VERSION_1,
-				conformancev2.HTTPVersion_HTTP_VERSION_2,
+			result.Versions = []conformancev1.HTTPVersion{
+				conformancev1.HTTPVersion_HTTP_VERSION_1,
+				conformancev1.HTTPVersion_HTTP_VERSION_2,
 			}
 		} else {
-			result.Versions = []conformancev2.HTTPVersion{conformancev2.HTTPVersion_HTTP_VERSION_1}
+			result.Versions = []conformancev1.HTTPVersion{conformancev1.HTTPVersion_HTTP_VERSION_1}
 		}
 	}
 
-	includesGPRC := contains(result.Protocols, conformancev2.Protocol_PROTOCOL_GRPC)
+	includesGPRC := contains(result.Protocols, conformancev1.Protocol_PROTOCOL_GRPC)
 	if includesGPRC && !result.SupportsTrailers {
 		return result, errors.New("config features indicate gRPC protocol is supported but trailers are not")
 	}
@@ -192,64 +192,64 @@ func resolveFeatures(features *conformancev2.Features) (supportedFeatures, error
 	canUseGRPC := result.SupportsTrailers && includesHTTP2
 	if len(result.Protocols) == 0 {
 		if canUseGRPC {
-			result.Protocols = []conformancev2.Protocol{
-				conformancev2.Protocol_PROTOCOL_CONNECT,
-				conformancev2.Protocol_PROTOCOL_GRPC,
-				conformancev2.Protocol_PROTOCOL_GRPC_WEB,
+			result.Protocols = []conformancev1.Protocol{
+				conformancev1.Protocol_PROTOCOL_CONNECT,
+				conformancev1.Protocol_PROTOCOL_GRPC,
+				conformancev1.Protocol_PROTOCOL_GRPC_WEB,
 			}
 		} else {
-			result.Protocols = []conformancev2.Protocol{
-				conformancev2.Protocol_PROTOCOL_CONNECT,
-				conformancev2.Protocol_PROTOCOL_GRPC_WEB,
+			result.Protocols = []conformancev1.Protocol{
+				conformancev1.Protocol_PROTOCOL_CONNECT,
+				conformancev1.Protocol_PROTOCOL_GRPC_WEB,
 			}
 		}
 	}
 
 	if len(result.Codecs) == 0 {
-		result.Codecs = []conformancev2.Codec{
-			conformancev2.Codec_CODEC_PROTO,
-			conformancev2.Codec_CODEC_JSON,
+		result.Codecs = []conformancev1.Codec{
+			conformancev1.Codec_CODEC_PROTO,
+			conformancev1.Codec_CODEC_JSON,
 		}
 	}
 	if len(result.Compressions) == 0 {
-		result.Compressions = []conformancev2.Compression{
-			conformancev2.Compression_COMPRESSION_IDENTITY,
-			conformancev2.Compression_COMPRESSION_GZIP,
+		result.Compressions = []conformancev1.Compression{
+			conformancev1.Compression_COMPRESSION_IDENTITY,
+			conformancev1.Compression_COMPRESSION_GZIP,
 		}
 	}
 
-	includesFullDuplex := contains(result.StreamTypes, conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM)
+	includesFullDuplex := contains(result.StreamTypes, conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM)
 	onlyHTTP1 := !includesHTTP2 && !includesHTTP3
 	if includesFullDuplex && onlyHTTP1 {
 		return result, errors.New("config features indicate full-duplex bidi streams are supported but neither HTTP/2 nor HTTP/3 included")
 	}
-	includesHalfDuplex := contains(result.StreamTypes, conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM)
+	includesHalfDuplex := contains(result.StreamTypes, conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM)
 	if includesHalfDuplex && onlyHTTP1 && !result.SupportsHalfDuplexBidiOverHTTP1 {
 		return result, errors.New("config features indicate half-duplex bidi streams are supported but not over HTTP/1.1, and neither HTTP/2 nor HTTP/3 included")
 	}
 	if len(result.StreamTypes) == 0 { //nolint:nestif
 		if onlyHTTP1 {
 			if result.SupportsHalfDuplexBidiOverHTTP1 {
-				result.StreamTypes = []conformancev2.StreamType{
-					conformancev2.StreamType_STREAM_TYPE_UNARY,
-					conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
-					conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
-					conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				result.StreamTypes = []conformancev1.StreamType{
+					conformancev1.StreamType_STREAM_TYPE_UNARY,
+					conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+					conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+					conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				}
 			} else {
-				result.StreamTypes = []conformancev2.StreamType{
-					conformancev2.StreamType_STREAM_TYPE_UNARY,
-					conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
-					conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
+				result.StreamTypes = []conformancev1.StreamType{
+					conformancev1.StreamType_STREAM_TYPE_UNARY,
+					conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+					conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				}
 			}
 		} else {
-			result.StreamTypes = []conformancev2.StreamType{
-				conformancev2.StreamType_STREAM_TYPE_UNARY,
-				conformancev2.StreamType_STREAM_TYPE_CLIENT_STREAM,
-				conformancev2.StreamType_STREAM_TYPE_SERVER_STREAM,
-				conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-				conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+			result.StreamTypes = []conformancev1.StreamType{
+				conformancev1.StreamType_STREAM_TYPE_UNARY,
+				conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 			}
 		}
 	}
@@ -286,8 +286,8 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 	for _, version := range features.Versions {
 		for _, tlsCase := range tlsCases {
 			if !tlsCase &&
-				(version == conformancev2.HTTPVersion_HTTP_VERSION_3 ||
-					(version == conformancev2.HTTPVersion_HTTP_VERSION_2 && !features.SupportsH2C)) {
+				(version == conformancev1.HTTPVersion_HTTP_VERSION_3 ||
+					(version == conformancev1.HTTPVersion_HTTP_VERSION_2 && !features.SupportsH2C)) {
 				continue // TLS required
 			}
 			for _, tlsClientCertCase := range tlsClientCertCases {
@@ -296,32 +296,32 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 					continue
 				}
 				for _, protocol := range features.Protocols {
-					if protocol == conformancev2.Protocol_PROTOCOL_GRPC &&
-						version != conformancev2.HTTPVersion_HTTP_VERSION_2 {
+					if protocol == conformancev1.Protocol_PROTOCOL_GRPC &&
+						version != conformancev1.HTTPVersion_HTTP_VERSION_2 {
 						continue // gRPC requires HTTP/2
 					}
 
 					connectGetCases := []bool{false}
-					if protocol == conformancev2.Protocol_PROTOCOL_CONNECT && features.SupportsConnectGet {
+					if protocol == conformancev1.Protocol_PROTOCOL_CONNECT && features.SupportsConnectGet {
 						connectGetCases = []bool{false, true}
 					}
-					validateConnectVersionCases := []conformancev2.TestSuite_ConnectVersionMode{conformancev2.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED}
-					if protocol == conformancev2.Protocol_PROTOCOL_CONNECT {
+					validateConnectVersionCases := []conformancev1.TestSuite_ConnectVersionMode{conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED}
+					if protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
 						if features.RequiresConnectVersionHeader {
-							validateConnectVersionCases = append(validateConnectVersionCases, conformancev2.TestSuite_CONNECT_VERSION_MODE_REQUIRE)
+							validateConnectVersionCases = append(validateConnectVersionCases, conformancev1.TestSuite_CONNECT_VERSION_MODE_REQUIRE)
 						} else {
-							validateConnectVersionCases = append(validateConnectVersionCases, conformancev2.TestSuite_CONNECT_VERSION_MODE_IGNORE)
+							validateConnectVersionCases = append(validateConnectVersionCases, conformancev1.TestSuite_CONNECT_VERSION_MODE_IGNORE)
 						}
 					}
 
 					for _, streamType := range features.StreamTypes {
 						switch streamType { //nolint:exhaustive
-						case conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
-							if !features.SupportsHalfDuplexBidiOverHTTP1 && version == conformancev2.HTTPVersion_HTTP_VERSION_1 {
+						case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+							if !features.SupportsHalfDuplexBidiOverHTTP1 && version == conformancev1.HTTPVersion_HTTP_VERSION_1 {
 								continue
 							}
-						case conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-							if version == conformancev2.HTTPVersion_HTTP_VERSION_1 {
+						case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+							if version == conformancev1.HTTPVersion_HTTP_VERSION_1 {
 								continue // HTTP/1.1 can't do full duplex
 							}
 						}
@@ -362,49 +362,49 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 // file can map to numerous permutations if a field is omitted. For example,
 // if the codecs field is unset/empty, the case is expanded to include all
 // codecs indicated by the configured features.
-func resolveCase(features supportedFeatures, unresolvedCase *conformancev2.ConfigCase) (map[configCase]struct{}, error) {
+func resolveCase(features supportedFeatures, unresolvedCase *conformancev1.ConfigCase) (map[configCase]struct{}, error) {
 	// Build a set of supportedFeatures that matches the given ConfigCase.
 	impliedFeatures := features // start as copy of supported features
-	if unresolvedCase.Version != conformancev2.HTTPVersion_HTTP_VERSION_UNSPECIFIED {
+	if unresolvedCase.Version != conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED {
 		usingTLS := (unresolvedCase.UseTls != nil && unresolvedCase.GetUseTls()) ||
 			(unresolvedCase.UseTls == nil && features.SupportsTLS)
 		switch unresolvedCase.Version { //nolint:exhaustive
-		case conformancev2.HTTPVersion_HTTP_VERSION_2:
+		case conformancev1.HTTPVersion_HTTP_VERSION_2:
 			if !usingTLS && !features.SupportsH2C {
 				return nil, errors.New("config case indicates HTTP/2 but not TLS, and features indicate that H2C not supported")
 			}
-		case conformancev2.HTTPVersion_HTTP_VERSION_3:
+		case conformancev1.HTTPVersion_HTTP_VERSION_3:
 			if !usingTLS {
 				return nil, errors.New("config case indicates HTTP/3 but not TLS")
 			}
 		}
-		impliedFeatures.Versions = []conformancev2.HTTPVersion{unresolvedCase.Version}
+		impliedFeatures.Versions = []conformancev1.HTTPVersion{unresolvedCase.Version}
 	}
-	if unresolvedCase.Protocol != conformancev2.Protocol_PROTOCOL_UNSPECIFIED {
-		if unresolvedCase.Protocol == conformancev2.Protocol_PROTOCOL_GRPC &&
-			!contains(impliedFeatures.Versions, conformancev2.HTTPVersion_HTTP_VERSION_2) {
+	if unresolvedCase.Protocol != conformancev1.Protocol_PROTOCOL_UNSPECIFIED {
+		if unresolvedCase.Protocol == conformancev1.Protocol_PROTOCOL_GRPC &&
+			!contains(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_2) {
 			return nil, errors.New("config case indicates gRPC protocol but not HTTP/2")
 		}
-		impliedFeatures.Protocols = []conformancev2.Protocol{unresolvedCase.Protocol}
+		impliedFeatures.Protocols = []conformancev1.Protocol{unresolvedCase.Protocol}
 	}
-	if unresolvedCase.Codec != conformancev2.Codec_CODEC_UNSPECIFIED {
-		impliedFeatures.Codecs = []conformancev2.Codec{unresolvedCase.Codec}
+	if unresolvedCase.Codec != conformancev1.Codec_CODEC_UNSPECIFIED {
+		impliedFeatures.Codecs = []conformancev1.Codec{unresolvedCase.Codec}
 	}
-	if unresolvedCase.Compression != conformancev2.Compression_COMPRESSION_UNSPECIFIED {
-		impliedFeatures.Compressions = []conformancev2.Compression{unresolvedCase.Compression}
+	if unresolvedCase.Compression != conformancev1.Compression_COMPRESSION_UNSPECIFIED {
+		impliedFeatures.Compressions = []conformancev1.Compression{unresolvedCase.Compression}
 	}
-	if unresolvedCase.StreamType != conformancev2.StreamType_STREAM_TYPE_UNSPECIFIED {
+	if unresolvedCase.StreamType != conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
 		switch unresolvedCase.StreamType { //nolint:exhaustive
-		case conformancev2.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
-			if !features.SupportsHalfDuplexBidiOverHTTP1 && only(impliedFeatures.Versions, conformancev2.HTTPVersion_HTTP_VERSION_1) {
+		case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+			if !features.SupportsHalfDuplexBidiOverHTTP1 && only(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1) {
 				return nil, errors.New("config case indicates half-duplex bidi stream type, but features indicate only HTTP/1.1 and that half-duplex is not supported over HTTP1.1")
 			}
-		case conformancev2.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-			if only(impliedFeatures.Versions, conformancev2.HTTPVersion_HTTP_VERSION_1) {
+		case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+			if only(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1) {
 				return nil, errors.New("config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex")
 			}
 		}
-		impliedFeatures.StreamTypes = []conformancev2.StreamType{unresolvedCase.StreamType}
+		impliedFeatures.StreamTypes = []conformancev1.StreamType{unresolvedCase.StreamType}
 	}
 	var tlsCases, tlsClientCertCases, msgReceiveLimitCases []bool
 	if unresolvedCase.UseTls != nil {

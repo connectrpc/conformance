@@ -8,7 +8,7 @@ plugins:
     out: internal/gen/proto/go
     opt: paths=source_relative
   - plugin: buf.build/connectrpc/go
-    out: internal/gen/proto/connect
+    out: internal/gen/proto/go
     opt: paths=source_relative
   - plugin: buf.build/grpc/go:v1.3.0
     out: internal/gen/proto/go

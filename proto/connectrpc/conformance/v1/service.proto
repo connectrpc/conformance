@@ -14,9 +14,9 @@
 
 syntax = "proto3";
 
-package connectrpc.conformance.v2;
+package connectrpc.conformance.v1;
 
-import "connectrpc/conformance/v2/config.proto";
+import "connectrpc/conformance/v1/config.proto";
 import "google/protobuf/any.proto";
 
 // The service implemented by conformance test servers. This is implemented by
