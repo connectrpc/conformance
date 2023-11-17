@@ -288,6 +288,9 @@ message RawHTTPRequest {
   message EncodedQueryParam {
     string name = 1;
     MessageContents value = 2;
+    // If true, the message contents will be base64-encoded and the
+    // resulting string used as the query parameter value.
+    bool base64_encode = 3;
   }
 
   oneof body {
