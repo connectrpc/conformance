@@ -321,7 +321,7 @@ message MessageContents {
 message StreamContents {
   repeated StreamItem items = 1;
   message StreamItem {
-    int32 flags = 1; // must be in the range 0 to 255.
+    uint32 flags = 1; // must be in the range 0 to 255.
     optional int32 length = 2; // if absent use actual length of payload
     MessageContents payload = 3;
   }
@@ -331,7 +331,7 @@ message StreamContents {
 // custom responses with odd properties (including certain kinds of
 // malformed responses) to test edge cases in clients.
 message RawHTTPResponse {
-  int32 status_code = 1;
+  uint32 status_code = 1;
   repeated Header headers = 2;
   oneof body {
     // The body is a single message.

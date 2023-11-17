@@ -80,21 +80,23 @@ message ClientCompatRequest {
   message Cancel {
     // These fields determine the timing of cancellation.
     // If none are present, the client should cancel immediately
-    // after all request messages are sent the stream half-closed
-    // (as if the after_half_close_ms field were present and zero).
+    // after all request messages are sent and the send side is
+    // closed (as if the after_close_send_ms field were present
+    // and zero).
     oneof cancel_timing {
-      // When present, the client should cancel instead of
-      // half-closing the stream, after all requests have been
-      // sent. This applies only to client and bidi stream RPCs.
-      google.protobuf.Empty before_half_close = 1;
+      // When present, the client should cancel *instead of*
+      // closing the send side of the stream, after all requests
+      // have been sent. This applies only to client and bidi
+      // stream RPCs.
+      google.protobuf.Empty before_close_send = 1;
       // When present, the client should delay for this many
-      // milliseconds after half-closing the stream and then
-      // cancel.
-      uint32 after_half_close_ms = 2;
+      // milliseconds after closing the send side of the stream
+      // and then cancel.
+      uint32 after_close_send_ms = 2;
       // When present, the client should cancel right after
       // reading this number of response messages from the stream.
       // This applies only to server and bidi stream RPCs.
-      int32 after_num_responses = 3;
+      uint32 after_num_responses = 3;
     }
   }
 

@@ -594,13 +594,14 @@ type ClientCompatRequest_Cancel struct {
 
 	// These fields determine the timing of cancellation.
 	// If none are present, the client should cancel immediately
-	// after all request messages are sent the stream half-closed
-	// (as if the after_half_close_ms field were present and zero).
+	// after all request messages are sent and the send side is
+	// closed (as if the after_close_send_ms field were present
+	// and zero).
 	//
 	// Types that are assignable to CancelTiming:
 	//
-	//	*ClientCompatRequest_Cancel_BeforeHalfClose
-	//	*ClientCompatRequest_Cancel_AfterHalfCloseMs
+	//	*ClientCompatRequest_Cancel_BeforeCloseSend
+	//	*ClientCompatRequest_Cancel_AfterCloseSendMs
 	//	*ClientCompatRequest_Cancel_AfterNumResponses
 	CancelTiming isClientCompatRequest_Cancel_CancelTiming `protobuf_oneof:"cancel_timing"`
 }
@@ -644,21 +645,21 @@ func (m *ClientCompatRequest_Cancel) GetCancelTiming() isClientCompatRequest_Can
 	return nil
 }
 
-func (x *ClientCompatRequest_Cancel) GetBeforeHalfClose() *emptypb.Empty {
-	if x, ok := x.GetCancelTiming().(*ClientCompatRequest_Cancel_BeforeHalfClose); ok {
-		return x.BeforeHalfClose
+func (x *ClientCompatRequest_Cancel) GetBeforeCloseSend() *emptypb.Empty {
+	if x, ok := x.GetCancelTiming().(*ClientCompatRequest_Cancel_BeforeCloseSend); ok {
+		return x.BeforeCloseSend
 	}
 	return nil
 }
 
-func (x *ClientCompatRequest_Cancel) GetAfterHalfCloseMs() uint32 {
-	if x, ok := x.GetCancelTiming().(*ClientCompatRequest_Cancel_AfterHalfCloseMs); ok {
-		return x.AfterHalfCloseMs
+func (x *ClientCompatRequest_Cancel) GetAfterCloseSendMs() uint32 {
+	if x, ok := x.GetCancelTiming().(*ClientCompatRequest_Cancel_AfterCloseSendMs); ok {
+		return x.AfterCloseSendMs
 	}
 	return 0
 }
 
-func (x *ClientCompatRequest_Cancel) GetAfterNumResponses() int32 {
+func (x *ClientCompatRequest_Cancel) GetAfterNumResponses() uint32 {
 	if x, ok := x.GetCancelTiming().(*ClientCompatRequest_Cancel_AfterNumResponses); ok {
 		return x.AfterNumResponses
 	}
@@ -669,30 +670,31 @@ type isClientCompatRequest_Cancel_CancelTiming interface {
 	isClientCompatRequest_Cancel_CancelTiming()
 }
 
-type ClientCompatRequest_Cancel_BeforeHalfClose struct {
-	// When present, the client should cancel instead of
-	// half-closing the stream, after all requests have been
-	// sent. This applies only to client and bidi stream RPCs.
-	BeforeHalfClose *emptypb.Empty `protobuf:"bytes,1,opt,name=before_half_close,json=beforeHalfClose,proto3,oneof"`
+type ClientCompatRequest_Cancel_BeforeCloseSend struct {
+	// When present, the client should cancel *instead of*
+	// closing the send side of the stream, after all requests
+	// have been sent. This applies only to client and bidi
+	// stream RPCs.
+	BeforeCloseSend *emptypb.Empty `protobuf:"bytes,1,opt,name=before_close_send,json=beforeCloseSend,proto3,oneof"`
 }
 
-type ClientCompatRequest_Cancel_AfterHalfCloseMs struct {
+type ClientCompatRequest_Cancel_AfterCloseSendMs struct {
 	// When present, the client should delay for this many
-	// milliseconds after half-closing the stream and then
-	// cancel.
-	AfterHalfCloseMs uint32 `protobuf:"varint,2,opt,name=after_half_close_ms,json=afterHalfCloseMs,proto3,oneof"`
+	// milliseconds after closing the send side of the stream
+	// and then cancel.
+	AfterCloseSendMs uint32 `protobuf:"varint,2,opt,name=after_close_send_ms,json=afterCloseSendMs,proto3,oneof"`
 }
 
 type ClientCompatRequest_Cancel_AfterNumResponses struct {
 	// When present, the client should cancel right after
 	// reading this number of response messages from the stream.
 	// This applies only to server and bidi stream RPCs.
-	AfterNumResponses int32 `protobuf:"varint,3,opt,name=after_num_responses,json=afterNumResponses,proto3,oneof"`
+	AfterNumResponses uint32 `protobuf:"varint,3,opt,name=after_num_responses,json=afterNumResponses,proto3,oneof"`
 }
 
-func (*ClientCompatRequest_Cancel_BeforeHalfClose) isClientCompatRequest_Cancel_CancelTiming() {}
+func (*ClientCompatRequest_Cancel_BeforeCloseSend) isClientCompatRequest_Cancel_CancelTiming() {}
 
-func (*ClientCompatRequest_Cancel_AfterHalfCloseMs) isClientCompatRequest_Cancel_CancelTiming() {}
+func (*ClientCompatRequest_Cancel_AfterCloseSendMs) isClientCompatRequest_Cancel_CancelTiming() {}
 
 func (*ClientCompatRequest_Cancel_AfterNumResponses) isClientCompatRequest_Cancel_CancelTiming() {}
 
@@ -787,15 +789,15 @@ var file_connectrpc_conformance_v2_client_compat_proto_rawDesc = []byte{
 	0x20, 0x01, 0x28, 0x0c, 0x52, 0x04, 0x63, 0x65, 0x72, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65,
 	0x79, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x1a, 0xc2, 0x01, 0x0a,
 	0x06, 0x43, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x12, 0x44, 0x0a, 0x11, 0x62, 0x65, 0x66, 0x6f, 0x72,
-	0x65, 0x5f, 0x68, 0x61, 0x6c, 0x66, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x18, 0x01, 0x20, 0x01,
+	0x65, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x5f, 0x73, 0x65, 0x6e, 0x64, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x0b, 0x32, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x48, 0x00, 0x52, 0x0f, 0x62, 0x65,
-	0x66, 0x6f, 0x72, 0x65, 0x48, 0x61, 0x6c, 0x66, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x12, 0x2f, 0x0a,
-	0x13, 0x61, 0x66, 0x74, 0x65, 0x72, 0x5f, 0x68, 0x61, 0x6c, 0x66, 0x5f, 0x63, 0x6c, 0x6f, 0x73,
-	0x65, 0x5f, 0x6d, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x48, 0x00, 0x52, 0x10, 0x61, 0x66,
-	0x74, 0x65, 0x72, 0x48, 0x61, 0x6c, 0x66, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x4d, 0x73, 0x12, 0x30,
+	0x66, 0x6f, 0x72, 0x65, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x53, 0x65, 0x6e, 0x64, 0x12, 0x2f, 0x0a,
+	0x13, 0x61, 0x66, 0x74, 0x65, 0x72, 0x5f, 0x63, 0x6c, 0x6f, 0x73, 0x65, 0x5f, 0x73, 0x65, 0x6e,
+	0x64, 0x5f, 0x6d, 0x73, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0d, 0x48, 0x00, 0x52, 0x10, 0x61, 0x66,
+	0x74, 0x65, 0x72, 0x43, 0x6c, 0x6f, 0x73, 0x65, 0x53, 0x65, 0x6e, 0x64, 0x4d, 0x73, 0x12, 0x30,
 	0x0a, 0x13, 0x61, 0x66, 0x74, 0x65, 0x72, 0x5f, 0x6e, 0x75, 0x6d, 0x5f, 0x72, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x05, 0x48, 0x00, 0x52, 0x11, 0x61,
+	0x6f, 0x6e, 0x73, 0x65, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0d, 0x48, 0x00, 0x52, 0x11, 0x61,
 	0x66, 0x74, 0x65, 0x72, 0x4e, 0x75, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x73,
 	0x42, 0x0f, 0x0a, 0x0d, 0x63, 0x61, 0x6e, 0x63, 0x65, 0x6c, 0x5f, 0x74, 0x69, 0x6d, 0x69, 0x6e,
 	0x67, 0x42, 0x0d, 0x0a, 0x0b, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x6f, 0x75, 0x74, 0x5f, 0x6d, 0x73,
@@ -924,7 +926,7 @@ var file_connectrpc_conformance_v2_client_compat_proto_depIdxs = []int32{
 	11, // 15: connectrpc.conformance.v2.ClientResponseResult.response_trailers:type_name -> connectrpc.conformance.v2.Header
 	16, // 16: connectrpc.conformance.v2.ClientResponseResult.connect_error_raw:type_name -> google.protobuf.Struct
 	11, // 17: connectrpc.conformance.v2.ClientResponseResult.actual_http_trailers:type_name -> connectrpc.conformance.v2.Header
-	17, // 18: connectrpc.conformance.v2.ClientCompatRequest.Cancel.before_half_close:type_name -> google.protobuf.Empty
+	17, // 18: connectrpc.conformance.v2.ClientCompatRequest.Cancel.before_close_send:type_name -> google.protobuf.Empty
 	19, // [19:19] is the sub-list for method output_type
 	19, // [19:19] is the sub-list for method input_type
 	19, // [19:19] is the sub-list for extension type_name
@@ -1019,8 +1021,8 @@ func file_connectrpc_conformance_v2_client_compat_proto_init() {
 		(*ClientCompatResponse_Error)(nil),
 	}
 	file_connectrpc_conformance_v2_client_compat_proto_msgTypes[5].OneofWrappers = []interface{}{
-		(*ClientCompatRequest_Cancel_BeforeHalfClose)(nil),
-		(*ClientCompatRequest_Cancel_AfterHalfCloseMs)(nil),
+		(*ClientCompatRequest_Cancel_BeforeCloseSend)(nil),
+		(*ClientCompatRequest_Cancel_AfterCloseSendMs)(nil),
 		(*ClientCompatRequest_Cancel_AfterNumResponses)(nil),
 	}
 	type x struct{}
