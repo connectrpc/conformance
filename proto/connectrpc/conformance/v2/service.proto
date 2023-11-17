@@ -261,7 +261,11 @@ message ConformancePayload {
 // An error definition used for specifying a desired error response
 message Error {
   int32 code = 1;
-  string message = 2;
+  // If this value is absent in a test case response definition, the contents of the
+  // actual error message will not be checked. This is useful for certain kinds of
+  // error conditions where the exact message to be used is not specified, only the
+  // code.
+  optional string message = 2;
   repeated google.protobuf.Any details = 3;
 }
 

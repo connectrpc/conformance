@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	conformancev2 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v2"
+	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
@@ -135,10 +136,7 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev2.Cl
 	}
 
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
-
-	if diff := cmp.Diff(expected.Error, actual.Error, protocmp.Transform()); diff != "" {
-		errs = append(errs, fmt.Errorf("actual error does not match expected error: - wanted, + got\n%s", diff))
-	}
+	errs = append(errs, checkError(expected.Error, actual.Error)...)
 
 	// If client didn't provide actual raw error, we skip this check.
 	if expected.ConnectErrorRaw != nil && actual.ConnectErrorRaw != nil {
@@ -380,5 +378,49 @@ func checkPayloads(expected, actual []*conformancev2.ConformancePayload) multiEr
 		}
 	}
 
+	return errs
+}
+
+func checkError(expected, actual *conformancev2.Error) multiErrors {
+	switch {
+	case expected == nil && actual == nil:
+		// nothing to do
+		return nil
+	case expected == nil && actual != nil:
+		return multiErrors{fmt.Errorf("received an unexpected error:\n%v", actual.String())}
+	case expected != nil && actual == nil:
+		return multiErrors{errors.New("expecting an error but received none")}
+	}
+
+	var errs multiErrors
+	if expected.Code != actual.Code {
+		errs = append(errs, fmt.Errorf("actual error code %d (%s) does not match expected code %d (%s)",
+			actual.Code, connect.Code(actual.Code).String(), expected.Code, connect.Code(expected.Code).String()))
+	}
+	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() {
+		errs = append(errs, fmt.Errorf("actual error message %q does not match expected message %q",
+			actual.GetMessage(), expected.GetMessage()))
+	}
+	if len(expected.Details) != len(actual.Details) {
+		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
+		//       error details transparently (such that the expected details would be a *subset* of
+		//       the actual details)?
+		errs = append(errs, fmt.Errorf("actual error contain %d details; expecing %d",
+			len(actual.Details), len(expected.Details)))
+	}
+	// Check as many as we can
+	length := len(expected.Details)
+	if len(actual.Details) < length {
+		length = len(actual.Details)
+	}
+	for i := 0; i < length; i++ {
+		// TODO: Should this be more lenient? Are we okay with details getting re-ordered?
+		//       An alternative might be to create a map keyed by type, and for each type
+		//       remove expected messages as they are matched against actual ones.
+		if diff := cmp.Diff(expected.Details[i], actual.Details[i], protocmp.Transform()); diff != "" {
+			errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",
+				i+1, diff))
+		}
+	}
 	return errs
 }

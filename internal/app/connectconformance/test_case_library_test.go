@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/testing/protocmp"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -628,7 +629,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	errorDef := &conformancev2.Error{
 		Code:    int32(connect.CodeResourceExhausted),
-		Message: "all resources exhausted",
+		Message: proto.String("all resources exhausted"),
 	}
 
 	// Unary Response Definitions

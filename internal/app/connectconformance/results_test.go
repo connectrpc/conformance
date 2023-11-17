@@ -25,6 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestResults_SetOutcome(t *testing.T) {
@@ -120,7 +121,7 @@ func TestResults_Assert(t *testing.T) {
 		},
 	}
 	payload2 := &conformancev2.ClientResponseResult{
-		Error: &conformancev2.Error{Code: int32(connect.CodeAborted), Message: "oops"},
+		Error: &conformancev2.Error{Code: int32(connect.CodeAborted), Message: proto.String("oops")},
 	}
 	results.assert("foo/bar/1", payload1, payload2)
 	results.assert("foo/bar/2", payload2, payload1)
@@ -338,7 +339,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				"actual error does not match expected error",
+				"actual error code 11 (out_of_range) does not match expected code 5 (not_found)",
 			},
 		},
 		{
@@ -356,7 +357,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				"actual error does not match expected error",
+				`actual error message "oof!" does not match expected message "foobar"`,
 			},
 		},
 		{
@@ -394,7 +395,8 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				"actual error does not match expected error",
+				"actual error detail #1 does not match expected error detail",
+				"actual error detail #2 does not match expected error detail",
 			},
 		},
 		{
@@ -432,7 +434,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				]
 			}`,
 			expectedErrors: []string{
-				"actual error does not match expected error",
+				"expecting an error but received none",
 			},
 		},
 		{
@@ -470,7 +472,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				"actual error does not match expected error",
+				"received an unexpected error",
 			},
 		},
 		{
@@ -676,7 +678,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				`server did not echo back a timeout but one was expected (12345 ms)`,
 				`response #1: expecting 1 request messages to be described but instead got 2`,
 				`request #1: did not survive round-trip`,
-				`actual error does not match expected error`,
+				`expecting an error but received none`,
 			},
 		},
 	}
