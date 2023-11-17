@@ -138,6 +138,9 @@ message StreamResponseDefinition {
 message UnaryRequest {
   // The response definition which should be returned in the conformance payload
   UnaryResponseDefinition response_definition = 1;
+
+  // Additional data. Only used to pad the request size to test large request messages.
+  bytes request_data = 2;
 }
 
 message UnaryResponse {
@@ -148,6 +151,9 @@ message UnaryResponse {
 message ServerStreamRequest {
   // The response definition which should be returned in the conformance payload.
   StreamResponseDefinition response_definition = 1;
+
+  // Additional data. Only used to pad the request size to test large request messages.
+  bytes request_data = 2;
 }
 
 message ServerStreamResponse {
@@ -161,7 +167,8 @@ message ClientStreamRequest {
   // should be ignored in subsequent messages.
   UnaryResponseDefinition response_definition = 1;
 
-  // Additional data for subsequent messages in the stream.
+  // Additional data for subsequent messages in the stream. Also
+  // used to pad the request size to test large request messages.
   bytes request_data = 2;
 }
 
@@ -186,7 +193,8 @@ message BidiStreamRequest {
   // and should be ignored in subsequent messages.
   bool full_duplex = 2;
 
-  // Additional data for subsequent messages in the stream.
+  // Additional data for subsequent messages in the stream. Also
+  // used to pad the request size to test large request messages.
   bytes request_data = 3;
 }
 
