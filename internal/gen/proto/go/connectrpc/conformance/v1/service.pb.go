@@ -144,6 +144,8 @@ type UnaryResponseDefinition_ResponseData struct {
 
 type UnaryResponseDefinition_Error struct {
 	// Error to raise instead of response message
+	// If no error details are explicitly provided to return, servers should
+	// still build a ConformancePayload and set it as the details.
 	Error *Error `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
 }
 

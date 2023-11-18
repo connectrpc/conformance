@@ -303,6 +303,18 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1.UnaryResponseDefinition_Error:
+			// If error details were not provided to be returned, then the server
+			// should set the conformance payload as the error details for unary responses
+			if respType.Error.Details == nil {
+				payload := &v1.ConformancePayload{
+					RequestInfo: createRequestInfo(metadata, reqs),
+				}
+				payloadAny, err := anypb.New(payload)
+				if err != nil {
+					return nil, status.Error(codes.Internal, err.Error())
+				}
+				respType.Error.Details = []*anypb.Any{payloadAny}
+			}
 			return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
 
 		case *v1.UnaryResponseDefinition_ResponseData, nil:

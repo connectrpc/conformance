@@ -280,17 +280,18 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1.UnaryResponseDefinition_Error:
-			requestInfo := createRequestInfo(ctx, hdrs, reqs)
-			// details:
-			//   - "@type": "connectrpc.conformance.v2.Header"
-			//     name: "test error detail name"
-			//     value:
-			//       - "test error detail value"
-			reqInfoAny, err := anypb.New(requestInfo)
-			if err != nil {
-				return nil, connect.NewError(connect.CodeInternal, err)
+			// If error details were not provided to be returned, then the server
+			// should set the conformance payload as the error details for unary responses
+			if respType.Error.Details == nil {
+				payload := &v1.ConformancePayload{
+					RequestInfo: createRequestInfo(ctx, hdrs, reqs),
+				}
+				payloadAny, err := anypb.New(payload)
+				if err != nil {
+					return nil, connect.NewError(connect.CodeInternal, err)
+				}
+				respType.Error.Details = []*anypb.Any{payloadAny}
 			}
-			respType.Error.Details = []*anypb.Any{reqInfoAny}
 
 			return nil, internal.ConvertProtoToConnectError(respType.Error)
 

@@ -632,9 +632,24 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		Message: proto.String("all resources exhausted"),
 	}
 
+	headerAny, err := anypb.New(&conformancev1.Header{
+		Name:  "detail test",
+		Value: []string{"val1", "val2"},
+	})
+	require.NoError(t, err)
+
+	errorDetailsDef := &conformancev1.Error{
+		Code:    int32(connect.CodeResourceExhausted),
+		Message: proto.String("all resources exhausted"),
+		Details: []*anypb.Any{headerAny},
+	}
+
 	// Unary Response Definitions
 	unaryErrorResp := &conformancev1.UnaryResponseDefinition_Error{
 		Error: errorDef,
+	}
+	unaryErrorDetailsResp := &conformancev1.UnaryResponseDefinition_Error{
+		Error: errorDetailsDef,
 	}
 	unarySuccessDef := &conformancev1.UnaryResponseDefinition{
 		ResponseHeaders: responseHeaders,
@@ -646,6 +661,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	unaryErrorDef := &conformancev1.UnaryResponseDefinition{
 		ResponseHeaders:  responseHeaders,
 		Response:         unaryErrorResp,
+		ResponseTrailers: responseTrailers,
+	}
+	unaryErrorDetailsDef := &conformancev1.UnaryResponseDefinition{
+		ResponseHeaders:  responseHeaders,
+		Response:         unaryErrorDetailsResp,
 		ResponseTrailers: responseTrailers,
 	}
 	unaryNoResponseDef := &conformancev1.UnaryResponseDefinition{
@@ -685,6 +705,19 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	unaryErrorDetailsReq, err := anypb.New(&conformancev1.UnaryRequest{
+		ResponseDefinition: unaryErrorDetailsDef,
+	})
+	require.NoError(t, err)
+
+	unaryErrorPayloadAny, err := anypb.New(&conformancev1.ConformancePayload{
+		RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+			RequestHeaders: requestHeaders,
+			Requests:       []*anypb.Any{unaryErrorReq},
+		},
+	})
+	require.NoError(t, err)
+
 	unaryNoResponseReq, err := anypb.New(&conformancev1.UnaryRequest{
 		ResponseDefinition: unaryNoResponseDef,
 	})
@@ -702,7 +735,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	clientStreamErrorReq, err := anypb.New(&conformancev1.ClientStreamRequest{
 		ResponseDefinition: unaryErrorDef,
-		RequestData:        data1,
+	})
+	require.NoError(t, err)
+
+	clientStreamErrorDetailsReq, err := anypb.New(&conformancev1.ClientStreamRequest{
+		ResponseDefinition: unaryErrorDetailsDef,
 	})
 	require.NoError(t, err)
 
@@ -719,6 +756,14 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	clientStreamReq2, err := anypb.New(&conformancev1.ClientStreamRequest{
 		RequestData: data1,
+	})
+	require.NoError(t, err)
+
+	clientStreamErrorPayloadAny, err := anypb.New(&conformancev1.ConformancePayload{
+		RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+			RequestHeaders: requestHeaders,
+			Requests:       []*anypb.Any{clientStreamErrorReq, clientStreamReq2},
+		},
 	})
 	require.NoError(t, err)
 
@@ -833,9 +878,24 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				// TODO - Payloads will be in error detail for unary response errors
-				// Payloads: []*conformancev1.ConformancePayload{{}}
-				Error:            unaryErrorResp.Error,
+				Error: &conformancev1.Error{
+					Code:    unaryErrorResp.Error.Code,
+					Message: unaryErrorResp.Error.Message,
+					Details: []*anypb.Any{unaryErrorPayloadAny},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "unary error with details is not overridden",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: []*anypb.Any{unaryErrorDetailsReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders:  responseHeaders,
+				Error:            errorDetailsDef,
 				ResponseTrailers: responseTrailers,
 			},
 		},
@@ -907,9 +967,24 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				// TODO - Payloads will be in error detail for unary response errors
-				// Payloads: []*conformancev1.ConformancePayload{{}}
-				Error:            unaryErrorResp.Error,
+				Error: &conformancev1.Error{
+					Code:    unaryErrorResp.Error.Code,
+					Message: unaryErrorResp.Error.Message,
+					Details: []*anypb.Any{clientStreamErrorPayloadAny},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "client stream error with details is not overridden",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				RequestMessages: []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders:  responseHeaders,
+				Error:            errorDetailsDef,
 				ResponseTrailers: responseTrailers,
 			},
 		},

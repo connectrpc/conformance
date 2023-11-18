@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect"
 	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -408,6 +409,20 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	case *conformancev1.UnaryResponseDefinition_Error:
 		// If an error was specified, it should be returned in the response
 		expected.Error = respType.Error
+
+		if respType.Error.Details == nil {
+			payload := &conformancev1.ConformancePayload{
+				RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+					RequestHeaders: testCase.Request.RequestHeaders,
+					Requests:       testCase.Request.RequestMessages,
+				},
+			}
+			payloadAny, err := anypb.New(payload)
+			if err != nil {
+				return connect.NewError(connect.CodeInternal, err)
+			}
+			respType.Error.Details = []*anypb.Any{payloadAny}
+		}
 	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
 		// If response data was specified for the response (or nothing at all),
 		// the server should echo back the request message and headers in the response

@@ -110,6 +110,8 @@ message UnaryResponseDefinition {
     // Response data to send
     bytes response_data = 2;
     // Error to raise instead of response message
+    // If no error details are explicitly provided to return, servers should
+    // still build a ConformancePayload and set it as the details.
     Error error = 3;
   }
 

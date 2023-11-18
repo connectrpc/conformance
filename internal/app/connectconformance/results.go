@@ -413,13 +413,31 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 	if len(actual.Details) < length {
 		length = len(actual.Details)
 	}
+	actualPayload := &conformancev1.ConformancePayload{}
+	expectedPayload := &conformancev1.ConformancePayload{}
 	for i := 0; i < length; i++ {
 		// TODO: Should this be more lenient? Are we okay with details getting re-ordered?
 		//       An alternative might be to create a map keyed by type, and for each type
 		//       remove expected messages as they are matched against actual ones.
-		if diff := cmp.Diff(expected.Details[i], actual.Details[i], protocmp.Transform()); diff != "" {
-			errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",
-				i+1, diff))
+		actualDetails := actual.Details[i]
+		expectedDetails := expected.Details[i]
+
+		// If the error details is a conformance payload, then verify equality using the checkPayloads function
+		// Otherwise, just do a straight diff of the two
+		if actualDetails.MessageIs(actualPayload) && expectedDetails.MessageIs(expectedPayload) {
+			// TODO - Do these error conditions need checked? They should prob never fail because of the above check
+			if err := actualDetails.UnmarshalTo(actualPayload); err != nil {
+				errs = append(errs, fmt.Errorf("unable to convert actual error detail %s into a payload", actualDetails.MessageName()))
+			}
+			if err := expectedDetails.UnmarshalTo(expectedPayload); err != nil {
+				errs = append(errs, fmt.Errorf("unable to convert expected error detail %s into a payload", expectedDetails.MessageName()))
+			}
+			errs = append(errs, checkPayloads([]*conformancev1.ConformancePayload{expectedPayload}, []*conformancev1.ConformancePayload{actualPayload})...)
+		} else {
+			if diff := cmp.Diff(expectedDetails, actualDetails, protocmp.Transform()); diff != "" {
+				errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",
+					i+1, diff))
+			}
 		}
 	}
 	return errs

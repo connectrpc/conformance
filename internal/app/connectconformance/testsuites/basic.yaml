@@ -103,11 +103,6 @@ testCases:
         error:
           code: 13
           message: "server stream failed"
-          details:
-            - "@type": "connectrpc.conformance.v1.Header"
-              name: "test error detail name"
-              value:
-                - "test error detail value"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
