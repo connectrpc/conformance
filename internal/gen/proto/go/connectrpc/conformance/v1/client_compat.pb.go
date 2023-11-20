@@ -89,8 +89,10 @@ type ClientCompatRequest struct {
 	// or respond with an error if the client receives a request where
 	// it is set.
 	//
-	// The raw request may be specified instead of the above group
-	// of fields for defining the request to send.
+	// When this field is present, it defines the actual HTTP request
+	// that will be sent. The above group of fields must still be
+	// provided and valid so that the reference client knows how it
+	// should try to interpret the server's response.
 	RawRequest *RawHTTPRequest `protobuf:"bytes,20,opt,name=raw_request,json=rawRequest,proto3" json:"raw_request,omitempty"`
 }
 
