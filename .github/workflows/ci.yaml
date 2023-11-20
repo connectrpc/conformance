@@ -1,9 +1,9 @@
 name: ci
 on:
   push:
-    branches: [main, v2] # TODO: Switch to just main once v2 is merged
+    branches: [main, v1] # TODO: Switch to just main once v1 is merged
   pull_request:
-    branches: [main, v2] # TODO: Switch to just main once v2 is merged
+    branches: [main, v1] # TODO: Switch to just main once v1 is merged
   workflow_dispatch: {} # support manual runs
 permissions:
   contents: read
