@@ -28,16 +28,8 @@ func ConvertMetadataToProtoHeader(
 ) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
-		// This fixes the problem, but is this the right solution? Doing this
-		// removes anything grpc specific from the headers returned to the test
-		// But maybe that's fine bc connect has already tried to parse the grpc
-		// stuff by now, so as long as we know the error that grpc returned by
-		// now we can discard anything we used to glean that information.
-		//
-		// We sort of have to do this here bc the problem is trying to write
-		// this base64 encoded data to the output (utf-8? buffer length?)
-		// So it needs to be omitted before we send out the response, but thats
-		// ok as long as we know the status and details by now.
+		// Omit grpc-status-details-bin from the response trailers reported
+		// since it is unnecessary from this point
 		if key == "grpc-status-details-bin" {
 			continue
 		}
