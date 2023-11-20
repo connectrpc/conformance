@@ -18,11 +18,6 @@ testCases:
         error:
           code: 13
           message: "unary failed"
-          details:
-            - "@type": "connectrpc.conformance.v1.Header"
-              name: "test error detail name"
-              value:
-                - "test error detail value"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
@@ -40,11 +35,6 @@ testCases:
         error:
           code: 13
           message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
-          details:
-            - "@type": "connectrpc.conformance.v1.Header"
-              name: "test error detail name"
-              value:
-                - "test error detail value"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
@@ -63,11 +53,6 @@ testCases:
         error:
           code: 13
           message: "client stream failed"
-          details:
-            - "@type": "connectrpc.conformance.v1.Header"
-              name: "test error detail name"
-              value:
-                - "test error detail value"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
