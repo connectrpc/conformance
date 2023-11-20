@@ -57,7 +57,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		return false, err
 	}
 	if flags.Verbose {
-		_, _ = fmt.Fprintf(logOut, "Computed %d active config case permutations.\n", len(configCases))
+		_, _ = fmt.Fprintf(logOut, "Computed %d config case permutations.\n", len(configCases))
 	}
 
 	var knownFailingData []byte
@@ -112,8 +112,19 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 	if err != nil {
 		return false, err
 	}
+	svrInstances := serverInstancesSlice(testCaseLib, flags.Verbose)
 	if flags.Verbose {
-		logTestCaseInfo(testCaseLib, logOut)
+		numPermutations := len(testCaseLib.testCases)
+		if useReferenceClient || useReferenceServer {
+			// Count permutations used against grpc-go reference impl.
+			testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCaseLib.testCases))
+			for _, testCase := range testCaseLib.testCases {
+				testCaseSlice = append(testCaseSlice, testCase)
+			}
+			grpcTestCases := filterGRPCImplTestCases(testCaseSlice)
+			numPermutations += len(grpcTestCases)
+		}
+		_, _ = fmt.Fprintf(logOut, "Computed %d test case permutations across %d server configurations.\n", numPermutations, len(testCaseLib.casesByServer))
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
@@ -155,10 +166,12 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 	if useReferenceClient {
 		clients = []processInfo{
 			{
+				name:            "reference client",
 				start:           runInProcess("reference-client", referenceclient.Run),
 				isReferenceImpl: true,
 			},
 			{
+				name:       "reference client (grpc)",
 				start:      runInProcess("grpc-reference-client", grpcclient.Run),
 				isGrpcImpl: true,
 			},
@@ -184,10 +197,12 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		if useReferenceServer {
 			servers = []processInfo{
 				{
+					name:            "reference server",
 					start:           runInProcess("reference-server", referenceserver.RunInReferenceMode),
 					isReferenceImpl: true,
 				},
 				{
+					name:       "reference server (grpc)",
 					start:      runInProcess("grpc-reference-server", grpcserver.Run),
 					isGrpcImpl: true,
 				},
@@ -202,12 +217,20 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 
 		// TODO: start servers in parallel (up to a limit) to allow parallelism and faster test execution
 		for _, serverInfo := range servers {
-			for svrInstance, testCases := range testCaseLib.casesByServer {
+			for _, svrInstance := range svrInstances {
+				testCases := testCaseLib.casesByServer[svrInstance]
 				if clientInfo.isGrpcImpl || serverInfo.isGrpcImpl {
 					testCases = filterGRPCImplTestCases(testCases)
 					if len(testCases) == 0 {
 						continue
 					}
+				}
+				if flags.Verbose {
+					with := serverInfo.name
+					if with == "" {
+						with = clientInfo.name
+					}
+					logTestCaseInfo(with, svrInstance, len(testCases), logOut)
 				}
 				runTestCasesForServer(ctx, clientInfo.isReferenceImpl, serverInfo.isReferenceImpl, svrInstance, testCases, clientCreds, serverInfo.start, results, clientProcess)
 				if !clientProcess.isRunning() {
@@ -231,10 +254,13 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 	return results.report(logOut)
 }
 
-func logTestCaseInfo(testCaseLib *testCaseLibrary, logOut io.Writer) {
+func serverInstancesSlice(testCaseLib *testCaseLibrary, sorted bool) []serverInstance {
 	svrInstances := make([]serverInstance, 0, len(testCaseLib.casesByServer))
 	for svrInstance := range testCaseLib.casesByServer {
 		svrInstances = append(svrInstances, svrInstance)
+	}
+	if !sorted {
+		return svrInstances
 	}
 	sort.Slice(svrInstances, func(i, j int) bool { //nolint:varnamelen
 		if svrInstances[i].httpVersion != svrInstances[j].httpVersion {
@@ -243,16 +269,30 @@ func logTestCaseInfo(testCaseLib *testCaseLibrary, logOut io.Writer) {
 		if svrInstances[i].protocol != svrInstances[j].protocol {
 			return svrInstances[i].protocol < svrInstances[j].protocol
 		}
-		return !svrInstances[i].useTLS || svrInstances[j].useTLS
+		if svrInstances[i].useTLS != svrInstances[j].useTLS {
+			return !svrInstances[i].useTLS
+		}
+		return !svrInstances[i].useTLSClientCerts || svrInstances[j].useTLSClientCerts
 	})
-	for _, svrInstance := range svrInstances {
-		testCases := testCaseLib.casesByServer[svrInstance]
-		_, _ = fmt.Fprintf(logOut, "Running %d tests for server config {%s, %s, TLS:%v}...\n",
-			len(testCases), svrInstance.httpVersion, svrInstance.protocol, svrInstance.useTLS)
+	return svrInstances
+}
+
+func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logOut io.Writer) {
+	var tlsMode string
+	switch {
+	case !svrInstance.useTLS:
+		tlsMode = "false"
+	case svrInstance.useTLS && svrInstance.useTLSClientCerts:
+		tlsMode = "true (with client certs)"
+	default:
+		tlsMode = "true"
 	}
+	_, _ = fmt.Fprintf(logOut, "Running %d tests with %s for server config {%s, %s, TLS:%s}...\n",
+		numCases, with, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
 }
 
 type processInfo struct {
+	name            string
 	start           processStarter
 	isReferenceImpl bool
 	isGrpcImpl      bool
