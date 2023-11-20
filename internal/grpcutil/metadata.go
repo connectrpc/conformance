@@ -28,8 +28,8 @@ func ConvertMetadataToProtoHeader(
 ) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
-		// Omit grpc-status-details-bin from the response trailers reported
-		// since it is unnecessary from this point
+		// TODO - Temporarily omitting from the returned headers.
+		// Need to figure out why leaving this in causes the write to stdout to fail
 		if key == "grpc-status-details-bin" {
 			continue
 		}
