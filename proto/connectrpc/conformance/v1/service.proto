@@ -329,7 +329,7 @@ message StreamContents {
   repeated StreamItem items = 1;
   message StreamItem {
     uint32 flags = 1; // must be in the range 0 to 255.
-    optional int32 length = 2; // if absent use actual length of payload
+    optional uint32 length = 2; // if absent use actual length of payload
     MessageContents payload = 3;
   }
 }
