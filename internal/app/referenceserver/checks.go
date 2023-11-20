@@ -15,6 +15,7 @@
 package referenceserver
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -72,7 +73,14 @@ func referenceServerChecks(handler http.Handler, errWriter io.Writer) http.Handl
 			feedback.Printf("expected HTTP method %q, got %q", expectedMethod, req.Method)
 		}
 
-		handler.ServeHTTP(respWriter, req)
+		// We stash this into context so interceptor can use it to abort handler and
+		// let us take over the response.
+		var rawResponse *v1.RawHTTPResponse
+		ctx := context.WithValue(req.Context(), rawResponseKey{}, &rawResponse)
+		req = req.WithContext(ctx)
+		rawResponder := &rawResponseWriter{respWriter: respWriter, rawResp: &rawResponse}
+		handler.ServeHTTP(rawResponder, req)
+		rawResponder.finish(feedback)
 	}
 }
 

@@ -151,7 +151,7 @@ func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode 
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
 		connect.WithCodec(&internal.TextConnectCodec{}),
-		connect.WithInterceptors(serverNameHandlerInterceptor{}),
+		connect.WithInterceptors(serverNameHandlerInterceptor{}, rawResponseRecorder{}),
 	}
 	if req.MessageReceiveLimit > 0 {
 		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))

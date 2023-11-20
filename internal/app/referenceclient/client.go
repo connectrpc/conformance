@@ -158,6 +158,10 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientRespons
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
+	if req.RawRequest != nil {
+		transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}
+	}
+
 	// Create client options based on protocol of the implementation
 	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
 	switch req.Protocol {
