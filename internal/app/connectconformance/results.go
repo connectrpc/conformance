@@ -317,65 +317,69 @@ func headerValsToString(vals []string) string {
 	return buf.String()
 }
 
+func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_RequestInfo, respNum int) multiErrors {
+	var errs multiErrors
+	if respNum == 0 { //nolint:nestif
+		// Validate headers, timeout, and query params. We only need to do this once, for first response.
+		errs = append(errs, checkHeaders("request headers", expected.GetRequestHeaders(), actual.GetRequestHeaders())...)
+		if expected != nil && expected.TimeoutMs != nil {
+			if actual == nil || actual.TimeoutMs == nil {
+				errs = append(errs, fmt.Errorf("server did not echo back a timeout but one was expected (%d ms)", expected.GetTimeoutMs()))
+			} else {
+				max := expected.GetTimeoutMs()
+				min := max - timeoutCheckGracePeriodMillis
+				if min < 0 {
+					min = 0
+				}
+				if actual.GetTimeoutMs() > max || actual.GetTimeoutMs() < min {
+					errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) that did not match expected (%d ms)", actual.GetTimeoutMs(), expected.GetTimeoutMs()))
+				}
+			}
+		} else if actual != nil && actual.TimeoutMs != nil {
+			errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) but none was expected", actual.GetTimeoutMs()))
+		}
+		if len(expected.GetConnectGetInfo().GetQueryParams()) > 0 && len(actual.GetConnectGetInfo().GetQueryParams()) > 0 {
+			errs = append(errs, checkHeaders("request query params", expected.GetConnectGetInfo().GetQueryParams(), actual.GetConnectGetInfo().GetQueryParams())...)
+		}
+	}
+
+	if len(actual.GetRequests()) != len(expected.GetRequests()) {
+		errs = append(errs, fmt.Errorf("response #%d: expecting %d request messages to be described but instead got %d", respNum+1, len(expected.GetRequests()), len(actual.GetRequests())))
+	}
+	reqNum := 0
+	for i := 0; i < len(actual.GetRequests()) && i < len(expected.GetRequests()); i++ {
+		reqNum++
+		actualMsg, err := anypb.UnmarshalNew(actual.GetRequests()[i], proto.UnmarshalOptions{})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("request #%d: failed to unmarshal actual message: %w", reqNum, err))
+			continue
+		}
+		expectedMsg, err := anypb.UnmarshalNew(expected.GetRequests()[i], proto.UnmarshalOptions{})
+		if err != nil {
+			errs = append(errs, fmt.Errorf("request #%d: failed to unmarshal expected message: %w", reqNum, err))
+			continue
+		}
+		diff := cmp.Diff(expectedMsg, actualMsg, protocmp.Transform())
+		if diff != "" {
+			errs = append(errs, fmt.Errorf("request #%d: did not survive round-trip: - wanted, + got\n%s", reqNum, diff))
+		}
+	}
+	return errs
+}
+
 func checkPayloads(expected, actual []*conformancev1.ConformancePayload) multiErrors {
 	var errs multiErrors
 	if len(actual) != len(expected) {
 		errs = append(errs, fmt.Errorf("expecting %d response messages but instead got %d", len(expected), len(actual)))
 	}
-	reqNum := 0
 	for i := 0; i < len(actual) && i < len(expected); i++ {
 		actualPayload := actual[i]
 		expectedPayload := expected[i]
 		if !bytes.Equal(actualPayload.Data, expectedPayload.Data) {
 			errs = append(errs, fmt.Errorf("response #%d: expecting data %x, got %x", i+1, expectedPayload.Data, actualPayload.Data))
 		}
-		actualReq := actualPayload.GetRequestInfo()
-		expectedReq := expectedPayload.GetRequestInfo()
 
-		if i == 0 { //nolint:nestif
-			// Validate headers, timeout, and query params. We only need to do this once, for first payload.
-			errs = append(errs, checkHeaders("request headers", expectedReq.GetRequestHeaders(), actualReq.GetRequestHeaders())...)
-			if expectedReq != nil && expectedReq.TimeoutMs != nil {
-				if actualReq == nil || actualReq.TimeoutMs == nil {
-					errs = append(errs, fmt.Errorf("server did not echo back a timeout but one was expected (%d ms)", expectedReq.GetTimeoutMs()))
-				} else {
-					max := expectedReq.GetTimeoutMs()
-					min := max - timeoutCheckGracePeriodMillis
-					if min < 0 {
-						min = 0
-					}
-					if actualReq.GetTimeoutMs() > max || actualReq.GetTimeoutMs() < min {
-						errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) that did not match expected (%d ms)", actualReq.GetTimeoutMs(), expectedReq.GetTimeoutMs()))
-					}
-				}
-			} else if actualReq != nil && actualReq.TimeoutMs != nil {
-				errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) but none was expected", actualReq.GetTimeoutMs()))
-			}
-			if len(expectedReq.GetConnectGetInfo().GetQueryParams()) > 0 && len(actualReq.GetConnectGetInfo().GetQueryParams()) > 0 {
-				errs = append(errs, checkHeaders("request query params", expectedReq.GetConnectGetInfo().GetQueryParams(), actualReq.GetConnectGetInfo().GetQueryParams())...)
-			}
-		}
-
-		if len(actualReq.GetRequests()) != len(expectedReq.GetRequests()) {
-			errs = append(errs, fmt.Errorf("response #%d: expecting %d request messages to be described but instead got %d", i+1, len(expectedReq.GetRequests()), len(actualReq.GetRequests())))
-		}
-		for i := 0; i < len(actualReq.GetRequests()) && i < len(expectedReq.GetRequests()); i++ {
-			reqNum++
-			actualMsg, err := anypb.UnmarshalNew(actualReq.GetRequests()[i], proto.UnmarshalOptions{})
-			if err != nil {
-				errs = append(errs, fmt.Errorf("request #%d: failed to unmarshal actual message: %w", reqNum, err))
-				continue
-			}
-			expectedMsg, err := anypb.UnmarshalNew(expectedReq.GetRequests()[i], proto.UnmarshalOptions{})
-			if err != nil {
-				errs = append(errs, fmt.Errorf("request #%d: failed to unmarshal expected message: %w", reqNum, err))
-				continue
-			}
-			diff := cmp.Diff(expectedMsg, actualMsg, protocmp.Transform())
-			if diff != "" {
-				errs = append(errs, fmt.Errorf("request #%d: did not survive round-trip: - wanted, + got\n%s", reqNum, diff))
-			}
-		}
+		errs = append(errs, checkRequestInfo(expectedPayload.GetRequestInfo(), actualPayload.GetRequestInfo(), i)...)
 	}
 
 	return errs
@@ -413,8 +417,8 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 	if len(actual.Details) < length {
 		length = len(actual.Details)
 	}
-	actualPayload := &conformancev1.ConformancePayload{}
-	expectedPayload := &conformancev1.ConformancePayload{}
+	actualReqInfo := &conformancev1.ConformancePayload_RequestInfo{}
+	expectedReqInfo := &conformancev1.ConformancePayload_RequestInfo{}
 	for i := 0; i < length; i++ {
 		// TODO: Should this be more lenient? Are we okay with details getting re-ordered?
 		//       An alternative might be to create a map keyed by type, and for each type
@@ -422,17 +426,19 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 		actualDetails := actual.Details[i]
 		expectedDetails := expected.Details[i]
 
-		// If the error details is a conformance payload, then verify equality using the checkPayloads function
+		// If the error details is a RequestInfo, then verify equality using the checkRequestInfo function
 		// Otherwise, just do a straight diff of the two
-		if actualDetails.MessageIs(actualPayload) && expectedDetails.MessageIs(expectedPayload) {
-			// TODO - Do these error conditions need checked? They should prob never fail because of the above check
-			if err := actualDetails.UnmarshalTo(actualPayload); err != nil {
-				errs = append(errs, fmt.Errorf("unable to convert actual error detail %s into a payload", actualDetails.MessageName()))
+		if actualDetails.MessageIs(actualReqInfo) && expectedDetails.MessageIs(expectedReqInfo) {
+			// If unmarshalling fails for either detail, add it to the errors and move on to the next detail
+			if err := actualDetails.UnmarshalTo(actualReqInfo); err != nil {
+				errs = append(errs, fmt.Errorf("unable to unmarshal request info from actual error detail %s", actualDetails.MessageName()))
+				continue
 			}
-			if err := expectedDetails.UnmarshalTo(expectedPayload); err != nil {
-				errs = append(errs, fmt.Errorf("unable to convert expected error detail %s into a payload", expectedDetails.MessageName()))
+			if err := expectedDetails.UnmarshalTo(expectedReqInfo); err != nil {
+				errs = append(errs, fmt.Errorf("unable to unmarshal request info from expected error detail %s", expectedDetails.MessageName()))
+				continue
 			}
-			errs = append(errs, checkPayloads([]*conformancev1.ConformancePayload{expectedPayload}, []*conformancev1.ConformancePayload{actualPayload})...)
+			errs = append(errs, checkRequestInfo(expectedReqInfo, actualReqInfo, 0)...)
 		} else {
 			if diff := cmp.Diff(expectedDetails, actualDetails, protocmp.Transform()); diff != "" {
 				errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",

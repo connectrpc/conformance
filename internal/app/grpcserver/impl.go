@@ -174,6 +174,17 @@ func (c *conformanceServiceServer) ServerStream(
 		respNum++
 	}
 	if responseDefinition.Error != nil {
+		if respNum == 0 {
+			// We've sent no responses and are returning an error, so build a
+			// RequestInfo message and append to the error details
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			reqInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return status.Error(codes.Internal, err.Error())
+			}
+			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+		}
 		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
 	}
 	return nil
@@ -288,6 +299,17 @@ func (c *conformanceServiceServer) BidiStream(
 	}
 
 	if responseDefinition.Error != nil {
+		if respNum == 0 {
+			// We've sent no responses and are returning an error, so build a
+			// RequestInfo message and append to the error details
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			reqInfo := createRequestInfo(metadata, reqs)
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return status.Error(codes.Internal, err.Error())
+			}
+			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+		}
 		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
 	}
 	return nil
@@ -303,18 +325,13 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1.UnaryResponseDefinition_Error:
-			// If error details were not provided to be returned, then the server
-			// should set the conformance payload as the error details for unary responses
-			if respType.Error.Details == nil {
-				payload := &v1.ConformancePayload{
-					RequestInfo: createRequestInfo(metadata, reqs),
-				}
-				payloadAny, err := anypb.New(payload)
-				if err != nil {
-					return nil, status.Error(codes.Internal, err.Error())
-				}
-				respType.Error.Details = []*anypb.Any{payloadAny}
+			reqInfo := createRequestInfo(metadata, reqs)
+
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
 			}
+			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 			return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
 
 		case *v1.UnaryResponseDefinition_ResponseData, nil:

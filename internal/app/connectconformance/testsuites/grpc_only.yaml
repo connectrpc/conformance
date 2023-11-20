@@ -26,22 +26,6 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-  # Override
-  expectedResponse:
-    responseHeaders:
-    - name: x-custom-header
-      value: ["foo","bar","baz"]
-    error:
-      code: 13
-      message: "unary failed"
-      details:
-        - "@type": "connectrpc.conformance.v1.Header"
-          name: "test error detail name"
-          value:
-            - "test error detail value"
-    responseTrailers:
-    - name: X-Custom-Trailer
-      value: ["bing","quux"]
 - request:
     testName: unary error trailers only response unicode
     service: connectrpc.conformance.v1.ConformanceService
@@ -64,22 +48,6 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-  # Override
-  expectedResponse:
-    responseHeaders:
-    - name: x-custom-header
-      value: ["foo","bar","baz"]
-    error:
-      code: 13
-      message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
-      details:
-        - "@type": "connectrpc.conformance.v1.Header"
-          name: "test error detail name"
-          value:
-            - "test error detail value"
-    responseTrailers:
-    - name: X-Custom-Trailer
-      value: ["bing","quux"]
 - request:
     # Tests a trailers-only error response to a client stream request
     testName: client stream error trailers only response
@@ -105,22 +73,6 @@ testCases:
           value: ["bing","quux"]
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
-  # Override
-  expectedResponse:
-    responseHeaders:
-    - name: X-Custom-Header
-      value: ["foo","bar","baz"]
-    error:
-      code: 13
-      message: "client stream failed"
-      details:
-        - "@type": "connectrpc.conformance.v1.Header"
-          name: "test error detail name"
-          value:
-            - "test error detail value"
-    responseTrailers:
-    - name: X-Custom-Trailer
-      value: ["bing","quux"]
 - request:
     testName: server stream error trailers only response
     service: connectrpc.conformance.v1.ConformanceService
@@ -135,27 +87,6 @@ testCases:
         error:
           code: 13
           message: "server stream failed"
-          details:
-            - "@type": "connectrpc.conformance.v1.Header"
-              name: "test error detail name"
-              value:
-                - "test error detail value"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-  # Override
-  expectedResponse:
-    responseHeaders:
-    - name: X-Custom-Header
-      value: ["foo","bar","baz"]
-    error:
-      code: 13
-      message: "server stream failed"
-      details:
-        - "@type": "connectrpc.conformance.v1.Header"
-          name: "test error detail name"
-          value:
-            - "test error detail value"
-    responseTrailers:
-    - name: X-Custom-Trailer
-      value: ["bing","quux"]

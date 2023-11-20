@@ -410,19 +410,16 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		// If an error was specified, it should be returned in the response
 		expected.Error = respType.Error
 
-		if respType.Error.Details == nil {
-			payload := &conformancev1.ConformancePayload{
-				RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
-					RequestHeaders: testCase.Request.RequestHeaders,
-					Requests:       testCase.Request.RequestMessages,
-				},
-			}
-			payloadAny, err := anypb.New(payload)
-			if err != nil {
-				return connect.NewError(connect.CodeInternal, err)
-			}
-			respType.Error.Details = []*anypb.Any{payloadAny}
+		// Build a RequestInfo object and add it to the error details
+		reqInfo := &conformancev1.ConformancePayload_RequestInfo{
+			RequestHeaders: testCase.Request.RequestHeaders,
+			Requests:       testCase.Request.RequestMessages,
 		}
+		reqInfoAny, err := anypb.New(reqInfo)
+		if err != nil {
+			return connect.NewError(connect.CodeInternal, err)
+		}
+		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
 		// If response data was specified for the response (or nothing at all),
 		// the server should echo back the request message and headers in the response
@@ -483,6 +480,20 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 	// There should be one payload for every ResponseData the client specified
 	expected.Payloads = make([]*conformancev1.ConformancePayload, len(def.ResponseData))
 
+	// The request specified an immediate error with no response
+	// Build a RequestInfo message and append it to the error details
+	if len(def.ResponseData) == 0 && expected.Error != nil {
+		reqInfo := &conformancev1.ConformancePayload_RequestInfo{
+			RequestHeaders: testCase.Request.RequestHeaders,
+			Requests:       testCase.Request.RequestMessages,
+		}
+		reqInfoAny, err := anypb.New(reqInfo)
+		if err != nil {
+			return connect.NewError(connect.CodeInternal, err)
+		}
+		expected.Error.Details = append(expected.Error.Details, reqInfoAny)
+	}
+
 	for idx, data := range def.ResponseData {
 		expected.Payloads[idx] = &conformancev1.ConformancePayload{
 			Data: data,
@@ -502,7 +513,6 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 			// For a full duplex stream, the first request should be echoed back in the first
 			// payload. The second should be echoed back in the second payload, etc. (i.e. a ping pong interaction)
 			expected.Payloads[idx].RequestInfo = &conformancev1.ConformancePayload_RequestInfo{
-				// RequestHeaders: testCase.Request.RequestHeaders,
 				Requests: []*anypb.Any{testCase.Request.RequestMessages[idx]},
 			}
 			if idx == 0 {

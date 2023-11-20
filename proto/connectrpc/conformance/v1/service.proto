@@ -110,8 +110,8 @@ message UnaryResponseDefinition {
     // Response data to send
     bytes response_data = 2;
     // Error to raise instead of response message
-    // If no error details are explicitly provided to return, servers should
-    // still build a ConformancePayload and set it as the details.
+    // Servers should build a RequestInfo and append it to the details of the
+    // requested error.
     Error error = 3;
   }
 
@@ -138,7 +138,11 @@ message StreamResponseDefinition {
   // Wait this many milliseconds before sending each response message
   uint32 response_delay_ms = 3;
 
-  // Optional error to raise, but only after sending the response messages
+  // Optional error to raise, but only after sending any response messages.
+  // In the event an immediate error is thrown before any responses are sent,
+  // (i.e. the equivalent of a trailers-only response), then servers should
+  // build a RequestInfo message with available information and append that to
+  // the error details.
   Error error = 4;
 
   // Response trailers to send - together with the error if present

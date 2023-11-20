@@ -144,8 +144,8 @@ type UnaryResponseDefinition_ResponseData struct {
 
 type UnaryResponseDefinition_Error struct {
 	// Error to raise instead of response message
-	// If no error details are explicitly provided to return, servers should
-	// still build a ConformancePayload and set it as the details.
+	// Servers should build a RequestInfo and append it to the details of the
+	// requested error.
 	Error *Error `protobuf:"bytes,3,opt,name=error,proto3,oneof"`
 }
 
@@ -166,7 +166,11 @@ type StreamResponseDefinition struct {
 	ResponseData [][]byte `protobuf:"bytes,2,rep,name=response_data,json=responseData,proto3" json:"response_data,omitempty"`
 	// Wait this many milliseconds before sending each response message
 	ResponseDelayMs uint32 `protobuf:"varint,3,opt,name=response_delay_ms,json=responseDelayMs,proto3" json:"response_delay_ms,omitempty"`
-	// Optional error to raise, but only after sending the response messages
+	// Optional error to raise, but only after sending any response messages.
+	// In the event an immediate error is thrown before any responses are sent,
+	// (i.e. the equivalent of a trailers-only response), then servers should
+	// build a RequestInfo message with available information and append that to
+	// the error details.
 	Error *Error `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	// Response trailers to send - together with the error if present
 	ResponseTrailers []*Header `protobuf:"bytes,5,rep,name=response_trailers,json=responseTrailers,proto3" json:"response_trailers,omitempty"`

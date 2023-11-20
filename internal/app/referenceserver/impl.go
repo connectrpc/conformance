@@ -155,6 +155,16 @@ func (s *conformanceServer) ServerStream(
 	}
 
 	if responseDefinition.Error != nil {
+		if respNum == 0 {
+			// We've sent no responses and are returning an error, so build a
+			// RequestInfo message and append to the error details
+			reqInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return connect.NewError(connect.CodeInternal, err)
+			}
+			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+		}
 		return internal.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
@@ -264,6 +274,16 @@ func (s *conformanceServer) BidiStream(
 	}
 
 	if responseDefinition.Error != nil {
+		if respNum == 0 {
+			// We've sent no responses and are returning an error, so build a
+			// RequestInfo message and append to the error details
+			reqInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return connect.NewError(connect.CodeInternal, err)
+			}
+			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+		}
 		return internal.ConvertProtoToConnectError(responseDefinition.Error)
 	}
 	return nil
@@ -280,18 +300,14 @@ func parseUnaryResponseDefinition(
 	if def != nil {
 		switch respType := def.Response.(type) {
 		case *v1.UnaryResponseDefinition_Error:
-			// If error details were not provided to be returned, then the server
-			// should set the conformance payload as the error details for unary responses
-			if respType.Error.Details == nil {
-				payload := &v1.ConformancePayload{
-					RequestInfo: createRequestInfo(ctx, hdrs, reqs),
-				}
-				payloadAny, err := anypb.New(payload)
-				if err != nil {
-					return nil, connect.NewError(connect.CodeInternal, err)
-				}
-				respType.Error.Details = []*anypb.Any{payloadAny}
+			// The server should build a RequestInfo object and add it to the error details
+			// for unary responses that return an error.
+			reqInfo := createRequestInfo(ctx, hdrs, reqs)
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return nil, connect.NewError(connect.CodeInternal, err)
 			}
+			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 
 			return nil, internal.ConvertProtoToConnectError(respType.Error)
 
