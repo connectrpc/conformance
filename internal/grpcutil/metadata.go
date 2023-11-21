@@ -28,6 +28,11 @@ func ConvertMetadataToProtoHeader(
 ) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
+		// TODO - Temporarily omitting from the returned headers.
+		// Need to figure out why leaving this in causes the write to stdout to fail
+		if key == "grpc-status-details-bin" {
+			continue
+		}
 		hdr := &v1.Header{
 			Name:  key,
 			Value: value,
