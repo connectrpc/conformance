@@ -18,47 +18,55 @@ server and client.
 
 ## Testing your implementation
 
+### Setup
 <!-- TODO - How in-depth do we want to get here with instructions? Should we specify how to generate files
 from the BSR (which would also depend on their language). Or do we just specify a simple command for getting
 the protos -->
-The first step to testing your implementation is to download the Conformance protos, which can be found on the
-Buf Schema Registry [here](TODO). From there, you will need to generate the code for the language you are testing.
+The conformance runner has the ability to test a client, a server, or both simultaneously. This means that if you are
+implementing both a server -and_ a client, you can run the conformance suite against each other. Testing either a client
+or server in isolation will use the reference implementations to verify conformance.
 
-Once you have the protos and have generated your code, the next step is implementing the service or client
-(depending on which you are testing).
+Below are the basic steps needed for running the conformance test suite against your implementation:
 
-To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
-proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
-and [reference server](./internal/app/referenceserver).
+1. The first step to testing your implementation is to download the Conformance protos, which can be found on the
+   Buf Schema Registry [here](TODO). From there, you will need to generate the code for the language you are testing.
 
-Once implemented, your file should then be made executable in your target language. For example, if implementing
-`ConformanceService` in Go, you would build a binary for your implemented client or service.
+2. Next, depending on which you are testing, you will need to implement either the service, the client, or both.
 
-## Download
+  To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
+  proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
+  and [reference server](./internal/app/referenceserver).
 
-The conformance test runner is published as a binary, released via Github artifacts. Visit the release package
-to download.
+3. Once implemented, your file should then be made executable in your target language. For example, if implementing
+  `ConformanceService` in Go, you would build a binary for your implemented client or service.
 
-## Testing an implementations
+4. Next, download the conformance runner and add it to your `$PATH`. The conformance test runner is published as a
+  binary, released via Github artifacts. Visit the [Releases](https://github.com/connectrpc/conformance/releases) page to download.
 
-The commands for testing will depend on whether you are testing a client or server implementation.
+
+### Running the tests
+
+The commands for testing will depend on whether you are testing a client, a server, or both.
 Specifying which implementation is done via the `mode` command line argument.
 
-Once you have the binary downloaded and on your path, the following commands will get you started:
+Once you have completed setup, the following commands will get you started:
 
-### Testing a client
-
-To test a client:
+#### Testing a client
 
 `connectconformance --mode client <path/to/your/executable/client>`
 
-### Testing a server
-
-To test a server:
+#### Testing a server
 
 `connectconformance --mode server <path/to/your/executable/server>`
 
-### Running the reference tests
+#### Testing both a client _and_ server
+
+To test your client against your server, specify a mode of `both`, with the client
+path first, followed by `----`, then the path to your server.
+
+`connectconformance --mode both path/to/your/executable/client ---- path/to/your/executable/server`
+
+## Running the reference tests
 
 To run the suite using the reference client against the reference server and see
 the process in action, use the following command:

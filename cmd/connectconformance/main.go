@@ -102,6 +102,7 @@ func run(flags *flags, command []string) {
 	if len(command) == 0 {
 		fatal(`Positional arguments are required to configure the command line of the client or server under test.`)
 	}
+	fmt.Println("boof")
 
 	var clientCommand, serverCommand []string
 	switch flags.mode {
@@ -128,6 +129,7 @@ func run(flags *flags, command []string) {
 		fatal(`Invalid mode: expecting "client", "server", or "both"; got %q`, flags.mode)
 	}
 
+	fmt.Println("i made it")
 	for _, cmd := range [][]string{clientCommand, serverCommand} {
 		if len(cmd) == 0 {
 			continue
