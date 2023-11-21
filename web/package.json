@@ -26,7 +26,7 @@
     "karma-chrome-launcher": "^3.2.0",
     "karma-esbuild": "^2.2.5",
     "karma-jasmine": "^5.1.0",
-    "tsx": "3.14.0"
+    "tsx": "4.1.4"
   },
   "devDependencies": {
     "@types/caseless": "^0.12.5",
