@@ -71,10 +71,10 @@ connectconformance --mode server <path/to/your/executable/server>
 #### Testing both a client _and_ server
 
 To test your client against your server, specify a mode of `both`, with the client
-path first, followed by `----`, then the path to your server.
+path first, followed by `----`, then the path to your server:
 
 ```bash
-connectconformance --mode both <path/to/your/executable/client> ---- <path/to/your/executable/server>
+connectconformance --mode both -- <path/to/your/executable/client> ---- <path/to/your/executable/server>
 ```
 
 ## Running the reference tests
