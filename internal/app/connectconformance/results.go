@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -297,13 +298,36 @@ func checkHeaders(what string, expected, actual []*conformancev1.Header) multiEr
 			errs = append(errs, fmt.Errorf("actual %s missing %q", what, name))
 			continue
 		}
-		actualStr := headerValsToString(actualVals)
-		expectedStr := headerValsToString(hdr.Value)
-		if actualStr != expectedStr {
-			errs = append(errs, fmt.Errorf("%s has incorrect values for %q: expected [%s], got [%s]", what, name, expectedStr, actualStr))
+		expectedVals := canonicalizeHeaderVals(hdr.Value)
+		actualVals = canonicalizeHeaderVals(actualVals)
+		if !reflect.DeepEqual(expectedVals, actualVals) {
+			errs = append(errs, fmt.Errorf("%s has incorrect values for %q: expected [%s], got [%s]",
+				what, name, headerValsToString(hdr.Value), headerValsToString(actualVals)))
 		}
 	}
 	return errs
+}
+
+func canonicalizeHeaderVals(vals []string) []string {
+	canon := make([]string, 0, len(vals))
+	for _, val := range vals {
+		parts := strings.Split(val, ",")
+		for i, last := 0, len(parts)-1; i <= last; i++ {
+			part := parts[i]
+			// We preserve any leading and trailing whitespace in the value.
+			// But otherwise we will trim a single leading or trailing space
+			// which a library may have added around a comma when combining
+			// multiple header values into one.
+			if i > 0 && part != "" && part[0] == ' ' {
+				part = part[1:] // trim single leading space
+			}
+			if i < last && part != "" && part[len(part)-1] == ' ' {
+				part = part[:len(part)-1] // trim single trailing space
+			}
+			canon = append(canon, part)
+		}
+	}
+	return canon
 }
 
 func headerValsToString(vals []string) string {

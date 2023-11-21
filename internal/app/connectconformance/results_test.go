@@ -789,6 +789,62 @@ func TestResults_Report(t *testing.T) {
 	require.False(t, success)
 }
 
+func TestCanonicalizeHeaderVals(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name   string
+		input  []string
+		output []string
+	}{
+		{
+			name:   "single-combined-value",
+			input:  []string{"a, b, c, d"},
+			output: []string{"a", "b", "c", "d"},
+		},
+		{
+			name:   "single-combined-value-no-spaces",
+			input:  []string{"a,b,c,d"},
+			output: []string{"a", "b", "c", "d"},
+		},
+		{
+			name:   "single-combined-value-more-spaces",
+			input:  []string{"a , b , c , d"},
+			output: []string{"a", "b", "c", "d"},
+		},
+		{
+			name:   "multiple-values",
+			input:  []string{"a", "b", "c", "d"},
+			output: []string{"a", "b", "c", "d"},
+		},
+		{
+			name: "mix-of-single-and-combined-values",
+			input: []string{
+				"a, b, c",
+				"d, e",
+				"f"},
+			output: []string{"a", "b", "c", "d", "e", "f"},
+		},
+		{
+			name:   "preserves-leading-and-trailing-whitespace",
+			input:  []string{"   a, b, c, d   "},
+			output: []string{"   a", "b", "c", "d   "},
+		},
+		{
+			name:   "preserves-extra-interior-whitespace",
+			input:  []string{"   a,   b ,  c  ,  d   "},
+			output: []string{"   a", "  b", " c ", " d   "},
+		},
+	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			result := canonicalizeHeaderVals(testCase.input)
+			require.Equal(t, testCase.output, result)
+		})
+	}
+}
+
 func makeKnownFailing() *knownFailingTrie {
 	var trie knownFailingTrie
 	trie.add([]string{"known-to-fail", "**"})
