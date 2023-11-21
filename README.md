@@ -13,7 +13,7 @@ compatibility, and conformance across the Connect, gRPC, and gRPC-Web protocols.
 various scenarios with a client-server interaction to ensure the results are as expected across platforms.
 
 Tests are divided into two types: client tests and server tests. Those which verify clients are run against a
-reference server implementation of the [Conformance Service](TODO) using Connect Go.
+reference server implementation of the Conformance Service using Connect Go.
 
 Likewise, servers under test will be interacted with by a reference client implementation of the Conformance
 Service also written in Connect Go.
@@ -28,15 +28,15 @@ server and client.
 from the BSR (which would also depend on their language). Or do we just specify a simple command for getting
 the protos -->
 The conformance runner has the ability to test a client, a server, or both simultaneously. This means that if you are
-implementing both a server -and_ a client, you can run the conformance suite against each other. Testing either a client
-or server in isolation will use the reference implementations to verify conformance.
+implementing both a server _and_ a client, you can run the conformance suite against each other. Testing either a client
+or server in isolation will use the corresponding reference implementation to verify conformance.
 
-Below are the basic steps needed for running the conformance test suite against your implementation:
+Below are the basic steps needed for setting up the suite to run against your implementation:
 
-1. The first step to testing your implementation is to download the Conformance protos, which can be found on the
-   Buf Schema Registry [here](TODO). From there, you will need to generate the code for the language you are testing.
+1. The first step is to download the Conformance protos, which can be found on the Buf Schema Registry [here](TODO).
+   From there, you will need to generate the code for the language you are testing.
 
-2. Next, depending on which you are testing, you will need to implement either the service, the client, or both.
+2. Next, you will need to implement either the service, the client, or both (depending on which you are testing).
 
    To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
    proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
@@ -58,25 +58,33 @@ Once you have completed setup, the following commands will get you started:
 
 #### Testing a client
 
-`connectconformance --mode client <path/to/your/executable/client>`
+```bash
+connectconformance --mode client <path/to/your/executable/client>`
+```
 
 #### Testing a server
 
-`connectconformance --mode server <path/to/your/executable/server>`
+```bash
+connectconformance --mode server <path/to/your/executable/server>`
+```
 
 #### Testing both a client _and_ server
 
 To test your client against your server, specify a mode of `both`, with the client
 path first, followed by `----`, then the path to your server.
 
-`connectconformance --mode both path/to/your/executable/client ---- path/to/your/executable/server`
+```bash
+connectconformance --mode both path/to/your/executable/client ---- path/to/your/executable/server`
+```
 
 ## Running the reference tests
 
 To run the suite using the reference client against the reference server and see
 the process in action, use the following command:
 
-`make runconformance`
+```bash
+make runconformance`
+```
 
 This will build the necessary binaries and run tests with the following setup:
 
