@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -312,7 +311,7 @@ func headerValsToString(vals []string) string {
 		if i > 0 {
 			buf.WriteString(", ")
 		}
-		buf.WriteString(strconv.Quote(val))
+		buf.WriteString(val)
 	}
 	return buf.String()
 }
