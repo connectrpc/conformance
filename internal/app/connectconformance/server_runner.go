@@ -176,7 +176,7 @@ func runTestCasesForServer(
 				results.assert(name, expectations[resp.TestName], resp.GetResponse())
 			}
 			if isReferenceClient {
-				for _, msg := range resp.Feedback {
+				for _, msg := range resp.GetFeedback() {
 					results.recordSideband(resp.TestName, msg)
 				}
 			}
