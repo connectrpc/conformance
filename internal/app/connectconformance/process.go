@@ -17,10 +17,10 @@ package connectconformance
 import (
 	"bytes"
 	"context"
-	"errors"
 	"io"
 	"os"
 	"os/exec"
+	"syscall"
 	"time"
 )
 
@@ -53,25 +53,28 @@ type processStarter func(ctx context.Context, pipeStderr bool) (*process, error)
 // a separate OS process.
 func runCommand(command []string) processStarter {
 	return makeProcess(func(ctx context.Context, stdin io.ReadCloser, stdout, stderr io.WriteCloser) (processController, error) {
+		ctx, cancel := context.WithCancel(ctx)
 		cmd := exec.CommandContext(ctx, command[0], command[1:]...) //nolint:gosec
 		cmd.Stdin = stdin
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 		cmd.Cancel = func() error {
-			err := cmd.Process.Signal(os.Interrupt)
+			err := cmd.Process.Signal(syscall.SIGTERM)
 			if err != nil {
-				// Interrupt not supported on Windows. If interrupt fails, try sending kill.
-				err = cmd.Process.Signal(os.Kill)
+				// Signals like above are not supported on Windows. So if signal fails, try killing.
+				err = cmd.Process.Kill()
 			}
 			return err
 		}
 		cmd.WaitDelay = gracefulShutdownPeriod
 		if err := cmd.Start(); err != nil {
+			cancel()
 			return nil, err
 		}
 		cmdProc := &cmdProcess{
-			cmd:  cmd,
-			done: make(chan struct{}),
+			cmd:    cmd,
+			cancel: cancel,
+			done:   make(chan struct{}),
 		}
 		go func() {
 			// cmd.Wait can only be called once. So we call it from this goroutine
@@ -158,6 +161,7 @@ func makeProcess(procFunc func(ctx context.Context, stdin io.ReadCloser, stdout,
 
 type cmdProcess struct {
 	cmd       *exec.Cmd
+	cancel    context.CancelFunc
 	done      chan struct{}
 	cmdResult error
 }
@@ -168,13 +172,7 @@ func (c *cmdProcess) result() error {
 }
 
 func (c *cmdProcess) abort() {
-	err := c.cmd.Cancel()
-	if err == nil || errors.Is(err, os.ErrProcessDone) {
-		// done
-		return
-	}
-	// Failed to cancel? Try to kill the process.
-	_ = c.cmd.Process.Kill()
+	c.cancel()
 }
 
 func (c *cmdProcess) whenDone(action func(error)) {
