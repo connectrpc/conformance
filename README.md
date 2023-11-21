@@ -33,15 +33,15 @@ Below are the basic steps needed for running the conformance test suite against 
 
 2. Next, depending on which you are testing, you will need to implement either the service, the client, or both.
 
-  To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
-  proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
-  and [reference server](./internal/app/referenceserver).
+   To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
+   proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
+   and [reference server](./internal/app/referenceserver).
 
 3. Once implemented, your file should then be made executable in your target language. For example, if implementing
   `ConformanceService` in Go, you would build a binary for your implemented client or service.
 
 4. Next, download the conformance runner and add it to your `$PATH`. The conformance test runner is published as a
-  binary, released via Github artifacts. Visit the [Releases](https://github.com/connectrpc/conformance/releases) page to download.
+   binary, released via Github artifacts. Visit the [Releases](https://github.com/connectrpc/conformance/releases) page to download.
 
 
 ### Running the tests
