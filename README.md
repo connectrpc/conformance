@@ -3,17 +3,76 @@
 [![License](https://img.shields.io/github/license/connectrpc/conformance?color=blue)][license]
 [![CI](https://github.com/connectrpc/conformance/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
 
-A test suite for Connect cross-platform compatibility and conformance.
+A test suite for [Connect](https://connectrpc.com) cross-platform compatibility and conformance.
 
-This conformance suite works with the most recent release of Go.
+## Summary
 
-## Requirements and Running the Tests
+The conformance test suite verifies conformance for both Connect clients and servers. Tests which
+verify clients are run against a reference server implementation of the Conformance Service using Connect Go.
 
-### Running the tests
+Likewise, servers under test will be interacted with by a reference client implementation of the Conformance
+Service also written in Connect Go.
 
-TBD
+To verify compatibility with gRPC, at least initially, the conformance test also uses reference implementations of a gRPC-Go
+server and client.
 
+## Testing your implementation
 
+<!-- TODO - How in-depth do we want to get here with instructions? Should we specify how to generate files
+from the BSR (which would also depend on their language). Or do we just specify a simple command for getting
+the protos -->
+The first step to testing your implementation is to download the Conformance protos, which can be found on the
+Buf Schema Registry [here](TODO). From there, you will need to generate the code for the language you are testing.
+
+Once you have the protos and have generated your code, the next step is implementing the service or client
+(depending on which you are testing).
+
+To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
+proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
+and [reference server](./internal/app/referenceserver).
+
+Once implemented, your file should then be made executable in your target language. For example, if implementing
+`ConformanceService` in Go, you would build a binary for your implemented client or service.
+
+## Download
+
+The conformance test runner is published as a binary, released via Github artifacts. Visit the release package
+to download.
+
+## Testing an implementations
+
+The commands for testing will depend on whether you are testing a client or server implementation.
+Specifying which implementation is done via the `mode` command line argument.
+
+Once you have the binary downloaded and on your path, the following commands will get you started:
+
+### Testing a client
+
+To test a client:
+
+`connectconformance --mode client <path/to/your/executable/client>`
+
+### Testing a server
+
+To test a server:
+
+`connectconformance --mode server <path/to/your/executable/server>`
+
+### Running the reference tests
+
+To run the suite using the reference client against the reference server and see
+the process in action, use the following command:
+
+`make runconformance`
+
+This will build the necessary binaries and run tests with the following setup:
+
+* Connect reference client against a Connect reference server
+* gRPC reference client against a Connect reference server
+* Connect reference client against a gRPC reference server
+
+<!-- What should we put as our status which properly conveys this is still a
+work in progress? Alpha seems wrong bc our stuff is all at a v1 -->
 ## Status: Alpha
 
 This project is currently under development.
@@ -26,7 +85,7 @@ as we gather feedback from early adopters.
 
 ## Ecosystem
 
-### Available Implementations
+### Implementations
 
 * [connect-go](https://github.com/connectrpc/connect-go):
   The Go implementation of Connect
