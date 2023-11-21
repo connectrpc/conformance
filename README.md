@@ -3,12 +3,17 @@
 [![License](https://img.shields.io/github/license/connectrpc/conformance?color=blue)][license]
 [![CI](https://github.com/connectrpc/conformance/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
 
-A test suite for [Connect](https://connectrpc.com) cross-platform compatibility and conformance.
+A test suite for [Connect](https://connectrpc.com) that verifies cross-platform conformance for
+both clients and servers.
 
 ## Summary
 
-The conformance test suite verifies conformance for both Connect clients and servers. Tests which
-verify clients are run against a reference server implementation of the Conformance Service using Connect Go.
+The Connect conformance test suite is a series of tests that are run using a client and server to validate interoperability,
+compatibility, and conformance. The test suite is meant to exercise various scenarios with a client-server interaction to
+ensure the results are as expected across platforms.
+
+Tests are divided into two types: client tests and server tests. Those which verify clients are run against a
+reference server implementation of the [Conformance Service](TODO) using Connect Go.
 
 Likewise, servers under test will be interacted with by a reference client implementation of the Conformance
 Service also written in Connect Go.
