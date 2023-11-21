@@ -602,7 +602,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			Value: []string{"reqHeaderVal"},
 		},
 	}
-
 	responseHeaders := []*conformancev1.Header{
 		{
 			Name:  "fooHeader",
@@ -613,7 +612,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			Value: []string{"barHeaderVal1", "barHeaderVal2"},
 		},
 	}
-
 	responseTrailers := []*conformancev1.Header{
 		{
 			Name:  "fooTrailer",
@@ -627,66 +625,62 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	data1 := []byte("data1")
 	data2 := []byte("data2")
 
+	headerAny, err := anypb.New(&conformancev1.Header{
+		Name:  "detail test",
+		Value: []string{"val1", "val2"},
+	})
+	require.NoError(t, err)
+
 	errorDef := &conformancev1.Error{
 		Code:    int32(connect.CodeResourceExhausted),
 		Message: proto.String("all resources exhausted"),
 	}
 
-	// Unary Response Definitions
-	unaryErrorResp := &conformancev1.UnaryResponseDefinition_Error{
-		Error: errorDef,
+	errorDetailsDef := &conformancev1.Error{
+		Code:    errorDef.Code,
+		Message: errorDef.Message,
+		Details: []*anypb.Any{headerAny},
 	}
-	unarySuccessDef := &conformancev1.UnaryResponseDefinition{
-		ResponseHeaders: responseHeaders,
-		Response: &conformancev1.UnaryResponseDefinition_ResponseData{
-			ResponseData: data1,
-		},
-		ResponseTrailers: responseTrailers,
-	}
-	unaryErrorDef := &conformancev1.UnaryResponseDefinition{
-		ResponseHeaders:  responseHeaders,
-		Response:         unaryErrorResp,
-		ResponseTrailers: responseTrailers,
-	}
-	unaryNoResponseDef := &conformancev1.UnaryResponseDefinition{
-		ResponseHeaders:  responseHeaders,
-		ResponseTrailers: responseTrailers,
-	}
-	// Stream Response Definitions
-	streamSuccessDef := &conformancev1.StreamResponseDefinition{
-		ResponseHeaders:  responseHeaders,
-		ResponseData:     [][]byte{data1, data2},
-		ResponseDelayMs:  1000,
-		ResponseTrailers: responseTrailers,
-	}
-	streamErrorDef := &conformancev1.StreamResponseDefinition{
-		ResponseHeaders:  responseHeaders,
-		ResponseData:     [][]byte{data1, data2},
-		ResponseDelayMs:  1000,
-		Error:            errorDef,
-		ResponseTrailers: responseTrailers,
-	}
-	streamNoResponseDef := &conformancev1.StreamResponseDefinition{
-		ResponseHeaders:  responseHeaders,
-		ResponseDelayMs:  1000,
-		ResponseTrailers: responseTrailers,
-	}
-
-	// Requests
 
 	// Unary Requests
 	unarySuccessReq, err := anypb.New(&conformancev1.UnaryRequest{
-		ResponseDefinition: unarySuccessDef,
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders: responseHeaders,
+			Response: &conformancev1.UnaryResponseDefinition_ResponseData{
+				ResponseData: data1,
+			},
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
 	unaryErrorReq, err := anypb.New(&conformancev1.UnaryRequest{
-		ResponseDefinition: unaryErrorDef,
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders: responseHeaders,
+			Response: &conformancev1.UnaryResponseDefinition_Error{
+				Error: errorDef,
+			},
+			ResponseTrailers: responseTrailers,
+		},
+	})
+	require.NoError(t, err)
+
+	unaryErrorDetailsReq, err := anypb.New(&conformancev1.UnaryRequest{
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders: responseHeaders,
+			Response: &conformancev1.UnaryResponseDefinition_Error{
+				Error: errorDetailsDef,
+			},
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
 	unaryNoResponseReq, err := anypb.New(&conformancev1.UnaryRequest{
-		ResponseDefinition: unaryNoResponseDef,
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
@@ -695,20 +689,45 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	// Client Stream Requests
 	clientStreamSuccessReq, err := anypb.New(&conformancev1.ClientStreamRequest{
-		ResponseDefinition: unarySuccessDef,
-		RequestData:        data1,
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders: responseHeaders,
+			Response: &conformancev1.UnaryResponseDefinition_ResponseData{
+				ResponseData: data1,
+			},
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
 	})
 	require.NoError(t, err)
 
 	clientStreamErrorReq, err := anypb.New(&conformancev1.ClientStreamRequest{
-		ResponseDefinition: unaryErrorDef,
-		RequestData:        data1,
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders: responseHeaders,
+			Response: &conformancev1.UnaryResponseDefinition_Error{
+				Error: errorDef,
+			},
+			ResponseTrailers: responseTrailers,
+		},
+	})
+	require.NoError(t, err)
+
+	clientStreamErrorDetailsReq, err := anypb.New(&conformancev1.ClientStreamRequest{
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders: responseHeaders,
+			Response: &conformancev1.UnaryResponseDefinition_Error{
+				Error: errorDetailsDef,
+			},
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
 	clientStreamNoResponseReq, err := anypb.New(&conformancev1.ClientStreamRequest{
-		ResponseDefinition: unaryNoResponseDef,
-		RequestData:        data1,
+		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
 	})
 	require.NoError(t, err)
 
@@ -724,17 +743,42 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	// Server Stream Requests
 	serverStreamSuccessReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: streamSuccessDef,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseData:     [][]byte{data1, data2},
+			ResponseDelayMs:  1000,
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
 	serverStreamErrorReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: streamErrorDef,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseData:     [][]byte{data1, data2},
+			ResponseDelayMs:  1000,
+			Error:            errorDef,
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
 	serverStreamNoResponseReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: streamNoResponseDef,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseDelayMs:  1000,
+			ResponseTrailers: responseTrailers,
+		},
+	})
+	require.NoError(t, err)
+
+	serverStreamNoResponseWithErrorReq, err := anypb.New(&conformancev1.ServerStreamRequest{
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseDelayMs:  1000,
+			Error:            errorDef,
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
@@ -743,8 +787,13 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	// Bidi Stream Requests
 	bidiStreamHalfDuplexSuccessReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: streamSuccessDef,
-		RequestData:        data1,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseData:     [][]byte{data1, data2},
+			ResponseDelayMs:  1000,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
 	})
 	require.NoError(t, err)
 
@@ -754,14 +803,34 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	bidiStreamHalfDuplexErrorReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: streamErrorDef,
-		RequestData:        data1,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseData:     [][]byte{data1, data2},
+			ResponseDelayMs:  1000,
+			Error:            errorDef,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
 	})
 	require.NoError(t, err)
 
 	bidiStreamHalfDuplexNoResponseReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: streamNoResponseDef,
-		RequestData:        data1,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseDelayMs:  1000,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
+	})
+	require.NoError(t, err)
+
+	bidiStreamHalfDuplexNoResponseWithErrorReq, err := anypb.New(&conformancev1.BidiStreamRequest{
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseDelayMs:  1000,
+			Error:            errorDef,
+			ResponseTrailers: responseTrailers,
+		},
 	})
 	require.NoError(t, err)
 
@@ -771,29 +840,99 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	bidiStreamFullDuplexSuccessReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: streamSuccessDef,
-		RequestData:        data1,
-		FullDuplex:         true,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseData:     [][]byte{data1, data2},
+			ResponseDelayMs:  1000,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
+		FullDuplex:  true,
 	})
 	require.NoError(t, err)
 
 	bidiStreamFullDuplexErrorReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: streamErrorDef,
-		RequestData:        data1,
-		FullDuplex:         true,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseData:     [][]byte{data1, data2},
+			ResponseDelayMs:  1000,
+			Error:            errorDef,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
+		FullDuplex:  true,
+	})
+	require.NoError(t, err)
+
+	bidiStreamFullDuplexNoResponseWithErrorReq, err := anypb.New(&conformancev1.BidiStreamRequest{
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseDelayMs:  1000,
+			Error:            errorDef,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
+		FullDuplex:  true,
 	})
 	require.NoError(t, err)
 
 	bidiStreamFullDuplexNoResponseReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: streamNoResponseDef,
-		RequestData:        data1,
-		FullDuplex:         true,
+		ResponseDefinition: &conformancev1.StreamResponseDefinition{
+			ResponseHeaders:  responseHeaders,
+			ResponseDelayMs:  1000,
+			ResponseTrailers: responseTrailers,
+		},
+		RequestData: data1,
+		FullDuplex:  true,
 	})
 	require.NoError(t, err)
 
 	bidiStreamFullDuplexNoDefReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		RequestData: data1,
 		FullDuplex:  true,
+	})
+	require.NoError(t, err)
+
+	// Request Infos
+	unaryErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{unaryErrorReq},
+	})
+	require.NoError(t, err)
+
+	unaryErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{unaryErrorDetailsReq},
+	})
+	require.NoError(t, err)
+
+	clientStreamErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{clientStreamErrorReq, clientStreamReq2},
+	})
+	require.NoError(t, err)
+
+	clientStreamErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
+	})
+	require.NoError(t, err)
+
+	serverStreamErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{serverStreamNoResponseWithErrorReq},
+	})
+	require.NoError(t, err)
+
+	bidiStreamHalfDuplexNoResponseWithErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReq, bidiStreamReq2},
+	})
+	require.NoError(t, err)
+
+	bidiStreamFullDuplexNoResponseWithErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{bidiStreamFullDuplexNoResponseWithErrorReq, bidiStreamReq2},
 	})
 	require.NoError(t, err)
 
@@ -833,9 +972,28 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				// TODO - Payloads will be in error detail for unary response errors
-				// Payloads: []*conformancev1.ConformancePayload{{}}
-				Error:            unaryErrorResp.Error,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{unaryErrorReqInfo},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "unary error specifying details appends req info to details",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: []*anypb.Any{unaryErrorDetailsReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{headerAny, unaryErrorDetailsReqInfo},
+				},
 				ResponseTrailers: responseTrailers,
 			},
 		},
@@ -907,9 +1065,28 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
-				// TODO - Payloads will be in error detail for unary response errors
-				// Payloads: []*conformancev1.ConformancePayload{{}}
-				Error:            unaryErrorResp.Error,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{clientStreamErrorReqInfo},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "client stream error specifying details appends req info to details",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
+				RequestMessages: []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDetailsDef.Code,
+					Message: errorDetailsDef.Message,
+					Details: []*anypb.Any{headerAny, clientStreamErrorDetailsReqInfo},
+				},
 				ResponseTrailers: responseTrailers,
 			},
 		},
@@ -976,7 +1153,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 		},
 		{
-			testName: "server stream error",
+			testName: "server stream error with responses",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				RequestMessages: []*anypb.Any{serverStreamErrorReq},
@@ -997,6 +1174,23 @@ func TestPopulateExpectedResponse(t *testing.T) {
 					},
 				},
 				Error:            errorDef,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "server stream error with no responses",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: []*anypb.Any{serverStreamNoResponseWithErrorReq},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{serverStreamErrorReqInfo},
+				},
 				ResponseTrailers: responseTrailers,
 			},
 		},
@@ -1046,7 +1240,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 		},
 		{
-			testName: "half duplex bidi stream error",
+			testName: "half duplex bidi stream error with responses",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexErrorReq, bidiStreamReq2},
@@ -1067,6 +1261,23 @@ func TestPopulateExpectedResponse(t *testing.T) {
 					},
 				},
 				Error:            errorDef,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "half duplex bidi stream error with no responses",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReq, bidiStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReqInfo},
+				},
 				ResponseTrailers: responseTrailers,
 			},
 		},
@@ -1119,7 +1330,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 		},
 		{
-			testName: "full duplex bidi stream error",
+			testName: "full duplex bidi stream error with responses",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamFullDuplexErrorReq, bidiStreamReq2},
@@ -1143,6 +1354,23 @@ func TestPopulateExpectedResponse(t *testing.T) {
 					},
 				},
 				Error:            errorDef,
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "full duplex bidi stream error with no responses",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoResponseWithErrorReq, bidiStreamReq2},
+				RequestHeaders:  requestHeaders,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{bidiStreamFullDuplexNoResponseWithErrorReqInfo},
+				},
 				ResponseTrailers: responseTrailers,
 			},
 		},

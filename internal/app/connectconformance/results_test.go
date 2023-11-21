@@ -370,7 +370,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 						{
 							"@type": "/google.protobuf.Int32Value",
 							"value": 123
-						},	
+						},
 						{
 							"@type": "/google.protobuf.StringValue",
 							"value": "foobar"
@@ -386,7 +386,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 						{
 							"@type": "/google.protobuf.Int32Value",
 							"value": 456
-						},	
+						},
 						{
 							"@type": "/google.protobuf.StringValue",
 							"value": "bobloblaw"
@@ -582,7 +582,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				]
 			}`,
 			expectedErrors: []string{
-				"response #1: expecting 3 request messages to be described but instead got 2",
+				"expecting 3 request messages to be described but instead got 2",
 			},
 		},
 		{
@@ -676,7 +676,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				`response #1: expecting data 69b71d79f821, got d76df8`,
 				`actual request headers missing "foo"`,
 				`server did not echo back a timeout but one was expected (12345 ms)`,
-				`response #1: expecting 1 request messages to be described but instead got 2`,
+				`expecting 1 request messages to be described but instead got 2`,
 				`request #1: did not survive round-trip`,
 				`expecting an error but received none`,
 			},
