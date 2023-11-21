@@ -9,8 +9,8 @@ both clients and servers.
 ## Summary
 
 The Connect conformance test suite is a series of tests that are run using a client and server to validate interoperability,
-compatibility, and conformance. The test suite is meant to exercise various scenarios with a client-server interaction to
-ensure the results are as expected across platforms.
+compatibility, and conformance across the Connect, gRPC, and gRPC-Web protocols. The test suite is meant to exercise
+various scenarios with a client-server interaction to ensure the results are as expected across platforms.
 
 Tests are divided into two types: client tests and server tests. Those which verify clients are run against a
 reference server implementation of the [Conformance Service](TODO) using Connect Go.
