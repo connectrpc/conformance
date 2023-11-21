@@ -59,13 +59,13 @@ Once you have completed setup, the following commands will get you started:
 #### Testing a client
 
 ```bash
-connectconformance --mode client <path/to/your/executable/client>`
+connectconformance --mode client <path/to/your/executable/client>
 ```
 
 #### Testing a server
 
 ```bash
-connectconformance --mode server <path/to/your/executable/server>`
+connectconformance --mode server <path/to/your/executable/server>
 ```
 
 #### Testing both a client _and_ server
@@ -74,7 +74,7 @@ To test your client against your server, specify a mode of `both`, with the clie
 path first, followed by `----`, then the path to your server.
 
 ```bash
-connectconformance --mode both path/to/your/executable/client ---- path/to/your/executable/server`
+connectconformance --mode both <path/to/your/executable/client> ---- <path/to/your/executable/server>
 ```
 
 ## Running the reference tests
@@ -83,7 +83,7 @@ To run the suite using the reference client against the reference server and see
 the process in action, use the following command:
 
 ```bash
-make runconformance`
+make runconformance
 ```
 
 This will build the necessary binaries and run tests with the following setup:
