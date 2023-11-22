@@ -59,7 +59,7 @@ Once you have completed setup, the following commands will get you started:
 #### Testing a client
 
 ```bash
-connectconformance --mode client <path/to/your/executable/client>
+connectconformance --mode client -- <path/to/your/executable/client>
 ```
 
 #### Testing a server
