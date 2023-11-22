@@ -21,9 +21,9 @@ Service also written in Connect Go.
 To verify compatibility with other protocol implementations, the conformance test also uses reference client
 and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go).
 
-> This project is currently in alpha. As a result, the conformance suite makes no backward compatibility
-  guarantees at this point. The goal is to eventually publish a stable release but please be aware we may make changes
-  as we gather feedback from early adopters.
+Also, please not that this project is currently in alpha. As a result, the conformance suite makes no backward compatibility
+guarantees at this point. The goal is to eventually publish a stable release but please be aware we may make changes
+as we gather feedback from early adopters.
 
 ## Testing your implementation
 
