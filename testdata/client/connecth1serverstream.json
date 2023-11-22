@@ -19,7 +19,33 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest"
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": [
+          "dGVzdCByZXNwb25zZQ==",
+          "dGVzdCByZXNwb25zZZ=="
+        ],
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ],
+        "responseDelayMs": 500
+      }
     }
   ]
 }
