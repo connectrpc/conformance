@@ -65,7 +65,7 @@ connectconformance --mode client -- <path/to/your/executable/client>
 #### Testing a server
 
 ```bash
-connectconformance --mode server <path/to/your/executable/server>
+connectconformance --mode server -- <path/to/your/executable/server>
 ```
 
 #### Testing both a client _and_ server
