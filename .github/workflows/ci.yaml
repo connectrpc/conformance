@@ -23,7 +23,8 @@ jobs:
       - name: Validate Protos
         uses: bufbuild/buf-breaking-action@v1
         with:
-          against: 'https://github.com/connectrpc/conformance.git#branch=v1' # TODO: Switch to main once v1 is merged
+          input: ../../proto
+          against: 'buf.build/connectrpc/conformance'
       - name: Lint Protos
         uses: bufbuild/buf-lint-action@v1
         with:
