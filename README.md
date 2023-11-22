@@ -35,7 +35,7 @@ or server in isolation will use the corresponding reference implementation to ve
 
 Below are the basic steps needed for setting up the suite to run against your implementation:
 
-1. The first step is to download the Conformance protos, which can be found on the Buf Schema Registry [here](TODO).
+1. The first step is to download the Conformance protos, which can be found on the Buf Schema Registry [here](https://buf.build/connectrpc/conformance).
    From there, you will need to generate the code for the language you are testing.
 
 2. Next, you will need to implement either the service, the client, or both (depending on which you are testing).
