@@ -65,11 +65,11 @@ type ConformanceServiceClient interface {
 	// should contain only the data field.
 	//
 	// Servers should allow the response definition to be unset in the request and
-	// if so, all responses should contain no response headers or trailers and
-	// contain empty response data.
+	// if so, the server should skip sending anything on the stream and return
+	// without error.
 	ServerStream(ctx context.Context, in *ServerStreamRequest, opts ...grpc.CallOption) (ConformanceService_ServerStreamClient, error)
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and send back empty response data.
+	// if it is, set no response headers or trailers and return an empty response.
 	ClientStream(ctx context.Context, opts ...grpc.CallOption) (ConformanceService_ClientStreamClient, error)
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
@@ -252,11 +252,11 @@ type ConformanceServiceServer interface {
 	// should contain only the data field.
 	//
 	// Servers should allow the response definition to be unset in the request and
-	// if so, all responses should contain no response headers or trailers and
-	// contain empty response data.
+	// if so, the server should skip sending anything on the stream and return
+	// without error.
 	ServerStream(*ServerStreamRequest, ConformanceService_ServerStreamServer) error
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and send back empty response data.
+	// if it is, set no response headers or trailers and return an empty response.
 	ClientStream(ConformanceService_ClientStreamServer) error
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.

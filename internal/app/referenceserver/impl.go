@@ -120,53 +120,56 @@ func (s *conformanceServer) ServerStream(
 	req *connect.Request[v1.ServerStreamRequest],
 	stream *connect.ServerStream[v1.ServerStreamResponse],
 ) error {
-	responseDefinition := req.Msg.ResponseDefinition
-	if responseDefinition != nil {
-		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
-		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
-	}
-
 	// Convert the request to an Any so that it can be recorded in the payload
 	msgAsAny, err := asAny(req.Msg)
 	if err != nil {
 		return err
 	}
+
 	respNum := 0
-	for _, data := range responseDefinition.ResponseData {
-		resp := &v1.ServerStreamResponse{
-			Payload: &v1.ConformancePayload{
-				Data: data,
-			},
-		}
 
-		// Only set the request info if this is the first response being sent back
-		// because for server streams, nothing in the request info will change
-		// after the first response.
-		if respNum == 0 {
-			resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
-		}
+	responseDefinition := req.Msg.ResponseDefinition
+	if responseDefinition != nil {
+		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
+		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
-
-		if err := stream.Send(resp); err != nil {
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
-		}
-		respNum++
-	}
-
-	if responseDefinition.Error != nil {
-		if respNum == 0 {
-			// We've sent no responses and are returning an error, so build a
-			// RequestInfo message and append to the error details
-			reqInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return connect.NewError(connect.CodeInternal, err)
+		for _, data := range responseDefinition.ResponseData {
+			resp := &v1.ServerStreamResponse{
+				Payload: &v1.ConformancePayload{
+					Data: data,
+				},
 			}
-			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+
+			// Only set the request info if this is the first response being sent back
+			// because for server streams, nothing in the request info will change
+			// after the first response.
+			if respNum == 0 {
+				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+			}
+
+			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			if err := stream.Send(resp); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+			}
+			respNum++
 		}
-		return internal.ConvertProtoToConnectError(responseDefinition.Error)
+
+		if responseDefinition.Error != nil {
+			if respNum == 0 {
+				// We've sent no responses and are returning an error, so build a
+				// RequestInfo message and append to the error details
+				reqInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+				reqInfoAny, err := anypb.New(reqInfo)
+				if err != nil {
+					return connect.NewError(connect.CodeInternal, err)
+				}
+				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			}
+			return internal.ConvertProtoToConnectError(responseDefinition.Error)
+		}
 	}
+
 	return nil
 }
 

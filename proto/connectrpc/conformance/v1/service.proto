@@ -46,8 +46,8 @@ service ConformanceService {
   // should contain only the data field.
   //
   // Servers should allow the response definition to be unset in the request and
-  // if so, all responses should contain no response headers or trailers and
-  // contain empty response data.
+  // if so, the server should skip sending anything on the stream and return
+  // without error.
   rpc ServerStream(ServerStreamRequest) returns (stream ServerStreamResponse);
   // A client-streaming operation. The first request indicates the response
   // headers and trailers and also indicates either a response message or an
@@ -65,7 +65,7 @@ service ConformanceService {
   // the stream and should ignore any definition set in subsequent messages.
 
   // Servers should allow the response definition to be unset in the request and
-  // if it is, set no response headers or trailers and send back empty response data.
+  // if it is, set no response headers or trailers and return an empty response.
   rpc ClientStream(stream ClientStreamRequest) returns (ClientStreamResponse);
   // A bidirectional-streaming operation. The first request indicates the response
   // headers, response messages, trailers, and an optional error to send back.

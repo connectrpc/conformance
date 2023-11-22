@@ -146,7 +146,11 @@ func (i *invoker) serverStream(
 	var protoErr *v1.Error
 	var headers []*v1.Header
 	var trailers []*v1.Header
-	payloads := make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
+	var payloads []*v1.ConformancePayload
+
+	if ssr.ResponseDefinition != nil {
+		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
+	}
 	for stream.Receive() {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers

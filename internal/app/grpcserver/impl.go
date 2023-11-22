@@ -133,6 +133,14 @@ func (c *conformanceServiceServer) ServerStream(
 	req *v1.ServerStreamRequest,
 	stream v1.ConformanceService_ServerStreamServer,
 ) error {
+	// Convert the request to an Any so that it can be recorded in the payload
+	msgAsAny, err := asAny(req)
+	if err != nil {
+		return err
+	}
+
+	respNum := 0
+
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil {
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
@@ -142,51 +150,45 @@ func (c *conformanceServiceServer) ServerStream(
 
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
 		stream.SetTrailer(trailerMD)
-	}
 
-	// Convert the request to an Any so that it can be recorded in the payload
-	msgAsAny, err := asAny(req)
-	if err != nil {
-		return err
-	}
-
-	respNum := 0
-	for _, data := range responseDefinition.ResponseData {
-		resp := &v1.ServerStreamResponse{
-			Payload: &v1.ConformancePayload{
-				Data: data,
-			},
-		}
-		// Only set the request info if this is the first response being sent back
-		// because for server streams, nothing in the request info will change
-		// after the first response.
-		if respNum == 0 {
-			metadata, _ := metadata.FromIncomingContext(stream.Context())
-			requestInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
-			resp.Payload.RequestInfo = requestInfo
-		}
-
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
-
-		if err := stream.Send(resp); err != nil {
-			return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
-		}
-		respNum++
-	}
-	if responseDefinition.Error != nil {
-		if respNum == 0 {
-			// We've sent no responses and are returning an error, so build a
-			// RequestInfo message and append to the error details
-			metadata, _ := metadata.FromIncomingContext(stream.Context())
-			reqInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return status.Error(codes.Internal, err.Error())
+		for _, data := range responseDefinition.ResponseData {
+			resp := &v1.ServerStreamResponse{
+				Payload: &v1.ConformancePayload{
+					Data: data,
+				},
 			}
-			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			// Only set the request info if this is the first response being sent back
+			// because for server streams, nothing in the request info will change
+			// after the first response.
+			if respNum == 0 {
+				metadata, _ := metadata.FromIncomingContext(stream.Context())
+				requestInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+				resp.Payload.RequestInfo = requestInfo
+			}
+
+			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			if err := stream.Send(resp); err != nil {
+				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
+			}
+			respNum++
 		}
-		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+		if responseDefinition.Error != nil {
+			if respNum == 0 {
+				// We've sent no responses and are returning an error, so build a
+				// RequestInfo message and append to the error details
+				metadata, _ := metadata.FromIncomingContext(stream.Context())
+				reqInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+				reqInfoAny, err := anypb.New(reqInfo)
+				if err != nil {
+					return status.Error(codes.Internal, err.Error())
+				}
+				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			}
+			return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+		}
 	}
+
 	return nil
 }
 

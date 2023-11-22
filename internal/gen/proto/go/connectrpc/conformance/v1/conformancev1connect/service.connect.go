@@ -88,11 +88,11 @@ type ConformanceServiceClient interface {
 	// should contain only the data field.
 	//
 	// Servers should allow the response definition to be unset in the request and
-	// if so, all responses should contain no response headers or trailers and
-	// contain empty response data.
+	// if so, the server should skip sending anything on the stream and return
+	// without error.
 	ServerStream(context.Context, *connect.Request[v1.ServerStreamRequest]) (*connect.ServerStreamForClient[v1.ServerStreamResponse], error)
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and send back empty response data.
+	// if it is, set no response headers or trailers and return an empty response.
 	ClientStream(context.Context) *connect.ClientStreamForClient[v1.ClientStreamRequest, v1.ClientStreamResponse]
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
@@ -224,11 +224,11 @@ type ConformanceServiceHandler interface {
 	// should contain only the data field.
 	//
 	// Servers should allow the response definition to be unset in the request and
-	// if so, all responses should contain no response headers or trailers and
-	// contain empty response data.
+	// if so, the server should skip sending anything on the stream and return
+	// without error.
 	ServerStream(context.Context, *connect.Request[v1.ServerStreamRequest], *connect.ServerStream[v1.ServerStreamResponse]) error
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and send back empty response data.
+	// if it is, set no response headers or trailers and return an empty response.
 	ClientStream(context.Context, *connect.ClientStream[v1.ClientStreamRequest]) (*connect.Response[v1.ClientStreamResponse], error)
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
