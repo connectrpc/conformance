@@ -24,7 +24,7 @@ jobs:
         uses: bufbuild/buf-breaking-action@v1
         with:
           input: proto
-          against: 'https://github.com/connectrpc/conformance.git#branch=v1,subdir=proto'
+          against: 'https://github.com/connectrpc/conformance.git#branch=v1,subdir=proto' # TODO: Switch to main once merged
       - name: Lint Protos
         uses: bufbuild/buf-lint-action@v1
         with:
