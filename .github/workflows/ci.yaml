@@ -23,7 +23,7 @@ jobs:
       - name: Validate Protos
         uses: bufbuild/buf-breaking-action@v1
         with:
-          input: ../../proto
+          input: proto
           against: 'buf.build/connectrpc/conformance'
       - name: Lint Protos
         uses: bufbuild/buf-lint-action@v1
