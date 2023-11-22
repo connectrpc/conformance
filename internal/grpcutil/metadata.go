@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -28,10 +29,11 @@ func ConvertMetadataToProtoHeader(
 ) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
-		// TODO - Temporarily omitting from the returned headers.
-		// Need to figure out why leaving this in causes the write to stdout to fail
-		if key == "grpc-status-details-bin" {
-			continue
+		if strings.HasSuffix(key, "-bin") {
+			// binary headers must be base64-encoded
+			for i := range value {
+				value[i] = connect.EncodeBinaryHeader([]byte(value[i]))
+			}
 		}
 		hdr := &v1.Header{
 			Name:  key,
@@ -46,16 +48,31 @@ func ConvertMetadataToProtoHeader(
 func ConvertProtoHeaderToMetadata(
 	src []*v1.Header,
 ) metadata.MD {
-	md := make(metadata.MD, len(src))
+	asMetadata := make(metadata.MD, len(src))
 	for _, hdr := range src {
 		key := strings.ToLower(hdr.Name)
-		md[key] = hdr.Value
+		vals := hdr.Value
+		if strings.HasSuffix(key, "-bin") {
+			// binary headers are base64-encoded in Header proto, but
+			// grpc-go library expects them to be unencoded
+			vals = make([]string, len(hdr.Value))
+			for i := range hdr.Value {
+				data, err := connect.DecodeBinaryHeader(hdr.Value[i])
+				if err != nil {
+					// That's weird... If it's not encoded, then just add the raw value
+					vals[i] = hdr.Value[i]
+					continue
+				}
+				vals[i] = string(data)
+			}
+		}
+		asMetadata[key] = vals
 	}
-	return md
+	return asMetadata
 }
 
-// Appends the given headers to the outgoing context. Used for sending metadata
-// from the client side.
+// AppendToOutgoingContext appends the given headers to the outgoing context.
+// Used for sending metadata from the client side.
 func AppendToOutgoingContext(ctx context.Context, src []*v1.Header) context.Context {
 	for _, hdr := range src {
 		for _, val := range hdr.Value {
