@@ -69,6 +69,16 @@ checkgenerate:
 	@# Used in CI to verify that `make generate` doesn't produce a diff.
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
+.PHONY: release
+release: $(BIN)/goreleaser
+	goreleaser release
+
+.PHONY: checkrelease
+checkrelease: $(BIN)/goreleaser
+	# skips some validation and doesn't actually publish a release, just to test
+	# that building a release works
+	goreleaser release --clean --snapshot
+
 .PHONY: runconformance
 runconformance: runservertests runclienttests
 
@@ -108,3 +118,7 @@ $(BIN)/license-header: Makefile
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+
+$(BIN)/goreleaser: Makefile
+	@mkdir -p $(@D)
+	go install github.com/goreleaser/goreleaser@v1.16.2

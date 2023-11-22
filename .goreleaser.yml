@@ -1,0 +1,24 @@
+project_name: connectconformance
+builds:
+  - id: connectconformance
+    binary: connectconformance
+    main: ./cmd/connectconformance
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.buildVersion=v{{.Version}}
+archives:
+  - format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    rlcp: true
+    # Follows same naming conventions as release artifacts for bufbuild/buf
+    name_template: 'connectconformance-{{ .Tag }}-{{ title .Os }}-{{ if and (eq .Os "linux") (eq .Arch "arm64")}}aarch64{{ else if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
+    files:
+      - LICENSE
