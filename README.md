@@ -15,7 +15,7 @@ various scenarios with a client-server interaction to ensure the results are as 
 Tests are divided into two types: client tests and server tests. Those which verify clients are run against a
 reference server implementation of the Conformance Service using Connect Go.
 
-Likewise, servers under test will be interacted with by a reference client implementation of the Conformance
+Likewise, servers under test will be verified by a reference client implementation of the Conformance
 Service also written in Connect Go.
 
 To verify compatibility with gRPC, at least initially, the conformance test also uses reference implementations of a gRPC-Go
