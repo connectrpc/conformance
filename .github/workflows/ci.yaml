@@ -24,7 +24,7 @@ jobs:
         uses: bufbuild/buf-breaking-action@v1
         with:
           input: proto
-          against: 'buf.build/connectrpc/conformance'
+          against: 'https://github.com/connectrpc/conformance.git#branch=v1'
       - name: Lint Protos
         uses: bufbuild/buf-lint-action@v1
         with:
