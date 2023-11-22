@@ -18,8 +18,8 @@ reference server implementation of the Conformance Service written with [Connect
 Likewise, servers under test will be verified by a reference client implementation of the Conformance
 Service also written in Connect Go.
 
-To verify compatibility with gRPC, at least initially, the conformance test also uses reference implementations of a gRPC-Go
-server and client.
+To verify compatibility with other protocol implementations, the conformance test also uses reference client
+and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go).
 
 ## Testing your implementation
 
