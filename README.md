@@ -24,9 +24,7 @@ and server implementations that use the [gRPC-Go module](https://github.com/grpc
 ## Testing your implementation
 
 ### Setup
-<!-- TODO - How in-depth do we want to get here with instructions? Should we specify how to generate files
-from the BSR (which would also depend on their language). Or do we just specify a simple command for getting
-the protos -->
+
 The conformance runner has the ability to test a client, a server, or both simultaneously. This means that if you are
 implementing both a server _and_ a client, you can run the conformance suite against each other. Testing either a client
 or server in isolation will use the corresponding reference implementation to verify conformance.
