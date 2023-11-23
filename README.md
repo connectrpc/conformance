@@ -21,8 +21,8 @@ Service also written in Connect Go.
 To verify compatibility with other protocol implementations, the conformance test also uses reference client
 and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go).
 
-Also, please not that this project is currently in alpha. As a result, the conformance suite makes no backward compatibility
-guarantees at this point. The goal is to eventually publish a stable release but please be aware we may make changes
+Also, please note that this project is currently in alpha. As a result, it does not currently make backward compatibility
+guarantees. The goal is to eventually publish a stable release but please be aware we may make changes
 as we gather feedback from early adopters.
 
 ## Testing your implementation
@@ -30,7 +30,7 @@ as we gather feedback from early adopters.
 ### Setup
 
 The conformance runner has the ability to test a client, a server, or both simultaneously. This means that if you are
-implementing both a server _and_ a client, you can run the conformance suite against each other. Testing either a client
+validating both a server _and_ a client, you can use the conformance suite to run them against each other. Testing either a client
 or server in isolation will use the corresponding reference implementation to verify conformance.
 
 Below are the basic steps needed for setting up the suite to run against your implementation:
@@ -38,17 +38,18 @@ Below are the basic steps needed for setting up the suite to run against your im
 1. The first step is to download the Conformance protos, which can be found on the Buf Schema Registry [here](https://buf.build/connectrpc/conformance).
    From there, you will need to generate the code for the language you are testing.
 
-2. Next, you will need to implement either the service, the client, or both (depending on which you are testing).
+2. Once complete, you will need to implement either the service, the client, or both (depending on which you are testing).
+   To do so, follow the instructions specified in the
+   [`ConformanceService`](https://buf.build/connectrpc/conformance/file/main:connectrpc/conformance/v1/service.proto) proto.
 
-   To do so, you will need to implement the `ConformanceService` according to the instructions specified in the
-   proto. For examples on how to implement, please refer to the Go [reference client](./internal/app/referenceclient)
+   For working examples, refer to the Go [reference client](./internal/app/referenceclient)
    and [reference server](./internal/app/referenceserver).
 
-3. Once implemented, your file should then be made executable in your target language. For example, if implementing
-  `ConformanceService` in Go, you would build a binary for your implemented client or service.
+3. Next, your file should then be made executable in your target language. For example, if implementing the
+  `ConformanceService` in Go, you would build a binary which executes your client or service.
 
-4. Next, download the conformance runner and add it to your `$PATH`. The conformance test runner is published as a
-   binary, released via Github artifacts. Visit the [Releases](https://github.com/connectrpc/conformance/releases) page to download.
+4. Finally, download the conformance runner and add it to your `$PATH`. The conformance test runner is published as a
+   binary and released via Github artifacts. Visit the [Releases](https://github.com/connectrpc/conformance/releases) page to download.
 
 
 ### Running the tests
