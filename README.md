@@ -48,8 +48,8 @@ Below are the basic steps needed for setting up the suite to run against your im
 3. Next, your file should then be made executable in your target language. For example, if implementing the
   `ConformanceService` in Go, you would build a binary which executes your client or service.
 
-4. Finally, download the conformance runner and add it to your `$PATH`. The conformance test runner is published as a
-   binary and released via Github artifacts. Visit the [Releases](https://github.com/connectrpc/conformance/releases) page to download.
+4. Finally, visit the repository's [Releases](https://github.com/connectrpc/conformance/releases) page, download
+   the conformance runner binary, and add it to your `$PATH`.
 
 
 ### Running the tests
