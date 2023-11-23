@@ -76,13 +76,26 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: server stream empty response
+    testName: server stream no response set
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+- request:
+    testName: server stream no definition set
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
 - request:
     testName: server stream error with responses
     service: connectrpc.conformance.v1.ConformanceService

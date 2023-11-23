@@ -1,10 +1,10 @@
 {
   "testName": "Server Stream Happy Path",
-  "httpVersion": "HTTP_VERSION_1",
-  "protocol": "PROTOCOL_CONNECT",
+  "httpVersion": "HTTP_VERSION_2",
+  "protocol": "PROTOCOL_GRPC_WEB",
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
-  "port": 23456,
+  "port": 23457,
   "service": "connectrpc.conformance.v1.ConformanceService",
   "method": "ServerStream",
   "streamType": "STREAM_TYPE_SERVER_STREAM",
@@ -30,10 +30,6 @@
               "baz"
             ]
           }
-        ],
-        "responseData": [
-          "dGVzdCByZXNwb25zZQ==",
-          "dGVzdCByZXNwb25zZZ=="
         ],
         "responseTrailers": [
           {
