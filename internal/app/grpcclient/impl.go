@@ -106,12 +106,10 @@ func (i *invoker) unary(
 	if err != nil {
 		// If an error was returned, convert it to a gRPC error
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
-	} else {
+	} else if resp.Payload != nil {
 		// If the call was successful and there's a payload
-		// add that the response also
-		if resp.Payload != nil {
-			payloads = append(payloads, resp.Payload)
-		}
+		// add that to the response also
+		payloads = append(payloads, resp.Payload)
 	}
 
 	return &v1.ClientResponseResult{
@@ -341,19 +339,19 @@ func (i *invoker) bidiStream(
 
 func (i *invoker) unimplemented(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
+	ccr *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	msg := req.RequestMessages[0]
-	ur := &v1.UnimplementedRequest{}
-	if err := msg.UnmarshalTo(ur); err != nil {
+	msg := ccr.RequestMessages[0]
+	req := &v1.UnimplementedRequest{}
+	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
 
 	// Add the specified request headers to the request
-	ctx = grpcutil.AppendToOutgoingContext(ctx, req.RequestHeaders)
+	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
 	// Invoke the Unary call
-	_, err := i.client.Unimplemented(ctx, ur)
+	_, err := i.client.Unimplemented(ctx, req)
 	return &v1.ClientResponseResult{
 		Error: grpcutil.ConvertGrpcToProtoError(err),
 	}, nil

@@ -101,6 +101,11 @@ type ConformanceServiceClient interface {
 	// vs. full duplex streams. Once all responses are sent, the server should either
 	// return an error if specified or close the stream without error.
 	//
+	// If a response definition is not specified OR is specified, but response data
+	// is empty, the server should skip sending anything on the stream. Stream
+	// headers and trailers should always be set on the stream if provided
+	// even if no response data is sent.
+	//
 	// If the full_duplex field is true:
 	//   - the handler should read one request and then send back one response, and
 	//     then alternate, reading another request and then sending back another response, etc.
@@ -117,20 +122,16 @@ type ConformanceServiceClient interface {
 	//     response.
 	//
 	// If the full_duplex field is false:
+	//   - the handler should read all requests until the client is done sending.
+	//     Once all requests are read, the server should then send back any responses
+	//     specified in the response definition.
+	//
 	//   - the service should echo back all request properties, including all request
 	//     messages in the order they were received, in the first response. Subsequent
 	//     responses should only include the message data in the data field.
 	//
 	//   - if the response_delay_ms duration is specified, the server should wait that
 	//     long in between sending each response message.
-	//
-	//   - if a response definition is not specified OR is specified, but response data
-	//     is empty, the server should skip sending anything on the stream and return
-	//     without error. Stream headers and trailers should still be set on the stream
-	//     if provided even if no response data is sent.
-	//
-	//   - once all responses are sent, the server should either throw an error if
-	//     specified, or return without error.
 	BidiStream(ctx context.Context, opts ...grpc.CallOption) (ConformanceService_BidiStreamClient, error)
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
@@ -321,6 +322,11 @@ type ConformanceServiceServer interface {
 	// vs. full duplex streams. Once all responses are sent, the server should either
 	// return an error if specified or close the stream without error.
 	//
+	// If a response definition is not specified OR is specified, but response data
+	// is empty, the server should skip sending anything on the stream. Stream
+	// headers and trailers should always be set on the stream if provided
+	// even if no response data is sent.
+	//
 	// If the full_duplex field is true:
 	//   - the handler should read one request and then send back one response, and
 	//     then alternate, reading another request and then sending back another response, etc.
@@ -337,20 +343,16 @@ type ConformanceServiceServer interface {
 	//     response.
 	//
 	// If the full_duplex field is false:
+	//   - the handler should read all requests until the client is done sending.
+	//     Once all requests are read, the server should then send back any responses
+	//     specified in the response definition.
+	//
 	//   - the service should echo back all request properties, including all request
 	//     messages in the order they were received, in the first response. Subsequent
 	//     responses should only include the message data in the data field.
 	//
 	//   - if the response_delay_ms duration is specified, the server should wait that
 	//     long in between sending each response message.
-	//
-	//   - if a response definition is not specified OR is specified, but response data
-	//     is empty, the server should skip sending anything on the stream and return
-	//     without error. Stream headers and trailers should still be set on the stream
-	//     if provided even if no response data is sent.
-	//
-	//   - once all responses are sent, the server should either throw an error if
-	//     specified, or return without error.
 	BidiStream(ConformanceService_BidiStreamServer) error
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.

@@ -142,7 +142,7 @@ func (c *conformanceServiceServer) ServerStream(
 	respNum := 0
 
 	responseDefinition := req.ResponseDefinition
-	if responseDefinition != nil {
+	if responseDefinition != nil { //nolint:nestif
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
 		if err := stream.SetHeader(headerMD); err != nil {
 			return err
@@ -278,7 +278,7 @@ func (c *conformanceServiceServer) BidiStream(
 	// If we still have responses left to send, flush them now. This accommodates
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
-	if responseDefinition != nil {
+	if responseDefinition != nil { //nolint:nestif
 		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{

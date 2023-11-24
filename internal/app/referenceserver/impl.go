@@ -140,7 +140,7 @@ func (s *conformanceServer) ServerStream(
 	respNum := 0
 
 	responseDefinition := req.Msg.ResponseDefinition
-	if responseDefinition != nil {
+	if responseDefinition != nil { //nolint:nestif
 		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 
@@ -267,7 +267,7 @@ func (s *conformanceServer) BidiStream(
 	// If we still have responses left to send, flush them now. This accommodates
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
-	if responseDefinition != nil {
+	if responseDefinition != nil { //nolint:nestif
 		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
@@ -308,8 +308,6 @@ func (s *conformanceServer) BidiStream(
 
 // Parses the given unary response definition and returns either
 // a built payload or a connect error based on the definition.
-// If definition is nil, function returns a nil payload and a nil
-//  error
 func parseUnaryResponseDefinition(
 	ctx context.Context,
 	def *v1.UnaryResponseDefinition,
