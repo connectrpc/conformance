@@ -101,8 +101,11 @@ func (i *invoker) unary(
 		// If an error was returned, convert it to a gRPC error
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
 	} else {
-		// If the call was successful, get the returned payloads
-		payloads = append(payloads, resp.Payload)
+		// If the call was successful and there's a payload
+		// , add that the response also
+		if resp.Payload != nil {
+			payloads = append(payloads, resp.Payload)
+		}
 	}
 
 	return &v1.ClientResponseResult{
