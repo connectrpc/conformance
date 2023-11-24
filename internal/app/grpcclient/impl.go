@@ -65,6 +65,12 @@ func (i *invoker) Invoke(
 			return nil, err
 		}
 		return resp, nil
+	case "Unimplemented":
+		resp, err := i.unimplemented(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
 	default:
 		return nil, errors.New("method name " + req.Method + " does not exist")
 	}
@@ -102,7 +108,7 @@ func (i *invoker) unary(
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
 	} else {
 		// If the call was successful and there's a payload
-		// , add that the response also
+		// add that the response also
 		if resp.Payload != nil {
 			payloads = append(payloads, resp.Payload)
 		}
@@ -278,30 +284,32 @@ func (i *invoker) bidiStream(
 		}
 	}
 
+	var hdr metadata.MD
+	defer func() {
+		if result != nil {
+			// Set headers and trailers from the stream
+			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
+			// Trailers are
+			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
+		}
+	}()
+
+	// Sends are done, close the send side of the stream
+	if err := stream.CloseSend(); err != nil {
+		return nil, err
+	}
+
+	// Once the send side is closed, header metadata is ready to be read
+	hdr, err = stream.Header()
+	if err != nil {
+		return nil, err
+	}
+
 	// If we received an error in any of the send logic or full-duplex reads, then exit
 	if protoErr != nil {
 		result.Error = protoErr
 		return result, nil
 	}
-
-	// Sends are done, close the send side of the stream
-	if err := stream.CloseSend(); err != nil {
-		result.Error = grpcutil.ConvertGrpcToProtoError(err)
-		return result, nil
-	}
-
-	// Once the send side is closed, header metadata is ready to be read
-	hdr, err := stream.Header()
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if result != nil {
-			// Set headers and trailers from the stream
-			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
-			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
-		}
-	}()
 
 	// Receive any remaining responses
 	for {
@@ -330,6 +338,26 @@ func (i *invoker) bidiStream(
 	}
 
 	return result, nil
+}
+
+func (i *invoker) unimplemented(
+	ctx context.Context,
+	req *v1.ClientCompatRequest,
+) (*v1.ClientResponseResult, error) {
+	msg := req.RequestMessages[0]
+	ur := &v1.UnimplementedRequest{}
+	if err := msg.UnmarshalTo(ur); err != nil {
+		return nil, err
+	}
+
+	// Add the specified request headers to the request
+	ctx = grpcutil.AppendToOutgoingContext(ctx, req.RequestHeaders)
+
+	// Invoke the Unary call
+	_, err := i.client.Unimplemented(ctx, ur)
+	return &v1.ClientResponseResult{
+		Error: grpcutil.ConvertGrpcToProtoError(err),
+	}, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.

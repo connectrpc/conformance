@@ -240,7 +240,7 @@ func (c *conformanceServiceServer) BidiStream(
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
 		if fullDuplex {
-			if respNum >= len(responseDefinition.ResponseData) {
+			if responseDefinition == nil || respNum >= len(responseDefinition.ResponseData) {
 				// If there are no responses to send, then break the receive loop
 				// and throw the error specified
 				break
@@ -278,40 +278,42 @@ func (c *conformanceServiceServer) BidiStream(
 	// If we still have responses left to send, flush them now. This accommodates
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
-	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
-		resp := &v1.BidiStreamResponse{
-			Payload: &v1.ConformancePayload{
-				Data: responseDefinition.ResponseData[respNum],
-			},
-		}
-		// Only set the request info if this is the first response being sent back
-		// because for half duplex streams, nothing in the request info will change
-		// after the first response (this includes the requests since they've all
-		// been received by this point)
-		if respNum == 0 {
-			metadata, _ := metadata.FromIncomingContext(stream.Context())
-			resp.Payload.RequestInfo = createRequestInfo(metadata, reqs)
-		}
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
-
-		if err := stream.Send(resp); err != nil {
-			return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
-		}
-	}
-
-	if responseDefinition.Error != nil {
-		if respNum == 0 {
-			// We've sent no responses and are returning an error, so build a
-			// RequestInfo message and append to the error details
-			metadata, _ := metadata.FromIncomingContext(stream.Context())
-			reqInfo := createRequestInfo(metadata, reqs)
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return status.Error(codes.Internal, err.Error())
+	if responseDefinition != nil {
+		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+			resp := &v1.BidiStreamResponse{
+				Payload: &v1.ConformancePayload{
+					Data: responseDefinition.ResponseData[respNum],
+				},
 			}
-			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			// Only set the request info if this is the first response being sent back
+			// because for half duplex streams, nothing in the request info will change
+			// after the first response (this includes the requests since they've all
+			// been received by this point)
+			if respNum == 0 {
+				metadata, _ := metadata.FromIncomingContext(stream.Context())
+				resp.Payload.RequestInfo = createRequestInfo(metadata, reqs)
+			}
+			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			if err := stream.Send(resp); err != nil {
+				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
+			}
 		}
-		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+
+		if responseDefinition.Error != nil {
+			if respNum == 0 {
+				// We've sent no responses and are returning an error, so build a
+				// RequestInfo message and append to the error details
+				metadata, _ := metadata.FromIncomingContext(stream.Context())
+				reqInfo := createRequestInfo(metadata, reqs)
+				reqInfoAny, err := anypb.New(reqInfo)
+				if err != nil {
+					return status.Error(codes.Internal, err.Error())
+				}
+				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			}
+			return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+		}
 	}
 	return nil
 }

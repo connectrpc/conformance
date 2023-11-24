@@ -300,15 +300,14 @@ func (i *invoker) bidiStream(
 		}
 	}
 
+	// Sends are done, close the send side of the stream
+	if err := stream.CloseRequest(); err != nil {
+		return nil, err
+	}
+
 	// If we received an error in any of the send logic or full-duplex reads, then exit
 	if protoErr != nil {
 		result.Error = protoErr
-		return result, nil
-	}
-
-	// Sends are done, close the send side of the stream
-	if err := stream.CloseRequest(); err != nil {
-		result.Error = internal.ConvertErrorToProtoError(err)
 		return result, nil
 	}
 

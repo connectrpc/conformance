@@ -1,5 +1,4 @@
 name: Basic
-# TODO: define more test cases
 testCases:
 - request:
     testName: unary success
@@ -35,6 +34,46 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 - request:
+    testName: unary error
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "unary failed"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+- request:
+    testName: unary error unicode
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+- request:
     testName: client stream success
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
@@ -49,6 +88,28 @@ testCases:
         - name: x-custom-header
           value: ["foo","bar","baz"]
         responseData: "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+- request:
+    testName: client stream error
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "client stream failed"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
@@ -153,3 +214,14 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
+- request:
+    testName: unimplemented
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unimplemented
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnimplementedRequest
+  # Override
+  expectedResponse:
+    error:
+      code: 12
