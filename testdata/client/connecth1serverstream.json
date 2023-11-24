@@ -2,7 +2,7 @@
   "testName": "Server Stream Happy Path",
   "httpVersion": "HTTP_VERSION_2",
   "protocol": "PROTOCOL_GRPC_WEB",
-  "codec": "CODEC_JSON",
+  "codec": "CODEC_PROTO",
   "host": "127.0.0.1",
   "port": 23457,
   "service": "connectrpc.conformance.v1.ConformanceService",
@@ -39,8 +39,7 @@
               "quux"
             ]
           }
-        ],
-        "responseDelayMs": 500
+        ]
       }
     }
   ]

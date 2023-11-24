@@ -33,14 +33,7 @@
         ],
         "error": {
           "code": 13,
-          "message": "unary failed",
-          "details": [
-            {
-              "@type": "type.googleapis.com/connectrpc.conformance.v1.Header",
-              "name": "test error detail name",
-              "value": ["test error detail value"]
-            }
-          ]
+          "message": "unary failed"
         },
         "responseTrailers": [
           {

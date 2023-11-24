@@ -53,6 +53,29 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
+    testName: bidi full duplex stream error no responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    requestHeaders:
+      - name: X-Conformance-Test
+        value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+          - name: x-custom-header
+            value: ["foo","bar","baz"]
+        error:
+          code: 13
+          message: "bidi full duplex stream failed"
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+- request:
     testName: bidi half duplex stream success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream

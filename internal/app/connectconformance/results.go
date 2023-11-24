@@ -110,8 +110,8 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
 	var errs multiErrors
 
-	if len(expected.Payloads) == 0 && expected.Error != nil {
-		// When there are no messages in the body, only an error, the server may send a
+	if len(expected.Payloads) == 0 {
+		// When there are no messages in the body, the server may send a
 		// trailers-only response. In that case, it is acceptable for the expected
 		// headers and trailers to be merged into one set, and it is acceptable for the
 		// client to interpret them as either headers or trailers.

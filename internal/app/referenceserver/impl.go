@@ -310,38 +310,40 @@ func parseUnaryResponseDefinition(
 	hdrs http.Header,
 	reqs []*anypb.Any,
 ) (*v1.ConformancePayload, *connect.Error) {
-	if def != nil {
-		switch respType := def.Response.(type) {
-		case *v1.UnaryResponseDefinition_Error:
-			// The server should build a RequestInfo object and add it to the error details
-			// for unary responses that return an error.
-			reqInfo := createRequestInfo(ctx, hdrs, reqs)
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return nil, connect.NewError(connect.CodeInternal, err)
-			}
-			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
-
-			return nil, internal.ConvertProtoToConnectError(respType.Error)
-
-		case *v1.UnaryResponseDefinition_ResponseData, nil:
-			requestInfo := createRequestInfo(ctx, hdrs, reqs)
-			payload := &v1.ConformancePayload{
-				RequestInfo: requestInfo,
-			}
-
-			// If response data was provided, set that in the payload response
-			if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
-				payload.Data = respType.ResponseData
-			}
-			return payload, nil
-		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
-		}
+	reqInfo := createRequestInfo(ctx, hdrs, reqs)
+	if def == nil {
+		// If the definition is not set at all, there's nothing to respond with.
+		// Just return a payload with the request info
+		return &v1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}, nil
 	}
-	// If the definition is not set at all, there's nothing to respond with.
-	// Just return a nil payload and error
-	return nil, nil
+
+	switch respType := def.Response.(type) {
+	case *v1.UnaryResponseDefinition_Error:
+		// The server should add the request info to the error details
+		// for unary responses that return an error.
+		reqInfoAny, err := anypb.New(reqInfo)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
+
+		return nil, internal.ConvertProtoToConnectError(respType.Error)
+
+	case *v1.UnaryResponseDefinition_ResponseData, nil:
+		payload := &v1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}
+
+		// If response data was provided, set that in the payload response
+		if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
+			payload.Data = respType.ResponseData
+		}
+		return payload, nil
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
+	}
 }
 
 // Creates request info for a conformance payload.

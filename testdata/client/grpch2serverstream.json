@@ -31,10 +31,6 @@
             ]
           }
         ],
-        "responseData": [
-          "dGVzdCByZXNwb25zZQ==",
-          "dGVzdCByZXNwb25zZZ=="
-        ],
         "responseTrailers": [
           {
             "name": "x-custom-trailer",
@@ -43,8 +39,7 @@
               "quux"
             ]
           }
-        ],
-        "responseDelayMs": 500
+        ]
       }
     }
   ]

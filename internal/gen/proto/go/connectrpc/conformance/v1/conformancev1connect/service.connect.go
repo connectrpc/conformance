@@ -75,7 +75,8 @@ type ConformanceServiceClient interface {
 	// data in the data field.
 	//
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and send back an empty response.
+	// if it is, set no response headers or trailers and return no response data.
+	// The returned payload should only contain the request info.
 	Unary(context.Context, *connect.Request[v1.UnaryRequest]) (*connect.Response[v1.UnaryResponse], error)
 	// A server-streaming operation. The request indicates the response headers,
 	// response messages, trailers, and an optional error to send back. The
@@ -87,40 +88,67 @@ type ConformanceServiceClient interface {
 	// message data in the data field. Subsequent messages after the first one
 	// should contain only the data field.
 	//
-	// Servers should allow the response definition to be unset in the request and
-	// if so, the server should skip sending anything on the stream and return
-	// without error.
+	// If a response definition is not specified OR is specified, but response data
+	// is empty, the server should skip sending anything on the stream and return
+	// without error. Stream headers and trailers should still be set on the stream
+	// if provided even if no response data is sent.
 	ServerStream(context.Context, *connect.Request[v1.ServerStreamRequest]) (*connect.ServerStreamForClient[v1.ServerStreamResponse], error)
+	// A client-streaming operation. The first request indicates the response
+	// headers and trailers and also indicates either a response message or an
+	// error to send back.
+	//
+	// Response message data is specified as bytes. The service should echo back
+	// request properties, including all request messages in the order they were
+	// received, in the ConformancePayload and then include the message data in
+	// the data field.
+	//
+	// If the input stream is empty, the server's response will include no data,
+	// only the request properties (headers, timeout).
+	//
+	// Servers should only read the response definition from the first message in
+	// the stream and should ignore any definition set in subsequent messages.
+	//
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and return an empty response.
+	// if it is, set no response headers or trailers and return no response data.
+	// The returned payload should only contain the request info.
 	ClientStream(context.Context) *connect.ClientStreamForClient[v1.ClientStreamRequest, v1.ClientStreamResponse]
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
 	// The response data should be sent in the order indicated, and the server
-	// should wait between sending response messages as indicated. If the
-	// full_duplex field is true, the handler should read one request
-	// and then send back one response, and then alternate, reading another
-	// request and then sending back another response, etc. If the response_delay_ms
-	// duration is specified, the server should wait that long in between sending each
-	// response message. If both are specified, the server should wait the given
-	// duration after reading the request before sending the corresponding
-	// response.
+	// should wait between sending response messages as indicated.
 	//
 	// Response message data is specified as bytes and should be included in the
 	// data field of the ConformancePayload in each response.
 	//
-	// If the full_duplex field is true, the service should echo back all request
-	// properties in the first response including the last received request.
-	// Subsequent responses should only echo back the last received request.
+	// If the full_duplex field is true:
+	//   - the handler should read one request and then send back one response, and
+	//     then alternate, reading another request and then sending back another response, etc.
+	//     The test suite guarantees that if the full_duplex field is true, there
+	//     will always be an equal amount of requests and desired responses.
 	//
-	// If the full_duplex field is false, the service should echo back all request
-	// properties, including all request messages in the order they were
-	// received, in the ConformancePayload. Subsequent responses should only include
-	// the message data in the data field.
+	//   - the service should echo back all request properties in the first response
+	//     including the last received request. Subsequent responses should only
+	//     echo back the last received request.
 	//
-	// If the input stream is empty, the server should send a single response
-	// message that includes no data and only the request properties (headers,
-	// timeout).
+	//   - if the response_delay_ms duration is specified, the server should wait the given
+	//     duration after reading the request before sending the corresponding
+	//     response.
+	//
+	// If the full_duplex field is false:
+	//   - the service should echo back all request properties, including all request
+	//     messages in the order they were received, in the first response. Subsequent
+	//     responses should only include the message data in the data field.
+	//
+	//   - if the response_delay_ms duration is specified, the server should wait that
+	//     long in between sending each response message.
+	//
+	//   - if a response definition is not specified OR is specified, but response data
+	//     is empty, the server should skip sending anything on the stream and return
+	//     without error. Stream headers and trailers should still be set on the stream
+	//     if provided even if no response data is sent.
+	//
+	//     Note again that this only applies to half duplex streams since a response definition
+	//     with response_data will always be provided for full duplex streams.
 	BidiStream(context.Context) *connect.BidiStreamForClient[v1.BidiStreamRequest, v1.BidiStreamResponse]
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
@@ -211,7 +239,8 @@ type ConformanceServiceHandler interface {
 	// data in the data field.
 	//
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and send back an empty response.
+	// if it is, set no response headers or trailers and return no response data.
+	// The returned payload should only contain the request info.
 	Unary(context.Context, *connect.Request[v1.UnaryRequest]) (*connect.Response[v1.UnaryResponse], error)
 	// A server-streaming operation. The request indicates the response headers,
 	// response messages, trailers, and an optional error to send back. The
@@ -223,40 +252,67 @@ type ConformanceServiceHandler interface {
 	// message data in the data field. Subsequent messages after the first one
 	// should contain only the data field.
 	//
-	// Servers should allow the response definition to be unset in the request and
-	// if so, the server should skip sending anything on the stream and return
-	// without error.
+	// If a response definition is not specified OR is specified, but response data
+	// is empty, the server should skip sending anything on the stream and return
+	// without error. Stream headers and trailers should still be set on the stream
+	// if provided even if no response data is sent.
 	ServerStream(context.Context, *connect.Request[v1.ServerStreamRequest], *connect.ServerStream[v1.ServerStreamResponse]) error
+	// A client-streaming operation. The first request indicates the response
+	// headers and trailers and also indicates either a response message or an
+	// error to send back.
+	//
+	// Response message data is specified as bytes. The service should echo back
+	// request properties, including all request messages in the order they were
+	// received, in the ConformancePayload and then include the message data in
+	// the data field.
+	//
+	// If the input stream is empty, the server's response will include no data,
+	// only the request properties (headers, timeout).
+	//
+	// Servers should only read the response definition from the first message in
+	// the stream and should ignore any definition set in subsequent messages.
+	//
 	// Servers should allow the response definition to be unset in the request and
-	// if it is, set no response headers or trailers and return an empty response.
+	// if it is, set no response headers or trailers and return no response data.
+	// The returned payload should only contain the request info.
 	ClientStream(context.Context, *connect.ClientStream[v1.ClientStreamRequest]) (*connect.Response[v1.ClientStreamResponse], error)
 	// A bidirectional-streaming operation. The first request indicates the response
 	// headers, response messages, trailers, and an optional error to send back.
 	// The response data should be sent in the order indicated, and the server
-	// should wait between sending response messages as indicated. If the
-	// full_duplex field is true, the handler should read one request
-	// and then send back one response, and then alternate, reading another
-	// request and then sending back another response, etc. If the response_delay_ms
-	// duration is specified, the server should wait that long in between sending each
-	// response message. If both are specified, the server should wait the given
-	// duration after reading the request before sending the corresponding
-	// response.
+	// should wait between sending response messages as indicated.
 	//
 	// Response message data is specified as bytes and should be included in the
 	// data field of the ConformancePayload in each response.
 	//
-	// If the full_duplex field is true, the service should echo back all request
-	// properties in the first response including the last received request.
-	// Subsequent responses should only echo back the last received request.
+	// If the full_duplex field is true:
+	//   - the handler should read one request and then send back one response, and
+	//     then alternate, reading another request and then sending back another response, etc.
+	//     The test suite guarantees that if the full_duplex field is true, there
+	//     will always be an equal amount of requests and desired responses.
 	//
-	// If the full_duplex field is false, the service should echo back all request
-	// properties, including all request messages in the order they were
-	// received, in the ConformancePayload. Subsequent responses should only include
-	// the message data in the data field.
+	//   - the service should echo back all request properties in the first response
+	//     including the last received request. Subsequent responses should only
+	//     echo back the last received request.
 	//
-	// If the input stream is empty, the server should send a single response
-	// message that includes no data and only the request properties (headers,
-	// timeout).
+	//   - if the response_delay_ms duration is specified, the server should wait the given
+	//     duration after reading the request before sending the corresponding
+	//     response.
+	//
+	// If the full_duplex field is false:
+	//   - the service should echo back all request properties, including all request
+	//     messages in the order they were received, in the first response. Subsequent
+	//     responses should only include the message data in the data field.
+	//
+	//   - if the response_delay_ms duration is specified, the server should wait that
+	//     long in between sending each response message.
+	//
+	//   - if a response definition is not specified OR is specified, but response data
+	//     is empty, the server should skip sending anything on the stream and return
+	//     without error. Stream headers and trailers should still be set on the stream
+	//     if provided even if no response data is sent.
+	//
+	//     Note again that this only applies to half duplex streams since a response definition
+	//     with response_data will always be provided for full duplex streams.
 	BidiStream(context.Context, *connect.BidiStream[v1.BidiStreamRequest, v1.BidiStreamResponse]) error
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.

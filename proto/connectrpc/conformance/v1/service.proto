@@ -33,7 +33,8 @@ service ConformanceService {
   // data in the data field.
   //
   // Servers should allow the response definition to be unset in the request and
-  // if it is, set no response headers or trailers and send back an empty response.
+  // if it is, set no response headers or trailers and return no response data.
+  // The returned payload should only contain the request info.
   rpc Unary(UnaryRequest) returns (UnaryResponse);
   // A server-streaming operation. The request indicates the response headers,
   // response messages, trailers, and an optional error to send back. The
@@ -45,9 +46,10 @@ service ConformanceService {
   // message data in the data field. Subsequent messages after the first one
   // should contain only the data field.
   //
-  // Servers should allow the response definition to be unset in the request and
-  // if so, the server should skip sending anything on the stream and return
-  // without error.
+  // If a response definition is not specified OR is specified, but response data
+  // is empty, the server should skip sending anything on the stream and return
+  // without error. Stream headers and trailers should still be set on the stream
+  // if provided even if no response data is sent.
   rpc ServerStream(ServerStreamRequest) returns (stream ServerStreamResponse);
   // A client-streaming operation. The first request indicates the response
   // headers and trailers and also indicates either a response message or an
@@ -63,9 +65,10 @@ service ConformanceService {
   //
   // Servers should only read the response definition from the first message in
   // the stream and should ignore any definition set in subsequent messages.
-
+  //
   // Servers should allow the response definition to be unset in the request and
-  // if it is, set no response headers or trailers and return an empty response.
+  // if it is, set no response headers or trailers and return no response data.
+  // The returned payload should only contain the request info.
   rpc ClientStream(stream ClientStreamRequest) returns (ClientStreamResponse);
   // A bidirectional-streaming operation. The first request indicates the response
   // headers, response messages, trailers, and an optional error to send back.
@@ -75,11 +78,18 @@ service ConformanceService {
   // Response message data is specified as bytes and should be included in the
   // data field of the ConformancePayload in each response.
   //
+  // Servers should send responses indicated according to the rules of half duplex
+  // vs. full duplex streams. Once all responses are sent, the server should either
+  // return an error if specified or close the stream without error.
+  //
   // If the full_duplex field is true:
   // - the handler should read one request and then send back one response, and
   //   then alternate, reading another request and then sending back another response, etc.
-  //   The test suite guarantees that if the full_duplex field is true, there
-  //   will always be an equal amount of requests and desired responses.
+  //
+  // - if the server receives a request and has no more responses to send, it
+  //   should throw the error specified in the request. The test suite guarantees
+  //   that an error will be present to throw if requests are greater than desired
+  //   responses.
   //
   // - the service should echo back all request properties in the first response
   //   including the last received request. Subsequent responses should only
@@ -98,8 +108,12 @@ service ConformanceService {
   //   long in between sending each response message.
   //
   // - if a response definition is not specified OR is specified, but response data
-  //   is empty, the server should send a single response message that includes no data and only
-  //   the request properties (headers, timeout).
+  //   is empty, the server should skip sending anything on the stream and return
+  //   without error. Stream headers and trailers should still be set on the stream
+  //   if provided even if no response data is sent.
+  //
+  // - once all responses are sent, the server should either throw an error if
+  //   specified, or return without error.
   //
   //   Note again that this only applies to half duplex streams since a response definition
   //   with response_data will always be provided for full duplex streams.
