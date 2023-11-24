@@ -70,30 +70,39 @@ service ConformanceService {
   // A bidirectional-streaming operation. The first request indicates the response
   // headers, response messages, trailers, and an optional error to send back.
   // The response data should be sent in the order indicated, and the server
-  // should wait between sending response messages as indicated. If the
-  // full_duplex field is true, the handler should read one request
-  // and then send back one response, and then alternate, reading another
-  // request and then sending back another response, etc. If the response_delay_ms
-  // duration is specified, the server should wait that long in between sending each
-  // response message. If both are specified, the server should wait the given
-  // duration after reading the request before sending the corresponding
-  // response.
+  // should wait between sending response messages as indicated.
   //
   // Response message data is specified as bytes and should be included in the
   // data field of the ConformancePayload in each response.
   //
-  // If the full_duplex field is true, the service should echo back all request
-  // properties in the first response including the last received request.
-  // Subsequent responses should only echo back the last received request.
+  // If the full_duplex field is true:
+  // - the handler should read one request and then send back one response, and
+  //   then alternate, reading another request and then sending back another response, etc.
+  //   The test suite guarantees that if the full_duplex field is true, there
+  //   will always be an equal amount of requests and desired responses.
   //
-  // If the full_duplex field is false, the service should echo back all request
-  // properties, including all request messages in the order they were
-  // received, in the ConformancePayload. Subsequent responses should only include
-  // the message data in the data field.
+  // - the service should echo back all request properties in the first response
+  //   including the last received request. Subsequent responses should only
+  //   echo back the last received request.
   //
-  // If the input stream is empty, the server should send a single response
-  // message that includes no data and only the request properties (headers,
-  // timeout).
+  // - if the response_delay_ms duration is specified, the server should wait the given
+  //   duration after reading the request before sending the corresponding
+  //   response.
+  //
+  // If the full_duplex field is false:
+  // - the service should echo back all request properties, including all request
+  //   messages in the order they were received, in the first response. Subsequent
+  //   responses should only include the message data in the data field.
+  //
+  // - if the response_delay_ms duration is specified, the server should wait that
+  //   long in between sending each response message.
+  //
+  // - if a response definition is not specified OR is specified, but response data
+  //   is empty, the server should send a single response message that includes no data and only
+  //   the request properties (headers, timeout).
+  //
+  //   Note again that this only applies to half duplex streams since a response definition
+  //   with response_data will always be provided for full duplex streams.
   rpc BidiStream(stream BidiStreamRequest) returns (stream BidiStreamResponse);
   // A unary endpoint that the server should not implement and should instead
   // return an unimplemented error when invoked.

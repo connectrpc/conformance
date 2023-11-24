@@ -19,29 +19,7 @@
   ],
   "requestMessages": [
     {
-      "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
-      "responseDefinition": {
-        "responseHeaders": [
-          {
-            "name": "x-custom-header",
-            "value": [
-              "foo",
-              "bar",
-              "baz"
-            ]
-          }
-        ],
-        "responseData": "dGVzdCByZXNwb25zZQ==",
-        "responseTrailers": [
-          {
-            "name": "x-custom-trailer",
-            "value": [
-              "bing",
-              "quux"
-            ]
-          }
-        ]
-      }
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"
     }
   ]
 }

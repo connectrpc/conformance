@@ -54,6 +54,9 @@ func (s *conformanceServer) Unary(
 		req.Header(),
 		[]*anypb.Any{msgAsAny},
 	)
+	// If connectErr is not nil, then the response definition must not be nil.
+	// Read the headers and trailers from the definition and add them to connectErr
+	// and return
 	if connectErr != nil {
 		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseHeaders(), connectErr.Meta())
 		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseTrailers(), connectErr.Meta())
@@ -64,8 +67,10 @@ func (s *conformanceServer) Unary(
 		Payload: payload,
 	})
 
-	internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
-	internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+	if req.Msg.ResponseDefinition != nil {
+		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
+		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+	}
 
 	return resp, nil
 }
@@ -99,6 +104,10 @@ func (s *conformanceServer) ClientStream(
 	}
 
 	payload, err := parseUnaryResponseDefinition(ctx, responseDefinition, stream.RequestHeader(), reqs)
+
+	// If err is not nil, then the response definition must not be nil.
+	// Read the headers and trailers from the definition and add them to connectErr
+	// and return
 	if err != nil {
 		internal.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
@@ -109,8 +118,10 @@ func (s *conformanceServer) ClientStream(
 		Payload: payload,
 	})
 
-	internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
-	internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+	if responseDefinition != nil {
+		internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
+		internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+	}
 
 	return resp, nil
 }
@@ -217,13 +228,9 @@ func (s *conformanceServer) BidiStream(
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
+		// The test framework guarantees that full-duplex streams will always have an equal amount of
+		// requests and desired responses.
 		if fullDuplex {
-			if respNum >= len(responseDefinition.ResponseData) {
-				return connect.NewError(
-					connect.CodeAborted,
-					errors.New("received more requests than desired responses on a full duplex stream"),
-				)
-			}
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],
@@ -289,11 +296,14 @@ func (s *conformanceServer) BidiStream(
 		}
 		return internal.ConvertProtoToConnectError(responseDefinition.Error)
 	}
+
 	return nil
 }
 
 // Parses the given unary response definition and returns either
 // a built payload or a connect error based on the definition.
+// If definition is nil, function returns a nil payload and a nil
+//  error
 func parseUnaryResponseDefinition(
 	ctx context.Context,
 	def *v1.UnaryResponseDefinition,
@@ -329,7 +339,9 @@ func parseUnaryResponseDefinition(
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
 		}
 	}
-	return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no response definition provided"))
+	// If the definition is not set at all, there's nothing to respond with.
+	// Just return a nil payload and error
+	return nil, nil
 }
 
 // Creates request info for a conformance payload.

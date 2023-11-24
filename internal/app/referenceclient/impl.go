@@ -108,11 +108,13 @@ func (i *invoker) unary(
 		headers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
-		payloads = append(payloads, resp.Msg.Payload)
+		// If the call was successful, get the headers and trailers
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
+		// If there's a payload, add that the response also
+		if resp.Msg.Payload != nil {
+			payloads = append(payloads, resp.Msg.Payload)
+		}
 	}
 
 	return &v1.ClientResponseResult{

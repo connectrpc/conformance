@@ -20,13 +20,20 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: unary empty response
+    testName: unary empty definition
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
+- request:
+    testName: unary no definition
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 - request:
     testName: client stream success
     service: connectrpc.conformance.v1.ConformanceService
