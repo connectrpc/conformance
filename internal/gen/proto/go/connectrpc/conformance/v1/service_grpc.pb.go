@@ -97,11 +97,16 @@ type ConformanceServiceClient interface {
 	// Response message data is specified as bytes and should be included in the
 	// data field of the ConformancePayload in each response.
 	//
+	// Servers should send responses indicated according to the rules of half duplex
+	// vs. full duplex streams. Once all responses are sent, the server should either
+	// return an error if specified or close the stream without error.
+	//
 	// If the full_duplex field is true:
 	//   - the handler should read one request and then send back one response, and
 	//     then alternate, reading another request and then sending back another response, etc.
-	//     The test suite guarantees that if the full_duplex field is true, there
-	//     will always be an equal amount of requests and desired responses.
+	//
+	//   - if the server receives a request and has no responses to send, it
+	//     should throw the error specified in the request.
 	//
 	//   - the service should echo back all request properties in the first response
 	//     including the last received request. Subsequent responses should only
@@ -124,8 +129,8 @@ type ConformanceServiceClient interface {
 	//     without error. Stream headers and trailers should still be set on the stream
 	//     if provided even if no response data is sent.
 	//
-	//     Note again that this only applies to half duplex streams since a response definition
-	//     with response_data will always be provided for full duplex streams.
+	//   - once all responses are sent, the server should either throw an error if
+	//     specified, or return without error.
 	BidiStream(ctx context.Context, opts ...grpc.CallOption) (ConformanceService_BidiStreamClient, error)
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
@@ -312,11 +317,16 @@ type ConformanceServiceServer interface {
 	// Response message data is specified as bytes and should be included in the
 	// data field of the ConformancePayload in each response.
 	//
+	// Servers should send responses indicated according to the rules of half duplex
+	// vs. full duplex streams. Once all responses are sent, the server should either
+	// return an error if specified or close the stream without error.
+	//
 	// If the full_duplex field is true:
 	//   - the handler should read one request and then send back one response, and
 	//     then alternate, reading another request and then sending back another response, etc.
-	//     The test suite guarantees that if the full_duplex field is true, there
-	//     will always be an equal amount of requests and desired responses.
+	//
+	//   - if the server receives a request and has no responses to send, it
+	//     should throw the error specified in the request.
 	//
 	//   - the service should echo back all request properties in the first response
 	//     including the last received request. Subsequent responses should only
@@ -339,8 +349,8 @@ type ConformanceServiceServer interface {
 	//     without error. Stream headers and trailers should still be set on the stream
 	//     if provided even if no response data is sent.
 	//
-	//     Note again that this only applies to half duplex streams since a response definition
-	//     with response_data will always be provided for full duplex streams.
+	//   - once all responses are sent, the server should either throw an error if
+	//     specified, or return without error.
 	BidiStream(ConformanceService_BidiStreamServer) error
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.

@@ -86,10 +86,8 @@ service ConformanceService {
   // - the handler should read one request and then send back one response, and
   //   then alternate, reading another request and then sending back another response, etc.
   //
-  // - if the server receives a request and has no more responses to send, it
-  //   should throw the error specified in the request. The test suite guarantees
-  //   that an error will be present to throw if requests are greater than desired
-  //   responses.
+  // - if the server receives a request and has no responses to send, it
+  //   should throw the error specified in the request.
   //
   // - the service should echo back all request properties in the first response
   //   including the last received request. Subsequent responses should only
@@ -114,9 +112,6 @@ service ConformanceService {
   //
   // - once all responses are sent, the server should either throw an error if
   //   specified, or return without error.
-  //
-  //   Note again that this only applies to half duplex streams since a response definition
-  //   with response_data will always be provided for full duplex streams.
   rpc BidiStream(stream BidiStreamRequest) returns (stream BidiStreamResponse);
   // A unary endpoint that the server should not implement and should instead
   // return an unimplemented error when invoked.

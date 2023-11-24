@@ -241,10 +241,9 @@ func (c *conformanceServiceServer) BidiStream(
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
 		if fullDuplex {
 			if respNum >= len(responseDefinition.ResponseData) {
-				return status.Error(
-					codes.Aborted,
-					"received more requests than desired responses on a full duplex stream",
-				)
+				// If there are no responses to send, then break the receive loop
+				// and throw the error specified
+				break
 			}
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
@@ -324,38 +323,40 @@ func parseUnaryResponseDefinition(
 	metadata metadata.MD,
 	reqs []*anypb.Any,
 ) (*v1.ConformancePayload, error) {
-	if def != nil {
-		switch respType := def.Response.(type) {
-		case *v1.UnaryResponseDefinition_Error:
-			reqInfo := createRequestInfo(metadata, reqs)
-
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return nil, status.Error(codes.Internal, err.Error())
-			}
-			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
-			return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
-
-		case *v1.UnaryResponseDefinition_ResponseData, nil:
-			requestInfo := createRequestInfo(metadata, reqs)
-			payload := &v1.ConformancePayload{
-				RequestInfo: requestInfo,
-			}
-
-			// If response data was provided, set that in the payload response
-			if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
-				payload.Data = respType.ResponseData
-			}
-			return payload, nil
-		default:
-			return nil, status.Errorf(
-				codes.InvalidArgument,
-				"provided UnaryRequest.Response has an unexpected type %T",
-				respType,
-			)
-		}
+	reqInfo := createRequestInfo(metadata, reqs)
+	if def == nil {
+		// If the definition is not set at all, there's nothing to respond with.
+		// Just return a payload with the request info
+		return &v1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}, nil
 	}
-	return nil, status.Error(codes.InvalidArgument, "no response definition provided")
+	switch respType := def.Response.(type) {
+	case *v1.UnaryResponseDefinition_Error:
+		reqInfoAny, err := anypb.New(reqInfo)
+		if err != nil {
+			return nil, status.Error(codes.Internal, err.Error())
+		}
+		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
+		return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
+
+	case *v1.UnaryResponseDefinition_ResponseData, nil:
+		payload := &v1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}
+
+		// If response data was provided, set that in the payload response
+		if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
+			payload.Data = respType.ResponseData
+		}
+		return payload, nil
+	default:
+		return nil, status.Errorf(
+			codes.InvalidArgument,
+			"provided UnaryRequest.Response has an unexpected type %T",
+			respType,
+		)
+	}
 }
 
 // Creates request info for a conformance payload.

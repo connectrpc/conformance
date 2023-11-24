@@ -228,9 +228,13 @@ func (s *conformanceServer) BidiStream(
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
-		// The test framework guarantees that full-duplex streams will always have an equal amount of
-		// requests and desired responses.
 		if fullDuplex {
+			if respNum >= len(responseDefinition.ResponseData) {
+				// If there are no responses to send, then break the receive loop
+				// and throw the error specified
+				break
+			}
+
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],

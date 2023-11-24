@@ -73,8 +73,6 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
       fullDuplex: true
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: bidi half duplex stream success
     service: connectrpc.conformance.v1.ConformanceService
