@@ -289,7 +289,6 @@ func (i *invoker) bidiStream(
 		if result != nil {
 			// Set headers and trailers from the stream
 			result.ResponseHeaders = grpcutil.ConvertMetadataToProtoHeader(hdr)
-			// Trailers are
 			result.ResponseTrailers = grpcutil.ConvertMetadataToProtoHeader(stream.Trailer())
 		}
 	}()
