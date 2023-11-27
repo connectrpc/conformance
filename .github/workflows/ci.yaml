@@ -18,6 +18,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - name: Install Buf
+        uses: bufbuild/buf-setup-action@v1
+      - name: Validate Protos
+        uses: bufbuild/buf-breaking-action@v1
+        with:
+          input: proto
+          against: 'buf.build/connectrpc/conformance'
+      - name: Lint Protos
+        uses: bufbuild/buf-lint-action@v1
+        with:
+          input: proto
       - name: Install Go
         uses: actions/setup-go@v4
         with:
