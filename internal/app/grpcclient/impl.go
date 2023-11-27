@@ -17,14 +17,18 @@ package grpcclient
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"time"
 
+	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
+
+const clientName = "connectconformance-grpcclient"
 
 type invoker struct {
 	client v1.ConformanceServiceClient
@@ -363,4 +367,23 @@ func newInvoker(clientConn grpc.ClientConnInterface) *invoker {
 	return &invoker{
 		client: client,
 	}
+}
+
+func userAgentUnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return invoker(addUserAgent(ctx), method, req, reply, cc, opts...)
+}
+
+func userAgentStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	return streamer(addUserAgent(ctx), desc, cc, method, opts...)
+}
+
+func addUserAgent(ctx context.Context) context.Context {
+	reqMD, ok := metadata.FromOutgoingContext(ctx)
+	if !ok {
+		reqMD = metadata.MD{}
+	}
+	// decorate user-agent with the program name and version
+	userAgent := fmt.Sprintf("%s %s/%s", reqMD.Get("User-Agent"), clientName, internal.Version)
+	reqMD.Set("User-Agent", userAgent)
+	return metadata.NewOutgoingContext(ctx, reqMD)
 }

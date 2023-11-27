@@ -11,6 +11,17 @@ export PATH := $(BIN):$(PATH)
 export GOBIN := $(abspath $(BIN))
 COPYRIGHT_YEARS := 2023
 LICENSE_IGNORE := -e internal/gen -e _legacy -e testdata/
+# Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
+GO ?= go
+LATEST_VERSION = $(shell git describe --tags --abbrev=0 2>/dev/null)
+CURRENT_VERSION = $(shell git describe --tags --always --dirty)
+# If not on release tag, this is a dev build. Add suffix to version.
+ifneq ($(CURRENT_VERSION), $(LATEST_VERSION))
+	DEV_BUILD_VERSION_DIRECTIVE = buildVersionSuffix=-$(shell git describe --exclude '*' --always --dirty)
+else
+	DEV_BUILD_VERSION_DIRECTIVE = buildVersion=$(CURRENT_VERSION)
+endif
+DEV_BUILD_VERSION_FLAG = -ldflags '-X "connectrpc.com/conformance/internal.$(DEV_BUILD_VERSION_DIRECTIVE)"'
 
 .PHONY: help
 help: ## Describe useful make targets
@@ -29,11 +40,11 @@ clean: ## Delete intermediate build artifacts
 
 .PHONY: test
 test: build ## Run unit tests
-	go test -vet=off -race -cover ./...
+	$(GO) test -vet=off -race -cover ./...
 
 .PHONY: build
 build: generate ## Build all packages
-	go build ./...
+	$(GO) build ./...
 
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
@@ -47,7 +58,7 @@ generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
 .PHONY: lint
 lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
 	test -z "$$($(BIN)/buf format -d . | tee /dev/stderr)"
-	go vet ./...
+	$(GO) vet ./...
 	golangci-lint run
 	buf lint proto
 
@@ -58,11 +69,11 @@ lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
 
 .PHONY: install
 install: ## Install all binaries
-	go install ./...
+	$(GO) install $(DEV_BUILD_VERSION_FLAG) ./...
 
 .PHONY: upgrade
 upgrade: ## Upgrade dependencies
-	go get -u -t ./... && go mod tidy -v
+	$(GO) get -u -t ./... && $(GO) mod tidy -v
 
 .PHONY: checkgenerate
 checkgenerate:
@@ -83,28 +94,28 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclie
 	$(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode client $(BIN)/grpcclient
 
 $(BIN)/connectconformance: Makefile generate
-	go build -o $(@) ./cmd/connectconformance/
+	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/connectconformance/
 
 $(BIN)/referenceclient: Makefile generate
-	go build -o $(@) ./cmd/referenceclient/
+	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/referenceclient/
 
 $(BIN)/referenceserver: Makefile generate
-	go build -o $(@) ./cmd/referenceserver/
+	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/referenceserver/
 
 $(BIN)/grpcclient: Makefile generate
-	go build -o $(@) ./cmd/grpcclient/
+	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/grpcclient/
 
 $(BIN)/grpcserver: Makefile generate
-	go build -o $(@) ./cmd/grpcserver/
+	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/grpcserver/
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
-	go install github.com/bufbuild/buf/cmd/buf@v1.26.1
+	$(GO) install github.com/bufbuild/buf/cmd/buf@v1.26.1
 
 $(BIN)/license-header: Makefile
 	@mkdir -p $(@D)
-	go install github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.26.1
+	$(GO) install github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.26.1
 
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2

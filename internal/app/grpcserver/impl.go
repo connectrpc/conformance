@@ -21,6 +21,7 @@ import (
 	"io"
 	"time"
 
+	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
@@ -30,6 +31,8 @@ import (
 	proto "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
+
+const serverName = "connectconformance-grpcserver"
 
 // NewConformanceServiceServer creates a new Conformance Service server.
 func NewConformanceServiceServer() v1.ConformanceServiceServer {
@@ -383,4 +386,19 @@ func asAny(msg proto.Message) (*anypb.Any, error) {
 		)
 	}
 	return msgAsAny, nil
+}
+
+func serverNameUnaryInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	_ = grpc.SetHeader(ctx, serverNameMetadata())
+	return handler(ctx, req)
+}
+
+func serverNameStreamInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	_ = ss.SetHeader(serverNameMetadata())
+	return handler(srv, ss)
+}
+
+func serverNameMetadata() metadata.MD {
+	server := fmt.Sprintf("%s/%s", serverName, internal.Version)
+	return metadata.Pairs("Server", server)
 }

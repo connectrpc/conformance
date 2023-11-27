@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -29,6 +30,8 @@ import (
 	proto "google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
+
+const serverName = "connectconformance-referenceserver"
 
 // ConformanceRequest is a general interface for all conformance requests (UnaryRequest, ServerStreamRequest, etc.)
 type ConformanceRequest interface {
@@ -377,4 +380,45 @@ func asAny(msg proto.Message) (*anypb.Any, error) {
 		)
 	}
 	return msgAsAny, nil
+}
+
+// serverNameHandlerInterceptor adds a "server" header on outgoing responses.
+type serverNameHandlerInterceptor struct{}
+
+func (i serverNameHandlerInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
+	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		resp, err := next(ctx, req)
+		if req.Spec().IsClient {
+			return resp, err
+		}
+
+		var headers http.Header
+		if err != nil {
+			var connErr *connect.Error
+			if !errors.As(err, &connErr) {
+				connErr = connect.NewError(connect.CodeUnknown, err)
+				err = connErr
+			}
+			headers = connErr.Meta()
+		} else {
+			headers = resp.Header()
+		}
+		// decorate server with the program name and version
+		server := strings.TrimSpace(fmt.Sprintf("%s %s/%s", headers.Get("Server"), serverName, internal.Version))
+		headers.Set("Server", server)
+		return resp, err
+	}
+}
+
+func (i serverNameHandlerInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return next
+}
+
+func (i serverNameHandlerInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return func(ctx context.Context, stream connect.StreamingHandlerConn) error {
+		// decorate server with the program name and version
+		server := strings.TrimSpace(fmt.Sprintf("%s %s/%s", stream.ResponseHeader().Get("Server"), serverName, internal.Version))
+		stream.ResponseHeader().Set("Server", server)
+		return next(ctx, stream)
+	}
 }
