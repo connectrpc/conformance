@@ -89,9 +89,11 @@ type ConformanceServiceClient interface {
 	// should contain only the data field.
 	//
 	// If a response definition is not specified OR is specified, but response data
-	// is empty, the server should skip sending anything on the stream and return
-	// without error. Stream headers and trailers should still be set on the stream
-	// if provided even if no response data is sent.
+	// is empty, the server should skip sending anything on the stream. When there
+	// are no responses to send, servers should throw an error if one is provided
+	// and return without error if one is not. Stream headers and trailers should
+	// still be set on the stream if provided regardless of whether a response is
+	// sent or an error is thrown.
 	ServerStream(context.Context, *connect.Request[v1.ServerStreamRequest]) (*connect.ServerStreamForClient[v1.ServerStreamResponse], error)
 	// A client-streaming operation. The first request indicates the response
 	// headers and trailers and also indicates either a response message or an
@@ -127,7 +129,7 @@ type ConformanceServiceClient interface {
 	// If a response definition is not specified OR is specified, but response data
 	// is empty, the server should skip sending anything on the stream. Stream
 	// headers and trailers should always be set on the stream if provided
-	// even if no response data is sent.
+	// regardless of whether a response is sent or an error is thrown.
 	//
 	// If the full_duplex field is true:
 	//   - the handler should read one request and then send back one response, and
@@ -149,7 +151,7 @@ type ConformanceServiceClient interface {
 	//     Once all requests are read, the server should then send back any responses
 	//     specified in the response definition.
 	//
-	//   - the service should echo back all request properties, including all request
+	//   - the server should echo back all request properties, including all request
 	//     messages in the order they were received, in the first response. Subsequent
 	//     responses should only include the message data in the data field.
 	//
@@ -259,9 +261,11 @@ type ConformanceServiceHandler interface {
 	// should contain only the data field.
 	//
 	// If a response definition is not specified OR is specified, but response data
-	// is empty, the server should skip sending anything on the stream and return
-	// without error. Stream headers and trailers should still be set on the stream
-	// if provided even if no response data is sent.
+	// is empty, the server should skip sending anything on the stream. When there
+	// are no responses to send, servers should throw an error if one is provided
+	// and return without error if one is not. Stream headers and trailers should
+	// still be set on the stream if provided regardless of whether a response is
+	// sent or an error is thrown.
 	ServerStream(context.Context, *connect.Request[v1.ServerStreamRequest], *connect.ServerStream[v1.ServerStreamResponse]) error
 	// A client-streaming operation. The first request indicates the response
 	// headers and trailers and also indicates either a response message or an
@@ -297,7 +301,7 @@ type ConformanceServiceHandler interface {
 	// If a response definition is not specified OR is specified, but response data
 	// is empty, the server should skip sending anything on the stream. Stream
 	// headers and trailers should always be set on the stream if provided
-	// even if no response data is sent.
+	// regardless of whether a response is sent or an error is thrown.
 	//
 	// If the full_duplex field is true:
 	//   - the handler should read one request and then send back one response, and
@@ -319,7 +323,7 @@ type ConformanceServiceHandler interface {
 	//     Once all requests are read, the server should then send back any responses
 	//     specified in the response definition.
 	//
-	//   - the service should echo back all request properties, including all request
+	//   - the server should echo back all request properties, including all request
 	//     messages in the order they were received, in the first response. Subsequent
 	//     responses should only include the message data in the data field.
 	//
