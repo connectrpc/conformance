@@ -69,15 +69,12 @@ func (i *invoker) Invoke(
 			return nil, err
 		}
 		return resp, nil
-<<<<<<< HEAD
 	case "Unimplemented":
 		resp, err := i.unimplemented(ctx, req)
 		if err != nil {
 			return nil, err
 		}
 		return resp, nil
-=======
->>>>>>> main
 	default:
 		return nil, errors.New("method name " + req.Method + " does not exist")
 	}
@@ -113,14 +110,9 @@ func (i *invoker) unary(
 	if err != nil {
 		// If an error was returned, convert it to a gRPC error
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
-<<<<<<< HEAD
 	} else if resp.Payload != nil {
 		// If the call was successful and there's a payload
 		// add that to the response also
-=======
-	} else {
-		// If the call was successful, get the returned payloads
->>>>>>> main
 		payloads = append(payloads, resp.Payload)
 	}
 
@@ -294,27 +286,7 @@ func (i *invoker) bidiStream(
 		}
 	}
 
-<<<<<<< HEAD
 	var hdr metadata.MD
-=======
-	// If we received an error in any of the send logic or full-duplex reads, then exit
-	if protoErr != nil {
-		result.Error = protoErr
-		return result, nil
-	}
-
-	// Sends are done, close the send side of the stream
-	if err := stream.CloseSend(); err != nil {
-		result.Error = grpcutil.ConvertGrpcToProtoError(err)
-		return result, nil
-	}
-
-	// Once the send side is closed, header metadata is ready to be read
-	hdr, err := stream.Header()
-	if err != nil {
-		return nil, err
-	}
->>>>>>> main
 	defer func() {
 		if result != nil {
 			// Set headers and trailers from the stream
@@ -323,7 +295,6 @@ func (i *invoker) bidiStream(
 		}
 	}()
 
-<<<<<<< HEAD
 	// Sends are done, close the send side of the stream
 	if err := stream.CloseSend(); err != nil {
 		return nil, err
@@ -341,8 +312,6 @@ func (i *invoker) bidiStream(
 		return result, nil
 	}
 
-=======
->>>>>>> main
 	// Receive any remaining responses
 	for {
 		if err := ctx.Err(); err != nil {
@@ -372,7 +341,6 @@ func (i *invoker) bidiStream(
 	return result, nil
 }
 
-<<<<<<< HEAD
 func (i *invoker) unimplemented(
 	ctx context.Context,
 	ccr *v1.ClientCompatRequest,
@@ -393,8 +361,6 @@ func (i *invoker) unimplemented(
 	}, nil
 }
 
-=======
->>>>>>> main
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(clientConn grpc.ClientConnInterface) *invoker {
 	client := v1.NewConformanceServiceClient(clientConn)
