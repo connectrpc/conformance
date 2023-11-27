@@ -11,7 +11,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X main.buildVersion=v{{.Version}}
+      - -s -w -X connectrpc.com/conformance/internal.buildVersion=v{{.Version}}
 archives:
   - format: tar.gz
     format_overrides:
