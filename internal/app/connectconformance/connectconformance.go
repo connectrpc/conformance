@@ -34,6 +34,8 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// Flags are the config values for the test runner that may be provided via
+// command-line flags and arguments.
 type Flags struct {
 	ConfigFile       string
 	KnownFailingFile string

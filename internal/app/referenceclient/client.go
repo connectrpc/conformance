@@ -19,10 +19,12 @@ import (
 	"crypto/tls"
 	"errors"
 	"flag"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strconv"
 
 	"connectrpc.com/conformance/internal"
@@ -41,8 +43,13 @@ import (
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) error {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+	showVersion := flags.Bool("version", false, "show version and exit")
 
 	_ = flags.Parse(args[1:])
+	if *showVersion {
+		_, _ = fmt.Fprintf(outWriter, "%s %s\n", filepath.Base(args[0]), internal.Version)
+		return nil
+	}
 	if flags.NArg() != 0 {
 		return errors.New("this command does not accept any positional arguments")
 	}

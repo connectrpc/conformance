@@ -17,6 +17,7 @@ package referenceclient
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -27,6 +28,8 @@ import (
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
 )
+
+const clientName = "connectconformance-referenceclient"
 
 type invoker struct {
 	client conformancev1connect.ConformanceServiceClient
@@ -361,6 +364,7 @@ func (i *invoker) unimplemented(
 
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
+	opts = append(opts, connect.WithInterceptors(userAgentClientInterceptor{}))
 	client := conformancev1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
 		url.String(),
@@ -369,4 +373,32 @@ func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.Client
 	return &invoker{
 		client: client,
 	}
+}
+
+// userAgentClientInterceptor adds to the user-agent header on outgoing requests.
+type userAgentClientInterceptor struct{}
+
+func (userAgentClientInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
+	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		if req.Spec().IsClient {
+			// decorate user-agent with the program name and version
+			userAgent := fmt.Sprintf("%s %s/%s", req.Header().Get("User-Agent"), clientName, internal.Version)
+			req.Header().Set("User-Agent", userAgent)
+		}
+		return next(ctx, req)
+	}
+}
+
+func (userAgentClientInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
+		conn := next(ctx, spec)
+		// decorate user-agent with the program name and version
+		userAgent := fmt.Sprintf("%s %s/%s", conn.RequestHeader().Get("User-Agent"), clientName, internal.Version)
+		conn.RequestHeader().Set("User-Agent", userAgent)
+		return conn
+	}
+}
+
+func (userAgentClientInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return next
 }
