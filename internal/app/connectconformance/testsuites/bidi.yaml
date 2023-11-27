@@ -53,7 +53,6 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-<<<<<<< HEAD
     testName: bidi full duplex stream error no responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
@@ -75,8 +74,6 @@ testCases:
           value: ["bing","quux"]
       fullDuplex: true
 - request:
-=======
->>>>>>> main
     testName: bidi half duplex stream success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
@@ -145,7 +142,6 @@ testCases:
           value: ["bing","quux"]
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
-<<<<<<< HEAD
 - request:
     # Note there is no 'full duplex no definition set' test since that is
     # logically equivalent to this test and is therefore covered here.
@@ -158,5 +154,3 @@ testCases:
         value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-=======
->>>>>>> main

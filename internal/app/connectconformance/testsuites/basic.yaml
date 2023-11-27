@@ -1,8 +1,4 @@
 name: Basic
-<<<<<<< HEAD
-=======
-# TODO: define more test cases
->>>>>>> main
 testCases:
 - request:
     testName: unary success
@@ -23,11 +19,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-<<<<<<< HEAD
     testName: unary empty definition
-=======
-    testName: unary empty response
->>>>>>> main
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -35,7 +27,6 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
 - request:
-<<<<<<< HEAD
     testName: unary no definition
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
@@ -83,8 +74,6 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-=======
->>>>>>> main
     testName: client stream success
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
@@ -105,7 +94,6 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-<<<<<<< HEAD
     testName: client stream error
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
@@ -129,9 +117,6 @@ testCases:
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: client stream empty definition
-=======
-    testName: client stream empty response
->>>>>>> main
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -139,7 +124,6 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
 - request:
-<<<<<<< HEAD
     testName: client stream no definition
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
@@ -147,8 +131,6 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
 - request:
-=======
->>>>>>> main
     testName: server stream success
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
@@ -169,18 +151,13 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-<<<<<<< HEAD
     testName: server stream no response
-=======
-    testName: server stream empty response
->>>>>>> main
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-<<<<<<< HEAD
         responseHeaders:
         - name: x-custom-header
           value: ["foo","bar","baz"]
@@ -194,8 +171,6 @@ testCases:
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-=======
->>>>>>> main
 - request:
     testName: server stream error with responses
     service: connectrpc.conformance.v1.ConformanceService
@@ -219,7 +194,6 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-<<<<<<< HEAD
 - request:
     testName: server stream error with no responses
     service: connectrpc.conformance.v1.ConformanceService
@@ -251,5 +225,3 @@ testCases:
   expectedResponse:
     error:
       code: 12
-=======
->>>>>>> main
