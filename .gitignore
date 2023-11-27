@@ -2,3 +2,7 @@
 *.pprof
 *.svg
 cover.out
+<<<<<<< HEAD
+=======
+dist/
+>>>>>>> main

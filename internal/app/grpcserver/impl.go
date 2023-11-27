@@ -136,6 +136,7 @@ func (c *conformanceServiceServer) ServerStream(
 	req *v1.ServerStreamRequest,
 	stream v1.ConformanceService_ServerStreamServer,
 ) error {
+<<<<<<< HEAD
 	// Convert the request to an Any so that it can be recorded in the payload
 	msgAsAny, err := asAny(req)
 	if err != nil {
@@ -146,6 +147,10 @@ func (c *conformanceServiceServer) ServerStream(
 
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil { //nolint:nestif
+=======
+	responseDefinition := req.ResponseDefinition
+	if responseDefinition != nil {
+>>>>>>> main
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
 		if err := stream.SetHeader(headerMD); err != nil {
 			return err
@@ -153,6 +158,7 @@ func (c *conformanceServiceServer) ServerStream(
 
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
 		stream.SetTrailer(trailerMD)
+<<<<<<< HEAD
 
 		for _, data := range responseDefinition.ResponseData {
 			resp := &v1.ServerStreamResponse{
@@ -192,6 +198,53 @@ func (c *conformanceServiceServer) ServerStream(
 		}
 	}
 
+=======
+	}
+
+	// Convert the request to an Any so that it can be recorded in the payload
+	msgAsAny, err := asAny(req)
+	if err != nil {
+		return err
+	}
+
+	respNum := 0
+	for _, data := range responseDefinition.ResponseData {
+		resp := &v1.ServerStreamResponse{
+			Payload: &v1.ConformancePayload{
+				Data: data,
+			},
+		}
+		// Only set the request info if this is the first response being sent back
+		// because for server streams, nothing in the request info will change
+		// after the first response.
+		if respNum == 0 {
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			requestInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+			resp.Payload.RequestInfo = requestInfo
+		}
+
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+		if err := stream.Send(resp); err != nil {
+			return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
+		}
+		respNum++
+	}
+	if responseDefinition.Error != nil {
+		if respNum == 0 {
+			// We've sent no responses and are returning an error, so build a
+			// RequestInfo message and append to the error details
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			reqInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return status.Error(codes.Internal, err.Error())
+			}
+			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+		}
+		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+	}
+>>>>>>> main
 	return nil
 }
 
@@ -243,10 +296,18 @@ func (c *conformanceServiceServer) BidiStream(
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
 		if fullDuplex {
+<<<<<<< HEAD
 			if responseDefinition == nil || respNum >= len(responseDefinition.ResponseData) {
 				// If there are no responses to send, then break the receive loop
 				// and throw the error specified
 				break
+=======
+			if respNum >= len(responseDefinition.ResponseData) {
+				return status.Error(
+					codes.Aborted,
+					"received more requests than desired responses on a full duplex stream",
+				)
+>>>>>>> main
 			}
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
@@ -281,6 +342,7 @@ func (c *conformanceServiceServer) BidiStream(
 	// If we still have responses left to send, flush them now. This accommodates
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
+<<<<<<< HEAD
 	if responseDefinition != nil { //nolint:nestif
 		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
 			resp := &v1.BidiStreamResponse{
@@ -317,6 +379,42 @@ func (c *conformanceServiceServer) BidiStream(
 			}
 			return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
 		}
+=======
+	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+		resp := &v1.BidiStreamResponse{
+			Payload: &v1.ConformancePayload{
+				Data: responseDefinition.ResponseData[respNum],
+			},
+		}
+		// Only set the request info if this is the first response being sent back
+		// because for half duplex streams, nothing in the request info will change
+		// after the first response (this includes the requests since they've all
+		// been received by this point)
+		if respNum == 0 {
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			resp.Payload.RequestInfo = createRequestInfo(metadata, reqs)
+		}
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+		if err := stream.Send(resp); err != nil {
+			return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
+		}
+	}
+
+	if responseDefinition.Error != nil {
+		if respNum == 0 {
+			// We've sent no responses and are returning an error, so build a
+			// RequestInfo message and append to the error details
+			metadata, _ := metadata.FromIncomingContext(stream.Context())
+			reqInfo := createRequestInfo(metadata, reqs)
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return status.Error(codes.Internal, err.Error())
+			}
+			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+		}
+		return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
+>>>>>>> main
 	}
 	return nil
 }
@@ -328,6 +426,7 @@ func parseUnaryResponseDefinition(
 	metadata metadata.MD,
 	reqs []*anypb.Any,
 ) (*v1.ConformancePayload, error) {
+<<<<<<< HEAD
 	reqInfo := createRequestInfo(metadata, reqs)
 	if def == nil {
 		// If the definition is not set at all, there's nothing to respond with.
@@ -362,6 +461,40 @@ func parseUnaryResponseDefinition(
 			respType,
 		)
 	}
+=======
+	if def != nil {
+		switch respType := def.Response.(type) {
+		case *v1.UnaryResponseDefinition_Error:
+			reqInfo := createRequestInfo(metadata, reqs)
+
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return nil, status.Error(codes.Internal, err.Error())
+			}
+			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
+			return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
+
+		case *v1.UnaryResponseDefinition_ResponseData, nil:
+			requestInfo := createRequestInfo(metadata, reqs)
+			payload := &v1.ConformancePayload{
+				RequestInfo: requestInfo,
+			}
+
+			// If response data was provided, set that in the payload response
+			if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
+				payload.Data = respType.ResponseData
+			}
+			return payload, nil
+		default:
+			return nil, status.Errorf(
+				codes.InvalidArgument,
+				"provided UnaryRequest.Response has an unexpected type %T",
+				respType,
+			)
+		}
+	}
+	return nil, status.Error(codes.InvalidArgument, "no response definition provided")
+>>>>>>> main
 }
 
 // Creates request info for a conformance payload.

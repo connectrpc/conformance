@@ -376,8 +376,19 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		return fmt.Errorf("%T is not a unary test case", concreteReq)
 	}
 
+<<<<<<< HEAD
 	// If no responses are specified for unary, the service will still return a response with the
 	// request information inside (but none of the response information since it wasn't provided).
+=======
+	// TODO - Need to define this better in the protos and tests as to how services should
+	// behave if no responses are specified. The behavior right now differs for unary vs. streaming
+	// If no responses are specified for unary, the service will still return a response with the
+	// request information inside (but none of the response information since it wasn't provided)
+	// But streaming endpoints don't return a single response and instead return responses via sending
+	// on a stream. But if no responses are specified in the request, the streams don't send anything outbound
+	// so there's no way to relay this to a client. So right now, streaming endpoints simply expect an empty
+	// ClientResponseResult if no response definition is provided
+>>>>>>> main
 	def := definer.GetResponseDefinition()
 	if def == nil {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
@@ -459,11 +470,14 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 	}
 
 	def := definer.GetResponseDefinition()
+<<<<<<< HEAD
 	// Streaming endpoints don't 'return' a response and instead send responses
 	// to a client via sending on a stream. So, if no responses are specified in
 	// the request, the endpoints won't send anything outbound.
 	// As a result, streaming endpoints simply expect an empty
 	// ClientResponseResult if no response definition is provided
+=======
+>>>>>>> main
 	if def == nil {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{}
 		return nil
