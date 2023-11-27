@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"path/filepath"
 	"strconv"
 
 	"connectrpc.com/conformance/internal"
@@ -35,8 +36,13 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
 	port := flags.Int("port", internal.DefaultPort, "the port for the conformance server ")
+	showVersion := flags.Bool("version", false, "show version and exit")
 
 	_ = flags.Parse(args[1:])
+	if *showVersion {
+		_, _ = fmt.Fprintf(outWriter, "%s %s\n", filepath.Base(args[0]), internal.Version)
+		return nil
+	}
 	if flags.NArg() != 0 {
 		return errors.New("this command does not accept any positional arguments")
 	}
@@ -91,7 +97,10 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 }
 
 func createServer() (*grpc.Server, error) { //nolint:unparam
-	server := grpc.NewServer()
+	server := grpc.NewServer(
+		grpc.UnaryInterceptor(serverNameUnaryInterceptor),
+		grpc.StreamInterceptor(serverNameStreamInterceptor),
+	)
 	v1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
 	return server, nil
 }

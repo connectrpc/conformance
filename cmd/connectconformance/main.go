@@ -18,8 +18,10 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance"
 	"github.com/spf13/cobra"
 )
@@ -30,6 +32,7 @@ const (
 	knownFailingFlagName = "known-failing"
 	verboseFlagName      = "verbose"
 	verboseFlagShortName = "v"
+	versionFlagName      = "version"
 )
 
 type flags struct {
@@ -37,22 +40,26 @@ type flags struct {
 	configFile       string
 	knownFailingFile string
 	verbose          bool
+	version          bool
 }
 
 func main() {
 	flagset := &flags{}
 	rootCmd := &cobra.Command{
-		Use:   "connectconformance --mode [client|server] command...",
+		Use: `connectconformance --mode [client|server] -- command...
+  connectconformance --mode both -- client-command... ---- server-command...`,
 		Short: "Runs conformance tests against the given command.",
 		Long: `Runs conformance tests against a Connect implementation. Depending on the mode,
 the given command must be either a conformance client or a conformance server.
+When mode is both, two commands are given, separated by a quadruple-slash ("----"),
+with the client command being first and the server command second.
 
 A conformance client tests a client implementation: the command reads test cases
 from stdin. Each test case describes an RPC to make. The command then records
 the result of each operation to stdout. The input is a sequence of binary-encoded
 Protobuf messages of type connectrpc.conformance.v1.ClientCompatRequest,
-each prefixed with a varint-encoded length. The output is expected to be similar:
-a sequence of varint-encoded-length-prefixed messages, but the results are of
+each prefixed with a fixed-32-bit length. The output is expected to be similar:
+a sequence of fixed-32-bit-length-prefixed messages, but the results are of
 type connectrpc.conformance.v1.ClientCompatResponse. The command should exit
 when it has read all test cases (i.e reached EOF of stdin) and then issued RPCs
 and recorded all results to stdout. The command should also exit and abort any
@@ -60,17 +67,19 @@ in-progress RPCs if it receives a SIGTERM signal.
 
 A conformance server tests a server implementation: the command reads the required
 server properties from stdin. This comes in the form of a binary-encoded Protobuf
-message of type connectrpc.conformance.v1.ServerCompatRequest. The command
-should then start a server process and write its properties to stdout in the form
-of a binary-encoded connectrpc.conformance.v1.ServerCompatResponse message.
-The server process should provide an implementation of the test service defined
-by connectrpc.conformance.v1.ConformanceService. The command should exit
+message of type connectrpc.conformance.v1.ServerCompatRequest, prefixed with a
+fixed-32-bit length. The command should then start a server process and write its
+properties to stdout in the same form as the input, but using a
+connectrpc.conformance.v1.ServerCompatResponse message. The server process should
+provide an implementation of the test service defined by
+connectrpc.conformance.v1.ConformanceService. The command should exit
 upon receiving a SIGTERM signal. The command maybe invoked repeatedly, to start
 and test servers with different properties.
 
 A configuration file may be provided which specifies what features the client
 or server under test supports. This is used to filter the set of test cases
-that will be executed. If no config file is indicated, all tests will be run.
+that will be executed. If no config file is indicated, default configuration
+will be used.
 
 A file with a list of known-failing test cases may also be provided. For these
 cases, the test runner reverses its assertions: it considers the test case
@@ -91,9 +100,15 @@ func bind(cmd *cobra.Command, flags *flags) {
 	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
 	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
+	cmd.Flags().BoolVar(&flags.version, versionFlagName, false, "print version and exit")
 }
 
 func run(flags *flags, command []string) {
+	if flags.version {
+		fmt.Printf("%s %s\n", filepath.Base(os.Args[0]), internal.Version)
+		return
+	}
+
 	fatal := func(format string, args ...any) {
 		_, _ = fmt.Fprintf(os.Stderr, format+"\n", args...)
 		os.Exit(1)
