@@ -21,8 +21,8 @@ Service also written in Connect Go.
 To verify compatibility with other protocol implementations, the conformance test also uses reference client
 and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go).
 
-Also, please note that this project is currently in alpha. As a result, it does not currently make backward compatibility
-guarantees. The goal is to eventually publish a stable release but please be aware we may make changes
+Also, please note that this project is currently pre-v1.0.0. As a result, it does not currently make backward compatibility
+guarantees. The goal is to publish a stable release but please be aware we may make changes
 as we gather feedback from early adopters.
 
 ## Testing your implementation
@@ -95,9 +95,9 @@ This will build the necessary binaries and run tests with the following setup:
 * gRPC reference client against a Connect reference server
 * Connect reference client against a gRPC reference server
 
-## Status: Alpha
+## Status: Pre-v1.0.0
 
-This project is currently in alpha. The API should be considered unstable and likely to change.
+This project is currently pre-v1.0.0. The API should be considered unstable and likely to change.
 
 ## Ecosystem
 
