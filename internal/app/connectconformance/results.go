@@ -110,6 +110,9 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
 	var errs multiErrors
 
+	// TODO - This check is for trailers-only and should really only apply to gRPC and gRPC-Web protocols.
+	// Previously, it checked for error != nil, which is compliant with gRPC. But gRPC-Web does trailers-only
+	// responses with no errors also.
 	if len(expected.Payloads) == 0 {
 		// When there are no messages in the body, the server may send a
 		// trailers-only response. In that case, it is acceptable for the expected
