@@ -111,7 +111,6 @@ func (i *invoker) unary(
 		headers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
-<<<<<<< HEAD
 		// If the call was successful, get the headers and trailers
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
@@ -119,13 +118,6 @@ func (i *invoker) unary(
 		if resp.Msg.Payload != nil {
 			payloads = append(payloads, resp.Msg.Payload)
 		}
-=======
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
-		payloads = append(payloads, resp.Msg.Payload)
-		headers = internal.ConvertToProtoHeader(resp.Header())
-		trailers = internal.ConvertToProtoHeader(resp.Trailer())
->>>>>>> main
 	}
 
 	return &v1.ClientResponseResult{
@@ -159,15 +151,11 @@ func (i *invoker) serverStream(
 	var protoErr *v1.Error
 	var headers []*v1.Header
 	var trailers []*v1.Header
-<<<<<<< HEAD
 	var payloads []*v1.ConformancePayload
 
 	if ssr.ResponseDefinition != nil {
 		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
-=======
-	payloads := make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
->>>>>>> main
 	for stream.Receive() {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
@@ -315,29 +303,17 @@ func (i *invoker) bidiStream(
 		}
 	}
 
-<<<<<<< HEAD
 	// Sends are done, close the send side of the stream
 	if err := stream.CloseRequest(); err != nil {
 		return nil, err
 	}
 
-=======
->>>>>>> main
 	// If we received an error in any of the send logic or full-duplex reads, then exit
 	if protoErr != nil {
 		result.Error = protoErr
 		return result, nil
 	}
 
-<<<<<<< HEAD
-=======
-	// Sends are done, close the send side of the stream
-	if err := stream.CloseRequest(); err != nil {
-		result.Error = internal.ConvertErrorToProtoError(err)
-		return result, nil
-	}
-
->>>>>>> main
 	// Receive any remaining responses
 	for {
 		if err := ctx.Err(); err != nil {
