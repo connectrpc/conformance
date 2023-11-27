@@ -1,0 +1,62 @@
+{
+  "testName": "gRPC Client Stream with an error",
+  "httpVersion": "HTTP_VERSION_2",
+  "protocol": "PROTOCOL_GRPC",
+  "codec": "CODEC_PROTO",
+  "host": "127.0.0.1",
+  "port": 23458,
+  "service": "connectrpc.conformance.v1.ConformanceService",
+  "method": "ClientStream",
+  "streamType": "STREAM_TYPE_CLIENT_STREAM",
+  "requestDelayMs": 500,
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
+      "responseDefinition": {
+        "error": {
+          "code": 13,
+          "message": "client stream failed",
+          "details": [
+            {
+              "@type": "type.googleapis.com/connectrpc.conformance.v1.Header",
+              "name": "test error detail name",
+              "value": ["test error detail value"]
+            }
+          ]
+        },
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
+      "requestData": "dGVzdCByZXNwb25zZQ=="
+    }
+  ]
+}

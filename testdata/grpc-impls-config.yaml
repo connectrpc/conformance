@@ -1,0 +1,8 @@
+features:
+  versions:
+    - HTTP_VERSION_2
+  protocols:
+    - PROTOCOL_GRPC
+  codecs:
+    - CODEC_PROTO
+  supportsTls: false

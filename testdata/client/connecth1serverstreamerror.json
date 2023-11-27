@@ -1,0 +1,62 @@
+{
+  "testName": "Server Stream with an Error",
+  "httpVersion": "HTTP_VERSION_1",
+  "protocol": "PROTOCOL_CONNECT",
+  "codec": "CODEC_JSON",
+  "host": "127.0.0.1",
+  "port": 23456,
+  "service": "connectrpc.conformance.v1.ConformanceService",
+  "method": "ServerStream",
+  "streamType": "STREAM_TYPE_SERVER_STREAM",
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": [
+          "dGVzdCByZXNwb25zZQ==",
+          "dGVzdCByZXNwb25zZZ=="
+        ],
+        "error": {
+          "code": 13,
+          "message": "server stream failed",
+          "details": [
+            {
+              "@type": "type.googleapis.com/connectrpc.conformance.v1.Header",
+              "name": "test error detail name",
+              "value": ["test error detail value"]
+            }
+          ]
+        },
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ],
+        "responseDelayMs": 500
+      }
+    }
+  ]
+}

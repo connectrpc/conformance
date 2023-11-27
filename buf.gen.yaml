@@ -4,30 +4,12 @@ managed:
   go_package_prefix:
     default: connectrpc.com/conformance/internal/gen/proto/go
 plugins:
-  - name: go
+  - plugin: buf.build/protocolbuffers/go:v1.31.0
     out: internal/gen/proto/go
     opt: paths=source_relative
-  - name: go-grpc
+  - plugin: buf.build/connectrpc/go
     out: internal/gen/proto/go
     opt: paths=source_relative
-  - name: connect-go
-    out: internal/gen/proto/connect
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: internal/gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/bufbuild/es:v1.3.1
-    out: web/gen/proto/connect-web
-    opt: target=ts
-  - plugin: buf.build/connectrpc/es:v0.13.2
-    out: web/gen/proto/connect-web
-    opt: target=ts
-  - plugin: buf.build/protocolbuffers/js:v3.21.2
-    out: web/gen/proto/grpc-web
-    opt: import_style=commonjs,binary
-  - plugin: buf.build/grpc/web:v1.4.2
-    out: web/gen/proto/grpc-web
-    opt:
-      - import_style=typescript
-      - mode=grpcweb
-  - plugin: buf.build/grpc/cpp:v1.56.2
-    out: cc/gen
-  - plugin: buf.build/protocolbuffers/cpp:v23.4
-    out: cc/gen

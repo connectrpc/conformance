@@ -1,9 +1,9 @@
 name: ci
 on:
   push:
-    branches: [main]
+    branches: [main, v1] # TODO: Switch to just main once v1 is merged
   pull_request:
-    branches: [main]
+    branches: [main, v1] # TODO: Switch to just main once v1 is merged
   workflow_dispatch: {} # support manual runs
 permissions:
   contents: read
@@ -12,21 +12,27 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: [1.19.x,1.20.x]
+        go-version: [1.20.x, 1.21.x]
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+      - name: Install Buf
+        uses: bufbuild/buf-setup-action@v1
+      - name: Validate Protos
+        uses: bufbuild/buf-breaking-action@v1
+        with:
+          input: proto
+          against: 'buf.build/connectrpc/conformance'
+      - name: Lint Protos
+        uses: bufbuild/buf-lint-action@v1
+        with:
+          input: proto
       - name: Install Go
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Setup Docker Buildx # Docker Buildkit required for docker-compose
-        uses: docker/setup-buildx-action@v3
-        with:
-          driver: docker
-          install: true
       - name: Cache
         uses: actions/cache@v3
         with:
@@ -34,72 +40,13 @@ jobs:
           key: ${{ runner.os }}-conformance-ci-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-conformance-ci-
       - name: Test
-        run: make dockercomposetest # Make target includes clean-up
-        env:
-          DOCKER_BUILDKIT: 1
-          COMPOSE_DOCKER_CLI_BUILD: 1
+        run: make test
+      - name: Run Conformance Tests
+        run: make runconformance
       - name: Lint
-        if: matrix.go-version == '1.20.x'
-        run: make lint && make checkgenerate
-  docker:
-    runs-on: ubuntu-latest
-    needs:
-      - ci
-    # This job only runs when
-    # 1. The previous ci job has completed successfully
-    # 2. The repository is not a fork, i.e. it will only run on the official connectrpc/conformance
-    # 3. The workflow run is triggered by push to main branch
-    if:  ${{ success() && github.repository == 'connectrpc/conformance' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    steps:
-      # qemu is used when executing things like `apk` in the final build
-      # stage which must execute on the target platform. We currently do
-      # not have any CGO and care should be taken in the Dockerfile to ensure
-      # that go cross compilation happens on the build platform.
-      - name: setup-qemu
-        uses: docker/setup-qemu-action@v3
-        id: qemu
-        with:
-          # alpine image doesn't support linux/riscv64
-          platforms: linux/386,linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x
-      - name: setup-docker-buildx
-        uses: docker/setup-buildx-action@v3
-      - name: login-docker
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: docker-build-push
-        uses: docker/build-push-action@v5
-        with:
-          file: Dockerfile.conformancego
-          platforms: ${{ steps.qemu.outputs.platforms }}
-          push: true
-          tags: |
-            connectrpc/conformance:latest
-            connectrpc/conformance:${{ github.sha }}
-  docker-web:
-    runs-on: ubuntu-latest
-    needs:
-      - ci
-    # This job only runs when
-    # 1. The previous ci job has completed successfully
-    # 2. The repository is not a fork, i.e. it will only run on the official connectrpc/conformance
-    # 3. The workflow run is triggered by push to main branch
-    if:  ${{ success() && github.repository == 'connectrpc/conformance' && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-    steps:
-      - name: setup-docker-buildx
-        uses: docker/setup-buildx-action@v3
-      - name: login-docker
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_TOKEN }}
-      - name: docker-build-push-web
-        uses: docker/build-push-action@v5
-        with:
-          file: Dockerfile.conformanceweb
-          platforms: ${{ steps.qemu.outputs.platforms }}
-          push: true
-          tags: |
-            connectrpc/conformance-web:latest
-            connectrpc/conformance-web:${{ github.sha }}
+        # Often, lint & gofmt guidelines depend on the Go version. To prevent
+        # conflicting guidance, run only on the most recent supported version.
+        # For the same reason, only check generated code on the most recent
+        # supported version.
+        if: matrix.go-version == '1.21.x'
+        run: make checkgenerate && make lint
