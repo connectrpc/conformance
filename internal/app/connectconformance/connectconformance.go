@@ -26,6 +26,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
+	"connectrpc.com/conformance/internal/app/grpcclient"
 	"connectrpc.com/conformance/internal/app/grpcserver"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
@@ -112,7 +113,6 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		// leave mode as "unspecified" (so we'll include neither
 		// client-specific nor server-specific cases).
 	}
-
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, mode)
 	if err != nil {
 		return false, err
@@ -175,11 +175,11 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 				start:           runInProcess("reference-client", referenceclient.Run),
 				isReferenceImpl: true,
 			},
-			// {
-			// 	name:       "reference client (grpc)",
-			// 	start:      runInProcess("grpc-reference-client", grpcclient.Run),
-			// 	isGrpcImpl: true,
-			// },
+			{
+				name:       "reference client (grpc)",
+				start:      runInProcess("grpc-reference-client", grpcclient.Run),
+				isGrpcImpl: true,
+			},
 		}
 	} else {
 		clients = []processInfo{
