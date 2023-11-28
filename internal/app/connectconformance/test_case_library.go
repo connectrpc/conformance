@@ -359,6 +359,15 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 	}
 }
 
+// Converts a pointer to a uint32 value into a pointer to an int64.
+// If the pointer is nil, function returns nil.
+func convertToInt64(num *uint32) *int64 {
+	if num == nil {
+		return nil
+	}
+	return proto.Int64(int64(*num))
+}
+
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
@@ -376,6 +385,12 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		return fmt.Errorf("%T is not a unary test case", concreteReq)
 	}
 
+	reqInfo := &conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: testCase.Request.RequestHeaders,
+		Requests:       testCase.Request.RequestMessages,
+		TimeoutMs:      convertToInt64(testCase.Request.TimeoutMs),
+	}
+
 	// If no responses are specified for unary, the service will still return a response with the
 	// request information inside (but none of the response information since it wasn't provided).
 	def := definer.GetResponseDefinition()
@@ -383,10 +398,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
 			Payloads: []*conformancev1.ConformancePayload{
 				{
-					RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
-						RequestHeaders: testCase.Request.RequestHeaders,
-						Requests:       testCase.Request.RequestMessages,
-					},
+					RequestInfo: reqInfo,
 				},
 			},
 		}
@@ -404,11 +416,8 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		// If an error was specified, it should be returned in the response
 		expected.Error = respType.Error
 
-		// Build a RequestInfo object and add it to the error details
-		reqInfo := &conformancev1.ConformancePayload_RequestInfo{
-			RequestHeaders: testCase.Request.RequestHeaders,
-			Requests:       testCase.Request.RequestMessages,
-		}
+		// Unary responses that return an error should have the request info
+		// in the error details
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
 			return connect.NewError(connect.CodeInternal, err)
@@ -418,10 +427,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		// If response data was specified for the response (or nothing at all),
 		// the server should echo back the request message and headers in the response
 		payload := &conformancev1.ConformancePayload{
-			RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
-				RequestHeaders: testCase.Request.RequestHeaders,
-				Requests:       testCase.Request.RequestMessages,
-			},
+			RequestInfo: reqInfo,
 		}
 		// If response data was specified for the response, it should be returned
 		if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
@@ -485,6 +491,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 		reqInfo := &conformancev1.ConformancePayload_RequestInfo{
 			RequestHeaders: testCase.Request.RequestHeaders,
 			Requests:       testCase.Request.RequestMessages,
+			TimeoutMs:      convertToInt64(testCase.Request.TimeoutMs),
 		}
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
@@ -506,6 +513,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 				expected.Payloads[idx].RequestInfo = &conformancev1.ConformancePayload_RequestInfo{
 					RequestHeaders: testCase.Request.RequestHeaders,
 					Requests:       testCase.Request.RequestMessages,
+					TimeoutMs:      convertToInt64(testCase.Request.TimeoutMs),
 				}
 			}
 		case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
@@ -516,6 +524,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 			}
 			if idx == 0 {
 				expected.Payloads[idx].RequestInfo.RequestHeaders = testCase.Request.RequestHeaders
+				expected.Payloads[idx].RequestInfo.TimeoutMs = convertToInt64(testCase.Request.TimeoutMs)
 			}
 		}
 	}

@@ -73,6 +73,8 @@ func (s *conformanceServer) Unary(
 	if req.Msg.ResponseDefinition != nil {
 		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
 		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+
+		time.Sleep((time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond))
 	}
 
 	return resp, nil
@@ -124,6 +126,8 @@ func (s *conformanceServer) ClientStream(
 	if responseDefinition != nil {
 		internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 	}
 
 	return resp, nil
