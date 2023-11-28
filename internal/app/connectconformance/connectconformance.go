@@ -87,7 +87,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		return false, fmt.Errorf("embedded test suite: %w", err)
 	}
 
-	allSuites = filterOnly(allSuites)
+	allSuites = filterOnly(logOut, allSuites)
 
 	if flags.Verbose {
 		var numCases int
@@ -128,7 +128,6 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			}
 			grpcTestCases := filterGRPCImplTestCases(testCaseSlice)
 			numPermutations += len(grpcTestCases)
-			_, _ = fmt.Fprintf(logOut, "Computed %d gRPC test case permutations against grpc-go.\n", len(grpcTestCases))
 		}
 		_, _ = fmt.Fprintf(logOut, "Computed %d test case permutations across %d server configurations.\n", numPermutations, len(testCaseLib.casesByServer))
 	}
@@ -334,12 +333,12 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase) []*conformance
 	return filtered
 }
 
-// Filters all test suites to return only those marked as 'runOnly'. If a suite is marked
+// Filters all test suites to return only those marked as 'RunOnly'. If a suite is marked
 // as run-only, then the suite and all associated test cases are added to the returned map.
 // If a suite is not marked as run-only and individual test cases within are, then only those
 // test cases are returned.
 // If there are no suites or test cases marked as run-only, then all suites are returned
-func filterOnly(allSuites map[string]*conformancev1.TestSuite) map[string]*conformancev1.TestSuite {
+func filterOnly(logOut io.Writer, allSuites map[string]*conformancev1.TestSuite) map[string]*conformancev1.TestSuite {
 	filtered := make(map[string]*conformancev1.TestSuite, len(allSuites))
 	for name, suite := range allSuites {
 		if suite.RunOnlyThisSuite {
@@ -360,6 +359,7 @@ func filterOnly(allSuites map[string]*conformancev1.TestSuite) map[string]*confo
 	}
 	if len(filtered) > 0 {
 		// TODO - Should we log a warning here that tests are marked as run-only?
+		_, _ = fmt.Fprintf(logOut, "WARNING: Found test cases marked as RunOnly\n")
 		return filtered
 	}
 	return allSuites

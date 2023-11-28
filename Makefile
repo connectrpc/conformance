@@ -95,8 +95,8 @@ runconformance: runservertests runclienttests
 
 .PHONY: runservertests
 runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserver
-	$(BIN)/connectconformance --conf ./testdata/reference-impls-config.yaml --mode server $(BIN)/referenceserver --verbose
-	# $(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode server $(BIN)/grpcserver
+	$(BIN)/connectconformance --conf ./testdata/reference-impls-config.yaml --mode server $(BIN)/referenceserver
+	$(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode server $(BIN)/grpcserver
 
 .PHONY: runclienttests
 runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient
