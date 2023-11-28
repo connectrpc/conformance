@@ -67,12 +67,9 @@ const (
 // ConformanceServiceClient is a client for the connectrpc.conformance.v1.ConformanceService
 // service.
 type ConformanceServiceClient interface {
-	// A unary operation. The request indicates the response headers and trailers
-	// and also indicates either a response message or an error to send back.
-	//
-	// Response message data is specified as bytes. The service should echo back
-	// request properties in the ConformancePayload and then include the message
-	// data in the data field.
+	// If the response_delay_ms duration is specified, the server should wait the
+	// given duration after reading the request before sending the corresponding
+	// response.
 	//
 	// Servers should allow the response definition to be unset in the request and
 	// if it is, set no response headers or trailers and return no response data.
@@ -239,12 +236,9 @@ func (c *conformanceServiceClient) Unimplemented(ctx context.Context, req *conne
 // ConformanceServiceHandler is an implementation of the
 // connectrpc.conformance.v1.ConformanceService service.
 type ConformanceServiceHandler interface {
-	// A unary operation. The request indicates the response headers and trailers
-	// and also indicates either a response message or an error to send back.
-	//
-	// Response message data is specified as bytes. The service should echo back
-	// request properties in the ConformancePayload and then include the message
-	// data in the data field.
+	// If the response_delay_ms duration is specified, the server should wait the
+	// given duration after reading the request before sending the corresponding
+	// response.
 	//
 	// Servers should allow the response definition to be unset in the request and
 	// if it is, set no response headers or trailers and return no response data.

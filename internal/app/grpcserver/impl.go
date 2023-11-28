@@ -62,6 +62,7 @@ func (c *conformanceServiceServer) Unary(
 		if err := grpc.SetTrailer(ctx, trailerMD); err != nil {
 			return nil, err
 		}
+		time.Sleep((time.Duration(req.ResponseDefinition.ResponseDelayMs) * time.Millisecond))
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
@@ -119,6 +120,8 @@ func (c *conformanceServiceServer) ClientStream(
 
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
 		stream.SetTrailer(trailerMD)
+
+		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 	}
 
 	md, _ := metadata.FromIncomingContext(stream.Context())
