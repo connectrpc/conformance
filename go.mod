@@ -8,7 +8,7 @@ require (
 	github.com/bufbuild/protoyaml-go v0.1.7
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.5.9
-	github.com/klauspost/compress v1.17.2
+	github.com/klauspost/compress v1.17.3
 	github.com/quic-go/quic-go v0.40.0
 	github.com/rs/cors v1.10.1
 	github.com/spf13/cobra v1.8.0
