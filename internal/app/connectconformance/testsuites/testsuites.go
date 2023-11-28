@@ -22,6 +22,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"os"
 	"path"
 	"strings"
 )
@@ -52,5 +53,15 @@ func LoadTestSuites() (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	return testSuites, nil
+}
+
+func LoadTestSuitesFromFile(file string) (map[string][]byte, error) {
+	testSuites := map[string][]byte{}
+	testFile, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+	testSuites[file] = testFile
 	return testSuites, nil
 }
