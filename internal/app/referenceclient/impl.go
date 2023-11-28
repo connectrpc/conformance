@@ -45,7 +45,6 @@ func (i *invoker) Invoke(
 		ctx = deadlineCtx
 		defer cancel()
 	}
-
 	switch req.Method {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
