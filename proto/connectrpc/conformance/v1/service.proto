@@ -98,6 +98,10 @@ service ConformanceService {
   // A unary endpoint that the server should not implement and should instead
   // return an unimplemented error when invoked.
   rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse);
+
+  /* rpc CacheableUnaryCall(SimpleRequest) returns (SimpleResponse) { */
+  /*   option idempotency_level = NO_SIDE_EFFECTS; */
+  /* } */
 }
 
 // A definition of a response to be sent from a single-response endpoint.
