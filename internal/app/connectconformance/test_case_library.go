@@ -361,7 +361,7 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 
 // Converts a pointer to a uint32 value into a pointer to an int64.
 // If the pointer is nil, function returns nil.
-func convertToInt64(num *uint32) *int64 {
+func convertToInt64Ptr(num *uint32) *int64 {
 	if num == nil {
 		return nil
 	}
@@ -388,7 +388,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	reqInfo := &conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: testCase.Request.RequestHeaders,
 		Requests:       testCase.Request.RequestMessages,
-		TimeoutMs:      convertToInt64(testCase.Request.TimeoutMs),
+		TimeoutMs:      convertToInt64Ptr(testCase.Request.TimeoutMs),
 	}
 
 	// If no responses are specified for unary, the service will still return a response with the
@@ -491,7 +491,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 		reqInfo := &conformancev1.ConformancePayload_RequestInfo{
 			RequestHeaders: testCase.Request.RequestHeaders,
 			Requests:       testCase.Request.RequestMessages,
-			TimeoutMs:      convertToInt64(testCase.Request.TimeoutMs),
+			TimeoutMs:      convertToInt64Ptr(testCase.Request.TimeoutMs),
 		}
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
@@ -513,7 +513,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 				expected.Payloads[idx].RequestInfo = &conformancev1.ConformancePayload_RequestInfo{
 					RequestHeaders: testCase.Request.RequestHeaders,
 					Requests:       testCase.Request.RequestMessages,
-					TimeoutMs:      convertToInt64(testCase.Request.TimeoutMs),
+					TimeoutMs:      convertToInt64Ptr(testCase.Request.TimeoutMs),
 				}
 			}
 		case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
@@ -524,7 +524,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 			}
 			if idx == 0 {
 				expected.Payloads[idx].RequestInfo.RequestHeaders = testCase.Request.RequestHeaders
-				expected.Payloads[idx].RequestInfo.TimeoutMs = convertToInt64(testCase.Request.TimeoutMs)
+				expected.Payloads[idx].RequestInfo.TimeoutMs = convertToInt64Ptr(testCase.Request.TimeoutMs)
 			}
 		}
 	}
