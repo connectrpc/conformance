@@ -85,6 +85,8 @@ message TestSuite {
   // size of received messages. When true, mode should be set to indicate
   // whether it is the client or the server that must support the limit.
   bool relies_on_message_receive_limit = 12;
+
+  bool run_only_this_suite = 13;
 }
 
 message TestCase {
@@ -116,4 +118,6 @@ message TestCase {
 
   // Defines the expected response to the above RPC. Many
   ClientResponseResult expected_response = 3;
+
+  bool run_only_this_test = 13;
 }

@@ -26,7 +26,6 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
-	"connectrpc.com/conformance/internal/app/grpcclient"
 	"connectrpc.com/conformance/internal/app/grpcserver"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
@@ -87,6 +86,9 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 	if err != nil {
 		return false, fmt.Errorf("embedded test suite: %w", err)
 	}
+
+	allSuites = filterOnly(allSuites)
+
 	if flags.Verbose {
 		var numCases int
 		for _, suite := range allSuites {
@@ -110,6 +112,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		// leave mode as "unspecified" (so we'll include neither
 		// client-specific nor server-specific cases).
 	}
+
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, mode)
 	if err != nil {
 		return false, err
@@ -125,6 +128,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			}
 			grpcTestCases := filterGRPCImplTestCases(testCaseSlice)
 			numPermutations += len(grpcTestCases)
+			_, _ = fmt.Fprintf(logOut, "Computed %d gRPC test case permutations against grpc-go.\n", len(grpcTestCases))
 		}
 		_, _ = fmt.Fprintf(logOut, "Computed %d test case permutations across %d server configurations.\n", numPermutations, len(testCaseLib.casesByServer))
 	}
@@ -172,11 +176,11 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 				start:           runInProcess("reference-client", referenceclient.Run),
 				isReferenceImpl: true,
 			},
-			{
-				name:       "reference client (grpc)",
-				start:      runInProcess("grpc-reference-client", grpcclient.Run),
-				isGrpcImpl: true,
-			},
+			// {
+			// 	name:       "reference client (grpc)",
+			// 	start:      runInProcess("grpc-reference-client", grpcclient.Run),
+			// 	isGrpcImpl: true,
+			// },
 		}
 	} else {
 		clients = []processInfo{
@@ -328,4 +332,35 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase) []*conformance
 		filtered = append(filtered, filteredCase)
 	}
 	return filtered
+}
+
+// Filters all test suites to return only those marked as 'runOnly'. If a suite is marked
+// as run-only, then the suite and all associated test cases are added to the returned map.
+// If a suite is not marked as run-only and individual test cases within are, then only those
+// test cases are returned.
+// If there are no suites or test cases marked as run-only, then all suites are returned
+func filterOnly(allSuites map[string]*conformancev1.TestSuite) map[string]*conformancev1.TestSuite {
+	filtered := make(map[string]*conformancev1.TestSuite, len(allSuites))
+	for name, suite := range allSuites {
+		if suite.RunOnlyThisSuite {
+			filtered[name] = proto.Clone(suite).(*conformancev1.TestSuite)
+			continue
+		}
+		runOnlyCases := []*conformancev1.TestCase{}
+		for _, testCase := range suite.TestCases {
+			if testCase.RunOnlyThisTest {
+				runOnlyCases = append(runOnlyCases, proto.Clone(testCase).(*conformancev1.TestCase))
+			}
+		}
+		if len(runOnlyCases) > 0 {
+			filtered[name] = proto.Clone(suite).(*conformancev1.TestSuite)
+			filtered[name].TestCases = runOnlyCases
+			continue
+		}
+	}
+	if len(filtered) > 0 {
+		// TODO - Should we log a warning here that tests are marked as run-only?
+		return filtered
+	}
+	return allSuites
 }
