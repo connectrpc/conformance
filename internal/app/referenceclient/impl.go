@@ -121,7 +121,7 @@ func (i *invoker) unary(
 		// If the call was successful, get the headers and trailers
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
-		// If there's a payload, add that the response also
+		// If there's a payload, add that to the response also
 		if resp.Msg.Payload != nil {
 			payloads = append(payloads, resp.Msg.Payload)
 		}
