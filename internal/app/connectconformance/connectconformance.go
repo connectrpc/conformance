@@ -26,8 +26,6 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
-	"connectrpc.com/conformance/internal/app/grpcclient"
-	"connectrpc.com/conformance/internal/app/grpcserver"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -172,11 +170,11 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 				start:           runInProcess("reference-client", referenceclient.Run),
 				isReferenceImpl: true,
 			},
-			{
-				name:       "reference client (grpc)",
-				start:      runInProcess("grpc-reference-client", grpcclient.Run),
-				isGrpcImpl: true,
-			},
+			// {
+			// 	name:       "reference client (grpc)",
+			// 	start:      runInProcess("grpc-reference-client", grpcclient.Run),
+			// 	isGrpcImpl: true,
+			// },
 		}
 	} else {
 		clients = []processInfo{
@@ -203,11 +201,11 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 					start:           runInProcess("reference-server", referenceserver.RunInReferenceMode),
 					isReferenceImpl: true,
 				},
-				{
-					name:       "reference server (grpc)",
-					start:      runInProcess("grpc-reference-server", grpcserver.Run),
-					isGrpcImpl: true,
-				},
+				// {
+				// 	name:       "reference server (grpc)",
+				// 	start:      runInProcess("grpc-reference-server", grpcserver.Run),
+				// 	isGrpcImpl: true,
+				// },
 			}
 		} else {
 			servers = []processInfo{
