@@ -41,7 +41,7 @@ func (i *invoker) Invoke(
 ) (*v1.ClientResponseResult, error) {
 	// If a timeout was specified, create a derived context with that deadline
 	if req.TimeoutMs != nil {
-		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Microsecond))
+		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
 		ctx = deadlineCtx
 		defer cancel()
 	}
@@ -111,7 +111,6 @@ func (i *invoker) unary(
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 	if err != nil {
-		fmt.Printf("%s received %s\n", req.TestName, err.Error())
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.

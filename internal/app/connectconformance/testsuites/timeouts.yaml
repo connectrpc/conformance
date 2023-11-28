@@ -5,12 +5,46 @@ testCases:
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
-    timeoutMs: 1
+    timeoutMs: 200
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
         responseData: "dGVzdCByZXNwb25zZQ=="
-        # responseDelayMs: 2
+        responseDelayMs: 500
+  # Override
+  expectedResponse:
+    error:
+      code: 4
+- request:
+    testName: client stream timeout
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    timeoutMs: 200
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+        responseData: "dGVzdCByZXNwb25zZQ=="
+        responseDelayMs: 500
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    error:
+      code: 4
+- request:
+    testName: server stream timeout
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    timeoutMs: 200
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseDelayMs: 500
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
   # Override
   expectedResponse:
     error:
