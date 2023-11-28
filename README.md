@@ -13,10 +13,10 @@ compatibility, and conformance across the Connect, gRPC, and gRPC-Web protocols.
 various scenarios with a client-server interaction to ensure the results are as expected across platforms.
 
 Tests are divided into two types: client tests and server tests. Those which verify clients are run against a
-reference server implementation of the Conformance Service written with [Connect Go](https://github.com/connectrpc/connect-go).
+reference server implementation of the Conformance Service written with [connect-go](https://github.com/connectrpc/connect-go).
 
 Likewise, servers under test will be verified by a reference client implementation of the Conformance
-Service also written with Connect Go.
+Service also written with connect-go.
 
 To verify compatibility with other protocol implementations, the conformance test also uses reference client
 and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go).
