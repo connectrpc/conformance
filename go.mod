@@ -11,7 +11,7 @@ require (
 	github.com/klauspost/compress v1.17.2
 	github.com/quic-go/quic-go v0.40.0
 	github.com/rs/cors v1.10.1
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.19.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13
