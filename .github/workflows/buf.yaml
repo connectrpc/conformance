@@ -2,10 +2,10 @@ name: buf
 on:
   push:
     branches: [main]
-    paths: ['proto/**']
+    paths: ['proto/**', '.github/workflows/buf.yaml']
   pull_request:
     branches: [main]
-    paths: ['proto/**']
+    paths: ['proto/**', '.github/workflows/buf.yaml']
   workflow_dispatch: {} # support manual runs
 jobs:
   lint:
