@@ -29,7 +29,6 @@ import (
 const (
 	modeFlagName         = "mode"
 	configFlagName       = "conf"
-	testFileFlagName     = "test-file"
 	knownFailingFlagName = "known-failing"
 	verboseFlagName      = "verbose"
 	verboseFlagShortName = "v"
@@ -40,7 +39,6 @@ type flags struct {
 	mode             string
 	configFile       string
 	knownFailingFile string
-	testFile         string
 	verbose          bool
 	version          bool
 }
@@ -100,7 +98,6 @@ test cases which have actually been fixed.)
 func bind(cmd *cobra.Command, flags *flags) {
 	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client', 'server', or 'both'")
 	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
-	cmd.Flags().StringVar(&flags.testFile, testFileFlagName, "", "a file in YAML format containing tests to run, which will skip running the embedded tests")
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
 	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
 	cmd.Flags().BoolVar(&flags.version, versionFlagName, false, "print version and exit")
@@ -162,7 +159,6 @@ func run(flags *flags, command []string) {
 		&connectconformance.Flags{
 			ConfigFile:       flags.configFile,
 			KnownFailingFile: flags.knownFailingFile,
-			TestFile:         flags.testFile,
 			Verbose:          flags.verbose,
 			ClientCommand:    clientCommand,
 			ServerCommand:    serverCommand,
