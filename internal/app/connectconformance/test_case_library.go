@@ -220,6 +220,14 @@ func serverInstanceForCase(testCase *conformancev1.TestCase) serverInstance {
 	}
 }
 
+type unaryResponseDefiner interface {
+	GetResponseDefinition() *conformancev1.UnaryResponseDefinition
+}
+
+type streamResponseDefiner interface {
+	GetResponseDefinition() *conformancev1.StreamResponseDefinition
+}
+
 // parseTestSuites processes the given file contents. The given map is keyed
 // by test file name. Each entry's value is the contents of the named file.
 // The given argument often represents the embedded test suite data. Also
@@ -235,6 +243,14 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 			return nil, ensureFileName(err, testFilePath)
 		}
 		for _, testCase := range suite.TestCases {
+			if testCase.Request.RawRequest != nil && suite.Mode != conformancev1.TestSuite_TEST_MODE_SERVER {
+				return nil, fmt.Errorf("%s: test case %q has raw request, but that is only allowed when mode is TEST_MODE_SERVER",
+					testFilePath, testCase.Request.TestName)
+			}
+			if hasRawResponse(testCase.Request.RequestMessages) && suite.Mode != conformancev1.TestSuite_TEST_MODE_CLIENT {
+				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
+					testFilePath, testCase.Request.TestName)
+			}
 			if err := expandRequestData(testCase); err != nil {
 				return nil, fmt.Errorf("%s: failed to expand request sizes as directed for test case %q: %w",
 					testFilePath, testCase.Request.TestName, err)
@@ -333,6 +349,11 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 	if testCase.ExpectedResponse != nil {
 		return nil
 	}
+
+	if testCase.Request.RawRequest != nil || hasRawResponse(testCase.Request.RequestMessages) {
+		return errors.New("test case must specify expected response when using raw request or response")
+	}
+
 	// TODO - This is just a temporary constraint to protect against panics for now.
 	// Eventually, we want to be able to test client and bidi streams where there are no request messages.
 	// The potential plan is for server impls to produce (and the code below to expect) a single response
@@ -368,6 +389,27 @@ func convertToInt64Ptr(num *uint32) *int64 {
 	return proto.Int64(int64(*num))
 }
 
+func hasRawResponse(reqs []*anypb.Any) bool {
+	if len(reqs) == 0 {
+		return false
+	}
+	msg, err := reqs[0].UnmarshalNew()
+	if err != nil {
+		return false // we'll deal with this error later
+	}
+	switch msg := msg.(type) {
+	case unaryResponseDefiner:
+		if msg.GetResponseDefinition().GetRawResponse() != nil {
+			return true
+		}
+	case streamResponseDefiner:
+		if msg.GetResponseDefinition().GetRawResponse() != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
@@ -375,9 +417,6 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	concreteReq, err := req.UnmarshalNew()
 	if err != nil {
 		return err
-	}
-	type unaryResponseDefiner interface {
-		GetResponseDefinition() *conformancev1.UnaryResponseDefinition
 	}
 
 	definer, ok := concreteReq.(unaryResponseDefiner)
@@ -450,9 +489,6 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 	concreteReq, err := req.UnmarshalNew()
 	if err != nil {
 		return err
-	}
-	type streamResponseDefiner interface {
-		GetResponseDefinition() *conformancev1.StreamResponseDefinition
 	}
 
 	definer, ok := concreteReq.(streamResponseDefiner)
