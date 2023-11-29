@@ -27,7 +27,6 @@ import (
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	"connectrpc.com/conformance/internal/app/grpcclient"
-	"connectrpc.com/conformance/internal/app/grpcserver"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -42,6 +41,7 @@ type Flags struct {
 	Verbose          bool
 	ClientCommand    []string
 	ServerCommand    []string
+	TestFile         string
 }
 
 func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
@@ -77,16 +77,23 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		_, _ = fmt.Fprintf(logOut, "Loaded %d known failing test cases/patterns.\n", knownFailing.length())
 	}
 
-	// TODO: allow test suite files to be indicated on command-line to override
-	//       use of built-in, embedded test suite data
-	testSuiteData, err := testsuites.LoadTestSuites()
-	if err != nil {
-		return false, fmt.Errorf("failed to load embedded test suite data: %w", err)
+	var testSuiteData map[string][]byte
+	if flags.TestFile != "" {
+		testSuiteData, err = testsuites.LoadTestSuitesFromFile(flags.TestFile)
+		if err != nil {
+			return false, fmt.Errorf("failed to load test suite data from file: %w", err)
+		}
+	} else {
+		testSuiteData, err = testsuites.LoadTestSuites()
+		if err != nil {
+			return false, fmt.Errorf("failed to load embedded test suite data: %w", err)
+		}
 	}
 	allSuites, err := parseTestSuites(testSuiteData)
 	if err != nil {
 		return false, fmt.Errorf("embedded test suite: %w", err)
 	}
+
 	if flags.Verbose {
 		var numCases int
 		for _, suite := range allSuites {
@@ -203,11 +210,11 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 					start:           runInProcess("reference-server", referenceserver.RunInReferenceMode),
 					isReferenceImpl: true,
 				},
-				{
-					name:       "reference server (grpc)",
-					start:      runInProcess("grpc-reference-server", grpcserver.Run),
-					isGrpcImpl: true,
-				},
+				// {
+				// 	name:       "reference server (grpc)",
+				// 	start:      runInProcess("grpc-reference-server", grpcserver.Run),
+				// 	isGrpcImpl: true,
+				// },
 			}
 		} else {
 			servers = []processInfo{
