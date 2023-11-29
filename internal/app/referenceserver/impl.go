@@ -74,7 +74,9 @@ func (s *conformanceServer) Unary(
 		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
 		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
 
-		time.Sleep((time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond))
+		// If a response delay was specified, sleep for that amount of ms before responding
+		responseDelay := time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond
+		time.Sleep(responseDelay)
 	}
 
 	return resp, nil
@@ -127,7 +129,9 @@ func (s *conformanceServer) ClientStream(
 		internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
 
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+		// If a response delay was specified, sleep for that amount of ms before responding
+		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
+		time.Sleep(responseDelay)
 	}
 
 	return resp, nil
@@ -151,6 +155,9 @@ func (s *conformanceServer) ServerStream(
 		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 
+		// Calculate the response delay if specified
+		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
+
 		for _, data := range responseDefinition.ResponseData {
 			resp := &v1.ServerStreamResponse{
 				Payload: &v1.ConformancePayload{
@@ -165,7 +172,8 @@ func (s *conformanceServer) ServerStream(
 				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
 			}
 
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+			// If a response delay was specified, sleep for that amount of ms before responding
+			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
@@ -196,6 +204,7 @@ func (s *conformanceServer) BidiStream(
 	stream *connect.BidiStream[v1.BidiStreamRequest, v1.BidiStreamResponse],
 ) error {
 	var responseDefinition *v1.StreamResponseDefinition
+	var responseDelay time.Duration
 	fullDuplex := false
 	firstRecv := true
 	respNum := 0
@@ -231,6 +240,9 @@ func (s *conformanceServer) BidiStream(
 			if responseDefinition != nil {
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+
+				// Calculate a response delay if specified
+				responseDelay = time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
 			}
 		}
 
@@ -261,7 +273,9 @@ func (s *conformanceServer) BidiStream(
 				}
 			}
 			resp.Payload.RequestInfo = requestInfo
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			// If a response delay was specified, sleep for that amount of ms before responding
+			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
@@ -288,7 +302,9 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
 			}
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			// If a response delay was specified, sleep for that amount of ms before responding
+			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
