@@ -57,6 +57,9 @@ func (s *conformanceServer) Unary(
 		req.Header(),
 		[]*anypb.Any{msgAsAny},
 	)
+	// If connectErr is not nil, then the response definition must not be nil.
+	// Read the headers and trailers from the definition and add them to connectErr
+	// and return
 	if connectErr != nil {
 		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseHeaders(), connectErr.Meta())
 		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseTrailers(), connectErr.Meta())
@@ -67,8 +70,14 @@ func (s *conformanceServer) Unary(
 		Payload: payload,
 	})
 
-	internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
-	internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+	if req.Msg.ResponseDefinition != nil {
+		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
+		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+
+		// If a response delay was specified, sleep for that amount of ms before responding
+		responseDelay := time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond
+		time.Sleep(responseDelay)
+	}
 
 	return resp, nil
 }
@@ -102,6 +111,10 @@ func (s *conformanceServer) ClientStream(
 	}
 
 	payload, err := parseUnaryResponseDefinition(ctx, responseDefinition, stream.RequestHeader(), reqs)
+
+	// If err is not nil, then the response definition must not be nil.
+	// Read the headers and trailers from the definition and add them to connectErr
+	// and return
 	if err != nil {
 		internal.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
@@ -112,8 +125,14 @@ func (s *conformanceServer) ClientStream(
 		Payload: payload,
 	})
 
-	internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
-	internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+	if responseDefinition != nil {
+		internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
+		internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+
+		// If a response delay was specified, sleep for that amount of ms before responding
+		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
+		time.Sleep(responseDelay)
+	}
 
 	return resp, nil
 }
@@ -123,53 +142,60 @@ func (s *conformanceServer) ServerStream(
 	req *connect.Request[v1.ServerStreamRequest],
 	stream *connect.ServerStream[v1.ServerStreamResponse],
 ) error {
-	responseDefinition := req.Msg.ResponseDefinition
-	if responseDefinition != nil {
-		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
-		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
-	}
-
 	// Convert the request to an Any so that it can be recorded in the payload
 	msgAsAny, err := asAny(req.Msg)
 	if err != nil {
 		return err
 	}
+
 	respNum := 0
-	for _, data := range responseDefinition.ResponseData {
-		resp := &v1.ServerStreamResponse{
-			Payload: &v1.ConformancePayload{
-				Data: data,
-			},
-		}
 
-		// Only set the request info if this is the first response being sent back
-		// because for server streams, nothing in the request info will change
-		// after the first response.
-		if respNum == 0 {
-			resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
-		}
+	responseDefinition := req.Msg.ResponseDefinition
+	if responseDefinition != nil { //nolint:nestif
+		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
+		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+		// Calculate the response delay if specified
+		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
 
-		if err := stream.Send(resp); err != nil {
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
-		}
-		respNum++
-	}
-
-	if responseDefinition.Error != nil {
-		if respNum == 0 {
-			// We've sent no responses and are returning an error, so build a
-			// RequestInfo message and append to the error details
-			reqInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return connect.NewError(connect.CodeInternal, err)
+		for _, data := range responseDefinition.ResponseData {
+			resp := &v1.ServerStreamResponse{
+				Payload: &v1.ConformancePayload{
+					Data: data,
+				},
 			}
-			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+
+			// Only set the request info if this is the first response being sent back
+			// because for server streams, nothing in the request info will change
+			// after the first response.
+			if respNum == 0 {
+				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+			}
+
+			// If a response delay was specified, sleep for that amount of ms before responding
+			time.Sleep(responseDelay)
+
+			if err := stream.Send(resp); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+			}
+			respNum++
 		}
-		return internal.ConvertProtoToConnectError(responseDefinition.Error)
+
+		if responseDefinition.Error != nil {
+			if respNum == 0 {
+				// We've sent no responses and are returning an error, so build a
+				// RequestInfo message and append to the error details
+				reqInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+				reqInfoAny, err := anypb.New(reqInfo)
+				if err != nil {
+					return connect.NewError(connect.CodeInternal, err)
+				}
+				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			}
+			return internal.ConvertProtoToConnectError(responseDefinition.Error)
+		}
 	}
+
 	return nil
 }
 
@@ -178,6 +204,7 @@ func (s *conformanceServer) BidiStream(
 	stream *connect.BidiStream[v1.BidiStreamRequest, v1.BidiStreamResponse],
 ) error {
 	var responseDefinition *v1.StreamResponseDefinition
+	var responseDelay time.Duration
 	fullDuplex := false
 	firstRecv := true
 	respNum := 0
@@ -213,17 +240,20 @@ func (s *conformanceServer) BidiStream(
 			if responseDefinition != nil {
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+
+				// Calculate a response delay if specified
+				responseDelay = time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
 			}
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
 		if fullDuplex {
-			if respNum >= len(responseDefinition.ResponseData) {
-				return connect.NewError(
-					connect.CodeAborted,
-					errors.New("received more requests than desired responses on a full duplex stream"),
-				)
+			if responseDefinition == nil || respNum >= len(responseDefinition.ResponseData) {
+				// If there are no responses to send, then break the receive loop
+				// and throw the error specified
+				break
 			}
+
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],
@@ -243,7 +273,9 @@ func (s *conformanceServer) BidiStream(
 				}
 			}
 			resp.Payload.RequestInfo = requestInfo
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+
+			// If a response delay was specified, sleep for that amount of ms before responding
+			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
@@ -256,39 +288,44 @@ func (s *conformanceServer) BidiStream(
 	// If we still have responses left to send, flush them now. This accommodates
 	// both scenarios of half duplex (we haven't sent any responses yet) or full duplex
 	// where the requested responses are greater than the total requests.
-	for ; respNum < len(responseDefinition.ResponseData); respNum++ {
-		resp := &v1.BidiStreamResponse{
-			Payload: &v1.ConformancePayload{
-				Data: responseDefinition.ResponseData[respNum],
-			},
-		}
-		// Only set the request info if this is the first response being sent back
-		// because for half duplex streams, nothing in the request info will change
-		// after the first response (this includes the requests since they've all
-		// been received by this point)
-		if respNum == 0 {
-			resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
-		}
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
-
-		if err := stream.Send(resp); err != nil {
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
-		}
-	}
-
-	if responseDefinition.Error != nil {
-		if respNum == 0 {
-			// We've sent no responses and are returning an error, so build a
-			// RequestInfo message and append to the error details
-			reqInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return connect.NewError(connect.CodeInternal, err)
+	if responseDefinition != nil { //nolint:nestif
+		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+			resp := &v1.BidiStreamResponse{
+				Payload: &v1.ConformancePayload{
+					Data: responseDefinition.ResponseData[respNum],
+				},
 			}
-			responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			// Only set the request info if this is the first response being sent back
+			// because for half duplex streams, nothing in the request info will change
+			// after the first response (this includes the requests since they've all
+			// been received by this point)
+			if respNum == 0 {
+				resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
+			}
+
+			// If a response delay was specified, sleep for that amount of ms before responding
+			time.Sleep(responseDelay)
+
+			if err := stream.Send(resp); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+			}
 		}
-		return internal.ConvertProtoToConnectError(responseDefinition.Error)
+
+		if responseDefinition.Error != nil {
+			if respNum == 0 {
+				// We've sent no responses and are returning an error, so build a
+				// RequestInfo message and append to the error details
+				reqInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
+				reqInfoAny, err := anypb.New(reqInfo)
+				if err != nil {
+					return connect.NewError(connect.CodeInternal, err)
+				}
+				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
+			}
+			return internal.ConvertProtoToConnectError(responseDefinition.Error)
+		}
 	}
+
 	return nil
 }
 
@@ -300,36 +337,40 @@ func parseUnaryResponseDefinition(
 	hdrs http.Header,
 	reqs []*anypb.Any,
 ) (*v1.ConformancePayload, *connect.Error) {
-	if def != nil {
-		switch respType := def.Response.(type) {
-		case *v1.UnaryResponseDefinition_Error:
-			// The server should build a RequestInfo object and add it to the error details
-			// for unary responses that return an error.
-			reqInfo := createRequestInfo(ctx, hdrs, reqs)
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return nil, connect.NewError(connect.CodeInternal, err)
-			}
-			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
-
-			return nil, internal.ConvertProtoToConnectError(respType.Error)
-
-		case *v1.UnaryResponseDefinition_ResponseData, nil:
-			requestInfo := createRequestInfo(ctx, hdrs, reqs)
-			payload := &v1.ConformancePayload{
-				RequestInfo: requestInfo,
-			}
-
-			// If response data was provided, set that in the payload response
-			if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
-				payload.Data = respType.ResponseData
-			}
-			return payload, nil
-		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
-		}
+	reqInfo := createRequestInfo(ctx, hdrs, reqs)
+	if def == nil {
+		// If the definition is not set at all, there's nothing to respond with.
+		// Just return a payload with the request info
+		return &v1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}, nil
 	}
-	return nil, connect.NewError(connect.CodeInvalidArgument, errors.New("no response definition provided"))
+
+	switch respType := def.Response.(type) {
+	case *v1.UnaryResponseDefinition_Error:
+		// The server should add the request info to the error details
+		// for unary responses that return an error.
+		reqInfoAny, err := anypb.New(reqInfo)
+		if err != nil {
+			return nil, connect.NewError(connect.CodeInternal, err)
+		}
+		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
+
+		return nil, internal.ConvertProtoToConnectError(respType.Error)
+
+	case *v1.UnaryResponseDefinition_ResponseData, nil:
+		payload := &v1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}
+
+		// If response data was provided, set that in the payload response
+		if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
+			payload.Data = respType.ResponseData
+		}
+		return payload, nil
+	default:
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
+	}
 }
 
 // Creates request info for a conformance payload.

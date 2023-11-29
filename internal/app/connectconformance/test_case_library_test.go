@@ -897,6 +897,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	unaryErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{unaryErrorReq},
+		TimeoutMs:      proto.Int64(42),
 	})
 	require.NoError(t, err)
 
@@ -915,18 +916,21 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	clientStreamErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
+		TimeoutMs:      proto.Int64(42),
 	})
 	require.NoError(t, err)
 
 	serverStreamErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{serverStreamNoResponseWithErrorReq},
+		TimeoutMs:      proto.Int64(42),
 	})
 	require.NoError(t, err)
 
 	bidiStreamHalfDuplexNoResponseWithErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReq, bidiStreamReq2},
+		TimeoutMs:      proto.Int64(42),
 	})
 	require.NoError(t, err)
 
@@ -948,6 +952,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
 				RequestMessages: []*anypb.Any{unarySuccessReq},
 				RequestHeaders:  requestHeaders,
+				TimeoutMs:       proto.Uint32(42),
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -957,6 +962,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
 							Requests:       []*anypb.Any{unarySuccessReq},
+							TimeoutMs:      proto.Int64(42),
 						},
 					},
 				},
@@ -969,6 +975,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
 				RequestMessages: []*anypb.Any{unaryErrorReq},
 				RequestHeaders:  requestHeaders,
+				TimeoutMs:       proto.Uint32(42),
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1079,6 +1086,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM,
 				RequestMessages: []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
 				RequestHeaders:  requestHeaders,
+				TimeoutMs:       proto.Uint32(42),
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1183,6 +1191,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
 				RequestMessages: []*anypb.Any{serverStreamNoResponseWithErrorReq},
 				RequestHeaders:  requestHeaders,
+				TimeoutMs:       proto.Uint32(42),
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1270,6 +1279,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
 				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReq, bidiStreamReq2},
 				RequestHeaders:  requestHeaders,
+				TimeoutMs:       proto.Uint32(42),
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
