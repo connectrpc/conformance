@@ -302,14 +302,15 @@ func (i *invoker) bidiStream(
 	}()
 
 	// Sends are done, close the send side of the stream
-	if err := stream.CloseSend(); err != nil {
-		return nil, err
+	err = stream.CloseSend()
+	if err != nil && protoErr == nil {
+		protoErr = grpcutil.ConvertGrpcToProtoError(err)
 	}
 
 	// Once the send side is closed, header metadata is ready to be read
 	hdr, err = stream.Header()
-	if err != nil {
-		return nil, err
+	if err != nil && protoErr == nil {
+		protoErr = grpcutil.ConvertGrpcToProtoError(err)
 	}
 
 	// If we received an error in any of the send logic or full-duplex reads, then exit
