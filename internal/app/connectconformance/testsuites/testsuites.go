@@ -24,6 +24,7 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 )
 
@@ -56,12 +57,19 @@ func LoadTestSuites() (map[string][]byte, error) {
 	return testSuites, nil
 }
 
-func LoadTestSuitesFromFile(file string) (map[string][]byte, error) {
+// LoadTestSuitesFromFile loads the test suites specified in the given path.
+// If the provided path is not found, is a directory, or is not a YAML file, the
+// function will return an error.
+func LoadTestSuitesFromFile(path string) (map[string][]byte, error) {
 	testSuites := map[string][]byte{}
-	testFile, err := os.ReadFile(file)
+	testFile, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
-	testSuites[file] = testFile
+	if filepath.Ext(path) != ".yaml" {
+		return nil, fmt.Errorf("failed to load test data file: %s. file is not in YAML format", path)
+	}
+
+	testSuites[path] = testFile
 	return testSuites, nil
 }
