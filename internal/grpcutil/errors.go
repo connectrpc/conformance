@@ -15,6 +15,9 @@
 package grpcutil
 
 import (
+	"fmt"
+
+	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	statuspb "google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc/status"
@@ -40,7 +43,14 @@ func ConvertGrpcToProtoError(err error) *v1.Error {
 	if err == nil {
 		return nil
 	}
-	stat, _ := status.FromError(err)
+	// First try to convert the error to gRPC directly
+	// This means it's an error returned from a gRPC server
+	stat, ok := status.FromError(err)
+	if !ok {
+		cerr := internal.ConvertErrorToProtoError(err)
+		fmt.Println(cerr)
+		return cerr
+	}
 	statProto := stat.Proto()
 	return &v1.Error{
 		Code:    int32(stat.Code()),

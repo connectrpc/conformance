@@ -291,6 +291,7 @@ func (i *invoker) bidiStream(
 			result.Payloads = append(result.Payloads, msg.Payload)
 		}
 	}
+	fmt.Println("yeeps")
 
 	var hdr metadata.MD
 	defer func() {
@@ -321,6 +322,8 @@ func (i *invoker) bidiStream(
 	// Receive any remaining responses
 	for {
 		if err := ctx.Err(); err != nil {
+			fmt.Println("yeeps2")
+			fmt.Println(err)
 			// If an error was returned, convert it to a proto Error
 			protoErr = grpcutil.ConvertGrpcToProtoError(err)
 			break

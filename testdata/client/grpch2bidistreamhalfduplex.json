@@ -8,6 +8,7 @@
   "service": "connectrpc.conformance.v1.ConformanceService",
   "method": "BidiStream",
   "streamType": "STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM",
+  "timeoutMs": 200,
   "requestHeaders": [
     {
       "name": "X-Conformance-Test",
@@ -21,6 +22,7 @@
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest",
       "responseDefinition": {
+        "responseDelayMs": 500,
         "responseHeaders": [
           {
             "name": "x-custom-header",

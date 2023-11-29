@@ -16,6 +16,7 @@ package internal
 
 import (
 	"errors"
+	"fmt"
 
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
@@ -46,6 +47,7 @@ func ConvertErrorToProtoError(err error) *v1.Error {
 	}
 	connectErr := new(connect.Error)
 	if !errors.As(err, &connectErr) {
+		fmt.Println("not a connect error")
 		return &v1.Error{
 			Code:    int32(connect.CodeUnknown),
 			Message: proto.String(err.Error()),
