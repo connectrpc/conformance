@@ -16,6 +16,7 @@ package internal
 
 import (
 	"net/http"
+	"net/url"
 
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 )
@@ -35,6 +36,21 @@ func AddHeaders(
 // ConvertToProtoHeader converts HTTP headers to a slice of proto Headers.
 func ConvertToProtoHeader(
 	src http.Header,
+) []*v1.Header {
+	headerInfo := make([]*v1.Header, 0, len(src))
+	for key, value := range src {
+		hdr := &v1.Header{
+			Name:  key,
+			Value: value,
+		}
+		headerInfo = append(headerInfo, hdr)
+	}
+	return headerInfo
+}
+
+// ConvertQueryToProtoHeader converts HTTP headers to a slice of proto Headers.
+func ConvertQueryToProtoHeader(
+	src url.Values,
 ) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -51,22 +52,55 @@ func (s *conformanceServer) Unary(
 	if err != nil {
 		return nil, err
 	}
-	payload, connectErr := parseUnaryResponseDefinition(
+
+	payload, err := parseUnaryResponseDefinition(
 		ctx,
 		req.Msg.ResponseDefinition,
 		req.Header(),
+		nil,
 		[]*anypb.Any{msgAsAny},
 	)
-	// If connectErr is not nil, then the response definition must not be nil.
-	// Read the headers and trailers from the definition and add them to connectErr
-	// and return
-	if connectErr != nil {
-		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseHeaders(), connectErr.Meta())
-		internal.AddHeaders(req.Msg.ResponseDefinition.GetResponseTrailers(), connectErr.Meta())
-		return nil, connectErr
+	if err != nil {
+		return nil, err
 	}
 
 	resp := connect.NewResponse(&v1.UnaryResponse{
+		Payload: payload,
+	})
+
+	if req.Msg.ResponseDefinition != nil {
+		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
+		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+
+		time.Sleep((time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond))
+	}
+
+	return resp, nil
+}
+
+func (s *conformanceServer) IdempotentUnary(
+	ctx context.Context,
+	req *connect.Request[v1.IdempotentUnaryRequest],
+) (*connect.Response[v1.IdempotentUnaryResponse], error) {
+	if req.HTTPMethod() != http.MethodGet {
+		return nil, errors.New("idempotent unary method should have been called via HTTP GET")
+	}
+	msgAsAny, err := asAny(req.Msg)
+	if err != nil {
+		return nil, err
+	}
+	payload, err := parseUnaryResponseDefinition(
+		ctx,
+		req.Msg.ResponseDefinition,
+		req.Header(),
+		req.Peer().Query,
+		[]*anypb.Any{msgAsAny},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	resp := connect.NewResponse(&v1.IdempotentUnaryResponse{
 		Payload: payload,
 	})
 
@@ -108,14 +142,14 @@ func (s *conformanceServer) ClientStream(
 		return nil, err
 	}
 
-	payload, err := parseUnaryResponseDefinition(ctx, responseDefinition, stream.RequestHeader(), reqs)
-
-	// If err is not nil, then the response definition must not be nil.
-	// Read the headers and trailers from the definition and add them to connectErr
-	// and return
+	payload, err := parseUnaryResponseDefinition(
+		ctx,
+		responseDefinition,
+		stream.RequestHeader(),
+		nil,
+		reqs,
+	)
 	if err != nil {
-		internal.AddHeaders(responseDefinition.ResponseHeaders, err.Meta())
-		internal.AddHeaders(responseDefinition.ResponseTrailers, err.Meta())
 		return nil, err
 	}
 
@@ -162,7 +196,7 @@ func (s *conformanceServer) ServerStream(
 			// because for server streams, nothing in the request info will change
 			// after the first response.
 			if respNum == 0 {
-				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), nil, []*anypb.Any{msgAsAny})
 			}
 
 			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
@@ -177,7 +211,7 @@ func (s *conformanceServer) ServerStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				reqInfo := createRequestInfo(ctx, req.Header(), []*anypb.Any{msgAsAny})
+				reqInfo := createRequestInfo(ctx, req.Header(), nil, []*anypb.Any{msgAsAny})
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
 					return connect.NewError(connect.CodeInternal, err)
@@ -251,7 +285,7 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				// Only send the full request info (including headers and timeouts)
 				// in the first response
-				requestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
+				requestInfo = createRequestInfo(ctx, stream.RequestHeader(), nil, reqs)
 			} else {
 				// All responses after the first should only include the requests
 				// since that is the only thing that will change between responses
@@ -286,7 +320,7 @@ func (s *conformanceServer) BidiStream(
 			// after the first response (this includes the requests since they've all
 			// been received by this point)
 			if respNum == 0 {
-				resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), reqs)
+				resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), nil, reqs)
 			}
 			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
 
@@ -299,7 +333,7 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				reqInfo := createRequestInfo(ctx, stream.RequestHeader(), reqs)
+				reqInfo := createRequestInfo(ctx, stream.RequestHeader(), nil, reqs)
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
 					return connect.NewError(connect.CodeInternal, err)
@@ -319,9 +353,10 @@ func parseUnaryResponseDefinition(
 	ctx context.Context,
 	def *v1.UnaryResponseDefinition,
 	hdrs http.Header,
+	queryParams url.Values,
 	reqs []*anypb.Any,
 ) (*v1.ConformancePayload, *connect.Error) {
-	reqInfo := createRequestInfo(ctx, hdrs, reqs)
+	reqInfo := createRequestInfo(ctx, hdrs, queryParams, reqs)
 	if def == nil {
 		// If the definition is not set at all, there's nothing to respond with.
 		// Just return a payload with the request info
@@ -340,7 +375,12 @@ func parseUnaryResponseDefinition(
 		}
 		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 
-		return nil, internal.ConvertProtoToConnectError(respType.Error)
+		connectErr := internal.ConvertProtoToConnectError(respType.Error)
+
+		internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
+		internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
+
+		return nil, connectErr
 
 	case *v1.UnaryResponseDefinition_ResponseData, nil:
 		payload := &v1.ConformancePayload{
@@ -358,8 +398,22 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-func createRequestInfo(ctx context.Context, headers http.Header, reqs []*anypb.Any) *v1.ConformancePayload_RequestInfo {
+func createRequestInfo(
+	ctx context.Context,
+	headers http.Header,
+	queryParams url.Values,
+	reqs []*anypb.Any,
+) *v1.ConformancePayload_RequestInfo {
 	headerInfo := internal.ConvertToProtoHeader(headers)
+
+	var connectGetInfo *v1.ConformancePayload_ConnectGetInfo
+	if len(queryParams) > 0 {
+		queryParamInfo := internal.ConvertQueryToProtoHeader(queryParams)
+
+		connectGetInfo = &v1.ConformancePayload_ConnectGetInfo{
+			QueryParams: queryParamInfo,
+		}
+	}
 
 	var timeoutMs *int64
 	if deadline, ok := ctx.Deadline(); ok {
@@ -371,6 +425,7 @@ func createRequestInfo(ctx context.Context, headers http.Header, reqs []*anypb.A
 		RequestHeaders: headerInfo,
 		Requests:       reqs,
 		TimeoutMs:      timeoutMs,
+		ConnectGetInfo: connectGetInfo,
 	}
 }
 

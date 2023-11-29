@@ -125,9 +125,10 @@ service ConformanceService {
   // return an unimplemented error when invoked.
   rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse);
 
-  /* rpc CacheableUnaryCall(SimpleRequest) returns (SimpleResponse) { */
-  /*   option idempotency_level = NO_SIDE_EFFECTS; */
-  /* } */
+
+  rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse) {
+    option idempotency_level = NO_SIDE_EFFECTS;
+  }
 }
 
 // A definition of a response to be sent from a single-response endpoint.
@@ -198,6 +199,19 @@ message UnaryRequest {
 }
 
 message UnaryResponse {
+  // The conformance payload to respond with.
+  ConformancePayload payload = 1;
+}
+
+message IdempotentUnaryRequest {
+  // The response definition which should be returned in the conformance payload
+  UnaryResponseDefinition response_definition = 1;
+
+  // Additional data. Only used to pad the request size to test large request messages.
+  bytes request_data = 2;
+}
+
+message IdempotentUnaryResponse {
   // The conformance payload to respond with.
   ConformancePayload payload = 1;
 }

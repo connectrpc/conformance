@@ -33,11 +33,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ConformanceService_Unary_FullMethodName         = "/connectrpc.conformance.v1.ConformanceService/Unary"
-	ConformanceService_ServerStream_FullMethodName  = "/connectrpc.conformance.v1.ConformanceService/ServerStream"
-	ConformanceService_ClientStream_FullMethodName  = "/connectrpc.conformance.v1.ConformanceService/ClientStream"
-	ConformanceService_BidiStream_FullMethodName    = "/connectrpc.conformance.v1.ConformanceService/BidiStream"
-	ConformanceService_Unimplemented_FullMethodName = "/connectrpc.conformance.v1.ConformanceService/Unimplemented"
+	ConformanceService_Unary_FullMethodName           = "/connectrpc.conformance.v1.ConformanceService/Unary"
+	ConformanceService_ServerStream_FullMethodName    = "/connectrpc.conformance.v1.ConformanceService/ServerStream"
+	ConformanceService_ClientStream_FullMethodName    = "/connectrpc.conformance.v1.ConformanceService/ClientStream"
+	ConformanceService_BidiStream_FullMethodName      = "/connectrpc.conformance.v1.ConformanceService/BidiStream"
+	ConformanceService_Unimplemented_FullMethodName   = "/connectrpc.conformance.v1.ConformanceService/Unimplemented"
+	ConformanceService_IdempotentUnary_FullMethodName = "/connectrpc.conformance.v1.ConformanceService/IdempotentUnary"
 )
 
 // ConformanceServiceClient is the client API for ConformanceService service.
@@ -135,6 +136,7 @@ type ConformanceServiceClient interface {
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
 	Unimplemented(ctx context.Context, in *UnimplementedRequest, opts ...grpc.CallOption) (*UnimplementedResponse, error)
+	IdempotentUnary(ctx context.Context, in *IdempotentUnaryRequest, opts ...grpc.CallOption) (*IdempotentUnaryResponse, error)
 }
 
 type conformanceServiceClient struct {
@@ -260,6 +262,15 @@ func (c *conformanceServiceClient) Unimplemented(ctx context.Context, in *Unimpl
 	return out, nil
 }
 
+func (c *conformanceServiceClient) IdempotentUnary(ctx context.Context, in *IdempotentUnaryRequest, opts ...grpc.CallOption) (*IdempotentUnaryResponse, error) {
+	out := new(IdempotentUnaryResponse)
+	err := c.cc.Invoke(ctx, ConformanceService_IdempotentUnary_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConformanceServiceServer is the server API for ConformanceService service.
 // All implementations must embed UnimplementedConformanceServiceServer
 // for forward compatibility
@@ -355,6 +366,7 @@ type ConformanceServiceServer interface {
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
 	Unimplemented(context.Context, *UnimplementedRequest) (*UnimplementedResponse, error)
+	IdempotentUnary(context.Context, *IdempotentUnaryRequest) (*IdempotentUnaryResponse, error)
 	mustEmbedUnimplementedConformanceServiceServer()
 }
 
@@ -376,6 +388,9 @@ func (UnimplementedConformanceServiceServer) BidiStream(ConformanceService_BidiS
 }
 func (UnimplementedConformanceServiceServer) Unimplemented(context.Context, *UnimplementedRequest) (*UnimplementedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Unimplemented not implemented")
+}
+func (UnimplementedConformanceServiceServer) IdempotentUnary(context.Context, *IdempotentUnaryRequest) (*IdempotentUnaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IdempotentUnary not implemented")
 }
 func (UnimplementedConformanceServiceServer) mustEmbedUnimplementedConformanceServiceServer() {}
 
@@ -499,6 +514,24 @@ func _ConformanceService_Unimplemented_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConformanceService_IdempotentUnary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IdempotentUnaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConformanceServiceServer).IdempotentUnary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConformanceService_IdempotentUnary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConformanceServiceServer).IdempotentUnary(ctx, req.(*IdempotentUnaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ConformanceService_ServiceDesc is the grpc.ServiceDesc for ConformanceService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -513,6 +546,10 @@ var ConformanceService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Unimplemented",
 			Handler:    _ConformanceService_Unimplemented_Handler,
+		},
+		{
+			MethodName: "IdempotentUnary",
+			Handler:    _ConformanceService_IdempotentUnary_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
