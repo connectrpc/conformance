@@ -33,6 +33,19 @@ func AddHeaders(
 	}
 }
 
+// AddTrailers adds all header values in src to dest, but
+// it prefixes each header name with http.TrailerPrefix.
+func AddTrailers(
+	src []*v1.Header,
+	dest http.Header,
+) {
+	for _, header := range src {
+		for _, val := range header.Value {
+			dest.Add(http.TrailerPrefix+header.Name, val)
+		}
+	}
+}
+
 // ConvertToProtoHeader converts HTTP headers to a slice of proto Headers.
 func ConvertToProtoHeader(
 	src http.Header,
