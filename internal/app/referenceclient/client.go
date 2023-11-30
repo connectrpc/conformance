@@ -47,7 +47,7 @@ import (
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) (retErr error) {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0)), "the number of parallel RPCs to issue")
+	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0))*4, "the number of parallel RPCs to issue")
 	showVersion := flags.Bool("version", false, "show version and exit")
 
 	_ = flags.Parse(args[1:])

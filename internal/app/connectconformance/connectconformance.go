@@ -46,6 +46,7 @@ type Flags struct {
 	ClientCommand    []string
 	ServerCommand    []string
 	TestFile         string
+	MaxServers       uint
 	Parallelism      uint
 }
 
@@ -232,7 +233,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		err = func() error {
 			var wg sync.WaitGroup
 			defer wg.Wait()
-			sema := semaphore.NewWeighted(int64(flags.Parallelism))
+			sema := semaphore.NewWeighted(int64(flags.MaxServers))
 
 			for _, serverInfo := range servers {
 				for _, svrInstance := range svrInstances {
