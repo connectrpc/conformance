@@ -22,11 +22,15 @@ import (
 	"io"
 	"net"
 	"path/filepath"
+	"runtime"
 	"strconv"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
@@ -36,9 +40,10 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) error {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) (retErr error) {
 	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
+	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0)), "the number of parallel RPCs to issue")
 	showVersion := flags.Bool("version", false, "show version and exit")
 
 	_ = flags.Parse(args[1:])
@@ -49,10 +54,27 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 	if flags.NArg() != 0 {
 		return errors.New("this command does not accept any positional arguments")
 	}
+	if *parallel == 0 {
+		return errors.New("invalid parallelism; must be greater than zero")
+	}
 
 	codec := internal.NewCodec(*json)
 	decoder := codec.NewDecoder(inReader)
 	encoder := codec.NewEncoder(outWriter)
+	var encoderMu sync.Mutex
+
+	var failure atomic.Pointer[error]
+	defer func() {
+		// if we're about to return nil error, but a goroutine reported
+		// a failure, return that failure as the error
+		if errPtr := failure.Load(); errPtr != nil && retErr == nil {
+			retErr = *errPtr
+		}
+	}()
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+	sema := semaphore.NewWeighted(int64(*parallel))
 
 	for {
 		var req v1.ClientCompatRequest
@@ -63,31 +85,51 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 			}
 			return err
 		}
-		result, err := invoke(ctx, &req)
 
-		// Build the result for the out writer.
-		resp := &v1.ClientCompatResponse{
-			TestName: req.TestName,
-		}
-		// If an error was returned, it was a runtime / unexpected internal error so
-		// the written response should contain an error result, not a response with
-		// any RPC information
-		if err != nil {
-			resp.Result = &v1.ClientCompatResponse_Error{
-				Error: &v1.ClientErrorResult{
-					Message: err.Error(),
-				},
-			}
-		} else {
-			resp.Result = &v1.ClientCompatResponse_Response{
-				Response: result,
-			}
-		}
-
-		// Marshal the response and write the output
-		if err := encoder.Encode(resp); err != nil {
+		if err := sema.Acquire(ctx, 1); err != nil {
 			return err
 		}
+		if errPtr := failure.Load(); errPtr != nil {
+			// If there's already been a terminal failure, don't spawn
+			// anymore goroutines.
+			return *errPtr
+		}
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer sema.Release(1)
+
+			result, err := invoke(ctx, &req)
+
+			// Build the result for the out writer.
+			resp := &v1.ClientCompatResponse{
+				TestName: req.TestName,
+			}
+			// If an error was returned, it was a runtime / unexpected internal error so
+			// the written response should contain an error result, not a response with
+			// any RPC information
+			if err != nil {
+				resp.Result = &v1.ClientCompatResponse_Error{
+					Error: &v1.ClientErrorResult{
+						Message: err.Error(),
+					},
+				}
+			} else {
+				resp.Result = &v1.ClientCompatResponse_Response{
+					Response: result,
+				}
+			}
+
+			// Marshal the response and write the output
+			func() {
+				encoderMu.Lock()
+				defer encoderMu.Unlock()
+				if err := encoder.Encode(resp); err != nil {
+					failure.CompareAndSwap(nil, &err)
+				}
+			}()
+		}()
 	}
 }
 
