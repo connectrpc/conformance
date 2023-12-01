@@ -131,7 +131,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			for _, testCase := range testCaseLib.testCases {
 				testCaseSlice = append(testCaseSlice, testCase)
 			}
-			grpcTestCases := filterGRPCImplTestCases(testCaseSlice)
+			grpcTestCases := filterGRPCImplTestCases(testCaseSlice, useReferenceClient)
 			numPermutations += len(grpcTestCases)
 		}
 		_, _ = fmt.Fprintf(logOut, "Computed %d test case permutations across %d server configurations.\n", numPermutations, len(testCaseLib.casesByServer))
@@ -230,7 +230,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			for _, svrInstance := range svrInstances {
 				testCases := testCaseLib.casesByServer[svrInstance]
 				if clientInfo.isGrpcImpl || serverInfo.isGrpcImpl {
-					testCases = filterGRPCImplTestCases(testCases)
+					testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl)
 					if len(testCases) == 0 {
 						continue
 					}
@@ -308,17 +308,29 @@ type processInfo struct {
 	isGrpcImpl      bool
 }
 
-func filterGRPCImplTestCases(testCases []*conformancev1.TestCase) []*conformancev1.TestCase {
+func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPC bool) []*conformancev1.TestCase {
 	// The gRPC reference impl does not support everything that the main reference impl does. So
 	// we must filter away any test cases that aren't applicable to the gRPC impls.
 	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
 	for _, testCase := range testCases {
-		if testCase.Request.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
+		// Client only supports gRPC protocol. Server also supports gRPC-Web.
+		if clientIsGRPC && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
+			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
 			continue
 		}
-		if testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC {
+
+		if testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
+			// grpc-web supports HTTP/1 and HTTP/2
+			switch testCase.Request.HttpVersion {
+			case conformancev1.HTTPVersion_HTTP_VERSION_1, conformancev1.HTTPVersion_HTTP_VERSION_2:
+			default:
+				continue
+			}
+		} else if testCase.Request.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
+			// but grpc only supports HTTP/2
 			continue
 		}
+
 		if testCase.Request.Codec != conformancev1.Codec_CODEC_PROTO {
 			continue
 		}
@@ -326,9 +338,11 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase) []*conformance
 			testCase.Request.Compression != conformancev1.Compression_COMPRESSION_GZIP {
 			continue
 		}
+
 		if len(testCase.Request.ServerTlsCert) > 0 {
 			continue
 		}
+
 		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
 		// Insert a path in the test name to indicate that this is against the gRPC impl.
 		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
