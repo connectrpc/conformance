@@ -95,13 +95,14 @@ runconformance: runservertests runclienttests
 
 .PHONY: runservertests
 runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserver
-	$(BIN)/connectconformance --conf ./testdata/reference-impls-config.yaml --mode server $(BIN)/referenceserver
-	$(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode server $(BIN)/grpcserver
+	$(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode server -- $(BIN)/referenceserver
+	$(BIN)/connectconformance -v --conf ./testdata/grpc-impls-config.yaml --mode server -- $(BIN)/grpcserver
+	$(BIN)/connectconformance -v --conf ./testdata/grpc-web-server-impl-config.yaml --mode server -- $(BIN)/grpcserver
 
 .PHONY: runclienttests
 runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient
-	$(BIN)/connectconformance --conf ./testdata/reference-impls-config.yaml --mode client $(BIN)/referenceclient
-	$(BIN)/connectconformance --conf ./testdata/grpc-impls-config.yaml --mode client $(BIN)/grpcclient
+	$(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode client -- $(BIN)/referenceclient
+	$(BIN)/connectconformance -v --conf ./testdata/grpc-impls-config.yaml --mode client -- $(BIN)/grpcclient
 
 $(BIN)/connectconformance: Makefile generate
 	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/connectconformance/
