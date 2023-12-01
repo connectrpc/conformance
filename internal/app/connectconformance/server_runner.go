@@ -164,6 +164,8 @@ func runTestCasesForServer(
 			}
 		}
 
+		fmt.Printf("Sending from the server runner: %+v\n", req)
+
 		wg.Add(1)
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()

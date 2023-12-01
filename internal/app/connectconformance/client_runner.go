@@ -104,6 +104,8 @@ func (c *clientProcessRunner) sendRequest(req *conformancev1.ClientCompatRequest
 		return fmt.Errorf("%w: %q", errDuplicate, req.TestName)
 	}
 
+	fmt.Printf("Received from the server runner: %+v\n", req)
+
 	if err := internal.WriteDelimitedMessage(c.proc.stdin, req); err != nil {
 		// Since we eagerly added to pending set but failed to write,
 		// we now need to remove it to clean up.

@@ -15,6 +15,7 @@
 package connectconformance
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -22,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/protoyaml-go"
@@ -222,6 +224,7 @@ func serverInstanceForCase(testCase *conformancev1.TestCase) serverInstance {
 
 type unaryResponseDefiner interface {
 	GetResponseDefinition() *conformancev1.UnaryResponseDefinition
+	proto.Message
 }
 
 type streamResponseDefiner interface {
@@ -410,18 +413,38 @@ func hasRawResponse(reqs []*anypb.Any) bool {
 	return false
 }
 
+// returns the response definition from an Any representing a unary request
+func getUnaryResponseDefinition(
+	req *anypb.Any,
+	msg unaryResponseDefiner,
+) (*conformancev1.UnaryResponseDefinition, error) {
+	err := req.UnmarshalTo(msg)
+	if err != nil {
+		return nil, err
+	}
+	return msg.GetResponseDefinition(), nil
+}
+
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
+	fmt.Printf("Got in the test library: %+v\n", testCase.Request)
 	req := testCase.Request.RequestMessages[0]
-	// First, find the response definition that the client instructed the server to return
-	concreteReq, err := req.UnmarshalNew()
-	if err != nil {
-		return err
+	var msg unaryResponseDefiner
+
+	codec := internal.NewCodec(testCase.Request.Codec == conformancev1.Codec_CODEC_JSON)
+
+	switch req.TypeUrl {
+	case "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest":
+		msg = &conformancev1.IdempotentUnaryRequest{}
+	case "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest":
+		msg = &conformancev1.ClientStreamRequest{}
+	case "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest":
+		msg = &conformancev1.UnaryRequest{}
 	}
 
-	definer, ok := concreteReq.(unaryResponseDefiner)
-	if !ok {
-		return fmt.Errorf("%T is not a unary test case", concreteReq)
+	def, err := getUnaryResponseDefinition(req, msg)
+	if err != nil {
+		return err
 	}
 
 	reqInfo := &conformancev1.ConformancePayload_RequestInfo{
@@ -430,9 +453,36 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		TimeoutMs:      convertToInt64Ptr(testCase.Request.TimeoutMs),
 	}
 
-	// If no responses are specified for unary, the service will still return a response with the
-	// request information inside (but none of the response information since it wasn't provided).
-	def := definer.GetResponseDefinition()
+	// If this is a GET test, then the request should be marshalled to a JSON
+	// string and in the query params
+	if testCase.Request.UseGetHttpMethod {
+		reqAsBytes, err := codec.MarshalStable(msg)
+		if err != nil {
+			return err
+		}
+		if testCase.Request.Codec == conformancev1.Codec_CODEC_JSON {
+			reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
+				QueryParams: []*conformancev1.Header{
+					{
+						Name:  "message",
+						Value: []string{string(reqAsBytes)},
+					},
+				},
+			}
+		} else {
+			b := base64.RawURLEncoding.EncodeToString(reqAsBytes)
+
+			reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
+				QueryParams: []*conformancev1.Header{
+					{
+						Name:  "message",
+						Value: []string{b},
+					},
+				},
+			}
+		}
+	}
+
 	if def == nil {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
 			Payloads: []*conformancev1.ConformancePayload{

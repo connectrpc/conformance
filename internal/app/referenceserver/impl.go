@@ -53,15 +53,15 @@ func (s *conformanceServer) Unary(
 		return nil, err
 	}
 
-	payload, err := parseUnaryResponseDefinition(
+	payload, connectErr := parseUnaryResponseDefinition(
 		ctx,
 		req.Msg.ResponseDefinition,
 		req.Header(),
 		nil,
 		[]*anypb.Any{msgAsAny},
 	)
-	if err != nil {
-		return nil, err
+	if connectErr != nil {
+		return nil, connectErr
 	}
 
 	resp := connect.NewResponse(&v1.UnaryResponse{
@@ -91,15 +91,15 @@ func (s *conformanceServer) IdempotentUnary(
 	if err != nil {
 		return nil, err
 	}
-	payload, err := parseUnaryResponseDefinition(
+	payload, connectErr := parseUnaryResponseDefinition(
 		ctx,
 		req.Msg.ResponseDefinition,
 		req.Header(),
 		req.Peer().Query,
 		[]*anypb.Any{msgAsAny},
 	)
-	if err != nil {
-		return nil, err
+	if connectErr != nil {
+		return nil, connectErr
 	}
 
 	resp := connect.NewResponse(&v1.IdempotentUnaryResponse{

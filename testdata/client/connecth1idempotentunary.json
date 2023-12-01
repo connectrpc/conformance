@@ -5,6 +5,7 @@
   "codec": "CODEC_JSON",
   "host": "127.0.0.1",
   "port": 23456,
+  "compression": "COMPRESSION_ZSTD",
   "service": "connectrpc.conformance.v1.ConformanceService",
   "method": "IdempotentUnary",
   "streamType": "STREAM_TYPE_UNARY",

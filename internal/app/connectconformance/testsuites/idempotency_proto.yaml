@@ -1,10 +1,18 @@
-name: Basic
+name: Idempotency
+relevantProtocols:
+  - PROTOCOL_CONNECT
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_PROTO
 testCases:
 - request:
-    testName: idempotent unary success
+    testName: idempotent unary success proto
     service: connectrpc.conformance.v1.ConformanceService
     method: IdempotentUnary
     streamType: STREAM_TYPE_UNARY
+    codec: CODEC_PROTO
+    useGetHttpMethod: true
     requestHeaders:
     - name: X-Conformance-Test
       value: ["Value1","Value2"]
