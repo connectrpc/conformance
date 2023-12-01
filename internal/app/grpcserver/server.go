@@ -21,11 +21,16 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // enables GZIP compression w/ gRPC
 )
@@ -81,6 +86,22 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	}
 
 	// Finally, start the server
+	if req.Protocol == v1.Protocol_PROTOCOL_GRPC_WEB {
+		return runGRPCWebServer(ctx, server, listener)
+	}
+	return runGRPCServer(ctx, server, listener)
+}
+
+func createServer() (*grpc.Server, error) { //nolint:unparam
+	server := grpc.NewServer(
+		grpc.UnaryInterceptor(serverNameUnaryInterceptor),
+		grpc.StreamInterceptor(serverNameStreamInterceptor),
+	)
+	v1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
+	return server, nil
+}
+
+func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listener) error {
 	var serveError error
 	serveDone := make(chan struct{})
 	go func() {
@@ -96,11 +117,28 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	}
 }
 
-func createServer() (*grpc.Server, error) { //nolint:unparam
-	server := grpc.NewServer(
-		grpc.UnaryInterceptor(serverNameUnaryInterceptor),
-		grpc.StreamInterceptor(serverNameStreamInterceptor),
-	)
-	v1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
-	return server, nil
+func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Listener) error {
+	httpServer := http.Server{
+		Handler:           h2c.NewHandler(grpcweb.WrapServer(server), &http2.Server{}),
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	var serveError error
+	serveDone := make(chan struct{})
+	go func() {
+		defer close(serveDone)
+		serveError = httpServer.Serve(listener)
+	}()
+	select {
+	case <-serveDone:
+		return serveError
+	case <-ctx.Done():
+		shutdownContext, shutdownCancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer shutdownCancel()
+		//nolint:contextcheck // intentionally using context.Background since ctx is already done
+		if err := httpServer.Shutdown(shutdownContext); err != nil {
+			// Graceful shutdown took too long. Do it more forcefully.
+			_ = httpServer.Close()
+		}
+		return nil
+	}
 }

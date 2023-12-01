@@ -208,7 +208,16 @@ func (i *invoker) serverStream(
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
-		return nil, err
+		// If an error was returned, first convert it to a Connect error
+		// so that we can get the headers from the Meta property. Then,
+		// convert _that_ to a proto Error so we can set it in the response.
+		connectErr := internal.ConvertErrorToConnectError(err)
+		headers := internal.ConvertToProtoHeader(connectErr.Meta())
+		protoErr := internal.ConvertConnectToProtoError(connectErr)
+		return &v1.ClientResponseResult{
+			ResponseHeaders: headers,
+			Error:           protoErr,
+		}, nil
 	}
 	var protoErr *v1.Error
 	var headers []*v1.Header
@@ -234,7 +243,9 @@ func (i *invoker) serverStream(
 
 	err = stream.Close()
 	if err != nil {
-		return nil, err
+		if protoErr == nil {
+			protoErr = internal.ConvertErrorToProtoError(err)
+		}
 	}
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -301,7 +312,7 @@ func (i *invoker) clientStream(
 func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, retErr error) {
+) (result *v1.ClientResponseResult, _ error) {
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
@@ -322,11 +333,6 @@ func (i *invoker) bidiStream(
 
 	var protoErr *v1.Error
 	for _, msg := range req.RequestMessages {
-		if err := ctx.Err(); err != nil {
-			// If an error was returned, convert it to a proto Error
-			protoErr = internal.ConvertErrorToProtoError(err)
-			break
-		}
 		bsr := &v1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
