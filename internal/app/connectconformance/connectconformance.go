@@ -18,7 +18,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path"
 	"sort"
@@ -50,7 +49,7 @@ type Flags struct {
 	Parallelism      uint
 }
 
-func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
+func Run(flags *Flags, logPrinter internal.Printer) (bool, error) {
 	var configData []byte
 	if flags.ConfigFile != "" {
 		var err error
@@ -58,14 +57,14 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			return false, ensureFileName(err, flags.ConfigFile)
 		}
 	} else if flags.Verbose {
-		_, _ = fmt.Fprintf(logOut, "No config file provided. Using defaults.\n")
+		logPrinter.Printf("No config file provided. Using defaults.")
 	}
 	configCases, err := parseConfig(flags.ConfigFile, configData)
 	if err != nil {
 		return false, err
 	}
 	if flags.Verbose {
-		_, _ = fmt.Fprintf(logOut, "Computed %d config case permutations.\n", len(configCases))
+		logPrinter.Printf("Computed %d config case permutations.", len(configCases))
 	}
 
 	var knownFailingData []byte
@@ -80,7 +79,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		return false, err
 	}
 	if flags.Verbose {
-		_, _ = fmt.Fprintf(logOut, "Loaded %d known failing test cases/patterns.\n", knownFailing.length())
+		logPrinter.Printf("Loaded %d known failing test cases/patterns.", knownFailing.length())
 	}
 
 	var testSuiteData map[string][]byte
@@ -99,47 +98,51 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 	if err != nil {
 		return false, fmt.Errorf("embedded test suite: %w", err)
 	}
-
 	if flags.Verbose {
 		var numCases int
 		for _, suite := range allSuites {
 			numCases += len(suite.TestCases)
 		}
-		_, _ = fmt.Fprintf(logOut, "Loaded %d test suites, %d test case templates.\n", len(allSuites), numCases)
+		logPrinter.Printf("Loaded %d test suites, %d test case templates.", len(allSuites), numCases)
 	}
+
+	results, err := run(configCases, knownFailing, allSuites, logPrinter, flags)
+	if err != nil {
+		return false, err
+	}
+	return results.report(logPrinter), nil
+}
+
+func run(
+	configCases []configCase,
+	knownFailing *knownFailingTrie,
+	allSuites map[string]*conformancev1.TestSuite,
+	logPrinter internal.Printer,
+	flags *Flags,
+) (*testResults, error) {
 	mode := conformancev1.TestSuite_TEST_MODE_UNSPECIFIED
-	var useReferenceClient, useReferenceServer bool
+	useReferenceClient := len(flags.ClientCommand) == 0
+	useReferenceServer := len(flags.ServerCommand) == 0
 	switch {
-	case len(flags.ClientCommand) > 0 && len(flags.ServerCommand) == 0:
-		// Client mode uses a reference server to test a client
+	case useReferenceServer && !useReferenceClient:
+		// Client mode uses a reference server to test a given client
 		mode = conformancev1.TestSuite_TEST_MODE_CLIENT
-		useReferenceServer = true
-	case len(flags.ClientCommand) == 0 && len(flags.ServerCommand) > 0:
-		// Server mode uses a reference client to test a server
+	case useReferenceClient && !useReferenceServer:
+		// Server mode uses a reference client to test a given server
 		mode = conformancev1.TestSuite_TEST_MODE_SERVER
-		useReferenceClient = true
 	default:
-		// Otherwise, no reference server or client is used, so
-		// leave mode as "unspecified" (so we'll include neither
-		// client-specific nor server-specific cases).
+		// Otherwise, leave mode as "unspecified" so we'll include
+		// neither client-specific nor server-specific cases.
 	}
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, mode)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 	svrInstances := serverInstancesSlice(testCaseLib, flags.Verbose)
 	if flags.Verbose {
 		numPermutations := len(testCaseLib.testCases)
-		if useReferenceClient || useReferenceServer {
-			// Count permutations used against grpc-go reference impl.
-			testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCaseLib.testCases))
-			for _, testCase := range testCaseLib.testCases {
-				testCaseSlice = append(testCaseSlice, testCase)
-			}
-			grpcTestCases := filterGRPCImplTestCases(testCaseSlice, useReferenceClient)
-			numPermutations += len(grpcTestCases)
-		}
-		_, _ = fmt.Fprintf(logOut, "Computed %d test case permutations across %d server configurations.\n", numPermutations, len(testCaseLib.casesByServer))
+		numPermutations += countGRPCImplTestCases(testCaseLib.testCases, useReferenceClient, useReferenceServer)
+		logPrinter.Printf("Computed %d test case permutations across %d server configurations.", numPermutations, len(testCaseLib.casesByServer))
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
@@ -155,7 +158,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			unmatchedSlice = append(unmatchedSlice, name)
 		}
 		sort.Strings(unmatchedSlice)
-		return false, fmt.Errorf("file %s contains unmatched and possibly invalid patterns:\n%v",
+		return nil, fmt.Errorf("file %s contains unmatched and possibly invalid patterns:\n%v",
 			flags.KnownFailingFile, strings.Join(unmatchedSlice, "\n"))
 	}
 
@@ -164,7 +167,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		if svrInstance.useTLSClientCerts {
 			clientCertBytes, clientKeyBytes, err := internal.NewClientCert()
 			if err != nil {
-				return false, fmt.Errorf("failed to generate client certificate: %w", err)
+				return nil, fmt.Errorf("failed to generate client certificate: %w", err)
 			}
 			clientCreds = &conformancev1.ClientCompatRequest_TLSCreds{
 				Cert: clientCertBytes,
@@ -204,7 +207,7 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 	for _, clientInfo := range clients {
 		clientProcess, err := runClient(ctx, clientInfo.start)
 		if err != nil {
-			return false, fmt.Errorf("error starting client: %w", err)
+			return nil, fmt.Errorf("error starting client: %w", err)
 		}
 		defer clientProcess.stop()
 
@@ -238,11 +241,9 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			for _, serverInfo := range servers {
 				for _, svrInstance := range svrInstances {
 					testCases := testCaseLib.casesByServer[svrInstance]
-					if clientInfo.isGrpcImpl || serverInfo.isGrpcImpl {
-						testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl)
-						if len(testCases) == 0 {
-							continue
-						}
+					testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl, serverInfo.isGrpcImpl)
+					if len(testCases) == 0 {
+						continue
 					}
 
 					if err := sema.Acquire(ctx, 1); err != nil {
@@ -250,11 +251,16 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 					}
 
 					if flags.Verbose {
-						with := serverInfo.name
-						if with == "" {
+						var with string
+						switch {
+						case clientInfo.name != "" && serverInfo.name != "":
+							with = clientInfo.name + " and " + serverInfo.name
+						case clientInfo.name != "":
 							with = clientInfo.name
+						case serverInfo.name != "":
+							with = serverInfo.name
 						}
-						logTestCaseInfo(with, svrInstance, len(testCases), logOut)
+						logTestCaseInfo(with, svrInstance, len(testCases), logPrinter)
 					}
 
 					// Double-check that client is still running before spawning a server process.
@@ -280,16 +286,16 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		}()
 
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 
 		clientProcess.closeSend()
 		if err := clientProcess.waitForResponses(); err != nil {
-			return false, err
+			return nil, err
 		}
 	}
 
-	return results.report(logOut)
+	return results, nil
 }
 
 func serverInstancesSlice(testCaseLib *testCaseLibrary, sorted bool) []serverInstance {
@@ -315,7 +321,7 @@ func serverInstancesSlice(testCaseLib *testCaseLibrary, sorted bool) []serverIns
 	return svrInstances
 }
 
-func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logOut io.Writer) {
+func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logPrinter internal.Printer) {
 	var tlsMode string
 	switch {
 	case !svrInstance.useTLS:
@@ -325,7 +331,7 @@ func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logO
 	default:
 		tlsMode = "true"
 	}
-	_, _ = fmt.Fprintf(logOut, "Running %d tests with %s for server config {%s, %s, TLS:%s}...\n",
+	logPrinter.Printf("Running %d tests with %s for server config {%s, %s, TLS:%s}...",
 		numCases, with, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
 }
 
@@ -336,13 +342,18 @@ type processInfo struct {
 	isGrpcImpl      bool
 }
 
-func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPC bool) []*conformancev1.TestCase {
-	// The gRPC reference impl does not support everything that the main reference impl does. So
-	// we must filter away any test cases that aren't applicable to the gRPC impls.
+func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
+	if !clientIsGRPCImpl && !serverIsGRPCImpl {
+		return testCases
+	}
+
+	// The gRPC reference impls do not support everything that the main reference impls do.
+	// So we must filter away any test cases that aren't applicable to the gRPC impls.
+
 	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
 	for _, testCase := range testCases {
 		// Client only supports gRPC protocol. Server also supports gRPC-Web.
-		if clientIsGRPC && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
+		if clientIsGRPCImpl && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
 			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
 			continue
 		}
@@ -374,8 +385,38 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPC b
 		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
 		// Insert a path in the test name to indicate that this is against the gRPC impl.
 		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
-		filteredCase.Request.TestName = path.Join(dir, "(grpc impl)", base)
+		var elem string
+		switch {
+		case clientIsGRPCImpl && serverIsGRPCImpl:
+			elem = "(grpc impls)"
+		case clientIsGRPCImpl:
+			elem = "(grpc client impl)"
+		case serverIsGRPCImpl:
+			elem = "(grpc server impl)"
+		}
+		filteredCase.Request.TestName = path.Join(dir, elem, base)
 		filtered = append(filtered, filteredCase)
 	}
 	return filtered
+}
+
+func countGRPCImplTestCases(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) int {
+	if !clientIsGRPCImpl && !serverIsGRPCImpl {
+		return 0
+	}
+	testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCases))
+	for _, testCase := range testCases {
+		testCaseSlice = append(testCaseSlice, testCase)
+	}
+	var numCases int
+	if clientIsGRPCImpl {
+		numCases += len(filterGRPCImplTestCases(testCaseSlice, true, false))
+	}
+	if serverIsGRPCImpl {
+		numCases += len(filterGRPCImplTestCases(testCaseSlice, false, true))
+	}
+	if clientIsGRPCImpl && serverIsGRPCImpl {
+		numCases += len(filterGRPCImplTestCases(testCaseSlice, true, true))
+	}
+	return numCases
 }

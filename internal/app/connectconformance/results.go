@@ -18,13 +18,13 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"reflect"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
+	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
@@ -182,7 +182,7 @@ func (r *testResults) processSidebandInfoLocked() {
 	}
 }
 
-func (r *testResults) report(writer io.Writer) (bool, error) {
+func (r *testResults) report(printer internal.Printer) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(r.serverSideband) > 0 {
@@ -198,42 +198,29 @@ func (r *testResults) report(writer io.Writer) (bool, error) {
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
 		expectError := outcome.knownFailing && !outcome.setupError
-		var err error
 		switch {
 		case !expectError && outcome.actualFailure != nil:
-			_, err = fmt.Fprintf(writer, "FAILED: %s: %v\n", name, outcome.actualFailure)
+			printer.Printf("FAILED: %s: %v", name, outcome.actualFailure)
 			failed++
 		case expectError && outcome.actualFailure == nil:
-			_, err = fmt.Fprintf(writer, "FAILED: %s was expected to fail but did not\n", name)
+			printer.Printf("FAILED: %s was expected to fail but did not", name)
 			failed++
 		case expectError && outcome.actualFailure != nil:
-			_, err = fmt.Fprintf(writer, "INFO: %s failed (as expected): %v\n", name, outcome.actualFailure)
+			printer.Printf("INFO: %s failed (as expected): %v", name, outcome.actualFailure)
 			expectedFailures++
 		default:
 			succeeded++
 		}
-		if err != nil {
-			return false, err
-		}
 	}
 	if failed+expectedFailures > 0 {
 		// Add a blank line to separate summary from messages above
-		_, err := writer.Write([]byte{'\n'})
-		if err != nil {
-			return false, err
-		}
+		printer.Printf("\n")
 	}
-	_, err := fmt.Fprintf(writer, "Total cases: %d\n%d passed, %d failed\n", len(r.outcomes), succeeded, failed)
-	if err != nil {
-		return false, err
-	}
+	printer.Printf("Total cases: %d\n%d passed, %d failed", len(r.outcomes), succeeded, failed)
 	if expectedFailures > 0 {
-		_, err := fmt.Fprintf(writer, "(%d failed as expected due to being known failures.)\n", expectedFailures)
-		if err != nil {
-			return false, err
-		}
+		printer.Printf("(%d failed as expected due to being known failures.)", expectedFailures)
 	}
-	return failed == 0, nil
+	return failed == 0
 }
 
 type testOutcome struct {

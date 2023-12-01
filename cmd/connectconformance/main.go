@@ -186,7 +186,7 @@ func run(flags *flags, command []string) {
 			MaxServers:       flags.maxServers,
 			Parallelism:      flags.parallel,
 		},
-		os.Stdout,
+		internal.NewPrinter(os.Stdout),
 	)
 	if err != nil {
 		fatal("%s", err)

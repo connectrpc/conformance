@@ -15,13 +15,12 @@
 package referenceserver
 
 import (
-	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -41,7 +40,7 @@ const (
 	codecText  = "text"
 )
 
-func referenceServerChecks(handler http.Handler, errWriter io.Writer) http.HandlerFunc {
+func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
 	return func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
 		if testCaseName == "" {
@@ -51,7 +50,7 @@ func referenceServerChecks(handler http.Handler, errWriter io.Writer) http.Handl
 			return
 		}
 
-		feedback := &feedbackWriter{w: errWriter, testCaseName: testCaseName}
+		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
 
 		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, v1.HTTPVersion(0), feedback); ok {
 			checkHTTPVersion(httpVersion, req, feedback)
@@ -81,7 +80,7 @@ type int32Enum interface {
 	protoreflect.Enum
 }
 
-func enumValue[E int32Enum](headerName string, headers http.Header, zero E, feedback *feedbackWriter) (E, bool) {
+func enumValue[E int32Enum](headerName string, headers http.Header, zero E, feedback *feedbackPrinter) (E, bool) {
 	val, _ := getHeader(headers, headerName, feedback)
 	intVal, err := strconv.ParseInt(val, 10, 32)
 	if err != nil {
@@ -95,7 +94,7 @@ func enumValue[E int32Enum](headerName string, headers http.Header, zero E, feed
 	return E(int32(intVal)), true
 }
 
-func checkHTTPVersion(expected v1.HTTPVersion, req *http.Request, feedback *feedbackWriter) {
+func checkHTTPVersion(expected v1.HTTPVersion, req *http.Request, feedback *feedbackPrinter) {
 	var expectVersion int
 	switch expected {
 	case v1.HTTPVersion_HTTP_VERSION_1:
@@ -113,7 +112,7 @@ func checkHTTPVersion(expected v1.HTTPVersion, req *http.Request, feedback *feed
 	}
 }
 
-func checkProtocol(expected v1.Protocol, req *http.Request, feedback *feedbackWriter) {
+func checkProtocol(expected v1.Protocol, req *http.Request, feedback *feedbackPrinter) {
 	var actual v1.Protocol
 	contentType := req.Header.Get("content-type")
 	switch {
@@ -132,7 +131,7 @@ func checkProtocol(expected v1.Protocol, req *http.Request, feedback *feedbackWr
 	}
 }
 
-func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackWriter) {
+func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackPrinter) {
 	var expect string
 	switch expected {
 	case v1.Codec_CODEC_PROTO:
@@ -177,7 +176,7 @@ func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackWriter) 
 	}
 }
 
-func checkCompression(expected v1.Compression, req *http.Request, feedback *feedbackWriter) {
+func checkCompression(expected v1.Compression, req *http.Request, feedback *feedbackPrinter) {
 	var expect string
 	switch expected {
 	case v1.Compression_COMPRESSION_IDENTITY:
@@ -228,7 +227,7 @@ func checkCompression(expected v1.Compression, req *http.Request, feedback *feed
 	}
 }
 
-func checkTLS(req *http.Request, feedback *feedbackWriter) {
+func checkTLS(req *http.Request, feedback *feedbackPrinter) {
 	tlsHeaderVal, _ := getHeader(req.Header, "x-expect-tls", feedback)
 	expectTLS, err := strconv.ParseBool(tlsHeaderVal)
 	if err != nil {
@@ -255,7 +254,7 @@ func checkTLS(req *http.Request, feedback *feedbackWriter) {
 	}
 }
 
-func getHeader(headers http.Header, headerName string, feedback *feedbackWriter) (string, bool) {
+func getHeader(headers http.Header, headerName string, feedback *feedbackPrinter) (string, bool) {
 	headerVals := headers.Values(headerName)
 	if len(headerVals) > 1 {
 		feedback.Printf("%s header appears %d times; should appear just once", headerName, len(headerVals))
@@ -263,7 +262,7 @@ func getHeader(headers http.Header, headerName string, feedback *feedbackWriter)
 	return headers.Get(headerName), len(headerVals) > 0
 }
 
-func getQueryParam(values url.Values, paramName string, feedback *feedbackWriter) (string, bool) {
+func getQueryParam(values url.Values, paramName string, feedback *feedbackPrinter) (string, bool) {
 	paramVals := values[paramName]
 	if len(paramVals) > 1 {
 		feedback.Printf("%s query string param appears %d times; should appear just once", paramName, len(paramVals))
@@ -271,15 +270,11 @@ func getQueryParam(values url.Values, paramName string, feedback *feedbackWriter
 	return values.Get(paramName), len(paramVals) > 0
 }
 
-type feedbackWriter struct {
-	w            io.Writer
+type feedbackPrinter struct {
+	p            internal.Printer
 	testCaseName string
 }
 
-func (w *feedbackWriter) Printf(format string, args ...any) {
-	msg := fmt.Sprintf(format, args...)
-	if !strings.HasSuffix(msg, "\n") {
-		msg += "\n"
-	}
-	_, _ = fmt.Fprintf(w.w, "%s: %s", w.testCaseName, msg)
+func (p *feedbackPrinter) Printf(format string, args ...any) {
+	p.p.PrefixPrintf(p.testCaseName, format, args...)
 }
