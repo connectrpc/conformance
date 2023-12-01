@@ -164,8 +164,6 @@ func runTestCasesForServer(
 			}
 		}
 
-		fmt.Printf("Sending from the server runner: %+v\n", req)
-
 		wg.Add(1)
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()
@@ -175,7 +173,7 @@ func runTestCasesForServer(
 			case resp.GetError() != nil:
 				results.failed(name, resp.GetError())
 			default:
-				results.assert(name, expectations[resp.TestName], resp.GetResponse())
+				results.assert(name, expectations[resp.TestName], resp.GetResponse(), req)
 			}
 			if isReferenceClient && resp != nil {
 				for _, msg := range resp.Feedback {

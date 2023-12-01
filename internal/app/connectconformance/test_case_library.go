@@ -427,11 +427,8 @@ func getUnaryResponseDefinition(
 
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
-	fmt.Printf("Got in the test library: %+v\n", testCase.Request)
 	req := testCase.Request.RequestMessages[0]
 	var msg unaryResponseDefiner
-
-	codec := internal.NewCodec(testCase.Request.Codec == conformancev1.Codec_CODEC_JSON)
 
 	switch req.TypeUrl {
 	case "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest":
@@ -453,33 +450,27 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		TimeoutMs:      convertToInt64Ptr(testCase.Request.TimeoutMs),
 	}
 
-	// If this is a GET test, then the request should be marshalled to a JSON
-	// string and in the query params
+	// If this is a GET test, then the request should be marshalled and in the query params
 	if testCase.Request.UseGetHttpMethod {
+		// Build a codec based on what is used in the request
+		codec := internal.NewCodec(testCase.Request.Codec == conformancev1.Codec_CODEC_JSON)
 		reqAsBytes, err := codec.MarshalStable(msg)
 		if err != nil {
 			return err
 		}
+		var value string
 		if testCase.Request.Codec == conformancev1.Codec_CODEC_JSON {
-			reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
-				QueryParams: []*conformancev1.Header{
-					{
-						Name:  "message",
-						Value: []string{string(reqAsBytes)},
-					},
-				},
-			}
+			value = string(reqAsBytes)
 		} else {
-			b := base64.RawURLEncoding.EncodeToString(reqAsBytes)
-
-			reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
-				QueryParams: []*conformancev1.Header{
-					{
-						Name:  "message",
-						Value: []string{b},
-					},
+			value = string(base64.RawURLEncoding.EncodeToString(reqAsBytes))
+		}
+		reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
+			QueryParams: []*conformancev1.Header{
+				{
+					Name:  "message",
+					Value: []string{value},
 				},
-			}
+			},
 		}
 	}
 
