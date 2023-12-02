@@ -46,24 +46,20 @@ func AddTrailers(
 	}
 }
 
-// ConvertToProtoHeader converts HTTP headers to a slice of proto Headers.
-func ConvertToProtoHeader(
-	src http.Header,
-) []*v1.Header {
-	headerInfo := make([]*v1.Header, 0, len(src))
-	for key, value := range src {
-		hdr := &v1.Header{
-			Name:  key,
-			Value: value,
-		}
-		headerInfo = append(headerInfo, hdr)
-	}
-	return headerInfo
+// ConvertHTTPHeaderToProtoHeader converts HTTP headers to a slice of proto Headers.
+func ConvertHTTPHeaderToProtoHeader(src http.Header) []*v1.Header {
+	return convertToProtoHeader(src)
 }
 
-// ConvertQueryToProtoHeader converts HTTP headers to a slice of proto Headers.
-func ConvertQueryToProtoHeader(
+// ConvertQueryParamToProtoHeader converts query parameters to a slice of proto Headers.
+func ConvertQueryParamToProtoHeader(
 	src url.Values,
+) []*v1.Header {
+	return convertToProtoHeader(src)
+}
+
+func convertToProtoHeader(
+	src map[string][]string,
 ) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {

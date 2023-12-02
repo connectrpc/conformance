@@ -420,11 +420,11 @@ func createRequestInfo(
 	queryParams url.Values,
 	reqs []*anypb.Any,
 ) *v1.ConformancePayload_RequestInfo {
-	headerInfo := internal.ConvertToProtoHeader(headers)
+	headerInfo := internal.ConvertHTTPHeaderToProtoHeader(headers)
 
 	var connectGetInfo *v1.ConformancePayload_ConnectGetInfo
 	if len(queryParams) > 0 {
-		queryParamInfo := internal.ConvertQueryToProtoHeader(queryParams)
+		queryParamInfo := internal.ConvertQueryParamToProtoHeader(queryParams)
 
 		connectGetInfo = &v1.ConformancePayload_ConnectGetInfo{
 			QueryParams: queryParamInfo,
