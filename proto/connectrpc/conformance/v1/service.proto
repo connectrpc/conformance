@@ -124,8 +124,9 @@ service ConformanceService {
   // A unary endpoint that the server should not implement and should instead
   // return an unimplemented error when invoked.
   rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse);
-
-
+  // A unary endpoint denoted as having no side effects (i.e. idempotent).
+  // Implementations should use an HTTP GET when invoking this endpoint and
+  // leverage query parameters to send data.
   rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse) {
     option idempotency_level = NO_SIDE_EFFECTS;
   }

@@ -161,6 +161,9 @@ type ConformanceServiceClient interface {
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
 	Unimplemented(context.Context, *connect.Request[v1.UnimplementedRequest]) (*connect.Response[v1.UnimplementedResponse], error)
+	// A unary endpoint denoted as having no side effects (i.e. idempotent).
+	// Implementations should use an HTTP GET when invoking this endpoint and
+	// leverage query parameters to send data.
 	IdempotentUnary(context.Context, *connect.Request[v1.IdempotentUnaryRequest]) (*connect.Response[v1.IdempotentUnaryResponse], error)
 }
 
@@ -343,6 +346,9 @@ type ConformanceServiceHandler interface {
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
 	Unimplemented(context.Context, *connect.Request[v1.UnimplementedRequest]) (*connect.Response[v1.UnimplementedResponse], error)
+	// A unary endpoint denoted as having no side effects (i.e. idempotent).
+	// Implementations should use an HTTP GET when invoking this endpoint and
+	// leverage query parameters to send data.
 	IdempotentUnary(context.Context, *connect.Request[v1.IdempotentUnaryRequest]) (*connect.Response[v1.IdempotentUnaryResponse], error)
 }
 

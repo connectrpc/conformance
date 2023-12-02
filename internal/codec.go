@@ -116,8 +116,8 @@ func (j *jsonEncoder) Encode(msg proto.Message) error {
 // to stably marshal a request message into JSON for putting into query params
 // of GET requests.
 // See https://github.com/connectrpc/connect-go/blob/main/codec.go
-func (j *jsonCodec) MarshalStable(msg proto.Message) ([]byte, error) {
-	messageJSON, err := j.Marshal(msg)
+func (c *jsonCodec) MarshalStable(msg proto.Message) ([]byte, error) {
+	messageJSON, err := c.Marshal(msg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal message to JSON: %w", err)
 	}

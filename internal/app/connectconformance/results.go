@@ -107,7 +107,7 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 
 // assert will examine the actual and expected RPC result and mark the test
 // case as successful or failed accordingly.
-func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult, req *conformancev1.ClientCompatRequest) {
+func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
 	var errs multiErrors
 
 	// TODO - This check is for trailers-only and should really only apply to gRPC and gRPC-Web protocols.
@@ -392,7 +392,6 @@ func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_Request
 			errs = append(errs, fmt.Errorf("request #%d: did not survive round-trip: - wanted, + got\n%s", reqNum, diff))
 		}
 	}
-
 	return errs
 }
 

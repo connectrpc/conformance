@@ -1,5 +1,5 @@
 {
-  "testName": "Unary Happy Path",
+  "testName": "Idempotent Unary Happy Path",
   "httpVersion": "HTTP_VERSION_1",
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",

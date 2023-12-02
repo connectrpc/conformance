@@ -173,7 +173,7 @@ func runTestCasesForServer(
 			case resp.GetError() != nil:
 				results.failed(name, resp.GetError())
 			default:
-				results.assert(name, expectations[resp.TestName], resp.GetResponse(), req)
+				results.assert(name, expectations[resp.TestName], resp.GetResponse())
 			}
 			if isReferenceClient && resp != nil {
 				for _, msg := range resp.Feedback {

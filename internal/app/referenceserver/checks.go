@@ -15,6 +15,7 @@
 package referenceserver
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -152,7 +153,7 @@ func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackWriter) 
 		// Servers should test for an empty request body by attempting a read.
 		// If no body is present, it should return an immediate EOF.
 		_, err := req.Body.Read([]byte{})
-		if err != io.EOF {
+		if !errors.Is(err, io.EOF) {
 			feedback.Printf("GET methods should not have a request body")
 		}
 		var hasActual bool
