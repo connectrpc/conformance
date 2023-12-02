@@ -2,8 +2,13 @@ name: Idempotency
 relevantProtocols:
   - PROTOCOL_CONNECT
 relevantCompressions:
+  # TODO - Clients only use compression for GET requests if the request is
+  # larger than a particular size. So since we aren't sending a request here
+  # that exceeds that, our requests won't use compression even if we specify
+  # it. So, we're limiting this test to identity
   - COMPRESSION_IDENTITY
 relevantCodecs:
+  - CODEC_JSON
   - CODEC_PROTO
 testCases:
 - request:
@@ -11,7 +16,6 @@ testCases:
     service: connectrpc.conformance.v1.ConformanceService
     method: IdempotentUnary
     streamType: STREAM_TYPE_UNARY
-    codec: CODEC_PROTO
     useGetHttpMethod: true
     requestHeaders:
     - name: X-Conformance-Test

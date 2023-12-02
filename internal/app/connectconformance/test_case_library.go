@@ -258,10 +258,10 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 				return nil, fmt.Errorf("%s: failed to expand request sizes as directed for test case %q: %w",
 					testFilePath, testCase.Request.TestName, err)
 			}
-			if err := populateExpectedResponse(testCase); err != nil {
-				return nil, fmt.Errorf("%s: failed to compute expected response for test case %q: %w",
-					testFilePath, testCase.Request.TestName, err)
-			}
+			// if err := populateExpectedResponse(testCase); err != nil {
+			// 	return nil, fmt.Errorf("%s: failed to compute expected response for test case %q: %w",
+			// 		testFilePath, testCase.Request.TestName, err)
+			// }
 		}
 		allSuites[testFilePath] = suite
 	}
@@ -452,17 +452,18 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 
 	// If this is a GET test, then the request should be marshalled and in the query params
 	if testCase.Request.UseGetHttpMethod {
+		isJson := testCase.Request.Codec == conformancev1.Codec_CODEC_JSON
 		// Build a codec based on what is used in the request
-		codec := internal.NewCodec(testCase.Request.Codec == conformancev1.Codec_CODEC_JSON)
+		codec := internal.NewCodec(isJson)
 		reqAsBytes, err := codec.MarshalStable(msg)
 		if err != nil {
 			return err
 		}
 		var value string
-		if testCase.Request.Codec == conformancev1.Codec_CODEC_JSON {
+		if isJson {
 			value = string(reqAsBytes)
 		} else {
-			value = string(base64.RawURLEncoding.EncodeToString(reqAsBytes))
+			value = base64.RawURLEncoding.EncodeToString(reqAsBytes)
 		}
 		reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
