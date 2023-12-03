@@ -1,5 +1,5 @@
 {
-  "testName": "Idempotent Unary Happy Path",
+  "testName": "Idempotent Unary Error",
   "httpVersion": "HTTP_VERSION_1",
   "protocol": "PROTOCOL_CONNECT",
   "codec": "CODEC_JSON",
@@ -32,7 +32,10 @@
             ]
           }
         ],
-        "responseData": "dGVzdCByZXNwb25zZQ==",
+        "error": {
+          "code": 13,
+          "message": "unary failed"
+        },
         "responseTrailers": [
           {
             "name": "x-custom-trailer",

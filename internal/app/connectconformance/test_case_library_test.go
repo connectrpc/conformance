@@ -901,6 +901,44 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	idempotentUnaryErrorJsonReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{unaryErrorReq},
+		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+			QueryParams: []*conformancev1.Header{
+				{
+					Name: "message",
+					// unaryErrorReq marshaled as json
+					Value: []string{"{\"responseDefinition\":{\"responseHeaders\":[{\"name\":\"fooHeader\",\"value\":[\"fooHeaderVal\"]},{\"name\":\"barHeader\",\"value\":[\"barHeaderVal1\",\"barHeaderVal2\"]}],\"error\":{\"code\":8,\"message\":\"all resources exhausted\"},\"responseTrailers\":[{\"name\":\"fooTrailer\",\"value\":[\"fooTrailerVal\"]},{\"name\":\"barTrailer\",\"value\":[\"barTrailerVal1\",\"barTrailerVal2\"]}]}}"},
+				},
+				{
+					Name:  "encoding",
+					Value: []string{"json"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	idempotentUnaryErrorProtoReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{unaryErrorReq},
+		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+			QueryParams: []*conformancev1.Header{
+				{
+					Name: "message",
+					// unaryErrorReq marshaled and base64 encoded
+					Value: []string{"Cq4BChkKCWZvb0hlYWRlchIMZm9vSGVhZGVyVmFsCikKCWJhckhlYWRlchINYmFySGVhZGVyVmFsMRINYmFySGVhZGVyVmFsMiIbCgpmb29UcmFpbGVyEg1mb29UcmFpbGVyVmFsIiwKCmJhclRyYWlsZXISDmJhclRyYWlsZXJWYWwxEg5iYXJUcmFpbGVyVmFsMhobCAgSF2FsbCByZXNvdXJjZXMgZXhoYXVzdGVk"},
+				},
+				{
+					Name:  "encoding",
+					Value: []string{"proto"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
 	unaryErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{unaryErrorDetailsReq},
@@ -1040,6 +1078,114 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						},
 					},
 				},
+			},
+		},
+		{
+			testName: "idempotent unary with json success",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unarySuccessReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_JSON,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unarySuccessReq},
+							ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+								QueryParams: []*conformancev1.Header{
+									{
+										Name:  "message",
+										Value: []string{"{\"responseDefinition\":{\"responseHeaders\":[{\"name\":\"fooHeader\",\"value\":[\"fooHeaderVal\"]},{\"name\":\"barHeader\",\"value\":[\"barHeaderVal1\",\"barHeaderVal2\"]}],\"responseData\":\"ZGF0YTE=\",\"responseTrailers\":[{\"name\":\"fooTrailer\",\"value\":[\"fooTrailerVal\"]},{\"name\":\"barTrailer\",\"value\":[\"barTrailerVal1\",\"barTrailerVal2\"]}]}}"},
+									},
+									{
+										Name:  "encoding",
+										Value: []string{"json"},
+									},
+								},
+							},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "idempotent unary with proto success",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unarySuccessReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_PROTO,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unarySuccessReq},
+							ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+								QueryParams: []*conformancev1.Header{
+									{
+										Name:  "message",
+										Value: []string{"CpgBChkKCWZvb0hlYWRlchIMZm9vSGVhZGVyVmFsCikKCWJhckhlYWRlchINYmFySGVhZGVyVmFsMRINYmFySGVhZGVyVmFsMiIbCgpmb29UcmFpbGVyEg1mb29UcmFpbGVyVmFsIiwKCmJhclRyYWlsZXISDmJhclRyYWlsZXJWYWwxEg5iYXJUcmFpbGVyVmFsMhIFZGF0YTE"},
+									},
+									{
+										Name:  "encoding",
+										Value: []string{"proto"},
+									},
+								},
+							},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "idempotent unary with json error",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unaryErrorReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_JSON,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{idempotentUnaryErrorJsonReqInfo},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "idempotent unary with proto error",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unaryErrorReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_PROTO,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{idempotentUnaryErrorProtoReqInfo},
+				},
+				ResponseTrailers: responseTrailers,
 			},
 		},
 		{

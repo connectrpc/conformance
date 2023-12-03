@@ -456,17 +456,32 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 			return err
 		}
 		var value string
+		var encoding string
 		if isJSON {
 			value = string(reqAsBytes)
+			encoding = "json"
 		} else {
 			value = base64.RawURLEncoding.EncodeToString(reqAsBytes)
+			encoding = "proto"
 		}
+		fmt.Println(value)
+		fmt.Println(string(value))
 		reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
 				{
 					Name:  "message",
 					Value: []string{value},
 				},
+				{
+					Name:  "encoding",
+					Value: []string{encoding},
+				},
+				// TODO: How should we verify the connect version parameter?
+				// Match the name "connect" and a value that is v + some number?
+				// {
+				// 	Name:  "connect",
+				// 	Value: []string{"v1"},
+				// },
 			},
 		}
 	}
