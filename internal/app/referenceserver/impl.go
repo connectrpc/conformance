@@ -52,7 +52,6 @@ func (s *conformanceServer) Unary(
 	if err != nil {
 		return nil, err
 	}
-
 	payload, connectErr := parseUnaryResponseDefinition(
 		ctx,
 		req.Msg.ResponseDefinition,

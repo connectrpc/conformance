@@ -464,8 +464,6 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 			value = base64.RawURLEncoding.EncodeToString(reqAsBytes)
 			encoding = "proto"
 		}
-		fmt.Println(value)
-		fmt.Println(string(value))
 		reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
 				{

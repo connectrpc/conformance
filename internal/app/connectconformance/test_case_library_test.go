@@ -901,7 +901,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	idempotentUnaryErrorJsonReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+	idempotentUnaryErrorJSONReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{unaryErrorReq},
 		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
@@ -1164,7 +1164,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    errorDef.Code,
 					Message: errorDef.Message,
-					Details: []*anypb.Any{idempotentUnaryErrorJsonReqInfo},
+					Details: []*anypb.Any{idempotentUnaryErrorJSONReqInfo},
 				},
 				ResponseTrailers: responseTrailers,
 			},
