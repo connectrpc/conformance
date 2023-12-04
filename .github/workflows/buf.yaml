@@ -34,7 +34,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1
-      - uses: bufbuild/buf-push-action@v1.1.1
+      - uses: bufbuild/buf-push-action@v1.2.0
         with:
           input: 'proto'
           buf_token: ${{ secrets.BUF_TOKEN }}
