@@ -536,6 +536,8 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 		expected.Error.Details = append(expected.Error.Details, reqInfoAny)
 	}
 
+	// numExpectedResponses := len(def.ResponseData)
+
 	for idx, data := range def.ResponseData {
 		expected.Payloads[idx] = &conformancev1.ConformancePayload{
 			Data: data,

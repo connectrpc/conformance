@@ -18,6 +18,9 @@
       ]
     }
   ],
+  "cancel": {
+      "beforeCloseSend": {}
+  },
   "requestMessages": [
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",

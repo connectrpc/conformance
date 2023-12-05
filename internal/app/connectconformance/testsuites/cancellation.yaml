@@ -1,0 +1,28 @@
+name: Server Cancel
+testCases:
+- request:
+    testName: server stream cancel
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    cancel:
+      after_num_responses: 0
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+  # Override
+  expectedResponse:
+    error:
+      code: 1

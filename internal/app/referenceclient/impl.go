@@ -27,6 +27,7 @@ import (
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const clientName = "connectconformance-referenceclient"
@@ -136,6 +137,35 @@ func (i *invoker) unary(
 	}, nil
 }
 
+type CancelTiming struct {
+	beforeCloseSend   *emptypb.Empty
+	afterCloseSendMs  int32
+	afterNumResponses int32
+}
+
+func parseOneOf(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
+	var beforeCloseSend *emptypb.Empty
+	afterCloseSendMs := int32(-1)
+	afterNumResponses := int32(-1)
+	if cancel != nil {
+		switch cancelTiming := cancel.CancelTiming.(type) {
+		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
+			beforeCloseSend = cancelTiming.BeforeCloseSend
+		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
+			afterCloseSendMs = int32(cancelTiming.AfterCloseSendMs)
+		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
+			afterNumResponses = int32(cancelTiming.AfterNumResponses)
+		default:
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming))
+		}
+	}
+	return &CancelTiming{
+		beforeCloseSend:   beforeCloseSend,
+		afterCloseSendMs:  afterCloseSendMs,
+		afterNumResponses: afterNumResponses,
+	}, nil
+}
+
 func (i *invoker) serverStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
@@ -151,7 +181,22 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	stream, err := i.client.ServerStream(ctx, request)
+	timing, err := parseOneOf(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
+	deadline, ok := ctx.Deadline()
+	var callCtx context.Context
+	var ctxCancel context.CancelFunc
+	if !ok {
+		callCtx, ctxCancel = context.WithCancel(ctx)
+	} else {
+		callCtx, ctxCancel = context.WithDeadline(ctx, deadline)
+	}
+	defer ctxCancel()
+
+	stream, err := i.client.ServerStream(callCtx, request)
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -172,10 +217,20 @@ func (i *invoker) serverStream(
 	if ssr.ResponseDefinition != nil {
 		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
+
+	if timing.afterNumResponses == 0 {
+		ctxCancel()
+	}
+	totalRcvd := int32(0)
 	for stream.Receive() {
+		totalRcvd += 1
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
+
+		if totalRcvd == timing.afterNumResponses {
+			ctxCancel()
+		}
 	}
 	if stream.Err() != nil {
 		// If an error was returned, convert it to a proto Error
@@ -205,7 +260,17 @@ func (i *invoker) clientStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	stream := i.client.ClientStream(ctx)
+	deadline, ok := ctx.Deadline()
+	var callCtx context.Context
+	var ctxCancel context.CancelFunc
+	if !ok {
+		callCtx, ctxCancel = context.WithCancel(ctx)
+	} else {
+		callCtx, ctxCancel = context.WithDeadline(ctx, deadline)
+	}
+	defer ctxCancel()
+
+	stream := i.client.ClientStream(callCtx)
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
@@ -229,6 +294,16 @@ func (i *invoker) clientStream(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
+	timing, err := parseOneOf(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO - The proto says to cancel _instead of_ closing, but how can we get
+	// the error if we don't close?
+	if timing.beforeCloseSend != nil {
+		ctxCancel()
+	}
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
@@ -243,6 +318,12 @@ func (i *invoker) clientStream(
 		payloads = append(payloads, resp.Msg.Payload)
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
+	}
+
+	// TODO - What do we expect to happen here? Not seeing any errors with delay
+	if timing.afterCloseSendMs > 0 {
+		time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
+		ctxCancel()
 	}
 
 	return &v1.ClientResponseResult{
