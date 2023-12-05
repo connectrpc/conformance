@@ -595,6 +595,8 @@ func TestExpandRequestData(t *testing.T) {
 	}
 }
 
+// TODO - Use JSON for this test case so that it becomes smaller and removes
+// a lot of the Any error checking
 func TestPopulateExpectedResponse(t *testing.T) {
 	t.Parallel()
 
@@ -998,11 +1000,10 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		testName     string
-		request      *conformancev1.ClientCompatRequest
-		expected     *conformancev1.ClientResponseResult
-		requireErr   bool
-		testCaseJSON string
+		testName   string
+		request    *conformancev1.ClientCompatRequest
+		expected   *conformancev1.ClientResponseResult
+		requireErr bool
 	}{
 		{
 			testName: "unary success",
@@ -1026,47 +1027,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				},
 				ResponseTrailers: responseTrailers,
 			},
-			testCaseJSON: `{
-			    "streamType": "STREAM_TYPE_UNARY",
-				"requestMessages":[
-					{
-						"@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
-						"responseDefinition": {
-							"responseHeaders": [
-								{
-									"name": "foo-header",
-									"value": [
-										"fooHeaderVal",
-									]
-								},
-								{
-									"name": "bar-header",
-									"value": [
-										"barHeaderVal1",
-										"barHeaderVal2",
-									]
-								}
-							],
-							"responseData": "hello",
-							"responseTrailers": [
-								{
-									"name": "foo-trailer",
-									"value": [
-										"fooTrailerVal",
-									]
-								},
-								{
-									"name": "bar-trailer",
-									"value": [
-										"barTrailerVal1",
-										"barTrailerVal2",
-									]
-								}
-							]
-						}
-					}
-				]
-			}`,
 		},
 		{
 			testName: "unary error",
