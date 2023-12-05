@@ -56,7 +56,7 @@ func (s *conformanceServer) Unary(
 		ctx,
 		req.Msg.ResponseDefinition,
 		req.Header(),
-		nil,
+		req.Peer().Query,
 		[]*anypb.Any{msgAsAny},
 	)
 	if connectErr != nil {
@@ -79,13 +79,13 @@ func (s *conformanceServer) Unary(
 	return resp, nil
 }
 
+// TODO - This should be consolidated with the unary implementation since they are
+// mostly the same. See https://github.com/connectrpc/conformance/pull/721/files#r1415699842
+// for an example
 func (s *conformanceServer) IdempotentUnary(
 	ctx context.Context,
 	req *connect.Request[v1.IdempotentUnaryRequest],
 ) (*connect.Response[v1.IdempotentUnaryResponse], error) {
-	if req.HTTPMethod() != http.MethodGet {
-		return nil, errors.New("idempotent unary method should have been called via HTTP GET")
-	}
 	msgAsAny, err := asAny(req.Msg)
 	if err != nil {
 		return nil, err
@@ -147,7 +147,7 @@ func (s *conformanceServer) ClientStream(
 		ctx,
 		responseDefinition,
 		stream.RequestHeader(),
-		nil,
+		stream.Peer().Query,
 		reqs,
 	)
 	if err != nil {
@@ -202,7 +202,7 @@ func (s *conformanceServer) ServerStream(
 			// because for server streams, nothing in the request info will change
 			// after the first response.
 			if respNum == 0 {
-				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), nil, []*anypb.Any{msgAsAny})
+				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), req.Peer().Query, []*anypb.Any{msgAsAny})
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
@@ -218,7 +218,7 @@ func (s *conformanceServer) ServerStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				reqInfo := createRequestInfo(ctx, req.Header(), nil, []*anypb.Any{msgAsAny})
+				reqInfo := createRequestInfo(ctx, req.Header(), req.Peer().Query, []*anypb.Any{msgAsAny})
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
 					return connect.NewError(connect.CodeInternal, err)
@@ -296,7 +296,7 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				// Only send the full request info (including headers and timeouts)
 				// in the first response
-				requestInfo = createRequestInfo(ctx, stream.RequestHeader(), nil, reqs)
+				requestInfo = createRequestInfo(ctx, stream.RequestHeader(), stream.Peer().Query, reqs)
 			} else {
 				// All responses after the first should only include the requests
 				// since that is the only thing that will change between responses
@@ -333,7 +333,11 @@ func (s *conformanceServer) BidiStream(
 			// after the first response (this includes the requests since they've all
 			// been received by this point)
 			if respNum == 0 {
-				resp.Payload.RequestInfo = createRequestInfo(ctx, stream.RequestHeader(), nil, reqs)
+				resp.Payload.RequestInfo = createRequestInfo(
+					ctx, stream.RequestHeader(),
+					stream.Peer().Query,
+					reqs,
+				)
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
@@ -348,7 +352,7 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				reqInfo := createRequestInfo(ctx, stream.RequestHeader(), nil, reqs)
+				reqInfo := createRequestInfo(ctx, stream.RequestHeader(), stream.Peer().Query, reqs)
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
 					return connect.NewError(connect.CodeInternal, err)
@@ -419,11 +423,11 @@ func createRequestInfo(
 	queryParams url.Values,
 	reqs []*anypb.Any,
 ) *v1.ConformancePayload_RequestInfo {
-	headerInfo := internal.ConvertHTTPHeaderToProtoHeader(headers)
+	headerInfo := internal.ConvertToProtoHeader(headers)
 
 	var connectGetInfo *v1.ConformancePayload_ConnectGetInfo
 	if len(queryParams) > 0 {
-		queryParamInfo := internal.ConvertQueryParamToProtoHeader(queryParams)
+		queryParamInfo := internal.ConvertToProtoHeader(queryParams)
 
 		connectGetInfo = &v1.ConformancePayload_ConnectGetInfo{
 			QueryParams: queryParamInfo,

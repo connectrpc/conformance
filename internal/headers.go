@@ -16,7 +16,6 @@ package internal
 
 import (
 	"net/http"
-	"net/url"
 
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 )
@@ -46,21 +45,9 @@ func AddTrailers(
 	}
 }
 
-// ConvertHTTPHeaderToProtoHeader converts HTTP headers to a slice of proto Headers.
-func ConvertHTTPHeaderToProtoHeader(src http.Header) []*v1.Header {
-	return convertToProtoHeader(src)
-}
-
-// ConvertQueryParamToProtoHeader converts query parameters to a slice of proto Headers.
-func ConvertQueryParamToProtoHeader(
-	src url.Values,
-) []*v1.Header {
-	return convertToProtoHeader(src)
-}
-
-func convertToProtoHeader(
-	src map[string][]string,
-) []*v1.Header {
+// ConvertToProtoHeader converts a map to a slice of proto Headers.
+// Note that this can accept types of url.Values and http.Header
+func ConvertToProtoHeader(src map[string][]string) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
 		hdr := &v1.Header{

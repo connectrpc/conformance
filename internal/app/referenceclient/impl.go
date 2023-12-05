@@ -124,12 +124,12 @@ func (i *invoker) unary(
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		headers = internal.ConvertHTTPHeaderToProtoHeader(connectErr.Meta())
+		headers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the headers and trailers
-		headers = internal.ConvertHTTPHeaderToProtoHeader(resp.Header())
-		trailers = internal.ConvertHTTPHeaderToProtoHeader(resp.Trailer())
+		headers = internal.ConvertToProtoHeader(resp.Header())
+		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 		// If there's a payload, add that to the response also
 		if resp.Msg.Payload != nil {
 			payloads = append(payloads, resp.Msg.Payload)
@@ -145,6 +145,9 @@ func (i *invoker) unary(
 	}, nil
 }
 
+// TODO - This should be consolidated with the unary implementation since they are
+// mostly the same. See https://github.com/connectrpc/conformance/pull/721/files#r1415699842
+// for an example
 func (i *invoker) idempotentUnary(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
@@ -172,14 +175,14 @@ func (i *invoker) idempotentUnary(
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		headers = internal.ConvertHTTPHeaderToProtoHeader(connectErr.Meta())
+		headers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, resp.Msg.Payload)
-		headers = internal.ConvertHTTPHeaderToProtoHeader(resp.Header())
-		trailers = internal.ConvertHTTPHeaderToProtoHeader(resp.Trailer())
+		headers = internal.ConvertToProtoHeader(resp.Header())
+		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
 	return &v1.ClientResponseResult{
@@ -212,7 +215,7 @@ func (i *invoker) serverStream(
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		headers := internal.ConvertHTTPHeaderToProtoHeader(connectErr.Meta())
+		headers := internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr := internal.ConvertConnectToProtoError(connectErr)
 		return &v1.ClientResponseResult{
 			ResponseHeaders: headers,
@@ -238,8 +241,8 @@ func (i *invoker) serverStream(
 	}
 
 	// Read headers and trailers from the stream
-	headers = internal.ConvertHTTPHeaderToProtoHeader(stream.ResponseHeader())
-	trailers = internal.ConvertHTTPHeaderToProtoHeader(stream.ResponseTrailer())
+	headers = internal.ConvertToProtoHeader(stream.ResponseHeader())
+	trailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 
 	err = stream.Close()
 	if err != nil {
@@ -290,14 +293,14 @@ func (i *invoker) clientStream(
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		headers = internal.ConvertHTTPHeaderToProtoHeader(connectErr.Meta())
+		headers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, resp.Msg.Payload)
-		headers = internal.ConvertHTTPHeaderToProtoHeader(resp.Header())
-		trailers = internal.ConvertHTTPHeaderToProtoHeader(resp.Trailer())
+		headers = internal.ConvertToProtoHeader(resp.Header())
+		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
 	return &v1.ClientResponseResult{
@@ -321,8 +324,8 @@ func (i *invoker) bidiStream(
 	defer func() {
 		if result != nil {
 			// Read headers and trailers from the stream
-			result.ResponseHeaders = internal.ConvertHTTPHeaderToProtoHeader(stream.ResponseHeader())
-			result.ResponseTrailers = internal.ConvertHTTPHeaderToProtoHeader(stream.ResponseTrailer())
+			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
+			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 		}
 	}()
 

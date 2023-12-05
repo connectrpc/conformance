@@ -146,7 +146,11 @@ func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackWriter) 
 		feedback.Printf("invalid expected codec %d", expected)
 		return
 	}
-	contentType, _ := getHeader(req.Header, "content-type", feedback)
+	contentType, hasContentType := getHeader(req.Header, "content-type", feedback)
+	// TODO: Require that no content-type be present. Must wait for
+	// https://github.com/connectrpc/connect-go/pull/644 to
+	// be released and incorporated into the reference client.
+	_ = hasContentType
 	var actual string
 	switch {
 	case req.Method == http.MethodGet:

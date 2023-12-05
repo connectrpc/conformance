@@ -409,35 +409,19 @@ func hasRawResponse(reqs []*anypb.Any) bool {
 	return false
 }
 
-// getUnaryResponseDefinition returns the response definition from an Any representing a unary request.
-func getUnaryResponseDefinition(
-	req *anypb.Any,
-	msg unaryResponseDefiner,
-) (*conformancev1.UnaryResponseDefinition, error) {
-	err := req.UnmarshalTo(msg)
-	if err != nil {
-		return nil, err
-	}
-	return msg.GetResponseDefinition(), nil
-}
-
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
-	var msg unaryResponseDefiner
 
-	switch req.TypeUrl {
-	case "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest":
-		msg = &conformancev1.IdempotentUnaryRequest{}
-	case "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest":
-		msg = &conformancev1.ClientStreamRequest{}
-	case "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest":
-		msg = &conformancev1.UnaryRequest{}
-	}
-
-	def, err := getUnaryResponseDefinition(req, msg)
+	// First, find the response definition that the client instructed the server to return
+	concreteReq, err := req.UnmarshalNew()
 	if err != nil {
 		return err
+	}
+
+	definer, ok := concreteReq.(unaryResponseDefiner)
+	if !ok {
+		return fmt.Errorf("%T is not a unary test case", concreteReq)
 	}
 
 	reqInfo := &conformancev1.ConformancePayload_RequestInfo{
@@ -451,7 +435,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		isJSON := testCase.Request.Codec == conformancev1.Codec_CODEC_JSON
 		// Build a codec based on what is used in the request
 		codec := internal.NewCodec(isJSON)
-		reqAsBytes, err := codec.MarshalStable(msg)
+		reqAsBytes, err := codec.MarshalStable(definer)
 		if err != nil {
 			return err
 		}
@@ -474,15 +458,15 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 					Name:  "encoding",
 					Value: []string{encoding},
 				},
-				// TODO: How should we verify the connect version parameter?
-				// Match the name "connect" and a value that is v + some number?
-				// {
-				// 	Name:  "connect",
-				// 	Value: []string{"v1"},
-				// },
+				{
+					Name:  "connect",
+					Value: []string{"v1"},
+				},
 			},
 		}
 	}
+
+	def := definer.GetResponseDefinition()
 
 	if def == nil {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
