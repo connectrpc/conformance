@@ -8,7 +8,6 @@
   "service": "connectrpc.conformance.v1.ConformanceService",
   "method": "ClientStream",
   "streamType": "STREAM_TYPE_CLIENT_STREAM",
-  "requestDelayMs": 500,
   "requestHeaders": [
     {
       "name": "X-Conformance-Test",
@@ -19,12 +18,13 @@
     }
   ],
   "cancel": {
-      "beforeCloseSend": {}
+      "afterCloseSendMs": 500
   },
   "requestMessages": [
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
       "responseDefinition": {
+        "responseDelayMs": 1000,
         "responseHeaders": [
           {
             "name": "x-custom-header",

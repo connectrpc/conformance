@@ -139,24 +139,28 @@ func (i *invoker) unary(
 
 type CancelTiming struct {
 	beforeCloseSend   *emptypb.Empty
-	afterCloseSendMs  int32
-	afterNumResponses int32
+	afterCloseSendMs  int
+	afterNumResponses int
 }
 
-func parseOneOf(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
+func parseCancel(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
 	var beforeCloseSend *emptypb.Empty
-	afterCloseSendMs := int32(-1)
-	afterNumResponses := int32(-1)
+	afterCloseSendMs := -1
+	afterNumResponses := -1
 	if cancel != nil {
 		switch cancelTiming := cancel.CancelTiming.(type) {
 		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
 			beforeCloseSend = cancelTiming.BeforeCloseSend
 		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
-			afterCloseSendMs = int32(cancelTiming.AfterCloseSendMs)
+			afterCloseSendMs = int(cancelTiming.AfterCloseSendMs)
 		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
-			afterNumResponses = int32(cancelTiming.AfterNumResponses)
+			afterNumResponses = int(cancelTiming.AfterNumResponses)
+		case nil:
+			// If cancel is non-nil, but none of timing values are set, it should
+			// be treated as if afterCloseSendMs was set to 0
+			afterCloseSendMs = 0
 		default:
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming))
+			return nil, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming)
 		}
 	}
 	return &CancelTiming{
@@ -167,9 +171,12 @@ func parseOneOf(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
 }
 
 func (i *invoker) serverStream(
-	ctx context.Context,
+	c context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
+	ctx, ctxCancel := wrapContext(c)
+	defer ctxCancel()
+
 	msg := req.RequestMessages[0]
 	ssr := &v1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(ssr); err != nil {
@@ -181,22 +188,12 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	timing, err := parseOneOf(req.Cancel)
+	timing, err := parseCancel(req.Cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	deadline, ok := ctx.Deadline()
-	var callCtx context.Context
-	var ctxCancel context.CancelFunc
-	if !ok {
-		callCtx, ctxCancel = context.WithCancel(ctx)
-	} else {
-		callCtx, ctxCancel = context.WithDeadline(ctx, deadline)
-	}
-	defer ctxCancel()
-
-	stream, err := i.client.ServerStream(callCtx, request)
+	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -218,12 +215,14 @@ func (i *invoker) serverStream(
 		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
+	// If the cancel timing specifies after 0 responses, then cancel before
+	// receiving anything
 	if timing.afterNumResponses == 0 {
 		ctxCancel()
 	}
-	totalRcvd := int32(0)
+	totalRcvd := 0
 	for stream.Receive() {
-		totalRcvd += 1
+		totalRcvd++
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
@@ -257,20 +256,13 @@ func (i *invoker) serverStream(
 }
 
 func (i *invoker) clientStream(
-	ctx context.Context,
+	c context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	deadline, ok := ctx.Deadline()
-	var callCtx context.Context
-	var ctxCancel context.CancelFunc
-	if !ok {
-		callCtx, ctxCancel = context.WithCancel(ctx)
-	} else {
-		callCtx, ctxCancel = context.WithDeadline(ctx, deadline)
-	}
+	ctx, ctxCancel := wrapContext(c)
 	defer ctxCancel()
 
-	stream := i.client.ClientStream(callCtx)
+	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
@@ -294,13 +286,11 @@ func (i *invoker) clientStream(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	timing, err := parseOneOf(req.Cancel)
+	timing, err := parseCancel(req.Cancel)
 	if err != nil {
 		return nil, err
 	}
 
-	// TODO - The proto says to cancel _instead of_ closing, but how can we get
-	// the error if we don't close?
 	if timing.beforeCloseSend != nil {
 		ctxCancel()
 	}
@@ -320,8 +310,7 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	// TODO - What do we expect to happen here? Not seeing any errors with delay
-	if timing.afterCloseSendMs > 0 {
+	if timing.afterCloseSendMs >= 0 {
 		time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
 		ctxCancel()
 	}
@@ -459,6 +448,16 @@ func (i *invoker) unimplemented(
 	return &v1.ClientResponseResult{
 		Error: internal.ConvertErrorToProtoError(err),
 	}, nil
+}
+
+// wrapContext wraps the current context. The resulting context and cancel
+// function will be dependent on whether the given context has a deadline.
+func wrapContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		return context.WithCancel(ctx)
+	}
+	return context.WithDeadline(ctx, deadline)
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
