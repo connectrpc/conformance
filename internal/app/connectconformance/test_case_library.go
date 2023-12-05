@@ -409,7 +409,7 @@ func hasRawResponse(reqs []*anypb.Any) bool {
 	return false
 }
 
-// returns the response definition from an Any representing a unary request.
+// getUnaryResponseDefinition returns the response definition from an Any representing a unary request.
 func getUnaryResponseDefinition(
 	req *anypb.Any,
 	msg unaryResponseDefiner,
