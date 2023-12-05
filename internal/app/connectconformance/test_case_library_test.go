@@ -15,9 +15,11 @@
 package connectconformance
 
 import (
+	"encoding/base64"
 	"sort"
 	"testing"
 
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
@@ -642,8 +644,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		Details: []*anypb.Any{headerAny},
 	}
 
+	jsonCodec := internal.NewCodec(true)
+	protoCodec := internal.NewCodec(false)
+
 	// Unary Requests
-	unarySuccessReq, err := anypb.New(&conformancev1.UnaryRequest{
+	unarySuccessReqLiteral := &conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 			ResponseHeaders: responseHeaders,
 			Response: &conformancev1.UnaryResponseDefinition_ResponseData{
@@ -651,10 +656,14 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			ResponseTrailers: responseTrailers,
 		},
-	})
+	}
+	unarySuccessReq, err := anypb.New(unarySuccessReqLiteral)
 	require.NoError(t, err)
 
-	unaryErrorReq, err := anypb.New(&conformancev1.UnaryRequest{
+	unarySuccessReqJSON, err := jsonCodec.MarshalStable(unarySuccessReqLiteral)
+	unarySuccessReqProto, err := protoCodec.MarshalStable(unarySuccessReqLiteral)
+
+	unaryErrorReqLiteral := &conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 			ResponseHeaders: responseHeaders,
 			Response: &conformancev1.UnaryResponseDefinition_Error{
@@ -662,8 +671,12 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			ResponseTrailers: responseTrailers,
 		},
-	})
+	}
+	unaryErrorReq, err := anypb.New(unaryErrorReqLiteral)
 	require.NoError(t, err)
+
+	unaryErrorReqJSON, err := jsonCodec.MarshalStable(unaryErrorReqLiteral)
+	unaryErrorReqProto, err := protoCodec.MarshalStable(unaryErrorReqLiteral)
 
 	unaryErrorDetailsReq, err := anypb.New(&conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
@@ -907,13 +920,16 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
 				{
-					Name: "message",
-					// unaryErrorReq marshaled as json
-					Value: []string{"{\"responseDefinition\":{\"responseHeaders\":[{\"name\":\"fooHeader\",\"value\":[\"fooHeaderVal\"]},{\"name\":\"barHeader\",\"value\":[\"barHeaderVal1\",\"barHeaderVal2\"]}],\"error\":{\"code\":8,\"message\":\"all resources exhausted\"},\"responseTrailers\":[{\"name\":\"fooTrailer\",\"value\":[\"fooTrailerVal\"]},{\"name\":\"barTrailer\",\"value\":[\"barTrailerVal1\",\"barTrailerVal2\"]}]}}"},
+					Name:  "message",
+					Value: []string{string(unaryErrorReqJSON)},
 				},
 				{
 					Name:  "encoding",
 					Value: []string{"json"},
+				},
+				{
+					Name:  "connect",
+					Value: []string{"v1"},
 				},
 			},
 		},
@@ -926,13 +942,16 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
 				{
-					Name: "message",
-					// unaryErrorReq marshaled and base64 encoded
-					Value: []string{"Cq4BChkKCWZvb0hlYWRlchIMZm9vSGVhZGVyVmFsCikKCWJhckhlYWRlchINYmFySGVhZGVyVmFsMRINYmFySGVhZGVyVmFsMiIbCgpmb29UcmFpbGVyEg1mb29UcmFpbGVyVmFsIiwKCmJhclRyYWlsZXISDmJhclRyYWlsZXJWYWwxEg5iYXJUcmFpbGVyVmFsMhobCAgSF2FsbCByZXNvdXJjZXMgZXhoYXVzdGVk"},
+					Name:  "message",
+					Value: []string{string(base64.RawURLEncoding.EncodeToString(unaryErrorReqProto))},
 				},
 				{
 					Name:  "encoding",
 					Value: []string{"proto"},
+				},
+				{
+					Name:  "connect",
+					Value: []string{"v1"},
 				},
 			},
 		},
@@ -979,10 +998,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	testCases := []struct {
-		testName   string
-		request    *conformancev1.ClientCompatRequest
-		expected   *conformancev1.ClientResponseResult
-		requireErr bool
+		testName     string
+		request      *conformancev1.ClientCompatRequest
+		expected     *conformancev1.ClientResponseResult
+		requireErr   bool
+		testCaseJSON string
 	}{
 		{
 			testName: "unary success",
@@ -1006,6 +1026,47 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				},
 				ResponseTrailers: responseTrailers,
 			},
+			testCaseJSON: `{
+			    "streamType": "STREAM_TYPE_UNARY",
+				"requestMessages":[
+					{
+						"@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
+						"responseDefinition": {
+							"responseHeaders": [
+								{
+									"name": "foo-header",
+									"value": [
+										"fooHeaderVal",
+									]
+								},
+								{
+									"name": "bar-header",
+									"value": [
+										"barHeaderVal1",
+										"barHeaderVal2",
+									]
+								}
+							],
+							"responseData": "hello",
+							"responseTrailers": [
+								{
+									"name": "foo-trailer",
+									"value": [
+										"fooTrailerVal",
+									]
+								},
+								{
+									"name": "bar-trailer",
+									"value": [
+										"barTrailerVal1",
+										"barTrailerVal2",
+									]
+								}
+							]
+						}
+					}
+				]
+			}`,
 		},
 		{
 			testName: "unary error",
@@ -1101,11 +1162,15 @@ func TestPopulateExpectedResponse(t *testing.T) {
 								QueryParams: []*conformancev1.Header{
 									{
 										Name:  "message",
-										Value: []string{"{\"responseDefinition\":{\"responseHeaders\":[{\"name\":\"fooHeader\",\"value\":[\"fooHeaderVal\"]},{\"name\":\"barHeader\",\"value\":[\"barHeaderVal1\",\"barHeaderVal2\"]}],\"responseData\":\"ZGF0YTE=\",\"responseTrailers\":[{\"name\":\"fooTrailer\",\"value\":[\"fooTrailerVal\"]},{\"name\":\"barTrailer\",\"value\":[\"barTrailerVal1\",\"barTrailerVal2\"]}]}}"},
+										Value: []string{string(unarySuccessReqJSON)},
 									},
 									{
 										Name:  "encoding",
 										Value: []string{"json"},
+									},
+									{
+										Name:  "connect",
+										Value: []string{"v1"},
 									},
 								},
 							},
@@ -1136,11 +1201,15 @@ func TestPopulateExpectedResponse(t *testing.T) {
 								QueryParams: []*conformancev1.Header{
 									{
 										Name:  "message",
-										Value: []string{"CpgBChkKCWZvb0hlYWRlchIMZm9vSGVhZGVyVmFsCikKCWJhckhlYWRlchINYmFySGVhZGVyVmFsMRINYmFySGVhZGVyVmFsMiIbCgpmb29UcmFpbGVyEg1mb29UcmFpbGVyVmFsIiwKCmJhclRyYWlsZXISDmJhclRyYWlsZXJWYWwxEg5iYXJUcmFpbGVyVmFsMhIFZGF0YTE"},
+										Value: []string{base64.RawURLEncoding.EncodeToString(unarySuccessReqProto)},
 									},
 									{
 										Name:  "encoding",
 										Value: []string{"proto"},
+									},
+									{
+										Name:  "connect",
+										Value: []string{"v1"},
 									},
 								},
 							},
