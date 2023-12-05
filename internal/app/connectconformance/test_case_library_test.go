@@ -596,7 +596,7 @@ func TestExpandRequestData(t *testing.T) {
 }
 
 // TODO - Use JSON for this test case so that it becomes smaller and removes
-// a lot of the Any error checking
+// a lot of the Any error checking.
 func TestPopulateExpectedResponse(t *testing.T) {
 	t.Parallel()
 
@@ -663,7 +663,9 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	unarySuccessReqJSON, err := jsonCodec.MarshalStable(unarySuccessReqLiteral)
+	require.NoError(t, err)
 	unarySuccessReqProto, err := protoCodec.MarshalStable(unarySuccessReqLiteral)
+	require.NoError(t, err)
 
 	unaryErrorReqLiteral := &conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
@@ -678,7 +680,9 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	unaryErrorReqJSON, err := jsonCodec.MarshalStable(unaryErrorReqLiteral)
+	require.NoError(t, err)
 	unaryErrorReqProto, err := protoCodec.MarshalStable(unaryErrorReqLiteral)
+	require.NoError(t, err)
 
 	unaryErrorDetailsReq, err := anypb.New(&conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
@@ -945,7 +949,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			QueryParams: []*conformancev1.Header{
 				{
 					Name:  "message",
-					Value: []string{string(base64.RawURLEncoding.EncodeToString(unaryErrorReqProto))},
+					Value: []string{base64.RawURLEncoding.EncodeToString(unaryErrorReqProto)},
 				},
 				{
 					Name:  "encoding",

@@ -81,7 +81,7 @@ func (s *conformanceServer) Unary(
 
 // TODO - This should be consolidated with the unary implementation since they are
 // mostly the same. See https://github.com/connectrpc/conformance/pull/721/files#r1415699842
-// for an example
+// for an example.
 func (s *conformanceServer) IdempotentUnary(
 	ctx context.Context,
 	req *connect.Request[v1.IdempotentUnaryRequest],

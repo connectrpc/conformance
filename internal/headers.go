@@ -46,7 +46,7 @@ func AddTrailers(
 }
 
 // ConvertToProtoHeader converts a map to a slice of proto Headers.
-// Note that this can accept types of url.Values and http.Header
+// Note that this can accept types of url.Values and http.Header.
 func ConvertToProtoHeader(src map[string][]string) []*v1.Header {
 	headerInfo := make([]*v1.Header, 0, len(src))
 	for key, value := range src {
