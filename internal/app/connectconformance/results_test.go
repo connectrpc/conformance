@@ -15,8 +15,8 @@
 package connectconformance
 
 import (
-	"bytes"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -38,9 +38,8 @@ func TestResults_SetOutcome(t *testing.T) {
 	results.setOutcome("known-to-fail/2", true, errors.New("fail"))
 	results.setOutcome("known-to-fail/3", false, errors.New("fail"))
 
-	logger := &lineWriter{}
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	logger := &linePrinter{}
+	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 5)
@@ -59,9 +58,8 @@ func TestResults_FailedToStart(t *testing.T) {
 		{Request: &conformancev1.ClientCompatRequest{TestName: "known-to-fail/1"}},
 	}, errors.New("fail"))
 
-	logger := &lineWriter{}
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	logger := &linePrinter{}
+	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 2)
@@ -82,9 +80,8 @@ func TestResults_FailRemaining(t *testing.T) {
 		{Request: &conformancev1.ClientCompatRequest{TestName: "known-to-fail/2"}},
 	}, errors.New("something went wrong"))
 
-	logger := &lineWriter{}
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	logger := &linePrinter{}
+	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 3)
@@ -102,9 +99,8 @@ func TestResults_Failed(t *testing.T) {
 	results.failed("foo/bar/1", &conformancev1.ClientErrorResult{Message: "fail"})
 	results.failed("known-to-fail/1", &conformancev1.ClientErrorResult{Message: "fail"})
 
-	logger := &lineWriter{}
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	logger := &linePrinter{}
+	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 2)
@@ -132,9 +128,8 @@ func TestResults_Assert(t *testing.T) {
 	results.assert("known-to-fail/3", payload1, payload1)
 	results.assert("known-to-fail/4", payload2, payload2)
 
-	logger := &lineWriter{}
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	logger := &linePrinter{}
+	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 6)
@@ -731,9 +726,8 @@ func TestResults_ServerSideband(t *testing.T) {
 	results.recordSideband("foo/bar/3", "something awkward in wire format")
 	results.recordSideband("known-to-fail/1", "something awkward in wire format")
 
-	logger := &lineWriter{}
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	logger := &linePrinter{}
+	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 4)
@@ -746,46 +740,40 @@ func TestResults_ServerSideband(t *testing.T) {
 func TestResults_Report(t *testing.T) {
 	t.Parallel()
 	results := newResults(makeKnownFailing())
-	logger := &lineWriter{}
+	logger := &linePrinter{}
 
 	// No test cases? Report success.
-	success, err := results.report(logger)
-	require.NoError(t, err)
+	success := results.report(logger)
 	require.True(t, success)
 
 	// Only successful outcomes? Report success.
 	results = newResults(makeKnownFailing())
 	results.setOutcome("foo/bar/1", false, nil)
-	success, err = results.report(logger)
-	require.NoError(t, err)
+	success = results.report(logger)
 	require.True(t, success)
 
 	// Unexpected failure? Report failure.
 	results = newResults(makeKnownFailing())
 	results.setOutcome("foo/bar/1", false, errors.New("ruh roh"))
-	success, err = results.report(logger)
-	require.NoError(t, err)
+	success = results.report(logger)
 	require.False(t, success)
 
 	// Unexpected failure during setup? Report failure.
 	results = newResults(makeKnownFailing())
 	results.setOutcome("foo/bar/1", true, errors.New("ruh roh"))
-	success, err = results.report(logger)
-	require.NoError(t, err)
+	success = results.report(logger)
 	require.False(t, success)
 
 	// Expected failure? Report success.
 	results = newResults(makeKnownFailing())
 	results.setOutcome("known-to-fail/1", false, errors.New("ruh roh"))
-	success, err = results.report(logger)
-	require.NoError(t, err)
+	success = results.report(logger)
 	require.True(t, success)
 
 	// Setup error from expected failure? Report failure (setup errors never acceptable).
 	results = newResults(makeKnownFailing())
 	results.setOutcome("known-to-fail/1", true, errors.New("ruh roh"))
-	success, err = results.report(logger)
-	require.NoError(t, err)
+	success = results.report(logger)
 	require.False(t, success)
 }
 
@@ -851,34 +839,28 @@ func makeKnownFailing() *knownFailingTrie {
 	return &trie
 }
 
-type lineWriter struct {
-	current []byte
-	lines   []string
+type linePrinter struct {
+	lines []string
 }
 
-func (l *lineWriter) Write(data []byte) (n int, err error) {
-	for {
-		if len(data) == 0 {
-			return n, nil
-		}
-		var hasLF bool
-		pos := bytes.IndexByte(data, '\n')
-		if pos == -1 {
-			pos = len(data)
-		} else {
-			pos++ // include LF
-			hasLF = true
-		}
-		l.current = append(l.current, data[:pos]...)
-		if hasLF {
-			l.lines = append(l.lines, string(l.current))
-			l.current = nil
-		}
-		data = data[pos:]
+func (l *linePrinter) Printf(msg string, args ...any) {
+	line := fmt.Sprintf(msg, args...)
+	if !strings.HasSuffix(line, "\n") {
+		line += "\n"
 	}
+	l.lines = append(l.lines, line)
 }
 
-func (l *lineWriter) errorLines() []string {
+func (l *linePrinter) PrefixPrintf(prefix, msg string, args ...any) {
+	msg = fmt.Sprintf(msg, args...)
+	line := fmt.Sprintf("%s: %s", prefix, msg)
+	if !strings.HasSuffix(line, "\n") {
+		line += "\n"
+	}
+	l.lines = append(l.lines, line)
+}
+
+func (l *linePrinter) errorLines() []string {
 	var lines []string
 	for _, line := range l.lines {
 		if strings.HasPrefix(line, "FAILED: ") || strings.HasPrefix(line, "INFO: ") {
