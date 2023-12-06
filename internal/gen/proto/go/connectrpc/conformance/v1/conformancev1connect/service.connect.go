@@ -32,7 +32,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion1_7_0
 
 const (
 	// ConformanceServiceName is the fully-qualified name of the ConformanceService service.
@@ -62,6 +62,9 @@ const (
 	// ConformanceServiceUnimplementedProcedure is the fully-qualified name of the ConformanceService's
 	// Unimplemented RPC.
 	ConformanceServiceUnimplementedProcedure = "/connectrpc.conformance.v1.ConformanceService/Unimplemented"
+	// ConformanceServiceIdempotentUnaryProcedure is the fully-qualified name of the
+	// ConformanceService's IdempotentUnary RPC.
+	ConformanceServiceIdempotentUnaryProcedure = "/connectrpc.conformance.v1.ConformanceService/IdempotentUnary"
 )
 
 // ConformanceServiceClient is a client for the connectrpc.conformance.v1.ConformanceService
@@ -158,6 +161,10 @@ type ConformanceServiceClient interface {
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
 	Unimplemented(context.Context, *connect.Request[v1.UnimplementedRequest]) (*connect.Response[v1.UnimplementedResponse], error)
+	// A unary endpoint denoted as having no side effects (i.e. idempotent).
+	// Implementations should use an HTTP GET when invoking this endpoint and
+	// leverage query parameters to send data.
+	IdempotentUnary(context.Context, *connect.Request[v1.IdempotentUnaryRequest]) (*connect.Response[v1.IdempotentUnaryResponse], error)
 }
 
 // NewConformanceServiceClient constructs a client for the
@@ -196,16 +203,23 @@ func NewConformanceServiceClient(httpClient connect.HTTPClient, baseURL string, 
 			baseURL+ConformanceServiceUnimplementedProcedure,
 			opts...,
 		),
+		idempotentUnary: connect.NewClient[v1.IdempotentUnaryRequest, v1.IdempotentUnaryResponse](
+			httpClient,
+			baseURL+ConformanceServiceIdempotentUnaryProcedure,
+			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // conformanceServiceClient implements ConformanceServiceClient.
 type conformanceServiceClient struct {
-	unary         *connect.Client[v1.UnaryRequest, v1.UnaryResponse]
-	serverStream  *connect.Client[v1.ServerStreamRequest, v1.ServerStreamResponse]
-	clientStream  *connect.Client[v1.ClientStreamRequest, v1.ClientStreamResponse]
-	bidiStream    *connect.Client[v1.BidiStreamRequest, v1.BidiStreamResponse]
-	unimplemented *connect.Client[v1.UnimplementedRequest, v1.UnimplementedResponse]
+	unary           *connect.Client[v1.UnaryRequest, v1.UnaryResponse]
+	serverStream    *connect.Client[v1.ServerStreamRequest, v1.ServerStreamResponse]
+	clientStream    *connect.Client[v1.ClientStreamRequest, v1.ClientStreamResponse]
+	bidiStream      *connect.Client[v1.BidiStreamRequest, v1.BidiStreamResponse]
+	unimplemented   *connect.Client[v1.UnimplementedRequest, v1.UnimplementedResponse]
+	idempotentUnary *connect.Client[v1.IdempotentUnaryRequest, v1.IdempotentUnaryResponse]
 }
 
 // Unary calls connectrpc.conformance.v1.ConformanceService.Unary.
@@ -231,6 +245,11 @@ func (c *conformanceServiceClient) BidiStream(ctx context.Context) *connect.Bidi
 // Unimplemented calls connectrpc.conformance.v1.ConformanceService.Unimplemented.
 func (c *conformanceServiceClient) Unimplemented(ctx context.Context, req *connect.Request[v1.UnimplementedRequest]) (*connect.Response[v1.UnimplementedResponse], error) {
 	return c.unimplemented.CallUnary(ctx, req)
+}
+
+// IdempotentUnary calls connectrpc.conformance.v1.ConformanceService.IdempotentUnary.
+func (c *conformanceServiceClient) IdempotentUnary(ctx context.Context, req *connect.Request[v1.IdempotentUnaryRequest]) (*connect.Response[v1.IdempotentUnaryResponse], error) {
+	return c.idempotentUnary.CallUnary(ctx, req)
 }
 
 // ConformanceServiceHandler is an implementation of the
@@ -327,6 +346,10 @@ type ConformanceServiceHandler interface {
 	// A unary endpoint that the server should not implement and should instead
 	// return an unimplemented error when invoked.
 	Unimplemented(context.Context, *connect.Request[v1.UnimplementedRequest]) (*connect.Response[v1.UnimplementedResponse], error)
+	// A unary endpoint denoted as having no side effects (i.e. idempotent).
+	// Implementations should use an HTTP GET when invoking this endpoint and
+	// leverage query parameters to send data.
+	IdempotentUnary(context.Context, *connect.Request[v1.IdempotentUnaryRequest]) (*connect.Response[v1.IdempotentUnaryResponse], error)
 }
 
 // NewConformanceServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -360,6 +383,12 @@ func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect
 		svc.Unimplemented,
 		opts...,
 	)
+	conformanceServiceIdempotentUnaryHandler := connect.NewUnaryHandler(
+		ConformanceServiceIdempotentUnaryProcedure,
+		svc.IdempotentUnary,
+		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/connectrpc.conformance.v1.ConformanceService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ConformanceServiceUnaryProcedure:
@@ -372,6 +401,8 @@ func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect
 			conformanceServiceBidiStreamHandler.ServeHTTP(w, r)
 		case ConformanceServiceUnimplementedProcedure:
 			conformanceServiceUnimplementedHandler.ServeHTTP(w, r)
+		case ConformanceServiceIdempotentUnaryProcedure:
+			conformanceServiceIdempotentUnaryHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -399,4 +430,8 @@ func (UnimplementedConformanceServiceHandler) BidiStream(context.Context, *conne
 
 func (UnimplementedConformanceServiceHandler) Unimplemented(context.Context, *connect.Request[v1.UnimplementedRequest]) (*connect.Response[v1.UnimplementedResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.ConformanceService.Unimplemented is not implemented"))
+}
+
+func (UnimplementedConformanceServiceHandler) IdempotentUnary(context.Context, *connect.Request[v1.IdempotentUnaryRequest]) (*connect.Response[v1.IdempotentUnaryResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("connectrpc.conformance.v1.ConformanceService.IdempotentUnary is not implemented"))
 }

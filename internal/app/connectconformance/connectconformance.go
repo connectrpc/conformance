@@ -144,8 +144,14 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 
 	// Validate keys in knownFailing, to make sure they match actual test names
 	// (to prevent accidental typos and inadvertently ignored entries)
-	for name := range testCaseLib.testCases {
+	for name, testCase := range testCaseLib.testCases {
 		knownFailing.match(strings.Split(name, "/"))
+
+		// Set the expected responses
+		if err := populateExpectedResponse(testCase); err != nil {
+			return false, fmt.Errorf("failed to compute expected response for test case %q: %w",
+				testCase.Request.TestName, err)
+		}
 	}
 	unmatched := map[string]struct{}{}
 	knownFailing.findUnmatched("", unmatched)
