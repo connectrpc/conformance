@@ -99,7 +99,7 @@ func runCommand(command []string) processStarter {
 
 // runInProcess returns a process starter that invokes the given function
 // in another goroutine.
-func runInProcess(name string, impl func(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error) processStarter {
+func runInProcess(args []string, impl func(ctx context.Context, args []string, in io.ReadCloser, out, err io.WriteCloser) error) processStarter {
 	return makeProcess(func(ctx context.Context, stdin io.ReadCloser, stdout, stderr io.WriteCloser) (processController, error) {
 		ctx, cancel := context.WithCancel(ctx)
 		proc := &localProcess{
@@ -128,7 +128,7 @@ func runInProcess(name string, impl func(ctx context.Context, args []string, in 
 					_ = stderr.Close()
 				}
 			}()
-			proc.err = impl(ctx, []string{name}, stdin, stdout, stderr)
+			proc.err = impl(ctx, args, stdin, stdout, stderr)
 		}()
 		return proc, nil
 	})
