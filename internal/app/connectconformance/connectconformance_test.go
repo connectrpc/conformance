@@ -31,44 +31,53 @@ func TestRun(t *testing.T) {
 	require.NoError(t, err)
 	allSuites, err := parseTestSuites(testSuiteData)
 	require.NoError(t, err)
+	configCases := []configCase{
+		{
+			Version:                conformancev1.HTTPVersion_HTTP_VERSION_1,
+			Protocol:               conformancev1.Protocol_PROTOCOL_CONNECT,
+			Codec:                  conformancev1.Codec_CODEC_JSON,
+			Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+			StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
+			UseTLS:                 false,
+			UseTLSClientCerts:      false,
+			UseConnectGET:          false,
+			UseMessageReceiveLimit: false,
+			ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+		},
+		{
+			Version:                conformancev1.HTTPVersion_HTTP_VERSION_2,
+			Protocol:               conformancev1.Protocol_PROTOCOL_GRPC,
+			Codec:                  conformancev1.Codec_CODEC_PROTO,
+			Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+			StreamType:             conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+			UseTLS:                 false,
+			UseTLSClientCerts:      false,
+			UseConnectGET:          false,
+			UseMessageReceiveLimit: false,
+			ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+		},
+	}
+
+	// Compute expected number of test cases.
+	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, conformancev1.TestSuite_TEST_MODE_UNSPECIFIED)
+	require.NoError(t, err)
+	expectedNumCases := len(testCaseLib.testCases)
+	expectedNumCases += countGRPCImplTestCases(testCaseLib.testCases, true, true)
+	// 19 test cases as of this writing, but we will likely add more
+	require.GreaterOrEqual(t, expectedNumCases, 19)
 
 	logger := &testPrinter{t}
 	results, err := run(
-		[]configCase{
-			{
-				Version:                conformancev1.HTTPVersion_HTTP_VERSION_1,
-				Protocol:               conformancev1.Protocol_PROTOCOL_CONNECT,
-				Codec:                  conformancev1.Codec_CODEC_JSON,
-				Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
-				StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
-				UseTLS:                 false,
-				UseTLSClientCerts:      false,
-				UseConnectGET:          false,
-				UseMessageReceiveLimit: false,
-				ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-			},
-			{
-				Version:                conformancev1.HTTPVersion_HTTP_VERSION_2,
-				Protocol:               conformancev1.Protocol_PROTOCOL_GRPC,
-				Codec:                  conformancev1.Codec_CODEC_PROTO,
-				Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
-				StreamType:             conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
-				UseTLS:                 false,
-				UseTLSClientCerts:      false,
-				UseConnectGET:          false,
-				UseMessageReceiveLimit: false,
-				ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
-			},
-		},
+		configCases,
 		&knownFailingTrie{},
 		allSuites,
 		logger,
 		&Flags{Verbose: true, MaxServers: 2, Parallelism: 4},
 	)
+
 	require.NoError(t, err)
 	require.True(t, results.report(logger))
-	// 19 test cases as of this writing, but we will likely add more
-	require.GreaterOrEqual(t, len(results.outcomes), 19)
+	require.Equal(t, expectedNumCases, len(results.outcomes))
 }
 
 type testPrinter struct {

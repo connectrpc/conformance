@@ -417,12 +417,16 @@ func countGRPCImplTestCases(testCases map[string]*conformancev1.TestCase, client
 	}
 	var numCases int
 	if clientIsGRPCImpl {
+		// Count the cases where we run grpc-go client against server under test.
 		numCases += len(filterGRPCImplTestCases(testCaseSlice, true, false))
 	}
 	if serverIsGRPCImpl {
+		// Count the cases where we run client under test against grpc-go server.
 		numCases += len(filterGRPCImplTestCases(testCaseSlice, false, true))
 	}
 	if clientIsGRPCImpl && serverIsGRPCImpl {
+		// Count the cases where we run grpc-go client against grpc-go server.
+		// (This is only done from a unit test. The CLI doesn't actually allow this.)
 		numCases += len(filterGRPCImplTestCases(testCaseSlice, true, true))
 	}
 	return numCases
