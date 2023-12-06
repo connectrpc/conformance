@@ -18,13 +18,12 @@
     }
   ],
   "cancel": {
-      "afterCloseSendMs": 500
+      "beforeCloseSend": {}
   },
   "requestMessages": [
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest",
       "responseDefinition": {
-        "responseDelayMs": 1000,
         "responseHeaders": [
           {
             "name": "x-custom-header",

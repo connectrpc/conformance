@@ -143,7 +143,9 @@ type CancelTiming struct {
 	afterNumResponses int
 }
 
-func parseCancel(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
+// getCancelTiming evaluates a Cancel setting and returns a struct with the
+// appropriate value set.
+func getCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
 	var beforeCloseSend *emptypb.Empty
 	afterCloseSendMs := -1
 	afterNumResponses := -1
@@ -188,7 +190,7 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	timing, err := parseCancel(req.Cancel)
+	timing, err := getCancelTiming(req.Cancel)
 	if err != nil {
 		return nil, err
 	}
@@ -227,6 +229,9 @@ func (i *invoker) serverStream(
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
 
+		// If afterNumResponses is specified, it will be a number > 0 here.
+		// If it wasn't specified, it will be -1, which means the totalRcvd
+		// will never be equal and we won't cancel.
 		if totalRcvd == timing.afterNumResponses {
 			ctxCancel()
 		}
@@ -286,13 +291,18 @@ func (i *invoker) clientStream(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	timing, err := parseCancel(req.Cancel)
+	// Cancellation timing
+	timing, err := getCancelTiming(req.Cancel)
 	if err != nil {
 		return nil, err
 	}
-
 	if timing.beforeCloseSend != nil {
 		ctxCancel()
+	} else if timing.afterCloseSendMs >= 0 {
+		go func() {
+			time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
+			ctxCancel()
+		}()
 	}
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
@@ -308,11 +318,6 @@ func (i *invoker) clientStream(
 		payloads = append(payloads, resp.Msg.Payload)
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
-	}
-
-	if timing.afterCloseSendMs >= 0 {
-		time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
-		ctxCancel()
 	}
 
 	return &v1.ClientResponseResult{
