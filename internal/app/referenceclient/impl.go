@@ -32,6 +32,12 @@ import (
 
 const clientName = "connectconformance-referenceclient"
 
+type cancelTiming struct {
+	beforeCloseSend   *emptypb.Empty
+	afterCloseSendMs  int
+	afterNumResponses int
+}
+
 type invoker struct {
 	client conformancev1connect.ConformanceServiceClient
 }
@@ -53,6 +59,15 @@ func (i *invoker) Invoke(
 			return nil, errors.New("unary calls must specify exactly one request message")
 		}
 		resp, err := i.unary(ctx, req)
+		if err != nil {
+			return nil, err
+		}
+		return resp, nil
+	case "IdempotentUnary":
+		if len(req.RequestMessages) != 1 {
+			return nil, errors.New("unary calls must specify exactly one request message")
+		}
+		resp, err := i.idempotentUnary(ctx, req)
 		if err != nil {
 			return nil, err
 		}
@@ -137,38 +152,52 @@ func (i *invoker) unary(
 	}, nil
 }
 
-type CancelTiming struct {
-	beforeCloseSend   *emptypb.Empty
-	afterCloseSendMs  int
-	afterNumResponses int
-}
-
-// getCancelTiming evaluates a Cancel setting and returns a struct with the
-// appropriate value set.
-func getCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
-	var beforeCloseSend *emptypb.Empty
-	afterCloseSendMs := -1
-	afterNumResponses := -1
-	if cancel != nil {
-		switch cancelTiming := cancel.CancelTiming.(type) {
-		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
-			beforeCloseSend = cancelTiming.BeforeCloseSend
-		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
-			afterCloseSendMs = int(cancelTiming.AfterCloseSendMs)
-		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
-			afterNumResponses = int(cancelTiming.AfterNumResponses)
-		case nil:
-			// If cancel is non-nil, but none of timing values are set, it should
-			// be treated as if afterCloseSendMs was set to 0
-			afterCloseSendMs = 0
-		default:
-			return nil, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming)
-		}
+// TODO - This should be consolidated with the unary implementation since they are
+// mostly the same. See https://github.com/connectrpc/conformance/pull/721/files#r1415699842
+// for an example.
+func (i *invoker) idempotentUnary(
+	ctx context.Context,
+	req *v1.ClientCompatRequest,
+) (*v1.ClientResponseResult, error) {
+	msg := req.RequestMessages[0]
+	ur := &v1.IdempotentUnaryRequest{}
+	if err := msg.UnmarshalTo(ur); err != nil {
+		return nil, err
 	}
-	return &CancelTiming{
-		beforeCloseSend:   beforeCloseSend,
-		afterCloseSendMs:  afterCloseSendMs,
-		afterNumResponses: afterNumResponses,
+
+	request := connect.NewRequest(ur)
+
+	// Add the specified request headers to the request
+	internal.AddHeaders(req.RequestHeaders, request.Header())
+
+	var protoErr *v1.Error
+	var headers []*v1.Header
+	var trailers []*v1.Header
+	payloads := make([]*v1.ConformancePayload, 0, 1)
+
+	// Invoke the Unary call
+	resp, err := i.client.IdempotentUnary(ctx, request)
+	if err != nil {
+		// If an error was returned, first convert it to a Connect error
+		// so that we can get the headers from the Meta property. Then,
+		// convert _that_ to a proto Error so we can set it in the response.
+		connectErr := internal.ConvertErrorToConnectError(err)
+		headers = internal.ConvertToProtoHeader(connectErr.Meta())
+		protoErr = internal.ConvertConnectToProtoError(connectErr)
+	} else {
+		// If the call was successful, get the returned payloads
+		// and the headers and trailers
+		payloads = append(payloads, resp.Msg.Payload)
+		headers = internal.ConvertToProtoHeader(resp.Header())
+		trailers = internal.ConvertToProtoHeader(resp.Trailer())
+	}
+
+	return &v1.ClientResponseResult{
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
@@ -452,6 +481,35 @@ func (i *invoker) unimplemented(
 	_, err := i.client.Unimplemented(ctx, request)
 	return &v1.ClientResponseResult{
 		Error: internal.ConvertErrorToProtoError(err),
+	}, nil
+}
+
+// getCancelTiming evaluates a Cancel setting and returns a struct with the
+// appropriate value set.
+func getCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*cancelTiming, error) {
+	var beforeCloseSend *emptypb.Empty
+	afterCloseSendMs := -1
+	afterNumResponses := -1
+	if cancel != nil {
+		switch cancelTiming := cancel.CancelTiming.(type) {
+		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
+			beforeCloseSend = cancelTiming.BeforeCloseSend
+		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
+			afterCloseSendMs = int(cancelTiming.AfterCloseSendMs)
+		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
+			afterNumResponses = int(cancelTiming.AfterNumResponses)
+		case nil:
+			// If cancel is non-nil, but none of timing values are set, it should
+			// be treated as if afterCloseSendMs was set to 0
+			afterCloseSendMs = 0
+		default:
+			return nil, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming)
+		}
+	}
+	return &cancelTiming{
+		beforeCloseSend:   beforeCloseSend,
+		afterCloseSendMs:  afterCloseSendMs,
+		afterNumResponses: afterNumResponses,
 	}, nil
 }
 

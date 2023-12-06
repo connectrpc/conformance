@@ -15,6 +15,7 @@
 package connectconformance
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -22,6 +23,7 @@ import (
 	"sort"
 	"strings"
 
+	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/protoyaml-go"
@@ -222,6 +224,7 @@ func serverInstanceForCase(testCase *conformancev1.TestCase) serverInstance {
 
 type unaryResponseDefiner interface {
 	GetResponseDefinition() *conformancev1.UnaryResponseDefinition
+	proto.Message
 }
 
 type streamResponseDefiner interface {
@@ -253,10 +256,6 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 			}
 			if err := expandRequestData(testCase); err != nil {
 				return nil, fmt.Errorf("%s: failed to expand request sizes as directed for test case %q: %w",
-					testFilePath, testCase.Request.TestName, err)
-			}
-			if err := populateExpectedResponse(testCase); err != nil {
-				return nil, fmt.Errorf("%s: failed to compute expected response for test case %q: %w",
 					testFilePath, testCase.Request.TestName, err)
 			}
 		}
@@ -413,6 +412,7 @@ func hasRawResponse(reqs []*anypb.Any) bool {
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
+
 	// First, find the response definition that the client instructed the server to return
 	concreteReq, err := req.UnmarshalNew()
 	if err != nil {
@@ -430,9 +430,44 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		TimeoutMs:      convertToInt64Ptr(testCase.Request.TimeoutMs),
 	}
 
-	// If no responses are specified for unary, the service will still return a response with the
-	// request information inside (but none of the response information since it wasn't provided).
+	// If this is a GET test, then the request should be marshalled and in the query params
+	if testCase.Request.UseGetHttpMethod {
+		isJSON := testCase.Request.Codec == conformancev1.Codec_CODEC_JSON
+		// Build a codec based on what is used in the request
+		codec := internal.NewCodec(isJSON)
+		reqAsBytes, err := codec.MarshalStable(definer)
+		if err != nil {
+			return err
+		}
+		var value string
+		var encoding string
+		if isJSON {
+			value = string(reqAsBytes)
+			encoding = "json"
+		} else {
+			value = base64.RawURLEncoding.EncodeToString(reqAsBytes)
+			encoding = "proto"
+		}
+		reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
+			QueryParams: []*conformancev1.Header{
+				{
+					Name:  "message",
+					Value: []string{value},
+				},
+				{
+					Name:  "encoding",
+					Value: []string{encoding},
+				},
+				{
+					Name:  "connect",
+					Value: []string{"v1"},
+				},
+			},
+		}
+	}
+
 	def := definer.GetResponseDefinition()
+
 	if def == nil {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
 			Payloads: []*conformancev1.ConformancePayload{

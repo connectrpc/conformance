@@ -22,7 +22,9 @@ import (
 	"os"
 	"path"
 	"sort"
+	"strconv"
 	"strings"
+	"sync"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
@@ -31,6 +33,7 @@ import (
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -43,6 +46,8 @@ type Flags struct {
 	ClientCommand    []string
 	ServerCommand    []string
 	TestFile         string
+	MaxServers       uint
+	Parallelism      uint
 }
 
 func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
@@ -139,8 +144,14 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 
 	// Validate keys in knownFailing, to make sure they match actual test names
 	// (to prevent accidental typos and inadvertently ignored entries)
-	for name := range testCaseLib.testCases {
+	for name, testCase := range testCaseLib.testCases {
 		knownFailing.match(strings.Split(name, "/"))
+
+		// Set the expected responses
+		if err := populateExpectedResponse(testCase); err != nil {
+			return false, fmt.Errorf("failed to compute expected response for test case %q: %w",
+				testCase.Request.TestName, err)
+		}
 	}
 	unmatched := map[string]struct{}{}
 	knownFailing.findUnmatched("", unmatched)
@@ -177,12 +188,12 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 		clients = []processInfo{
 			{
 				name:            "reference client",
-				start:           runInProcess("reference-client", referenceclient.Run),
+				start:           runInProcess([]string{"reference-client", "-p", strconv.Itoa(int(flags.Parallelism))}, referenceclient.Run),
 				isReferenceImpl: true,
 			},
 			{
 				name:       "reference client (grpc)",
-				start:      runInProcess("grpc-reference-client", grpcclient.Run),
+				start:      runInProcess([]string{"grpc-reference-client", "-p", strconv.Itoa(int(flags.Parallelism))}, grpcclient.Run),
 				isGrpcImpl: true,
 			},
 		}
@@ -208,12 +219,12 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			servers = []processInfo{
 				{
 					name:            "reference server",
-					start:           runInProcess("reference-server", referenceserver.RunInReferenceMode),
+					start:           runInProcess([]string{"reference-server"}, referenceserver.RunInReferenceMode),
 					isReferenceImpl: true,
 				},
 				{
 					name:       "reference server (grpc)",
-					start:      runInProcess("grpc-reference-server", grpcserver.Run),
+					start:      runInProcess([]string{"grpc-reference-server"}, grpcserver.Run),
 					isGrpcImpl: true,
 				},
 			}
@@ -225,34 +236,57 @@ func Run(flags *Flags, logOut io.Writer) (bool, error) { //nolint:gocyclo
 			}
 		}
 
-		// TODO: start servers in parallel (up to a limit) to allow parallelism and faster test execution
-		for _, serverInfo := range servers {
-			for _, svrInstance := range svrInstances {
-				testCases := testCaseLib.casesByServer[svrInstance]
-				if clientInfo.isGrpcImpl || serverInfo.isGrpcImpl {
-					testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl)
-					if len(testCases) == 0 {
-						continue
+		err = func() error {
+			var wg sync.WaitGroup
+			defer wg.Wait()
+			sema := semaphore.NewWeighted(int64(flags.MaxServers))
+
+			for _, serverInfo := range servers {
+				for _, svrInstance := range svrInstances {
+					testCases := testCaseLib.casesByServer[svrInstance]
+					if clientInfo.isGrpcImpl || serverInfo.isGrpcImpl {
+						testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl)
+						if len(testCases) == 0 {
+							continue
+						}
 					}
-				}
-				if flags.Verbose {
-					with := serverInfo.name
-					if with == "" {
-						with = clientInfo.name
+
+					if err := sema.Acquire(ctx, 1); err != nil {
+						return err
 					}
-					logTestCaseInfo(with, svrInstance, len(testCases), logOut)
-				}
-				runTestCasesForServer(ctx, clientInfo.isReferenceImpl, serverInfo.isReferenceImpl, svrInstance, testCases, clientCreds, serverInfo.start, results, clientProcess)
-				if !clientProcess.isRunning() {
-					err := clientProcess.waitForResponses()
-					if err == nil {
-						err = errors.New("client process unexpectedly stopped")
-					} else {
-						err = fmt.Errorf("client process unexpectedly stopped: %w", err)
+
+					if flags.Verbose {
+						with := serverInfo.name
+						if with == "" {
+							with = clientInfo.name
+						}
+						logTestCaseInfo(with, svrInstance, len(testCases), logOut)
 					}
-					return false, err
+
+					// Double-check that client is still running before spawning a server process.
+					if !clientProcess.isRunning() {
+						err := clientProcess.waitForResponses()
+						if err == nil {
+							err = errors.New("client process unexpectedly stopped")
+						} else {
+							err = fmt.Errorf("client process unexpectedly stopped: %w", err)
+						}
+						return err
+					}
+
+					wg.Add(1)
+					go func(ctx context.Context, clientInfo processInfo, serverInfo processInfo, svrInstance serverInstance) {
+						defer wg.Done()
+						defer sema.Release(1)
+						runTestCasesForServer(ctx, clientInfo.isReferenceImpl, serverInfo.isReferenceImpl, svrInstance, testCases, clientCreds, serverInfo.start, results, clientProcess)
+					}(ctx, clientInfo, serverInfo, svrInstance)
 				}
 			}
+			return nil
+		}()
+
+		if err != nil {
+			return false, err
 		}
 
 		clientProcess.closeSend()

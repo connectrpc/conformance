@@ -101,7 +101,7 @@ func TestRunClient(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			start := runInProcess("testclient", testCase.clientFunc)
+			start := runInProcess([]string{"testclient"}, testCase.clientFunc)
 			runner, err := runClient(context.Background(), start)
 			require.NoError(t, err)
 

@@ -19,6 +19,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"connectrpc.com/conformance/internal"
@@ -27,13 +28,16 @@ import (
 )
 
 const (
-	modeFlagName         = "mode"
-	configFlagName       = "conf"
-	testFileFlagName     = "test-file"
-	knownFailingFlagName = "known-failing"
-	verboseFlagName      = "verbose"
-	verboseFlagShortName = "v"
-	versionFlagName      = "version"
+	modeFlagName          = "mode"
+	configFlagName        = "conf"
+	testFileFlagName      = "test-file"
+	knownFailingFlagName  = "known-failing"
+	verboseFlagName       = "verbose"
+	verboseFlagShortName  = "v"
+	versionFlagName       = "version"
+	maxServersFlagName    = "max-servers"
+	parallelFlagName      = "parallel"
+	parallelFlagShortName = "p"
 )
 
 type flags struct {
@@ -43,6 +47,8 @@ type flags struct {
 	testFile         string
 	verbose          bool
 	version          bool
+	maxServers       uint
+	parallel         uint
 }
 
 func main() {
@@ -104,6 +110,10 @@ func bind(cmd *cobra.Command, flags *flags) {
 	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
 	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
 	cmd.Flags().BoolVar(&flags.version, versionFlagName, false, "print version and exit")
+	cmd.Flags().UintVar(&flags.maxServers, maxServersFlagName, 4,
+		"the maximum number of server processes to be running in parallel")
+	cmd.Flags().UintVarP(&flags.parallel, parallelFlagName, parallelFlagShortName, uint(runtime.GOMAXPROCS(0)*4),
+		"in server mode, the level of parallelism used when issuing RPCs")
 }
 
 func run(flags *flags, command []string) {
@@ -119,6 +129,13 @@ func run(flags *flags, command []string) {
 
 	if len(command) == 0 {
 		fatal(`Positional arguments are required to configure the command line of the client or server under test.`)
+	}
+
+	if flags.maxServers == 0 {
+		fatal(`Invalid max servers: must be greater than zero`)
+	}
+	if flags.parallel == 0 {
+		fatal(`Invalid parallelism: must be greater than zero`)
 	}
 
 	var clientCommand, serverCommand []string
@@ -166,6 +183,8 @@ func run(flags *flags, command []string) {
 			Verbose:          flags.verbose,
 			ClientCommand:    clientCommand,
 			ServerCommand:    serverCommand,
+			MaxServers:       flags.maxServers,
+			Parallelism:      flags.parallel,
 		},
 		os.Stdout,
 	)

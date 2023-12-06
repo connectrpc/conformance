@@ -1,0 +1,48 @@
+{
+  "testName": "Idempotent Unary Happy Path",
+  "httpVersion": "HTTP_VERSION_1",
+  "protocol": "PROTOCOL_CONNECT",
+  "codec": "CODEC_JSON",
+  "host": "127.0.0.1",
+  "port": 23456,
+  "compression": "COMPRESSION_IDENTITY",
+  "service": "connectrpc.conformance.v1.ConformanceService",
+  "method": "IdempotentUnary",
+  "streamType": "STREAM_TYPE_UNARY",
+  "requestHeaders": [
+    {
+      "name": "X-Conformance-Test",
+      "value": [
+        "Value1",
+        "Value2"
+      ]
+    }
+  ],
+  "requestMessages": [
+    {
+      "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest",
+      "responseDefinition": {
+        "responseHeaders": [
+          {
+            "name": "x-custom-header",
+            "value": [
+              "foo",
+              "bar",
+              "baz"
+            ]
+          }
+        ],
+        "responseData": "dGVzdCByZXNwb25zZQ==",
+        "responseTrailers": [
+          {
+            "name": "x-custom-trailer",
+            "value": [
+              "bing",
+              "quux"
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

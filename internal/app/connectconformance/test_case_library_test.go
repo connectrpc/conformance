@@ -15,9 +15,11 @@
 package connectconformance
 
 import (
+	"encoding/base64"
 	"sort"
 	"testing"
 
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
@@ -593,6 +595,8 @@ func TestExpandRequestData(t *testing.T) {
 	}
 }
 
+// TODO - Use JSON for this test case so that it becomes smaller and removes
+// a lot of the Any error checking.
 func TestPopulateExpectedResponse(t *testing.T) {
 	t.Parallel()
 
@@ -642,8 +646,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		Details: []*anypb.Any{headerAny},
 	}
 
+	jsonCodec := internal.NewCodec(true)
+	protoCodec := internal.NewCodec(false)
+
 	// Unary Requests
-	unarySuccessReq, err := anypb.New(&conformancev1.UnaryRequest{
+	unarySuccessReqLiteral := &conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 			ResponseHeaders: responseHeaders,
 			Response: &conformancev1.UnaryResponseDefinition_ResponseData{
@@ -651,10 +658,16 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			ResponseTrailers: responseTrailers,
 		},
-	})
+	}
+	unarySuccessReq, err := anypb.New(unarySuccessReqLiteral)
 	require.NoError(t, err)
 
-	unaryErrorReq, err := anypb.New(&conformancev1.UnaryRequest{
+	unarySuccessReqJSON, err := jsonCodec.MarshalStable(unarySuccessReqLiteral)
+	require.NoError(t, err)
+	unarySuccessReqProto, err := protoCodec.MarshalStable(unarySuccessReqLiteral)
+	require.NoError(t, err)
+
+	unaryErrorReqLiteral := &conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 			ResponseHeaders: responseHeaders,
 			Response: &conformancev1.UnaryResponseDefinition_Error{
@@ -662,7 +675,13 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			},
 			ResponseTrailers: responseTrailers,
 		},
-	})
+	}
+	unaryErrorReq, err := anypb.New(unaryErrorReqLiteral)
+	require.NoError(t, err)
+
+	unaryErrorReqJSON, err := jsonCodec.MarshalStable(unaryErrorReqLiteral)
+	require.NoError(t, err)
+	unaryErrorReqProto, err := protoCodec.MarshalStable(unaryErrorReqLiteral)
 	require.NoError(t, err)
 
 	unaryErrorDetailsReq, err := anypb.New(&conformancev1.UnaryRequest{
@@ -901,6 +920,50 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	idempotentUnaryErrorJSONReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{unaryErrorReq},
+		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+			QueryParams: []*conformancev1.Header{
+				{
+					Name:  "message",
+					Value: []string{string(unaryErrorReqJSON)},
+				},
+				{
+					Name:  "encoding",
+					Value: []string{"json"},
+				},
+				{
+					Name:  "connect",
+					Value: []string{"v1"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	idempotentUnaryErrorProtoReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
+		RequestHeaders: requestHeaders,
+		Requests:       []*anypb.Any{unaryErrorReq},
+		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+			QueryParams: []*conformancev1.Header{
+				{
+					Name:  "message",
+					Value: []string{base64.RawURLEncoding.EncodeToString(unaryErrorReqProto)},
+				},
+				{
+					Name:  "encoding",
+					Value: []string{"proto"},
+				},
+				{
+					Name:  "connect",
+					Value: []string{"v1"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
 	unaryErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{unaryErrorDetailsReq},
@@ -1040,6 +1103,122 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						},
 					},
 				},
+			},
+		},
+		{
+			testName: "idempotent unary with json success",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unarySuccessReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_JSON,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unarySuccessReq},
+							ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+								QueryParams: []*conformancev1.Header{
+									{
+										Name:  "message",
+										Value: []string{string(unarySuccessReqJSON)},
+									},
+									{
+										Name:  "encoding",
+										Value: []string{"json"},
+									},
+									{
+										Name:  "connect",
+										Value: []string{"v1"},
+									},
+								},
+							},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "idempotent unary with proto success",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unarySuccessReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_PROTO,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Payloads: []*conformancev1.ConformancePayload{
+					{
+						Data: data1,
+						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
+							RequestHeaders: requestHeaders,
+							Requests:       []*anypb.Any{unarySuccessReq},
+							ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
+								QueryParams: []*conformancev1.Header{
+									{
+										Name:  "message",
+										Value: []string{base64.RawURLEncoding.EncodeToString(unarySuccessReqProto)},
+									},
+									{
+										Name:  "encoding",
+										Value: []string{"proto"},
+									},
+									{
+										Name:  "connect",
+										Value: []string{"v1"},
+									},
+								},
+							},
+						},
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "idempotent unary with json error",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unaryErrorReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_JSON,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{idempotentUnaryErrorJSONReqInfo},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		},
+		{
+			testName: "idempotent unary with proto error",
+			request: &conformancev1.ClientCompatRequest{
+				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages:  []*anypb.Any{unaryErrorReq},
+				RequestHeaders:   requestHeaders,
+				UseGetHttpMethod: true,
+				Codec:            conformancev1.Codec_CODEC_PROTO,
+			},
+			expected: &conformancev1.ClientResponseResult{
+				ResponseHeaders: responseHeaders,
+				Error: &conformancev1.Error{
+					Code:    errorDef.Code,
+					Message: errorDef.Message,
+					Details: []*anypb.Any{idempotentUnaryErrorProtoReqInfo},
+				},
+				ResponseTrailers: responseTrailers,
 			},
 		},
 		{
