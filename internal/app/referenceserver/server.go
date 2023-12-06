@@ -76,7 +76,8 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	}
 
 	// Create an HTTP server based on the request
-	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), referenceMode, errWriter)
+	errPrinter := internal.NewPrinter(errWriter)
+	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), referenceMode, errPrinter)
 	if err != nil {
 		return err
 	}
@@ -143,7 +144,7 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode bool, errWriter io.Writer) (httpServer, []byte, error) {
+func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode bool, errPrinter internal.Printer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
@@ -163,7 +164,7 @@ func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode 
 	))
 	handler := http.Handler(mux)
 	if referenceMode {
-		handler = referenceServerChecks(handler, errWriter)
+		handler = referenceServerChecks(handler, errPrinter)
 	}
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
