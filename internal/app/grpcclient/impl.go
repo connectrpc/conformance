@@ -26,16 +26,9 @@ import (
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const clientName = "connectconformance-grpcclient"
-
-type cancelTiming struct {
-	beforeCloseSend   *emptypb.Empty
-	afterCloseSendMs  int
-	afterNumResponses int
-}
 
 type invoker struct {
 	client v1.ConformanceServiceClient
@@ -410,35 +403,6 @@ func (i *invoker) unimplemented(
 	_, err := i.client.Unimplemented(ctx, req)
 	return &v1.ClientResponseResult{
 		Error: grpcutil.ConvertGrpcToProtoError(err),
-	}, nil
-}
-
-// getCancelTiming evaluates a Cancel setting and returns a struct with the
-// appropriate value set.
-func getCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*cancelTiming, error) {
-	var beforeCloseSend *emptypb.Empty
-	afterCloseSendMs := -1
-	afterNumResponses := -1
-	if cancel != nil {
-		switch cancelTiming := cancel.CancelTiming.(type) {
-		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
-			beforeCloseSend = cancelTiming.BeforeCloseSend
-		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
-			afterCloseSendMs = int(cancelTiming.AfterCloseSendMs)
-		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
-			afterNumResponses = int(cancelTiming.AfterNumResponses)
-		case nil:
-			// If cancel is non-nil, but none of timing values are set, it should
-			// be treated as if afterCloseSendMs was set to 0
-			afterCloseSendMs = 0
-		default:
-			return nil, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming)
-		}
-	}
-	return &cancelTiming{
-		beforeCloseSend:   beforeCloseSend,
-		afterCloseSendMs:  afterCloseSendMs,
-		afterNumResponses: afterNumResponses,
 	}, nil
 }
 

@@ -22,7 +22,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-type cancelTiming struct {
+type CancelTiming struct {
 	BeforeCloseSend   *emptypb.Empty
 	AfterCloseSendMs  int
 	AfterNumResponses int
@@ -30,7 +30,7 @@ type cancelTiming struct {
 
 // GetCancelTiming evaluates a Cancel setting and returns a struct with the
 // appropriate value set.
-func GetCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*cancelTiming, error) {
+func GetCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
 	var beforeCloseSend *emptypb.Empty
 	afterCloseSendMs := -1
 	afterNumResponses := -1
@@ -50,7 +50,7 @@ func GetCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*cancelTiming, erro
 			return nil, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming)
 		}
 	}
-	return &cancelTiming{
+	return &CancelTiming{
 		BeforeCloseSend:   beforeCloseSend,
 		AfterCloseSendMs:  afterCloseSendMs,
 		AfterNumResponses: afterNumResponses,
