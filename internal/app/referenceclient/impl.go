@@ -27,16 +27,9 @@ import (
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const clientName = "connectconformance-referenceclient"
-
-type cancelTiming struct {
-	beforeCloseSend   *emptypb.Empty
-	afterCloseSendMs  int
-	afterNumResponses int
-}
 
 type invoker struct {
 	client conformancev1connect.ConformanceServiceClient
@@ -205,7 +198,7 @@ func (i *invoker) serverStream(
 	c context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	ctx, ctxCancel := wrapContext(c)
+	ctx, ctxCancel := internal.WrapContext(c)
 	defer ctxCancel()
 
 	msg := req.RequestMessages[0]
@@ -218,11 +211,6 @@ func (i *invoker) serverStream(
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
-
-	timing, err := getCancelTiming(req.Cancel)
-	if err != nil {
-		return nil, err
-	}
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
@@ -246,9 +234,13 @@ func (i *invoker) serverStream(
 		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
 	// If the cancel timing specifies after 0 responses, then cancel before
 	// receiving anything
-	if timing.afterNumResponses == 0 {
+	if timing.AfterNumResponses == 0 {
 		ctxCancel()
 	}
 	totalRcvd := 0
@@ -258,10 +250,10 @@ func (i *invoker) serverStream(
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
 
-		// If afterNumResponses is specified, it will be a number > 0 here.
+		// If AfterNumResponses is specified, it will be a number > 0 here.
 		// If it wasn't specified, it will be -1, which means the totalRcvd
 		// will never be equal and we won't cancel.
-		if totalRcvd == timing.afterNumResponses {
+		if totalRcvd == timing.AfterNumResponses {
 			ctxCancel()
 		}
 	}
@@ -293,7 +285,7 @@ func (i *invoker) clientStream(
 	c context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	ctx, ctxCancel := wrapContext(c)
+	ctx, ctxCancel := internal.WrapContext(c)
 	defer ctxCancel()
 
 	stream := i.client.ClientStream(ctx)
@@ -321,15 +313,15 @@ func (i *invoker) clientStream(
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
 	// Cancellation timing
-	timing, err := getCancelTiming(req.Cancel)
+	timing, err := internal.GetCancelTiming(req.Cancel)
 	if err != nil {
 		return nil, err
 	}
-	if timing.beforeCloseSend != nil {
+	if timing.BeforeCloseSend != nil {
 		ctxCancel()
-	} else if timing.afterCloseSendMs >= 0 {
+	} else if timing.AfterCloseSendMs >= 0 {
 		go func() {
-			time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
+			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
 			ctxCancel()
 		}()
 	}
@@ -362,7 +354,7 @@ func (i *invoker) bidiStream(
 	c context.Context,
 	req *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, _ error) {
-	ctx, ctxCancel := wrapContext(c)
+	ctx, ctxCancel := internal.WrapContext(c)
 	defer ctxCancel()
 
 	result = &v1.ClientResponseResult{
@@ -384,7 +376,7 @@ func (i *invoker) bidiStream(
 	fullDuplex := req.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
 	// Cancellation timing
-	timing, err := getCancelTiming(req.Cancel)
+	timing, err := internal.GetCancelTiming(req.Cancel)
 	if err != nil {
 		return nil, err
 	}
@@ -412,7 +404,7 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
-			if totalRcvd == timing.afterNumResponses {
+			if totalRcvd == timing.AfterNumResponses {
 				ctxCancel()
 			}
 			// If this is a full duplex stream, receive a response for each request
@@ -434,7 +426,7 @@ func (i *invoker) bidiStream(
 		}
 	}
 
-	if timing.beforeCloseSend != nil {
+	if timing.BeforeCloseSend != nil {
 		ctxCancel()
 	}
 
@@ -443,8 +435,8 @@ func (i *invoker) bidiStream(
 		return nil, err
 	}
 
-	if timing.afterCloseSendMs >= 0 {
-		time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
+	if timing.AfterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
 		ctxCancel()
 	}
 
@@ -461,7 +453,7 @@ func (i *invoker) bidiStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 			break
 		}
-		if totalRcvd == timing.afterNumResponses {
+		if totalRcvd == timing.AfterNumResponses {
 			ctxCancel()
 		}
 		msg, err := stream.Receive()
@@ -509,45 +501,6 @@ func (i *invoker) unimplemented(
 	return &v1.ClientResponseResult{
 		Error: internal.ConvertErrorToProtoError(err),
 	}, nil
-}
-
-// getCancelTiming evaluates a Cancel setting and returns a struct with the
-// appropriate value set.
-func getCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*cancelTiming, error) {
-	var beforeCloseSend *emptypb.Empty
-	afterCloseSendMs := -1
-	afterNumResponses := -1
-	if cancel != nil {
-		switch cancelTiming := cancel.CancelTiming.(type) {
-		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
-			beforeCloseSend = cancelTiming.BeforeCloseSend
-		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
-			afterCloseSendMs = int(cancelTiming.AfterCloseSendMs)
-		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
-			afterNumResponses = int(cancelTiming.AfterNumResponses)
-		case nil:
-			// If cancel is non-nil, but none of timing values are set, it should
-			// be treated as if afterCloseSendMs was set to 0
-			afterCloseSendMs = 0
-		default:
-			return nil, fmt.Errorf("provided CancelTiming has an unexpected type %T", cancelTiming)
-		}
-	}
-	return &cancelTiming{
-		beforeCloseSend:   beforeCloseSend,
-		afterCloseSendMs:  afterCloseSendMs,
-		afterNumResponses: afterNumResponses,
-	}, nil
-}
-
-// wrapContext wraps the current context. The resulting context and cancel
-// function will be dependent on whether the given context has a deadline.
-func wrapContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	deadline, ok := ctx.Deadline()
-	if !ok {
-		return context.WithCancel(ctx)
-	}
-	return context.WithDeadline(ctx, deadline)
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
