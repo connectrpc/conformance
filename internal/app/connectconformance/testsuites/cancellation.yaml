@@ -24,6 +24,32 @@ testCases:
     error:
       code: 1
 - request:
+    testName: server stream cancel after responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    cancel:
+      afterNumResponses: 1
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    payloads:
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+              responseDefinition:
+                responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
+                  - "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 1
+- request:
     testName: client stream cancel before close send
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream

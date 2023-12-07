@@ -359,9 +359,12 @@ func (i *invoker) clientStream(
 }
 
 func (i *invoker) bidiStream(
-	ctx context.Context,
+	c context.Context,
 	req *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, _ error) {
+	ctx, ctxCancel := wrapContext(c)
+	defer ctxCancel()
+
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
@@ -380,7 +383,14 @@ func (i *invoker) bidiStream(
 
 	fullDuplex := req.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
+	// Cancellation timing
+	timing, err := getCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
 	var protoErr *v1.Error
+	totalRcvd := 0
 	for _, msg := range req.RequestMessages {
 		bsr := &v1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
@@ -402,8 +412,12 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
+			if totalRcvd == timing.afterNumResponses {
+				ctxCancel()
+			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Receive()
+			totalRcvd++
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
@@ -420,9 +434,18 @@ func (i *invoker) bidiStream(
 		}
 	}
 
+	if timing.beforeCloseSend != nil {
+		ctxCancel()
+	}
+
 	// Sends are done, close the send side of the stream
 	if err := stream.CloseRequest(); err != nil {
 		return nil, err
+	}
+
+	if timing.afterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.afterCloseSendMs) * time.Millisecond)
+		ctxCancel()
 	}
 
 	// If we received an error in any of the send logic or full-duplex reads, then exit
@@ -438,7 +461,11 @@ func (i *invoker) bidiStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 			break
 		}
+		if totalRcvd == timing.afterNumResponses {
+			ctxCancel()
+		}
 		msg, err := stream.Receive()
+		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// If an error was returned that is not an EOF, convert it

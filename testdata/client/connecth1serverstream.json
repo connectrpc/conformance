@@ -17,9 +17,6 @@
       ]
     }
   ],
-  "cancel": {
-      "afterNumResponses": 0
-  },
   "requestMessages": [
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest",
@@ -46,7 +43,8 @@
               "quux"
             ]
           }
-        ]
+        ],
+        "responseDelayMs": 500
       }
     }
   ]
