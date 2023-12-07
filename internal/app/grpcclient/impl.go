@@ -182,7 +182,6 @@ func (i *invoker) serverStream(
 	// receiving anything
 	if timing.AfterNumResponses == 0 {
 		ctxCancel()
-		time.Sleep(time.Duration(500) * time.Millisecond)
 	}
 	totalRcvd := 0
 	for {
