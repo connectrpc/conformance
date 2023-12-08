@@ -195,11 +195,11 @@ func (i *invoker) idempotentUnary(
 }
 
 func (i *invoker) serverStream(
-	c context.Context,
+	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	ctx, ctxCancel := internal.WrapContext(c)
-	defer ctxCancel()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	msg := req.RequestMessages[0]
 	ssr := &v1.ServerStreamRequest{}
@@ -241,7 +241,7 @@ func (i *invoker) serverStream(
 	// If the cancel timing specifies after 0 responses, then cancel before
 	// receiving anything
 	if timing.AfterNumResponses == 0 {
-		ctxCancel()
+		cancel()
 	}
 	totalRcvd := 0
 	for stream.Receive() {
@@ -254,7 +254,7 @@ func (i *invoker) serverStream(
 		// If it wasn't specified, it will be -1, which means the totalRcvd
 		// will never be equal and we won't cancel.
 		if totalRcvd == timing.AfterNumResponses {
-			ctxCancel()
+			cancel()
 		}
 	}
 	if stream.Err() != nil {
@@ -282,11 +282,11 @@ func (i *invoker) serverStream(
 }
 
 func (i *invoker) clientStream(
-	c context.Context,
+	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	ctx, ctxCancel := internal.WrapContext(c)
-	defer ctxCancel()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	stream := i.client.ClientStream(ctx)
 
@@ -318,11 +318,11 @@ func (i *invoker) clientStream(
 		return nil, err
 	}
 	if timing.BeforeCloseSend != nil {
-		ctxCancel()
+		cancel()
 	} else if timing.AfterCloseSendMs >= 0 {
 		go func() {
 			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
-			ctxCancel()
+			cancel()
 		}()
 	}
 	resp, err := stream.CloseAndReceive()
@@ -351,11 +351,11 @@ func (i *invoker) clientStream(
 }
 
 func (i *invoker) bidiStream(
-	c context.Context,
+	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, _ error) {
-	ctx, ctxCancel := internal.WrapContext(c)
-	defer ctxCancel()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
@@ -405,7 +405,7 @@ func (i *invoker) bidiStream(
 		}
 		if fullDuplex {
 			if totalRcvd == timing.AfterNumResponses {
-				ctxCancel()
+				cancel()
 			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Receive()
@@ -427,7 +427,7 @@ func (i *invoker) bidiStream(
 	}
 
 	if timing.BeforeCloseSend != nil {
-		ctxCancel()
+		cancel()
 	}
 
 	// Sends are done, close the send side of the stream
@@ -437,7 +437,7 @@ func (i *invoker) bidiStream(
 
 	if timing.AfterCloseSendMs >= 0 {
 		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
-		ctxCancel()
+		cancel()
 	}
 
 	// If we received an error in any of the send logic or full-duplex reads, then exit
@@ -454,7 +454,7 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if totalRcvd == timing.AfterNumResponses {
-			ctxCancel()
+			cancel()
 		}
 		msg, err := stream.Receive()
 		totalRcvd++

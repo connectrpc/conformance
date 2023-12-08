@@ -132,11 +132,11 @@ func (i *invoker) unary(
 }
 
 func (i *invoker) serverStream(
-	c context.Context,
+	ctx context.Context,
 	ccr *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, retErr error) {
-	ctx, ctxCancel := internal.WrapContext(c)
-	defer ctxCancel()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
@@ -174,7 +174,7 @@ func (i *invoker) serverStream(
 	// If the cancel timing specifies after 0 responses, then cancel before
 	// receiving anything
 	if timing.AfterNumResponses == 0 {
-		ctxCancel()
+		cancel()
 	}
 	totalRcvd := 0
 	for {
@@ -194,7 +194,7 @@ func (i *invoker) serverStream(
 		// If it wasn't specified, it will be -1, which means the totalRcvd
 		// will never be equal and we won't cancel.
 		if totalRcvd == timing.AfterNumResponses {
-			ctxCancel()
+			cancel()
 		}
 	}
 
@@ -202,11 +202,11 @@ func (i *invoker) serverStream(
 }
 
 func (i *invoker) clientStream(
-	c context.Context,
+	ctx context.Context,
 	ccr *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-	ctx, ctxCancel := internal.WrapContext(c)
-	defer ctxCancel()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	result := &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
@@ -240,11 +240,11 @@ func (i *invoker) clientStream(
 		return nil, err
 	}
 	if timing.BeforeCloseSend != nil {
-		ctxCancel()
+		cancel()
 	} else if timing.AfterCloseSendMs >= 0 {
 		go func() {
 			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
-			ctxCancel()
+			cancel()
 		}()
 	}
 	resp, err := stream.CloseAndRecv()

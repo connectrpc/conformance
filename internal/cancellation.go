@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"context"
 	"fmt"
 
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -55,14 +54,4 @@ func GetCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, erro
 		AfterCloseSendMs:  afterCloseSendMs,
 		AfterNumResponses: afterNumResponses,
 	}, nil
-}
-
-// WrapContext wraps the current context. The resulting context and cancel
-// function will be dependent on whether the given context has a deadline.
-func WrapContext(ctx context.Context) (context.Context, context.CancelFunc) {
-	deadline, ok := ctx.Deadline()
-	if !ok {
-		return context.WithCancel(ctx)
-	}
-	return context.WithDeadline(ctx, deadline)
 }
