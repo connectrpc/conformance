@@ -2,11 +2,6 @@ name: Bidi Timeouts
 relevantHttpVersions:
   - HTTP_VERSION_2
   - HTTP_VERSION_3
-# TODO - Need to fix the timeout issues with wrapping context deadline. Right now
-# these tests break for gRPC until that issue is addressed
-relevantProtocols:
-  - PROTOCOL_CONNECT
-  - PROTOCOL_GRPC_WEB
 testCases:
 - request:
     testName: bidi full duplex timeout
