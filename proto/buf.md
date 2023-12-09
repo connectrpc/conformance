@@ -21,7 +21,7 @@ various scenarios with a client-server interaction to ensure the results are as 
 * [connect-swift](https://github.com/connectrpc/connect-swift):
   The Swift implementation of Connect
 
-For more on Connect, see the [announcement blog post][blog], the documentation
-on [connectrpc.com][docs], or the following implementations:
+For more on Connect, see the [announcement blog post](https://buf.build/blog/connect-a-better-grpc) and the documentation
+on [connectrpc.com](https://connectrpc.com).
 
-The source files for this module are available on [GitHub][proto].
+The source files for this module are available on [GitHub](https://github.com/connectrpc/examples-go/tree/main/proto).
