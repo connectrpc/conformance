@@ -91,6 +91,22 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 		return err
 	}
 
+	// Start the server
+	var serveError error
+	serveDone := make(chan struct{})
+	go func() {
+		defer close(serveDone)
+		serveError = server.Serve()
+	}()
+	// Give the above goroutine a chance to start the server and potentially
+	// abort if it could not be started.
+	time.Sleep(200 * time.Millisecond)
+	select {
+	case <-serveDone:
+		return serveError
+	default:
+	}
+
 	resp := &v1.ServerCompatResponse{
 		Host:    actualHost,
 		Port:    uint32(actualPort),
@@ -100,13 +116,6 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 		return err
 	}
 
-	// Finally, start the server
-	var serveError error
-	serveDone := make(chan struct{})
-	go func() {
-		defer close(serveDone)
-		serveError = server.Serve()
-	}()
 	select {
 	case <-serveDone:
 		return serveError
