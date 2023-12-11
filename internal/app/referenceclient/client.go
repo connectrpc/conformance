@@ -317,7 +317,7 @@ func (t *contextFixTransport) RoundTrip(req *http.Request) (*http.Response, erro
 }
 
 type contextFixReader struct {
-	ctx context.Context
+	ctx context.Context //nolint:containedctx
 	r   io.ReadCloser
 }
 
@@ -354,6 +354,7 @@ type contextFixError struct {
 	error
 }
 
+//nolint:goerr113
 func (e *contextFixError) Is(err error) bool {
 	return (e.timeout && err == context.DeadlineExceeded) ||
 		(!e.timeout && err == context.Canceled)
