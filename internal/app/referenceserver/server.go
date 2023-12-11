@@ -268,7 +268,7 @@ func newH3Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		Handler:   handler,
 		TLSConfig: tlsConf,
 	}
-	lis, err := quic.ListenAddrEarly(listenAddr, tlsConf, &quic.Config{Allow0RTT: true, EnableDatagrams: true})
+	lis, err := quic.ListenAddrEarly(listenAddr, tlsConf, &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second})
 	if err != nil {
 		return nil, err
 	}
