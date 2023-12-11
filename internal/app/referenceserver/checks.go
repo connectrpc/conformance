@@ -147,13 +147,13 @@ func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackPrinter)
 		return
 	}
 	contentType, hasContentType := getHeader(req.Header, "content-type", feedback)
-	// TODO: Require that no content-type be present. Must wait for
-	// https://github.com/connectrpc/connect-go/pull/644 to
-	// be released and incorporated into the reference client.
-	_ = hasContentType
 	var actual string
 	switch {
 	case req.Method == http.MethodGet:
+		// GET requests should not have a Content-Type header
+		if hasContentType {
+			feedback.Printf("content-type header should not appear with method GET")
+		}
 		// Servers should test for an empty request body by attempting a read.
 		// If no body is present, it should return an immediate EOF.
 		_, err := req.Body.Read([]byte{})
