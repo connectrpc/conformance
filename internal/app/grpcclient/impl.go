@@ -135,6 +135,9 @@ func (i *invoker) serverStream(
 	ctx context.Context,
 	ccr *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, retErr error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
@@ -164,8 +167,19 @@ func (i *invoker) serverStream(
 		}
 	}()
 
+	timing, err := internal.GetCancelTiming(ccr.Cancel)
+	if err != nil {
+		return nil, err
+	}
+	// If the cancel timing specifies after 0 responses, then cancel before
+	// receiving anything
+	if timing.AfterNumResponses == 0 {
+		cancel()
+	}
+	totalRcvd := 0
 	for {
 		msg, err := stream.Recv()
+		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				result.Error = grpcutil.ConvertGrpcToProtoError(err)
@@ -175,6 +189,13 @@ func (i *invoker) serverStream(
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		result.Payloads = append(result.Payloads, msg.Payload)
+
+		// If AfterNumResponses is specified, it will be a number > 0 here.
+		// If it wasn't specified, it will be -1, which means the totalRcvd
+		// will never be equal and we won't cancel.
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 	}
 
 	return result, nil
@@ -184,6 +205,9 @@ func (i *invoker) clientStream(
 	ctx context.Context,
 	ccr *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	result := &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
@@ -208,6 +232,20 @@ func (i *invoker) clientStream(
 		if err := stream.Send(csr); err != nil && errors.Is(err, io.EOF) {
 			break
 		}
+	}
+
+	// Cancellation timing
+	timing, err := internal.GetCancelTiming(ccr.Cancel)
+	if err != nil {
+		return nil, err
+	}
+	if timing.BeforeCloseSend != nil {
+		cancel()
+	} else if timing.AfterCloseSendMs >= 0 {
+		go func() {
+			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+			cancel()
+		}()
 	}
 	resp, err := stream.CloseAndRecv()
 	if err != nil {

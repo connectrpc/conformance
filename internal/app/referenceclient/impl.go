@@ -198,6 +198,9 @@ func (i *invoker) serverStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	msg := req.RequestMessages[0]
 	ssr := &v1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(ssr); err != nil {
@@ -230,10 +233,29 @@ func (i *invoker) serverStream(
 	if ssr.ResponseDefinition != nil {
 		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
+
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+	// If the cancel timing specifies after 0 responses, then cancel before
+	// receiving anything
+	if timing.AfterNumResponses == 0 {
+		cancel()
+	}
+	totalRcvd := 0
 	for stream.Receive() {
+		totalRcvd++
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
 		payloads = append(payloads, stream.Msg().Payload)
+
+		// If AfterNumResponses is specified, it will be a number > 0 here.
+		// If it wasn't specified, it will be -1, which means the totalRcvd
+		// will never be equal and we won't cancel.
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 	}
 	if stream.Err() != nil {
 		// If an error was returned, convert it to a proto Error
@@ -263,6 +285,9 @@ func (i *invoker) clientStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
@@ -287,6 +312,19 @@ func (i *invoker) clientStream(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
+	// Cancellation timing
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+	if timing.BeforeCloseSend != nil {
+		cancel()
+	} else if timing.AfterCloseSendMs >= 0 {
+		go func() {
+			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+			cancel()
+		}()
+	}
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
@@ -316,6 +354,9 @@ func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, _ error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
@@ -334,7 +375,14 @@ func (i *invoker) bidiStream(
 
 	fullDuplex := req.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
+	// Cancellation timing
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
 	var protoErr *v1.Error
+	totalRcvd := 0
 	for _, msg := range req.RequestMessages {
 		bsr := &v1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
@@ -356,8 +404,12 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
+			if totalRcvd == timing.AfterNumResponses {
+				cancel()
+			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Receive()
+			totalRcvd++
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
@@ -374,9 +426,18 @@ func (i *invoker) bidiStream(
 		}
 	}
 
+	if timing.BeforeCloseSend != nil {
+		cancel()
+	}
+
 	// Sends are done, close the send side of the stream
 	if err := stream.CloseRequest(); err != nil {
 		return nil, err
+	}
+
+	if timing.AfterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+		cancel()
 	}
 
 	// If we received an error in any of the send logic or full-duplex reads, then exit
@@ -392,7 +453,11 @@ func (i *invoker) bidiStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 			break
 		}
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 		msg, err := stream.Receive()
+		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// If an error was returned that is not an EOF, convert it
