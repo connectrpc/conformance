@@ -180,6 +180,15 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					UseConnectGET: true,
 				},
 				{
+					Version:       conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:      conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:         conformancev1.Codec_CODEC_PROTO,
+					Compression:   conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:    conformancev1.StreamType_STREAM_TYPE_UNARY,
+					UseConnectGET: true,
+					UseTLS:        true,
+				},
+				{
 					Version:            conformancev1.HTTPVersion_HTTP_VERSION_1,
 					Protocol:           conformancev1.Protocol_PROTOCOL_CONNECT,
 					Codec:              conformancev1.Codec_CODEC_PROTO,
@@ -210,15 +219,17 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      false,
 				}: {
-					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-unary",
-					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/connect-get-unary",
-					"Connect Version Required (client)/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-without-connect-version-header",
+					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/basic-unary",
+					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/connect-get-unary",
+					"Connect Version Required (client)/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/unary-without-connect-version-header",
 				},
 				{
 					protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
 					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      true,
 				}: {
+					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:true/basic-unary",
+					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:true/connect-get-unary",
 					"TLS/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-unary",
 				},
 				{
@@ -234,7 +245,7 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_2,
 					useTLS:      false,
 				}: {
-					"Basic/HTTPVersion:2/Protocol:PROTOCOL_GRPC/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-bidi-stream",
+					"Basic/HTTPVersion:2/Protocol:PROTOCOL_GRPC/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/basic-bidi-stream",
 				},
 			},
 		},
@@ -275,6 +286,15 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					UseConnectGET: true,
 				},
 				{
+					Version:       conformancev1.HTTPVersion_HTTP_VERSION_1,
+					Protocol:      conformancev1.Protocol_PROTOCOL_CONNECT,
+					Codec:         conformancev1.Codec_CODEC_PROTO,
+					Compression:   conformancev1.Compression_COMPRESSION_IDENTITY,
+					StreamType:    conformancev1.StreamType_STREAM_TYPE_UNARY,
+					UseConnectGET: true,
+					UseTLS:        true,
+				},
+				{
 					Version:            conformancev1.HTTPVersion_HTTP_VERSION_1,
 					Protocol:           conformancev1.Protocol_PROTOCOL_CONNECT,
 					Codec:              conformancev1.Codec_CODEC_PROTO,
@@ -305,16 +325,18 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      false,
 				}: {
-					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-unary",
-					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/connect-get-unary",
-					"Connect Version Optional (server)/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-without-connect-version-header",
-					"Max Receive Size (server)/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/unary-exceeds-limit",
+					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/basic-unary",
+					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/connect-get-unary",
+					"Connect Version Optional (server)/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/unary-without-connect-version-header",
+					"Max Receive Size (server)/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/unary-exceeds-limit",
 				},
 				{
 					protocol:    conformancev1.Protocol_PROTOCOL_CONNECT,
 					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_1,
 					useTLS:      true,
 				}: {
+					"Basic/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:true/basic-unary",
+					"Connect GET/HTTPVersion:1/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:true/connect-get-unary",
 					"TLS/HTTPVersion:1/Protocol:PROTOCOL_CONNECT/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/tls-unary",
 				},
 				{
@@ -330,7 +352,7 @@ func TestNewTestCaseLibrary(t *testing.T) {
 					httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_2,
 					useTLS:      false,
 				}: {
-					"Basic/HTTPVersion:2/Protocol:PROTOCOL_GRPC/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/basic-bidi-stream",
+					"Basic/HTTPVersion:2/Protocol:PROTOCOL_GRPC/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/basic-bidi-stream",
 				},
 			},
 		},

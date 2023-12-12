@@ -448,11 +448,6 @@ func (i *invoker) bidiStream(
 
 	// Receive any remaining responses
 	for {
-		if err := ctx.Err(); err != nil {
-			// If an error was returned, convert it to a proto Error
-			protoErr = internal.ConvertErrorToProtoError(err)
-			break
-		}
 		if totalRcvd == timing.AfterNumResponses {
 			cancel()
 		}

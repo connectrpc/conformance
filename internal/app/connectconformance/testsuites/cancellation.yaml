@@ -1,56 +1,8 @@
 name: Cancellation
+# Cancellations only apply to clients under test
+mode: TEST_MODE_CLIENT
 testCases:
-# TODO - The server stream tests are failing with grpc due to issues with
-# blocking on sender header metadata.
-# - request:
-#     testName: server stream cancel after zero responses
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ServerStream
-#     streamType: STREAM_TYPE_SERVER_STREAM
-#     cancel:
-#       afterNumResponses: 0
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-#       responseDefinition:
-#         responseHeaders:
-#         - name: x-custom-header
-#           value: ["foo","bar","baz"]
-#         responseData:
-#           - "dGVzdCByZXNwb25zZQ=="
-#           - "dGVzdCByZXNwb25zZQ=="
-#         responseTrailers:
-#         - name: x-custom-trailer
-#           value: ["bing","quux"]
-#   # Override
-#   expectedResponse:
-#     error:
-#       code: 1
-# - request:
-#     testName: server stream cancel after responses
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ServerStream
-#     streamType: STREAM_TYPE_SERVER_STREAM
-#     cancel:
-#       afterNumResponses: 1
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-#       responseDefinition:
-#         responseData:
-#           - "dGVzdCByZXNwb25zZQ=="
-#           - "dGVzdCByZXNwb25zZQ=="
-#   # Override
-#   expectedResponse:
-#     payloads:
-#       - data: "dGVzdCByZXNwb25zZQ=="
-#         requestInfo:
-#           requests:
-#             - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-#               responseDefinition:
-#                 responseData:
-#                   - "dGVzdCByZXNwb25zZQ=="
-#                   - "dGVzdCByZXNwb25zZQ=="
-#     error:
-#       code: 1
+# Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client stream cancel before close send
     service: connectrpc.conformance.v1.ConformanceService
@@ -93,6 +45,274 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    error:
+      code: 1
+# Server Stream Tests ---------------------------------------------------------
+- request:
+    testName: server stream cancel after zero responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    cancel:
+      afterNumResponses: 0
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseDelayMs: 100
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
+  # Override
+  expectedResponse:
+    error:
+      code: 1
+- request:
+    testName: server stream cancel after responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    cancel:
+      afterNumResponses: 1
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseDelayMs: 100
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    payloads:
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+              responseDefinition:
+                responseDelayMs: 100
+                responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
+                  - "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 1
+# Bidi Stream Tests -----------------------------------------------------------
+- request:
+    testName: bidi full duplex cancel after zero responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    cancel:
+      afterNumResponses: 0
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseDelayMs: 100
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    error:
+      code: 1
+- request:
+    testName: bidi full duplex cancel after responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    cancel:
+      afterNumResponses: 1
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseDelayMs: 100
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    payloads:
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              responseDefinition:
+                responseDelayMs: 100
+                responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
+                  - "dGVzdCByZXNwb25zZQ=="
+              fullDuplex: true
+    error:
+      code: 1
+- request:
+    testName: bidi full duplex cancel before close send
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    cancel:
+      beforeCloseSend:
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    payloads:
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              responseDefinition:
+                responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
+                  - "dGVzdCByZXNwb25zZQ=="
+              fullDuplex: true
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              requestData: "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 1
+- request:
+    testName: bidi full duplex cancel after close send
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    cancel:
+      afterCloseSendMs: 0
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    payloads:
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              responseDefinition:
+                responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
+                  - "dGVzdCByZXNwb25zZQ=="
+              fullDuplex: true
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              requestData: "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 1
+- request:
+    testName: bidi half duplex cancel after zero responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    cancel:
+      afterNumResponses: 0
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseDelayMs: 100
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    error:
+      code: 1
+- request:
+    testName: bidi half duplex cancel after responses
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    cancel:
+      afterNumResponses: 1
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseDelayMs: 100
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    payloads:
+      - data: "dGVzdCByZXNwb25zZQ=="
+        requestInfo:
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              responseDefinition:
+                responseDelayMs: 100
+                responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
+                  - "dGVzdCByZXNwb25zZQ=="
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              requestData: "dGVzdCByZXNwb25zZQ=="
+    error:
+      code: 1
+- request:
+    testName: bidi half duplex cancel before close send
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    cancel:
+      beforeCloseSend:
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    error:
+      code: 1
+- request:
+    testName: bidi half duplex cancel after close send
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    cancel:
+      afterCloseSendMs: 0
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseDelayMs: 250
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   # Override
   expectedResponse:

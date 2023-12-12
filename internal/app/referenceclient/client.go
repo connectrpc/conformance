@@ -29,12 +29,14 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
+	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/semaphore"
@@ -193,11 +195,11 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientRespons
 		if tlsConf == nil {
 			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
 		}
-		transport = &http3.RoundTripper{
+		transport = &contextFixTransport{http3.RoundTripper{
 			DisableCompression: true,
-			EnableDatagrams:    true,
 			TLSClientConfig:    tlsConf,
-		}
+			QuicConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
+		}}
 	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
 	}
@@ -296,4 +298,66 @@ func createTLSConfig(req *v1.ClientCompatRequest) (*tls.Config, error) {
 		return nil, nil //nolint:nilnil
 	}
 	return internal.NewClientTLSConfig(req.ServerTlsCert, req.ClientTlsCreds.GetCert(), req.ClientTlsCreds.GetKey())
+}
+
+// contextFixTransport wraps an HTTP/3 transport so that context errors can be correctly
+// classified by the connect-go framework. This is a work-around until a fix
+// can be implemented in connect-go and/or quic-go.
+// See: https://github.com/quic-go/quic-go/issues/4196
+type contextFixTransport struct {
+	http3.RoundTripper
+}
+
+func (t *contextFixTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	ctx := req.Context()
+	resp, err := t.RoundTripper.RoundTrip(req)
+	if err != nil {
+		return nil, maybeWrapContextError(ctx, err)
+	}
+	resp.Body = &contextFixReader{ctx: ctx, r: resp.Body}
+	return resp, nil
+}
+
+type contextFixReader struct {
+	ctx context.Context //nolint:containedctx
+	r   io.ReadCloser
+}
+
+func (r *contextFixReader) Read(data []byte) (int, error) {
+	n, err := r.r.Read(data)
+	return n, maybeWrapContextError(r.ctx, err)
+}
+
+func (r *contextFixReader) Close() error {
+	return maybeWrapContextError(r.ctx, r.r.Close())
+}
+
+func maybeWrapContextError(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	ctxErr := ctx.Err()
+	if ctxErr == nil {
+		return err
+	}
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return &contextFixError{timeout: true, error: err}
+	}
+	var httpErr *http3.Error
+	if errors.As(err, &httpErr) && httpErr.ErrorCode == http3.ErrCodeRequestCanceled {
+		return &contextFixError{timeout: errors.Is(ctxErr, context.DeadlineExceeded), error: err}
+	}
+	return err
+}
+
+type contextFixError struct {
+	timeout bool
+	error
+}
+
+//nolint:goerr113
+func (e *contextFixError) Is(err error) bool {
+	return (e.timeout && err == context.DeadlineExceeded) ||
+		(!e.timeout && err == context.Canceled)
 }

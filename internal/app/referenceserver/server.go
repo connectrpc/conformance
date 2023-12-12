@@ -100,6 +100,22 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 		return err
 	}
 
+	// Start the server
+	var serveError error
+	serveDone := make(chan struct{})
+	go func() {
+		defer close(serveDone)
+		serveError = server.Serve()
+	}()
+	// Give the above goroutine a chance to start the server and potentially
+	// abort if it could not be started.
+	time.Sleep(200 * time.Millisecond)
+	select {
+	case <-serveDone:
+		return serveError
+	default:
+	}
+
 	resp := &v1.ServerCompatResponse{
 		Host:    actualHost,
 		Port:    uint32(actualPort),
@@ -109,13 +125,6 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 		return err
 	}
 
-	// Finally, start the server
-	var serveError error
-	serveDone := make(chan struct{})
-	go func() {
-		defer close(serveDone)
-		serveError = server.Serve()
-	}()
 	select {
 	case <-serveDone:
 		return serveError
@@ -296,7 +305,7 @@ func newH3Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		Handler:   handler,
 		TLSConfig: tlsConf,
 	}
-	lis, err := quic.ListenAddrEarly(listenAddr, tlsConf, &quic.Config{Allow0RTT: true, EnableDatagrams: true})
+	lis, err := quic.ListenAddrEarly(listenAddr, tlsConf, &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second})
 	if err != nil {
 		return nil, err
 	}
