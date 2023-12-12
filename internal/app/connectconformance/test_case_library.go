@@ -121,33 +121,39 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCa
 			httpVersions = allHTTPVersions
 		}
 		for _, httpVersion := range httpVersions {
-			codecs := suite.RelevantCodecs
-			if len(codecs) == 0 {
-				codecs = allCodecs
+			tlsCases := []bool{true, false}
+			if suite.ReliesOnTls {
+				tlsCases = []bool{true} // can't run these cases w/out TLS
 			}
-			for _, codec := range codecs {
-				compressions := suite.RelevantCompressions
-				if len(compressions) == 0 {
-					compressions = allCompressions
+			for _, tlsCase := range tlsCases {
+				codecs := suite.RelevantCodecs
+				if len(codecs) == 0 {
+					codecs = allCodecs
 				}
-				for _, compression := range compressions {
-					for _, streamType := range allStreamTypes {
-						cfgCase := configCase{
-							Version:                httpVersion,
-							Protocol:               protocol,
-							Codec:                  codec,
-							Compression:            compression,
-							StreamType:             streamType,
-							UseTLS:                 suite.ReliesOnTls,
-							UseTLSClientCerts:      suite.ReliesOnTlsClientCerts,
-							UseConnectGET:          suite.ReliesOnConnectGet,
-							ConnectVersionMode:     suite.ConnectVersionMode,
-							UseMessageReceiveLimit: suite.ReliesOnMessageReceiveLimit,
-						}
-						if _, ok := configCases[cfgCase]; ok {
-							namePrefix := generateTestCasePrefix(suite, cfgCase)
-							if err := lib.expandCases(cfgCase, namePrefix, suite.TestCases); err != nil {
-								return err
+				for _, codec := range codecs {
+					compressions := suite.RelevantCompressions
+					if len(compressions) == 0 {
+						compressions = allCompressions
+					}
+					for _, compression := range compressions {
+						for _, streamType := range allStreamTypes {
+							cfgCase := configCase{
+								Version:                httpVersion,
+								Protocol:               protocol,
+								Codec:                  codec,
+								Compression:            compression,
+								StreamType:             streamType,
+								UseTLS:                 tlsCase,
+								UseTLSClientCerts:      suite.ReliesOnTlsClientCerts,
+								UseConnectGET:          suite.ReliesOnConnectGet,
+								ConnectVersionMode:     suite.ConnectVersionMode,
+								UseMessageReceiveLimit: suite.ReliesOnMessageReceiveLimit,
+							}
+							if _, ok := configCases[cfgCase]; ok {
+								namePrefix := generateTestCasePrefix(suite, cfgCase)
+								if err := lib.expandCases(cfgCase, namePrefix, suite.TestCases); err != nil {
+									return err
+								}
 							}
 						}
 					}
@@ -617,6 +623,9 @@ func generateTestCasePrefix(suite *conformancev1.TestSuite, cfgCase configCase) 
 	}
 	if len(suite.RelevantCompressions) != 1 {
 		components = append(components, fmt.Sprintf("Compression:%s", cfgCase.Compression))
+	}
+	if !suite.ReliesOnTls {
+		components = append(components, fmt.Sprintf("TLS:%v", cfgCase.UseTLS))
 	}
 	return components
 }
