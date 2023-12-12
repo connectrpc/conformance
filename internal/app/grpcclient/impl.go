@@ -271,6 +271,9 @@ func (i *invoker) bidiStream(
 	ctx context.Context,
 	ccr *v1.ClientCompatRequest,
 ) (result *v1.ClientResponseResult, retErr error) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
@@ -285,7 +288,14 @@ func (i *invoker) bidiStream(
 
 	fullDuplex := ccr.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
+	// Cancellation timing
+	timing, err := internal.GetCancelTiming(ccr.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
 	var protoErr *v1.Error
+	totalRcvd := 0
 	for _, msg := range ccr.RequestMessages {
 		bsr := &v1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
@@ -307,8 +317,12 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
+			if totalRcvd == timing.AfterNumResponses {
+				cancel()
+			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Recv()
+			totalRcvd++
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
@@ -334,10 +348,19 @@ func (i *invoker) bidiStream(
 		}
 	}()
 
+	if timing.BeforeCloseSend != nil {
+		cancel()
+	}
+
 	// Sends are done, close the send side of the stream
 	err = stream.CloseSend()
 	if err != nil && protoErr == nil {
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
+	}
+
+	if timing.AfterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+		cancel()
 	}
 
 	// Once the send side is closed, header metadata is ready to be read
@@ -354,7 +377,11 @@ func (i *invoker) bidiStream(
 
 	// Receive any remaining responses
 	for {
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 		msg, err := stream.Recv()
+		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// If an error was returned that is not an EOF, convert it

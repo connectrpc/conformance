@@ -276,6 +276,9 @@ func (s *conformanceServer) BidiStream(
 			if responseDefinition != nil {
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+				if err := stream.Send(nil); err != nil {
+					return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+				}
 
 				// Calculate a response delay if specified
 				responseDelay = time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond

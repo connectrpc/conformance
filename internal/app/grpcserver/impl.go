@@ -235,7 +235,7 @@ func (c *conformanceServiceServer) BidiStream(
 
 			if responseDefinition != nil {
 				headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
-				if err := stream.SetHeader(headerMD); err != nil {
+				if err := stream.SendHeader(headerMD); err != nil {
 					return err
 				}
 
