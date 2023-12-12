@@ -150,6 +150,7 @@ func (c *conformanceServiceServer) ServerStream(
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil { //nolint:nestif
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
+		// Immediately send the headers on the stream so that metadata can be read by the client
 		if err := stream.SendHeader(headerMD); err != nil {
 			return err
 		}
@@ -235,6 +236,7 @@ func (c *conformanceServiceServer) BidiStream(
 
 			if responseDefinition != nil {
 				headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
+				// Immediately send the headers on the stream so that metadata can be read by the client
 				if err := stream.SendHeader(headerMD); err != nil {
 					return err
 				}

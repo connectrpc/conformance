@@ -187,6 +187,7 @@ func (s *conformanceServer) ServerStream(
 	if responseDefinition != nil { //nolint:nestif
 		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+		// Immediately send the headers/trailers on the stream so that they can be read by the client
 		if err := stream.Send(nil); err != nil {
 			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 		}
@@ -276,6 +277,7 @@ func (s *conformanceServer) BidiStream(
 			if responseDefinition != nil {
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+				// Immediately send the headers on the stream so that they can be read by the client
 				if err := stream.Send(nil); err != nil {
 					return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 				}
