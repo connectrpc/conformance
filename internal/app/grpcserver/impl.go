@@ -150,7 +150,8 @@ func (c *conformanceServiceServer) ServerStream(
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil { //nolint:nestif
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
-		if err := stream.SetHeader(headerMD); err != nil {
+		// Immediately send the headers on the stream so that metadata can be read by the client
+		if err := stream.SendHeader(headerMD); err != nil {
 			return err
 		}
 
@@ -235,7 +236,8 @@ func (c *conformanceServiceServer) BidiStream(
 
 			if responseDefinition != nil {
 				headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
-				if err := stream.SetHeader(headerMD); err != nil {
+				// Immediately send the headers on the stream so that metadata can be read by the client
+				if err := stream.SendHeader(headerMD); err != nil {
 					return err
 				}
 
@@ -286,6 +288,9 @@ func (c *conformanceServiceServer) BidiStream(
 	// where the requested responses are greater than the total requests.
 	if responseDefinition != nil { //nolint:nestif
 		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+			if err := stream.Context().Err(); err != nil {
+				return err
+			}
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],

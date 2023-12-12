@@ -63,6 +63,10 @@ type ConformanceServiceClient interface {
 	// message data in the data field. Subsequent messages after the first one
 	// should contain only the data field.
 	//
+	// Servers should immediately send response headers on the stream before sleeping
+	// for any specified response delay and/or sending the first message so that
+	// clients can be unblocked reading response headers.
+	//
 	// If a response definition is not specified OR is specified, but response data
 	// is empty, the server should skip sending anything on the stream. When there
 	// are no responses to send, servers should throw an error if one is provided
@@ -100,6 +104,10 @@ type ConformanceServiceClient interface {
 	// Servers should send responses indicated according to the rules of half duplex
 	// vs. full duplex streams. Once all responses are sent, the server should either
 	// return an error if specified or close the stream without error.
+	//
+	// Servers should immediately send response headers on the stream before sleeping
+	// for any specified response delay and/or sending the first message so that
+	// clients can be unblocked reading response headers.
 	//
 	// If a response definition is not specified OR is specified, but response data
 	// is empty, the server should skip sending anything on the stream. Stream
@@ -296,6 +304,10 @@ type ConformanceServiceServer interface {
 	// message data in the data field. Subsequent messages after the first one
 	// should contain only the data field.
 	//
+	// Servers should immediately send response headers on the stream before sleeping
+	// for any specified response delay and/or sending the first message so that
+	// clients can be unblocked reading response headers.
+	//
 	// If a response definition is not specified OR is specified, but response data
 	// is empty, the server should skip sending anything on the stream. When there
 	// are no responses to send, servers should throw an error if one is provided
@@ -333,6 +345,10 @@ type ConformanceServiceServer interface {
 	// Servers should send responses indicated according to the rules of half duplex
 	// vs. full duplex streams. Once all responses are sent, the server should either
 	// return an error if specified or close the stream without error.
+	//
+	// Servers should immediately send response headers on the stream before sleeping
+	// for any specified response delay and/or sending the first message so that
+	// clients can be unblocked reading response headers.
 	//
 	// If a response definition is not specified OR is specified, but response data
 	// is empty, the server should skip sending anything on the stream. Stream

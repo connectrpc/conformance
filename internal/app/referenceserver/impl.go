@@ -187,6 +187,10 @@ func (s *conformanceServer) ServerStream(
 	if responseDefinition != nil { //nolint:nestif
 		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+		// Immediately send the headers/trailers on the stream so that they can be read by the client
+		if err := stream.Send(nil); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+		}
 
 		// Calculate the response delay if specified
 		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
@@ -273,6 +277,10 @@ func (s *conformanceServer) BidiStream(
 			if responseDefinition != nil {
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+				// Immediately send the headers on the stream so that they can be read by the client
+				if err := stream.Send(nil); err != nil {
+					return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+				}
 
 				// Calculate a response delay if specified
 				responseDelay = time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
@@ -323,6 +331,9 @@ func (s *conformanceServer) BidiStream(
 	// where the requested responses are greater than the total requests.
 	if responseDefinition != nil { //nolint:nestif
 		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],

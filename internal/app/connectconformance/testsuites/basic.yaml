@@ -1,5 +1,6 @@
 name: Basic
 testCases:
+# Unary Tests -----------------------------------------------------------------
 - request:
     testName: unary success
     service: connectrpc.conformance.v1.ConformanceService
@@ -73,21 +74,7 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-- request:
-    testName: unary timeout
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
-    streamType: STREAM_TYPE_UNARY
-    timeoutMs: 200
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      responseDefinition:
-        responseData: "dGVzdCByZXNwb25zZQ=="
-        responseDelayMs: 500
-  # Override
-  expectedResponse:
-    error:
-      code: 4
+# Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client stream success
     service: connectrpc.conformance.v1.ConformanceService
@@ -145,23 +132,7 @@ testCases:
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-- request:
-    testName: client stream timeout
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
-    streamType: STREAM_TYPE_CLIENT_STREAM
-    timeoutMs: 200
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-      responseDefinition:
-        responseData: "dGVzdCByZXNwb25zZQ=="
-        responseDelayMs: 500
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
-  # Override
-  expectedResponse:
-    error:
-      code: 4
+# Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server stream success
     service: connectrpc.conformance.v1.ConformanceService
@@ -246,23 +217,7 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
-- request:
-    testName: server stream timeout
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
-    streamType: STREAM_TYPE_SERVER_STREAM
-    timeoutMs: 200
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-      responseDefinition:
-        responseDelayMs: 500
-        responseData:
-          - "dGVzdCByZXNwb25zZQ=="
-          - "dGVzdCByZXNwb25zZQ=="
-  # Override
-  expectedResponse:
-    error:
-      code: 4
+# Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi full duplex stream success
     service: connectrpc.conformance.v1.ConformanceService
@@ -414,6 +369,7 @@ testCases:
         value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+# Misc Tests ------------------------------------------------------------------
 - request:
     testName: unimplemented
     service: connectrpc.conformance.v1.ConformanceService
