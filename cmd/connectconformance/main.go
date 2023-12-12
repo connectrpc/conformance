@@ -25,6 +25,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 )
 
 const (
@@ -38,6 +39,10 @@ const (
 	maxServersFlagName    = "max-servers"
 	parallelFlagName      = "parallel"
 	parallelFlagShortName = "p"
+	tlsCertFlagName       = "cert"
+	tlsKeyFlagName        = "key"
+	portFlagName          = "port"
+	bindFlagName          = "bind"
 )
 
 type flags struct {
@@ -49,6 +54,10 @@ type flags struct {
 	version          bool
 	maxServers       uint
 	parallel         uint
+	tlsCertFile      string
+	tlsKeyFile       string
+	port             uint
+	bind             string
 }
 
 func main() {
@@ -96,7 +105,7 @@ failing to be successful; if the test case succeeds, it is considered a failure.
 test cases which have actually been fixed.)
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			run(flagset, args)
+			run(flagset, cmd.Flags(), args)
 		},
 	}
 	bind(rootCmd, flagset)
@@ -114,9 +123,17 @@ func bind(cmd *cobra.Command, flags *flags) {
 		"the maximum number of server processes to be running in parallel")
 	cmd.Flags().UintVarP(&flags.parallel, parallelFlagName, parallelFlagShortName, uint(runtime.GOMAXPROCS(0)*4),
 		"in server mode, the level of parallelism used when issuing RPCs")
+	cmd.Flags().StringVar(&flags.tlsCertFile, tlsCertFlagName, "",
+		"in client mode, the path to a PEM-encoded TLS certificate file that the reference server should use")
+	cmd.Flags().StringVar(&flags.tlsKeyFile, tlsKeyFlagName, "",
+		"in client mode, the path to a PEM-encoded TLS key file that the reference server should use")
+	cmd.Flags().UintVar(&flags.port, portFlagName, internal.DefaultPort,
+		"in client mode, the port number on which the reference server should listen (implies --max-servers=1)")
+	cmd.Flags().StringVar(&flags.bind, bindFlagName, internal.DefaultHost,
+		"in client mode, the bind address on which the reference server should listen (0.0.0.0 means listen on all interfaces)")
 }
 
-func run(flags *flags, command []string) {
+func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:gocyclo
 	if flags.version {
 		fmt.Printf("%s %s\n", filepath.Base(os.Args[0]), internal.Version)
 		return
@@ -133,6 +150,13 @@ func run(flags *flags, command []string) {
 
 	if flags.maxServers == 0 {
 		fatal(`Invalid max servers: must be greater than zero`)
+	}
+	if flags.port != 0 {
+		if flags.maxServers > 1 && cobraFlags.Changed(maxServersFlagName) {
+			fatal(`Invalid max servers: cannot be greater than one when non-zero --port is specified`)
+		}
+		// Can only run a single server process at a time with a specific port.
+		flags.maxServers = 1
 	}
 	if flags.parallel == 0 {
 		fatal(`Invalid parallelism: must be greater than zero`)
@@ -163,6 +187,45 @@ func run(flags *flags, command []string) {
 		fatal(`Invalid mode: expecting "client", "server", or "both"; got %q`, flags.mode)
 	}
 
+	if flags.mode != "client" {
+		if cobraFlags.Changed(tlsCertFlagName) {
+			fatal(fmt.Sprintf("Cannot specify --%s flag when mode is %s", tlsCertFlagName, flags.mode))
+		}
+		if cobraFlags.Changed(tlsKeyFlagName) {
+			fatal(fmt.Sprintf("Cannot specify --%s flag when mode is %s", tlsKeyFlagName, flags.mode))
+		}
+		if cobraFlags.Changed(portFlagName) {
+			fatal(fmt.Sprintf("Cannot specify --%s flag when mode is %s", portFlagName, flags.mode))
+		}
+		if cobraFlags.Changed(bindFlagName) {
+			fatal(fmt.Sprintf("Cannot specify --%s flag when mode is %s", bindFlagName, flags.mode))
+		}
+	}
+	if flags.mode != "server" {
+		if cobraFlags.Changed(parallelFlagName) {
+			fatal(fmt.Sprintf("Cannot specify --%s/-%s flag when mode is %s", parallelFlagName, parallelFlagShortName, flags.mode))
+		}
+	}
+
+	switch {
+	case flags.tlsCertFile != "" && flags.tlsKeyFile == "":
+		fatal(fmt.Sprintf("Missing TLS key: --%s flag must be specified when --%s is used", tlsKeyFlagName, tlsCertFlagName))
+	case flags.tlsCertFile == "" && flags.tlsKeyFile != "":
+		fatal(fmt.Sprintf("Missing TLS certificate: --%s flag must be specified when --%s is used", tlsCertFlagName, tlsKeyFlagName))
+	case flags.tlsCertFile != "":
+		// Make sure the given TLS files are present and readable
+		file, err := os.Open(flags.tlsCertFile)
+		if err != nil {
+			fatal(errWithFilename(err, flags.tlsCertFile).Error())
+		}
+		_ = file.Close()
+		file, err = os.Open(flags.tlsKeyFile)
+		if err != nil {
+			fatal(errWithFilename(err, flags.tlsKeyFile).Error())
+		}
+		_ = file.Close()
+	}
+
 	for _, cmd := range [][]string{clientCommand, serverCommand} {
 		if len(cmd) == 0 {
 			continue
@@ -185,8 +248,13 @@ func run(flags *flags, command []string) {
 			ServerCommand:    serverCommand,
 			MaxServers:       flags.maxServers,
 			Parallelism:      flags.parallel,
+			TLSCertFile:      flags.tlsCertFile,
+			TLSKeyFile:       flags.tlsKeyFile,
+			ServerPort:       flags.port,
+			ServerBind:       flags.bind,
 		},
 		internal.NewPrinter(os.Stdout),
+		internal.NewPrinter(os.Stderr),
 	)
 	if err != nil {
 		fatal("%s", err)

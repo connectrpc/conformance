@@ -17,6 +17,7 @@ package connectconformance
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -129,6 +130,9 @@ func runInProcess(args []string, impl func(ctx context.Context, args []string, i
 				}
 			}()
 			proc.err = impl(ctx, args, stdin, stdout, stderr)
+			if proc.err != nil {
+				_, _ = fmt.Fprintf(stderr, "%v\n", proc.err)
+			}
 		}()
 		return proc, nil
 	})

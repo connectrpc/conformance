@@ -47,9 +47,13 @@ type Flags struct {
 	TestFile         string
 	MaxServers       uint
 	Parallelism      uint
+	TLSCertFile      string
+	TLSKeyFile       string
+	ServerPort       uint
+	ServerBind       string
 }
 
-func Run(flags *Flags, logPrinter internal.Printer) (bool, error) {
+func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer) (bool, error) {
 	var configData []byte
 	if flags.ConfigFile != "" {
 		var err error
@@ -106,7 +110,7 @@ func Run(flags *Flags, logPrinter internal.Printer) (bool, error) {
 		logPrinter.Printf("Loaded %d test suites, %d test case templates.", len(allSuites), numCases)
 	}
 
-	results, err := run(configCases, knownFailing, allSuites, logPrinter, flags)
+	results, err := run(configCases, knownFailing, allSuites, logPrinter, errPrinter, flags)
 	if err != nil {
 		return false, err
 	}
@@ -119,6 +123,7 @@ func run(
 	knownFailing *knownFailingTrie,
 	allSuites map[string]*conformancev1.TestSuite,
 	logPrinter internal.Printer,
+	errPrinter internal.Printer,
 	flags *Flags,
 ) (*testResults, error) {
 	mode := conformancev1.TestSuite_TEST_MODE_UNSPECIFIED
@@ -191,13 +196,19 @@ func run(
 	if useReferenceClient {
 		clients = []processInfo{
 			{
-				name:            "reference client",
-				start:           runInProcess([]string{"reference-client", "-p", strconv.Itoa(int(flags.Parallelism))}, referenceclient.Run),
+				name: "reference client",
+				start: runInProcess([]string{
+					"reference-client",
+					"-p", strconv.Itoa(int(flags.Parallelism)),
+				}, referenceclient.Run),
 				isReferenceImpl: true,
 			},
 			{
-				name:       "reference client (grpc)",
-				start:      runInProcess([]string{"grpc-reference-client", "-p", strconv.Itoa(int(flags.Parallelism))}, grpcclient.Run),
+				name: "reference client (grpc)",
+				start: runInProcess([]string{
+					"grpc-reference-client",
+					"-p", strconv.Itoa(int(flags.Parallelism)),
+				}, grpcclient.Run),
 				isGrpcImpl: true,
 			},
 		}
@@ -222,13 +233,23 @@ func run(
 		if useReferenceServer {
 			servers = []processInfo{
 				{
-					name:            "reference server",
-					start:           runInProcess([]string{"reference-server"}, referenceserver.RunInReferenceMode),
+					name: "reference server",
+					start: runInProcess([]string{
+						"reference-server",
+						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
+						"-bind", flags.ServerBind,
+						"-cert", flags.TLSCertFile,
+						"-key", flags.TLSKeyFile,
+					}, referenceserver.RunInReferenceMode),
 					isReferenceImpl: true,
 				},
 				{
-					name:       "reference server (grpc)",
-					start:      runInProcess([]string{"grpc-reference-server"}, grpcserver.Run),
+					name: "reference server (grpc)",
+					start: runInProcess([]string{
+						"grpc-reference-server",
+						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
+						"-bind", flags.ServerBind,
+					}, grpcserver.Run),
 					isGrpcImpl: true,
 				},
 			}
@@ -285,7 +306,18 @@ func run(
 					go func(ctx context.Context, clientInfo processInfo, serverInfo processInfo, svrInstance serverInstance) {
 						defer wg.Done()
 						defer sema.Release(1)
-						runTestCasesForServer(ctx, clientInfo.isReferenceImpl, serverInfo.isReferenceImpl, svrInstance, testCases, clientCreds, serverInfo.start, results, clientProcess)
+						runTestCasesForServer(
+							ctx,
+							clientInfo.isReferenceImpl,
+							serverInfo.isReferenceImpl,
+							svrInstance,
+							testCases,
+							clientCreds,
+							serverInfo.start,
+							errPrinter,
+							results,
+							clientProcess,
+						)
 					}(ctx, clientInfo, serverInfo, svrInstance)
 				}
 			}

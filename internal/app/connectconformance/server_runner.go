@@ -48,6 +48,7 @@ func runTestCasesForServer(
 	testCases []*conformancev1.TestCase,
 	clientCreds *conformancev1.ClientCompatRequest_TLSCreds,
 	startServer processStarter,
+	errPrinter internal.Printer,
 	results *testResults,
 	client clientRunner,
 ) {
@@ -75,15 +76,21 @@ func runTestCasesForServer(
 			defer close(refServerFinished)
 			r := bufio.NewReader(serverProcess.stderr)
 			for {
-				str, err := r.ReadString('\n')
-				str = strings.TrimSpace(str)
+				origLine, err := r.ReadString('\n')
+				str := strings.TrimSpace(origLine)
 				if str != "" {
+					var isSideband bool
 					parts := strings.SplitN(str, ": ", 2)
 					if len(parts) == 2 {
 						if _, ok := expectations[parts[0]]; ok {
 							// appears to be valid message in the form "test case: error message"
+							isSideband = true
 							results.recordSideband(parts[0], parts[1])
 						}
+					}
+					if !isSideband {
+						// Was some other message printed to stderr. Propagate to our stderr so user can see it.
+						errPrinter.PrefixPrintf("referenceserver", "%s", origLine)
 					}
 				}
 				if err != nil {

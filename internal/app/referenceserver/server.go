@@ -17,12 +17,14 @@ package referenceserver
 import (
 	"context"
 	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 	"strconv"
 	"time"
@@ -52,19 +54,26 @@ func RunInReferenceMode(ctx context.Context, args []string, inReader io.ReadClos
 }
 
 func run(ctx context.Context, referenceMode bool, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
-	port := flags.Int("port", internal.DefaultPort, "the port for the conformance server ")
+	host := flags.String("bind", internal.DefaultHost, "the bind address for the conformance server")
+	port := flags.Int("port", internal.DefaultPort, "the port for the conformance server")
+	tlsCert := flags.String("cert", "", "the path to a PEM-encoded TLS certificate file to use instead of generating self-signed")
+	tlsKey := flags.String("key", "", "the path to a PEM-encoded TLS key file to use instead of generating self-signed")
 	showVersion := flags.Bool("version", false, "show version and exit")
 
-	_ = flags.Parse(args[1:])
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
 	if *showVersion {
 		_, _ = fmt.Fprintf(outWriter, "%s %s\n", filepath.Base(args[0]), internal.Version)
 		return nil
 	}
 	if flags.NArg() != 0 {
 		return errors.New("this command does not accept any positional arguments")
+	}
+	if (*tlsCert == "") != (*tlsKey == "") {
+		return errors.New("-cert and -key must both be provided")
 	}
 
 	codec := internal.NewCodec(*json)
@@ -77,7 +86,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 
 	// Create an HTTP server based on the request
 	errPrinter := internal.NewPrinter(errWriter)
-	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), referenceMode, errPrinter)
+	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), *tlsCert, *tlsKey, referenceMode, errPrinter)
 	if err != nil {
 		return err
 	}
@@ -153,7 +162,7 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode bool, errPrinter internal.Printer) (httpServer, []byte, error) {
+func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
@@ -198,12 +207,31 @@ func createServer(req *v1.ServerCompatRequest, listenAddr string, referenceMode 
 	// Create servers
 	var tlsConf *tls.Config
 	var certBytes []byte
-	if req.UseTls {
+	if req.UseTls { //nolint:nestif
 		var cert tls.Certificate
 		var err error
-		cert, certBytes, err = internal.NewServerCert()
-		if err != nil {
-			return nil, nil, fmt.Errorf("could not generate TLS cert: %w", err)
+		if tlsCertFile != "" {
+			certBytes, err = os.ReadFile(tlsCertFile)
+			if err != nil {
+				return nil, nil, fmt.Errorf("could not load TLS cert: %w", err)
+			}
+			keyBytes, err := os.ReadFile(tlsKeyFile)
+			if err != nil {
+				return nil, nil, fmt.Errorf("could not load TLS key: %w", err)
+			}
+			cert, err = tls.X509KeyPair(certBytes, keyBytes)
+			if err != nil {
+				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
+			}
+			cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+			if err != nil {
+				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
+			}
+		} else {
+			cert, certBytes, err = internal.NewServerCert()
+			if err != nil {
+				return nil, nil, fmt.Errorf("could not generate TLS cert: %w", err)
+			}
 		}
 		clientCertMode := tls.NoClientCert
 		if len(req.ClientTlsCert) > 0 {
@@ -293,8 +321,11 @@ func (s *http3Server) Serve() error {
 	return s.svr.ServeListener(s.lis)
 }
 
-func (s *http3Server) GracefulShutdown(period time.Duration) error {
-	return s.svr.CloseGracefully(period)
+func (s *http3Server) GracefulShutdown(_ time.Duration) error {
+	// Note: http3.Server.CloseGracefully is not actually implemented!
+	// https://github.com/quic-go/quic-go/issues/153
+	// So we must use the non-graceful version :(
+	return s.svr.Close()
 }
 
 func (s *http3Server) Addr() string {
