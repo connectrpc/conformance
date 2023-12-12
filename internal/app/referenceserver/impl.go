@@ -323,6 +323,9 @@ func (s *conformanceServer) BidiStream(
 	// where the requested responses are greater than the total requests.
 	if responseDefinition != nil { //nolint:nestif
 		for ; respNum < len(responseDefinition.ResponseData); respNum++ {
+			if err := ctx.Err(); err != nil {
+				return err
+			}
 			resp := &v1.BidiStreamResponse{
 				Payload: &v1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],

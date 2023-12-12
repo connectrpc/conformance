@@ -287,11 +287,6 @@ func (i *invoker) bidiStream(
 
 	var protoErr *v1.Error
 	for _, msg := range ccr.RequestMessages {
-		if err := ctx.Err(); err != nil {
-			// If an error was returned, convert it to a proto Error
-			protoErr = grpcutil.ConvertGrpcToProtoError(err)
-			break
-		}
 		bsr := &v1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
@@ -359,11 +354,6 @@ func (i *invoker) bidiStream(
 
 	// Receive any remaining responses
 	for {
-		if err := ctx.Err(); err != nil {
-			// If an error was returned, convert it to a proto Error
-			protoErr = grpcutil.ConvertGrpcToProtoError(err)
-			break
-		}
 		msg, err := stream.Recv()
 		if err != nil {
 			if !errors.Is(err, io.EOF) {

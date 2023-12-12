@@ -445,3 +445,22 @@ testCases:
   expectedResponse:
     error:
       code: 12
+- request:
+    testName: bidi half duplex timeout
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    timeoutMs: 200
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseDelayMs: 500
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+  # Override
+  expectedResponse:
+    error:
+      code: 4
