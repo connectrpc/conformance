@@ -37,13 +37,15 @@ import (
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
-	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
-	host := flags.String("host", internal.DefaultHost, "the host for the conformance server")
+	host := flags.String("bind", internal.DefaultHost, "the bind address for the conformance server")
 	port := flags.Int("port", internal.DefaultPort, "the port for the conformance server ")
 	showVersion := flags.Bool("version", false, "show version and exit")
 
-	_ = flags.Parse(args[1:])
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
 	if *showVersion {
 		_, _ = fmt.Fprintf(outWriter, "%s %s\n", filepath.Base(args[0]), internal.Version)
 		return nil
@@ -59,9 +61,18 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
+	if req.UseTls {
+		return fmt.Errorf("%s: TLS is not supported", args[0])
+	}
+	if req.Protocol != v1.Protocol_PROTOCOL_GRPC && req.Protocol != v1.Protocol_PROTOCOL_GRPC_WEB {
+		return fmt.Errorf("%s: protocol %s is not supported", args[0], req.Protocol)
+	}
+	if req.Protocol == v1.Protocol_PROTOCOL_GRPC && req.HttpVersion != v1.HTTPVersion_HTTP_VERSION_2 {
+		return fmt.Errorf("%s: HTTP version %s is not supported with protocol %s", args[0], req.HttpVersion, req.Protocol)
+	}
 
 	// Create a gRPC server based on the request
-	server, err := createServer()
+	server, err := createServer(req.MessageReceiveLimit)
 	if err != nil {
 		return err
 	}
@@ -92,10 +103,11 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	return runGRPCServer(ctx, server, listener)
 }
 
-func createServer() (*grpc.Server, error) { //nolint:unparam
+func createServer(recvLimit uint32) (*grpc.Server, error) { //nolint:unparam
 	server := grpc.NewServer(
 		grpc.UnaryInterceptor(serverNameUnaryInterceptor),
 		grpc.StreamInterceptor(serverNameStreamInterceptor),
+		grpc.MaxRecvMsgSize(int(recvLimit)),
 	)
 	v1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
 	return server, nil

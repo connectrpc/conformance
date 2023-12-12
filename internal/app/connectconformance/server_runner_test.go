@@ -263,6 +263,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				testCaseData,
 				nil, // TODO: client cert
 				hookedProcess,
+				discardPrinter{},
 				results,
 				&client,
 			)
@@ -479,4 +480,12 @@ func (f *fakeClient) isRunning() bool {
 }
 
 func (f *fakeClient) stop() {
+}
+
+type discardPrinter struct{}
+
+func (d discardPrinter) Printf(_ string, _ ...any) {
+}
+
+func (d discardPrinter) PrefixPrintf(_, _ string, _ ...any) {
 }

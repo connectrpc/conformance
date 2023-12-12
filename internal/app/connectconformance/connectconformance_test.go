@@ -72,6 +72,7 @@ func TestRun(t *testing.T) {
 		&knownFailingTrie{},
 		allSuites,
 		logger,
+		logger,
 		&Flags{Verbose: true, MaxServers: 2, Parallelism: 4},
 	)
 

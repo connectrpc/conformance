@@ -45,12 +45,14 @@ import (
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) (retErr error) {
-	flags := flag.NewFlagSet(args[0], flag.ExitOnError)
+	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0))*4, "the number of parallel RPCs to issue")
 	showVersion := flags.Bool("version", false, "show version and exit")
 
-	_ = flags.Parse(args[1:])
+	if err := flags.Parse(args[1:]); err != nil {
+		return err
+	}
 	if *showVersion {
 		_, _ = fmt.Fprintf(outWriter, "%s %s\n", filepath.Base(args[0]), internal.Version)
 		return nil
