@@ -150,7 +150,7 @@ func (c *conformanceServiceServer) ServerStream(
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil { //nolint:nestif
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
-		if err := stream.SetHeader(headerMD); err != nil {
+		if err := stream.SendHeader(headerMD); err != nil {
 			return err
 		}
 

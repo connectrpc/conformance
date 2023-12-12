@@ -187,6 +187,9 @@ func (s *conformanceServer) ServerStream(
 	if responseDefinition != nil { //nolint:nestif
 		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+		if err := stream.Send(nil); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+		}
 
 		// Calculate the response delay if specified
 		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
