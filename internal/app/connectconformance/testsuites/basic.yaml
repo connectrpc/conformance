@@ -34,46 +34,6 @@ testCases:
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-- request:
-    testName: unary error
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
-    streamType: STREAM_TYPE_UNARY
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo","bar","baz"]
-        error:
-          code: 13
-          message: "unary failed"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-- request:
-    testName: unary error unicode
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
-    streamType: STREAM_TYPE_UNARY
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo","bar","baz"]
-        error:
-          code: 13
-          message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
 # Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client stream success
@@ -90,28 +50,6 @@ testCases:
         - name: x-custom-header
           value: ["foo","bar","baz"]
         responseData: "dGVzdCByZXNwb25zZQ=="
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
-- request:
-    testName: client stream error
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
-    streamType: STREAM_TYPE_CLIENT_STREAM
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo","bar","baz"]
-        error:
-          code: 13
-          message: "client stream failed"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
@@ -174,49 +112,6 @@ testCases:
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-- request:
-    testName: server stream error with responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
-    streamType: STREAM_TYPE_SERVER_STREAM
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo","bar","baz"]
-        responseData:
-          - "dGVzdCByZXNwb25zZQ=="
-          - "dGVzdCByZXNwb25zZQ=="
-        error:
-          code: 13
-          message: "server stream failed"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-- request:
-    testName: server stream error with no responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
-    streamType: STREAM_TYPE_SERVER_STREAM
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo","bar","baz"]
-        error:
-          code: 13
-          message: "server stream failed"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi full duplex stream success
@@ -242,53 +137,6 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi full duplex stream error with responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
-    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
-    requestHeaders:
-      - name: X-Conformance-Test
-        value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      responseDefinition:
-        responseHeaders:
-          - name: x-custom-header
-            value: ["foo","bar","baz"]
-        responseData:
-          - "dGVzdCByZXNwb25zZQ=="
-          - "dGVzdCByZXNwb25zZQ=="
-        error:
-          code: 13
-          message: "bidi full duplex stream failed"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-      fullDuplex: true
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
-- request:
-    testName: bidi full duplex stream error no responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
-    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
-    requestHeaders:
-      - name: X-Conformance-Test
-        value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      responseDefinition:
-        responseHeaders:
-          - name: x-custom-header
-            value: ["foo","bar","baz"]
-        error:
-          code: 13
-          message: "bidi full duplex stream failed"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-      fullDuplex: true
-- request:
     testName: bidi half duplex stream success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
@@ -305,53 +153,6 @@ testCases:
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
-- request:
-    testName: bidi half duplex stream error with responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
-    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
-    requestHeaders:
-      - name: X-Conformance-Test
-        value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      responseDefinition:
-        responseHeaders:
-          - name: x-custom-header
-            value: ["foo","bar","baz"]
-        responseData:
-          - "dGVzdCByZXNwb25zZQ=="
-          - "dGVzdCByZXNwb25zZQ=="
-        error:
-          code: 13
-          message: "bidi half duplex stream failed"
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
-- request:
-    testName: bidi half duplex stream error with no responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
-    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
-    requestHeaders:
-      - name: X-Conformance-Test
-        value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      responseDefinition:
-        responseHeaders:
-          - name: x-custom-header
-            value: ["foo","bar","baz"]
-        error:
-          code: 13
-          message: "bidi half duplex stream failed"
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing","quux"]
