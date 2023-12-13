@@ -170,7 +170,7 @@ func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFi
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
 		connect.WithCodec(&internal.TextConnectCodec{}),
-		connect.WithInterceptors(serverNameHandlerInterceptor{}),
+		connect.WithInterceptors(serverNameHandlerInterceptor{}, rawResponseRecorder{}),
 	}
 	if req.MessageReceiveLimit > 0 {
 		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
@@ -183,6 +183,7 @@ func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFi
 	handler := http.Handler(mux)
 	if referenceMode {
 		handler = referenceServerChecks(handler, errPrinter)
+		handler = rawResponder(handler, errPrinter)
 	}
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
