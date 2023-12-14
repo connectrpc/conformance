@@ -94,6 +94,9 @@ func newTestCaseLibrary(
 	if len(lib.testCases) == 0 {
 		return nil, errors.New("no test cases apply to current configuration")
 	}
+	if err := lib.populateExpectedResponses(); err != nil {
+		return nil, err
+	}
 	lib.groupTestCases()
 	return lib, nil
 }
@@ -202,6 +205,16 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 	return nil
 }
 
+func (lib *testCaseLibrary) populateExpectedResponses() error {
+	for _, testCase := range lib.testCases {
+		if err := populateExpectedResponse(testCase); err != nil {
+			return fmt.Errorf("failed to compute expected response for test case %q: %w",
+				testCase.Request.TestName, err)
+		}
+	}
+	return nil
+}
+
 func (lib *testCaseLibrary) groupTestCases() {
 	lib.casesByServer = map[serverInstance][]*conformancev1.TestCase{}
 	for _, testCase := range lib.testCases {
@@ -258,6 +271,11 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 			}
 			if hasRawResponse(testCase.Request.RequestMessages) && suite.Mode != conformancev1.TestSuite_TEST_MODE_CLIENT {
 				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
+					testFilePath, testCase.Request.TestName)
+			}
+			// The expand request directive uses the proto codec for size calculations, so it doesn't make sense to test with other codecs
+			if len(testCase.ExpandRequests) > 0 && (len(suite.RelevantCodecs) > 1 || !hasCodec(suite.RelevantCodecs, conformancev1.Codec_CODEC_PROTO)) {
+				return nil, fmt.Errorf("%s: test case %q specifies expand requests directive, but includes codecs other than CODEC_PROTO",
 					testFilePath, testCase.Request.TestName)
 			}
 			if err := expandRequestData(testCase); err != nil {
@@ -355,10 +373,6 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 		return nil
 	}
 
-	if testCase.Request.RawRequest != nil || hasRawResponse(testCase.Request.RequestMessages) {
-		return errors.New("test case must specify expected response when using raw request or response")
-	}
-
 	// TODO - This is just a temporary constraint to protect against panics for now.
 	// Eventually, we want to be able to test client and bidi streams where there are no request messages.
 	// The potential plan is for server impls to produce (and the code below to expect) a single response
@@ -392,6 +406,15 @@ func convertToInt64Ptr(num *uint32) *int64 {
 		return nil
 	}
 	return proto.Int64(int64(*num))
+}
+
+func hasCodec(codecs []conformancev1.Codec, target conformancev1.Codec) bool {
+	for _, c := range codecs {
+		if c == target {
+			return true
+		}
+	}
+	return false
 }
 
 func hasRawResponse(reqs []*anypb.Any) bool {
