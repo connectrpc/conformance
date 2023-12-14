@@ -631,6 +631,7 @@ func TestExpandRequestData(t *testing.T) {
 	}
 }
 
+// START
 // TODO - Use JSON for this test case so that it becomes smaller and removes
 // a lot of the Any error checking.
 func TestPopulateExpectedResponse(t *testing.T) {
@@ -707,31 +708,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	unaryErrorReqJSON, err := jsonCodec.MarshalStable(unaryErrorReqLiteral)
 	require.NoError(t, err)
 	unaryErrorReqProto, err := protoCodec.MarshalStable(unaryErrorReqLiteral)
-	require.NoError(t, err)
-
-	unaryErrorDetailsReq := &conformancev1.UnaryRequest{
-		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
-			ResponseHeaders: responseHeaders,
-			Response: &conformancev1.UnaryResponseDefinition_Error{
-				Error: &conformancev1.Error{
-					Code:    int32(connect.CodeResourceExhausted),
-					Message: proto.String("message"),
-					Details: asAnySlice(t, header),
-				},
-			},
-			ResponseTrailers: responseTrailers,
-		},
-	}
-
-	unaryNoResponseReq, err := anypb.New(&conformancev1.UnaryRequest{
-		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
-			ResponseHeaders:  responseHeaders,
-			ResponseTrailers: responseTrailers,
-		},
-	})
-	require.NoError(t, err)
-
-	unaryNoDefReq, err := anypb.New(&conformancev1.UnaryRequest{})
 	require.NoError(t, err)
 
 	// Client Stream Requests
@@ -842,9 +818,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	serverStreamNoDefReq, err := anypb.New(&conformancev1.ServerStreamRequest{})
-	require.NoError(t, err)
-
 	// Bidi Stream Requests
 	bidiStreamHalfDuplexSuccessReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: &conformancev1.StreamResponseDefinition{
@@ -900,11 +873,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bidiStreamHalfDuplexNoDefReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		RequestData: data1,
-	})
-	require.NoError(t, err)
-
 	bidiStreamFullDuplexSuccessReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		ResponseDefinition: &conformancev1.StreamResponseDefinition{
 			ResponseHeaders:  responseHeaders,
@@ -948,17 +916,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bidiStreamFullDuplexNoResponseReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		ResponseDefinition: &conformancev1.StreamResponseDefinition{
-			ResponseHeaders:  responseHeaders,
-			ResponseDelayMs:  1000,
-			ResponseTrailers: responseTrailers,
-		},
-		RequestData: data1,
-		FullDuplex:  true,
-	})
-	require.NoError(t, err)
-
 	bidiStreamFullDuplexNoDefReq, err := anypb.New(&conformancev1.BidiStreamRequest{
 		RequestData: data1,
 		FullDuplex:  true,
@@ -966,13 +923,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	require.NoError(t, err)
 
 	// Request Infos
-	unaryErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{unaryErrorReq},
-		TimeoutMs:      proto.Int64(42),
-	})
-	require.NoError(t, err)
-
 	idempotentUnaryErrorJSONReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
 		Requests:       []*anypb.Any{unaryErrorReq},
@@ -1019,7 +969,19 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	unaryErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
-		Requests:       asAnySlice(t, unaryErrorDetailsReq),
+		Requests: asAnySlice(t, &conformancev1.UnaryRequest{
+			ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+				ResponseHeaders: responseHeaders,
+				Response: &conformancev1.UnaryResponseDefinition_Error{
+					Error: &conformancev1.Error{
+						Code:    int32(connect.CodeResourceExhausted),
+						Message: proto.String("message"),
+						Details: asAnySlice(t, header),
+					},
+				},
+				ResponseTrailers: responseTrailers,
+			},
+		}),
 	})
 	require.NoError(t, err)
 
@@ -1098,7 +1060,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{unaryErrorReqInfo},
+					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests:       []*anypb.Any{unaryErrorReq},
+						TimeoutMs:      proto.Int64(42),
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1106,9 +1072,21 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "unary error specifying details appends req info to details",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
-				RequestMessages: asAnySlice(t, unaryErrorDetailsReq),
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: asAnySlice(t, &conformancev1.UnaryRequest{
+					ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+						ResponseHeaders: responseHeaders,
+						Response: &conformancev1.UnaryResponseDefinition_Error{
+							Error: &conformancev1.Error{
+								Code:    int32(connect.CodeResourceExhausted),
+								Message: proto.String("message"),
+								Details: asAnySlice(t, header),
+							},
+						},
+						ResponseTrailers: responseTrailers,
+					},
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1123,9 +1101,14 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "unary no response set",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
-				RequestMessages: []*anypb.Any{unaryNoResponseReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_UNARY,
+				RequestMessages: asAnySlice(t, &conformancev1.UnaryRequest{
+					ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+						ResponseHeaders:  responseHeaders,
+						ResponseTrailers: responseTrailers,
+					},
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1133,7 +1116,12 @@ func TestPopulateExpectedResponse(t *testing.T) {
 					{
 						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
-							Requests:       []*anypb.Any{unaryNoResponseReq},
+							Requests: asAnySlice(t, &conformancev1.UnaryRequest{
+								ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+									ResponseHeaders:  responseHeaders,
+									ResponseTrailers: responseTrailers,
+								},
+							}),
 						},
 					},
 				},
@@ -1144,7 +1132,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			testName: "unary no definition set",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
-				RequestMessages: []*anypb.Any{unaryNoDefReq},
+				RequestMessages: asAnySlice(t, &conformancev1.UnaryRequest{}),
 				RequestHeaders:  requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
@@ -1152,7 +1140,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 					{
 						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
-							Requests:       []*anypb.Any{unaryNoDefReq},
+							Requests:       asAnySlice(t, &conformancev1.UnaryRequest{}),
 						},
 					},
 				},
@@ -1454,7 +1442,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			testName: "server stream no definition set",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
-				RequestMessages: []*anypb.Any{serverStreamNoDefReq},
+				RequestMessages: asAnySlice(t, &conformancev1.ServerStreamRequest{}),
 				RequestHeaders:  requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{},
@@ -1544,9 +1532,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "half duplex bidi stream no definition set",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-				RequestMessages: []*anypb.Any{bidiStreamHalfDuplexNoDefReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.BidiStreamRequest{
+					RequestData: data1,
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{},
 		},
@@ -1628,9 +1618,17 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "full duplex bidi stream no response set",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
-				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoResponseReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.BidiStreamRequest{
+					ResponseDefinition: &conformancev1.StreamResponseDefinition{
+						ResponseHeaders:  responseHeaders,
+						ResponseDelayMs:  1000,
+						ResponseTrailers: responseTrailers,
+					},
+					RequestData: data1,
+					FullDuplex:  true,
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders:  responseHeaders,
