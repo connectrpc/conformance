@@ -32,29 +32,6 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
-	arr := []*anypb.Any{}
-	for _, msg := range msgs {
-		asAny, err := anypb.New(msg)
-		require.NoError(t, err)
-		arr = append(arr, asAny)
-	}
-	return arr
-}
-
-func marshalToString(t *testing.T, asJSON bool, msg proto.Message) string {
-	codec := internal.NewCodec(asJSON)
-
-	bytes, err := codec.MarshalStable(msg)
-	require.NoError(t, err)
-
-	if asJSON {
-		return string(bytes)
-	}
-
-	return base64.RawURLEncoding.EncodeToString(bytes)
-}
-
 func TestNewTestCaseLibrary(t *testing.T) {
 	t.Parallel()
 
@@ -1697,4 +1674,35 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			}
 		})
 	}
+}
+
+// asAnySlice converts the given variadic arg of proto messages to a slice of Any protos
+// and verifies there are no errors during the conversion
+func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
+	arr := make([]*anypb.Any, len(msgs))
+	for _, msg := range msgs {
+		asAny, err := anypb.New(msg)
+		require.NoError(t, err)
+		arr = append(arr, asAny)
+	}
+	return arr
+}
+
+// marshalToString marshals the given proto message to a string mirroring the
+// logic that Connect specifies for GET requests.
+// If asJSON is true, the message is first marshalled to JSON and the bytes are
+// then converted to a string.
+// If asJSON is false, the message is marshalled to binary and the bytes are then
+// base64-encoded as a string.
+func marshalToString(t *testing.T, asJSON bool, msg proto.Message) string {
+	codec := internal.NewCodec(asJSON)
+
+	bytes, err := codec.MarshalStable(msg)
+	require.NoError(t, err)
+
+	if asJSON {
+		return string(bytes)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(bytes)
 }
