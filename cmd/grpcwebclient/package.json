@@ -1,0 +1,17 @@
+{
+  "name": "grpcwebclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "google-protobuf": "^3.21.2",
+    "grpc-web": "^1.5.0",
+    "tsx": "^4.6.2"
+  }
+}

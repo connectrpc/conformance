@@ -13,3 +13,6 @@ plugins:
   - plugin: buf.build/grpc/go:v1.3.0
     out: internal/gen/proto/go
     opt: paths=source_relative
+  - plugin: buf.build/grpc/web:v1.5.0
+    out: cmd/grpcwebclient/gen/proto
+    opt: import_style=typescript,mode=grpcweb
