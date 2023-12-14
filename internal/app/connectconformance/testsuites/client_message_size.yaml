@@ -1,7 +1,6 @@
 name: Client Message Size
 mode: TEST_MODE_CLIENT
 reliesOnMessageReceiveLimit: true
-# TODO - The size limit is currently only calculated against the proto size
 relevantCodecs:
   - CODEC_PROTO
 testCases:
