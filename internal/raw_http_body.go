@@ -22,8 +22,6 @@ import (
 
 	"connectrpc.com/conformance/internal/compression"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
-	"github.com/klauspost/compress/gzip"
 )
 
 // WriteRawMessageContents writes the given message contents to the given writer.
@@ -43,27 +41,12 @@ func WriteRawMessageContents(contents *conformancev1.MessageContents, writer io.
 		return fmt.Errorf("invalid message contents data type: %T", data)
 	}
 
-	var compressor connect.Compressor
-	switch contents.Compression {
-	case conformancev1.Compression_COMPRESSION_IDENTITY, conformancev1.Compression_COMPRESSION_UNSPECIFIED:
-		// no compression
-		_, err := writer.Write(msgBytes)
+	compressor, err := compression.GetCompressor(contents.Compression)
+	if err != nil {
 		return err
-	case conformancev1.Compression_COMPRESSION_GZIP:
-		compressor = gzip.NewWriter(nil)
-	case conformancev1.Compression_COMPRESSION_BR:
-		compressor = compression.NewBrotliCompressor()
-	case conformancev1.Compression_COMPRESSION_ZSTD:
-		compressor = compression.NewZstdCompressor()
-	case conformancev1.Compression_COMPRESSION_SNAPPY:
-		compressor = compression.NewSnappyCompressor()
-	case conformancev1.Compression_COMPRESSION_DEFLATE:
-		compressor = compression.NewDeflateCompressor()
-	default:
-		return fmt.Errorf("unknown compression type: %v", contents.Compression)
 	}
 	compressor.Reset(writer)
-	_, err := compressor.Write(msgBytes)
+	_, err = compressor.Write(msgBytes)
 	if err == nil {
 		err = compressor.Close()
 	}
