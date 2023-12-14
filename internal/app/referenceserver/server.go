@@ -164,13 +164,17 @@ func (s *stdHTTPServer) Addr() string {
 // Creates an HTTP server using the provided ServerCompatRequest.
 func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
+	interceptors := []connect.Interceptor{serverNameHandlerInterceptor{}}
+	if referenceMode {
+		interceptors = append(interceptors, rawResponseRecorder{})
+	}
 	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
 		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
 		connect.WithCodec(&internal.TextConnectCodec{}),
-		connect.WithInterceptors(serverNameHandlerInterceptor{}, rawResponseRecorder{}),
+		connect.WithInterceptors(interceptors...),
 	}
 	if req.MessageReceiveLimit > 0 {
 		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
