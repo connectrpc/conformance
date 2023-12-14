@@ -27,6 +27,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -170,10 +171,21 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientRespons
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"http/1.1"}
 		}
-		transport = &http.Transport{
+		tx := &http.Transport{
 			DisableCompression: true,
 			TLSClientConfig:    tlsConf,
 		}
+		transport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			resp, err := tx.RoundTrip(req)
+			if resp != nil &&
+				strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) {
+				// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
+				// we "trick" the client into thinking this is HTTP/2. We have to do this because
+				// otherwise, connect-go refuses to support bidi streams over HTTP 1.1.
+				resp.ProtoMajor, resp.ProtoMinor = 2, 0
+			}
+			return resp, err
+		})
 	case v1.HTTPVersion_HTTP_VERSION_2:
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"h2"}
@@ -364,4 +376,10 @@ type contextFixError struct {
 func (e *contextFixError) Is(err error) bool {
 	return (e.timeout && err == context.DeadlineExceeded) ||
 		(!e.timeout && err == context.Canceled)
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }
