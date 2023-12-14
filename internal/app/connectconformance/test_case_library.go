@@ -94,6 +94,9 @@ func newTestCaseLibrary(
 	if len(lib.testCases) == 0 {
 		return nil, errors.New("no test cases apply to current configuration")
 	}
+	if err := lib.populateExpectedResponses(); err != nil {
+		return nil, err
+	}
 	lib.groupTestCases()
 	return lib, nil
 }
@@ -198,6 +201,16 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		// won't run the test cases that verify that it's enforced.
 		testCase.Request.MessageReceiveLimit = clientReceiveLimit
 		lib.testCases[name] = testCase
+	}
+	return nil
+}
+
+func (lib *testCaseLibrary) populateExpectedResponses() error {
+	for _, testCase := range lib.testCases {
+		if err := populateExpectedResponse(testCase); err != nil {
+			return fmt.Errorf("failed to compute expected response for test case %q: %w",
+				testCase.Request.TestName, err)
+		}
 	}
 	return nil
 }
@@ -353,10 +366,6 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 	// This allows for overriding this function with explicit values in the yaml file.
 	if testCase.ExpectedResponse != nil {
 		return nil
-	}
-
-	if testCase.Request.RawRequest != nil || hasRawResponse(testCase.Request.RequestMessages) {
-		return errors.New("test case must specify expected response when using raw request or response")
 	}
 
 	// TODO - This is just a temporary constraint to protect against panics for now.

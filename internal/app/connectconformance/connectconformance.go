@@ -117,7 +117,6 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 	return results.report(logPrinter), nil
 }
 
-//nolint:gocyclo
 func run(
 	configCases []configCase,
 	knownFailing *knownFailingTrie,
@@ -153,14 +152,8 @@ func run(
 
 	// Validate keys in knownFailing, to make sure they match actual test names
 	// (to prevent accidental typos and inadvertently ignored entries)
-	for name, testCase := range testCaseLib.testCases {
+	for name := range testCaseLib.testCases {
 		knownFailing.match(strings.Split(name, "/"))
-
-		// Set the expected responses
-		if err := populateExpectedResponse(testCase); err != nil {
-			return nil, fmt.Errorf("failed to compute expected response for test case %q: %w",
-				testCase.Request.TestName, err)
-		}
 	}
 	unmatched := map[string]struct{}{}
 	knownFailing.findUnmatched("", unmatched)
