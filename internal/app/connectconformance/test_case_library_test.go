@@ -32,16 +32,12 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-func asAny(t *testing.T, msg proto.Message) *anypb.Any {
-	asAny, err := anypb.New(msg)
-	require.NoError(t, err)
-	return asAny
-}
-
 func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
 	arr := []*anypb.Any{}
 	for _, msg := range msgs {
-		arr = append(arr, asAny(t, msg))
+		asAny, err := anypb.New(msg)
+		require.NoError(t, err)
+		arr = append(arr, asAny)
 	}
 	return arr
 }
