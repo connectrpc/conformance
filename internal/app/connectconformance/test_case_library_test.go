@@ -670,8 +670,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		Name:  "detail test",
 		Value: []string{"val1", "val2"},
 	}
-	headerAny := asAny(t, header)
-
 	jsonCodec := internal.NewCodec(true)
 	protoCodec := internal.NewCodec(false)
 
@@ -690,7 +688,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	unarySuccessReqProto, err := protoCodec.MarshalStable(unarySuccessReq)
 	require.NoError(t, err)
 
-	unaryErrorReqLiteral := &conformancev1.UnaryRequest{
+	unaryErrorReq := &conformancev1.UnaryRequest{
 		ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 			ResponseHeaders: responseHeaders,
 			Response: &conformancev1.UnaryResponseDefinition_Error{
@@ -702,12 +700,10 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			ResponseTrailers: responseTrailers,
 		},
 	}
-	unaryErrorReq, err := anypb.New(unaryErrorReqLiteral)
-	require.NoError(t, err)
 
-	unaryErrorReqJSON, err := jsonCodec.MarshalStable(unaryErrorReqLiteral)
+	unaryErrorReqJSON, err := jsonCodec.MarshalStable(unaryErrorReq)
 	require.NoError(t, err)
-	unaryErrorReqProto, err := protoCodec.MarshalStable(unaryErrorReqLiteral)
+	unaryErrorReqProto, err := protoCodec.MarshalStable(unaryErrorReq)
 	require.NoError(t, err)
 
 	// Client Stream Requests
@@ -768,53 +764,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	clientStreamReq2, err := anypb.New(&conformancev1.ClientStreamRequest{
 		RequestData: data1,
-	})
-	require.NoError(t, err)
-
-	// Server Stream Requests
-	serverStreamSuccessReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: &conformancev1.StreamResponseDefinition{
-			ResponseHeaders:  responseHeaders,
-			ResponseData:     [][]byte{data1, data2},
-			ResponseDelayMs:  1000,
-			ResponseTrailers: responseTrailers,
-		},
-	})
-	require.NoError(t, err)
-
-	serverStreamErrorReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: &conformancev1.StreamResponseDefinition{
-			ResponseHeaders: responseHeaders,
-			ResponseData:    [][]byte{data1, data2},
-			ResponseDelayMs: 1000,
-			Error: &conformancev1.Error{
-				Code:    int32(connect.CodeResourceExhausted),
-				Message: proto.String("message"),
-			},
-			ResponseTrailers: responseTrailers,
-		},
-	})
-	require.NoError(t, err)
-
-	serverStreamNoResponseReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: &conformancev1.StreamResponseDefinition{
-			ResponseHeaders:  responseHeaders,
-			ResponseDelayMs:  1000,
-			ResponseTrailers: responseTrailers,
-		},
-	})
-	require.NoError(t, err)
-
-	serverStreamNoResponseWithErrorReq, err := anypb.New(&conformancev1.ServerStreamRequest{
-		ResponseDefinition: &conformancev1.StreamResponseDefinition{
-			ResponseHeaders: responseHeaders,
-			ResponseDelayMs: 1000,
-			Error: &conformancev1.Error{
-				Code:    int32(connect.CodeResourceExhausted),
-				Message: proto.String("message"),
-			},
-			ResponseTrailers: responseTrailers,
-		},
 	})
 	require.NoError(t, err)
 
@@ -916,16 +865,10 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	bidiStreamFullDuplexNoDefReq, err := anypb.New(&conformancev1.BidiStreamRequest{
-		RequestData: data1,
-		FullDuplex:  true,
-	})
-	require.NoError(t, err)
-
 	// Request Infos
 	idempotentUnaryErrorJSONReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{unaryErrorReq},
+		Requests:       asAnySlice(t, unaryErrorReq),
 		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
 				{
@@ -947,7 +890,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 
 	idempotentUnaryErrorProtoReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{unaryErrorReq},
+		Requests:       asAnySlice(t, unaryErrorReq),
 		ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
 				{
@@ -964,57 +907,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				},
 			},
 		},
-	})
-	require.NoError(t, err)
-
-	unaryErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests: asAnySlice(t, &conformancev1.UnaryRequest{
-			ResponseDefinition: &conformancev1.UnaryResponseDefinition{
-				ResponseHeaders: responseHeaders,
-				Response: &conformancev1.UnaryResponseDefinition_Error{
-					Error: &conformancev1.Error{
-						Code:    int32(connect.CodeResourceExhausted),
-						Message: proto.String("message"),
-						Details: asAnySlice(t, header),
-					},
-				},
-				ResponseTrailers: responseTrailers,
-			},
-		}),
-	})
-	require.NoError(t, err)
-
-	clientStreamErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{clientStreamErrorReq, clientStreamReq2},
-	})
-	require.NoError(t, err)
-
-	clientStreamErrorDetailsReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
-		TimeoutMs:      proto.Int64(42),
-	})
-	require.NoError(t, err)
-
-	serverStreamErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{serverStreamNoResponseWithErrorReq},
-		TimeoutMs:      proto.Int64(42),
-	})
-	require.NoError(t, err)
-
-	bidiStreamHalfDuplexNoResponseWithErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReq, bidiStreamReq2},
-		TimeoutMs:      proto.Int64(42),
-	})
-	require.NoError(t, err)
-
-	bidiStreamFullDuplexNoResponseWithErrorReqInfo, err := anypb.New(&conformancev1.ConformancePayload_RequestInfo{
-		RequestHeaders: requestHeaders,
-		Requests:       []*anypb.Any{bidiStreamFullDuplexNoResponseWithErrorReq, bidiStreamReq2},
 	})
 	require.NoError(t, err)
 
@@ -1051,7 +943,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			testName: "unary error",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
-				RequestMessages: []*anypb.Any{unaryErrorReq},
+				RequestMessages: asAnySlice(t, unaryErrorReq),
 				RequestHeaders:  requestHeaders,
 				TimeoutMs:       proto.Uint32(42),
 			},
@@ -1062,7 +954,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 					Message: proto.String("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
-						Requests:       []*anypb.Any{unaryErrorReq},
+						Requests:       asAnySlice(t, unaryErrorReq),
 						TimeoutMs:      proto.Int64(42),
 					}),
 				},
@@ -1093,7 +985,22 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{headerAny, unaryErrorDetailsReqInfo},
+					Details: asAnySlice(t, header, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests: asAnySlice(t, &conformancev1.UnaryRequest{
+							ResponseDefinition: &conformancev1.UnaryResponseDefinition{
+								ResponseHeaders: responseHeaders,
+								Response: &conformancev1.UnaryResponseDefinition_Error{
+									Error: &conformancev1.Error{
+										Code:    int32(connect.CodeResourceExhausted),
+										Message: proto.String("message"),
+										Details: asAnySlice(t, header),
+									},
+								},
+								ResponseTrailers: responseTrailers,
+							},
+						}),
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1228,7 +1135,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			testName: "idempotent unary with json error",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
-				RequestMessages:  []*anypb.Any{unaryErrorReq},
+				RequestMessages:  asAnySlice(t, unaryErrorReq),
 				RequestHeaders:   requestHeaders,
 				UseGetHttpMethod: true,
 				Codec:            conformancev1.Codec_CODEC_JSON,
@@ -1247,7 +1154,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			testName: "idempotent unary with proto error",
 			request: &conformancev1.ClientCompatRequest{
 				StreamType:       conformancev1.StreamType_STREAM_TYPE_UNARY,
-				RequestMessages:  []*anypb.Any{unaryErrorReq},
+				RequestMessages:  asAnySlice(t, unaryErrorReq),
 				RequestHeaders:   requestHeaders,
 				UseGetHttpMethod: true,
 				Codec:            conformancev1.Codec_CODEC_PROTO,
@@ -1295,7 +1202,10 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{clientStreamErrorReqInfo},
+					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests:       []*anypb.Any{clientStreamErrorReq, clientStreamReq2},
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1313,7 +1223,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{headerAny, clientStreamErrorDetailsReqInfo},
+					Details: asAnySlice(t, header, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests:       []*anypb.Any{clientStreamErrorDetailsReq, clientStreamReq2},
+						TimeoutMs:      proto.Int64(42),
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1359,9 +1273,16 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "server stream success",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
-				RequestMessages: []*anypb.Any{serverStreamSuccessReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.ServerStreamRequest{
+					ResponseDefinition: &conformancev1.StreamResponseDefinition{
+						ResponseHeaders:  responseHeaders,
+						ResponseData:     [][]byte{data1, data2},
+						ResponseDelayMs:  1000,
+						ResponseTrailers: responseTrailers,
+					},
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1370,7 +1291,14 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						Data: data1,
 						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
-							Requests:       []*anypb.Any{serverStreamSuccessReq},
+							Requests: asAnySlice(t, &conformancev1.ServerStreamRequest{
+								ResponseDefinition: &conformancev1.StreamResponseDefinition{
+									ResponseHeaders:  responseHeaders,
+									ResponseData:     [][]byte{data1, data2},
+									ResponseDelayMs:  1000,
+									ResponseTrailers: responseTrailers,
+								},
+							}),
 						},
 					},
 					{
@@ -1383,9 +1311,20 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "server stream error with responses",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
-				RequestMessages: []*anypb.Any{serverStreamErrorReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.ServerStreamRequest{
+					ResponseDefinition: &conformancev1.StreamResponseDefinition{
+						ResponseHeaders: responseHeaders,
+						ResponseData:    [][]byte{data1, data2},
+						ResponseDelayMs: 1000,
+						Error: &conformancev1.Error{
+							Code:    int32(connect.CodeResourceExhausted),
+							Message: proto.String("message"),
+						},
+						ResponseTrailers: responseTrailers,
+					},
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
@@ -1394,7 +1333,18 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						Data: data1,
 						RequestInfo: &conformancev1.ConformancePayload_RequestInfo{
 							RequestHeaders: requestHeaders,
-							Requests:       []*anypb.Any{serverStreamErrorReq},
+							Requests: asAnySlice(t, &conformancev1.ServerStreamRequest{
+								ResponseDefinition: &conformancev1.StreamResponseDefinition{
+									ResponseHeaders: responseHeaders,
+									ResponseData:    [][]byte{data1, data2},
+									ResponseDelayMs: 1000,
+									Error: &conformancev1.Error{
+										Code:    int32(connect.CodeResourceExhausted),
+										Message: proto.String("message"),
+									},
+									ResponseTrailers: responseTrailers,
+								},
+							}),
 						},
 					},
 					{
@@ -1411,17 +1361,41 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "server stream error with no responses",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
-				RequestMessages: []*anypb.Any{serverStreamNoResponseWithErrorReq},
-				RequestHeaders:  requestHeaders,
-				TimeoutMs:       proto.Uint32(42),
+				StreamType: conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.ServerStreamRequest{
+					ResponseDefinition: &conformancev1.StreamResponseDefinition{
+						ResponseHeaders: responseHeaders,
+						ResponseDelayMs: 1000,
+						Error: &conformancev1.Error{
+							Code:    int32(connect.CodeResourceExhausted),
+							Message: proto.String("message"),
+						},
+						ResponseTrailers: responseTrailers,
+					},
+				}),
+				RequestHeaders: requestHeaders,
+				TimeoutMs:      proto.Uint32(42),
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{serverStreamErrorReqInfo},
+					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests: asAnySlice(t, &conformancev1.ServerStreamRequest{
+							ResponseDefinition: &conformancev1.StreamResponseDefinition{
+								ResponseHeaders: responseHeaders,
+								ResponseDelayMs: 1000,
+								Error: &conformancev1.Error{
+									Code:    int32(connect.CodeResourceExhausted),
+									Message: proto.String("message"),
+								},
+								ResponseTrailers: responseTrailers,
+							},
+						}),
+						TimeoutMs: proto.Int64(42),
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1429,9 +1403,15 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "server stream no response set",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
-				RequestMessages: []*anypb.Any{serverStreamNoResponseReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.ServerStreamRequest{
+					ResponseDefinition: &conformancev1.StreamResponseDefinition{
+						ResponseHeaders:  responseHeaders,
+						ResponseDelayMs:  1000,
+						ResponseTrailers: responseTrailers,
+					},
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{
 				ResponseHeaders:  responseHeaders,
@@ -1512,7 +1492,11 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReqInfo},
+					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests:       []*anypb.Any{bidiStreamHalfDuplexNoResponseWithErrorReq, bidiStreamReq2},
+						TimeoutMs:      proto.Int64(42),
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1610,7 +1594,10 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				Error: &conformancev1.Error{
 					Code:    int32(connect.CodeResourceExhausted),
 					Message: proto.String("message"),
-					Details: []*anypb.Any{bidiStreamFullDuplexNoResponseWithErrorReqInfo},
+					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
+						RequestHeaders: requestHeaders,
+						Requests:       []*anypb.Any{bidiStreamFullDuplexNoResponseWithErrorReq, bidiStreamReq2},
+					}),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1638,9 +1625,12 @@ func TestPopulateExpectedResponse(t *testing.T) {
 		{
 			testName: "full duplex bidi stream no definition set",
 			request: &conformancev1.ClientCompatRequest{
-				StreamType:      conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
-				RequestMessages: []*anypb.Any{bidiStreamFullDuplexNoDefReq},
-				RequestHeaders:  requestHeaders,
+				StreamType: conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+				RequestMessages: asAnySlice(t, &conformancev1.BidiStreamRequest{
+					RequestData: data1,
+					FullDuplex:  true,
+				}),
+				RequestHeaders: requestHeaders,
 			},
 			expected: &conformancev1.ClientResponseResult{},
 		},
