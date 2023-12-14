@@ -140,8 +140,12 @@ func (r *rawResponseWriter) finish(feedback *feedbackPrinter) {
 		delete(r.respWriter.Header(), k)
 	}
 	internal.AddHeaders(resp.Headers, r.respWriter.Header())
-	r.respWriter.Header()["Content-Length"] = nil // force chunked encoding, so we can send trailers
-	r.respWriter.Header()["Date"] = nil           // suppress automatic date header
+	r.respWriter.Header()["Date"] = nil // suppress automatic date header
+	// We must pre-declare trailers to make sure that chunked encoding is used and
+	// trailers can actually be sent.
+	for _, hdr := range resp.Trailers {
+		r.respWriter.Header().Add("Trailer", hdr.Name)
+	}
 	r.respWriter.WriteHeader(int(resp.StatusCode))
 	switch contents := resp.Body.(type) {
 	case *v1.RawHTTPResponse_Unary:

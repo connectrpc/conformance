@@ -292,6 +292,8 @@ func TestRawResponseRecorder(t *testing.T) {
 
 					// Then headers and trailers
 					expectedHeaders := http.Header{}
+					resp.Header.Del("Content-Length") // may be added automatically by server
+					resp.Header.Del("Trailer")        // added by handler to ensure trailers can be sent
 					internal.AddHeaders(testCase.resp.Headers, expectedHeaders)
 					assert.Equal(t, expectedHeaders, resp.Header)
 
