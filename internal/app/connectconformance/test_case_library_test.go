@@ -1679,7 +1679,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 // asAnySlice converts the given variadic arg of proto messages to a slice of Any protos
 // and verifies there are no errors during the conversion
 func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
-	arr := []*anypb.Any{}
+	arr := make([]*anypb.Any, 0, len(msgs))
 	for _, msg := range msgs {
 		asAny, err := anypb.New(msg)
 		require.NoError(t, err)
