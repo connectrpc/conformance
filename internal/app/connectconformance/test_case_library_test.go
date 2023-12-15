@@ -1677,8 +1677,9 @@ func TestPopulateExpectedResponse(t *testing.T) {
 }
 
 // asAnySlice converts the given variadic arg of proto messages to a slice of Any protos
-// and verifies there are no errors during the conversion
+// and verifies there are no errors during the conversion.
 func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
+	t.Helper()
 	arr := make([]*anypb.Any, 0, len(msgs))
 	for _, msg := range msgs {
 		asAny, err := anypb.New(msg)
@@ -1695,6 +1696,7 @@ func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
 // If asJSON is false, the message is marshalled to binary and the bytes are then
 // base64-encoded as a string.
 func marshalToString(t *testing.T, asJSON bool, msg proto.Message) string {
+	t.Helper()
 	codec := internal.NewCodec(asJSON)
 
 	bytes, err := codec.MarshalStable(msg)
