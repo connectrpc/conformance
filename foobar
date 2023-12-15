@@ -1,3 +1,0 @@
-#!/usr/bin/env -S npx tsx
-
-console.log("it worked bitch");

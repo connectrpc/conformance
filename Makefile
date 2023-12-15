@@ -10,7 +10,7 @@ BIN := .tmp/bin
 export PATH := $(BIN):$(PATH)
 export GOBIN := $(abspath $(BIN))
 COPYRIGHT_YEARS := 2023
-LICENSE_IGNORE := -e internal/gen -e _legacy -e testdata/
+LICENSE_IGNORE := -e internal/gen -e _legacy -e testdata/ -e grpcwebclient/app.ts
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 LATEST_VERSION = $(shell git describe --tags --abbrev=0 2>/dev/null)
