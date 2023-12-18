@@ -273,6 +273,11 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
 					testFilePath, testCase.Request.TestName)
 			}
+			// The expand request directive uses the proto codec for size calculations, so it doesn't make sense to test with other codecs
+			if len(testCase.ExpandRequests) > 0 && (len(suite.RelevantCodecs) > 1 || !hasCodec(suite.RelevantCodecs, conformancev1.Codec_CODEC_PROTO)) {
+				return nil, fmt.Errorf("%s: test case %q specifies expand requests directive, but includes codecs other than CODEC_PROTO",
+					testFilePath, testCase.Request.TestName)
+			}
 			if err := expandRequestData(testCase); err != nil {
 				return nil, fmt.Errorf("%s: failed to expand request sizes as directed for test case %q: %w",
 					testFilePath, testCase.Request.TestName, err)
@@ -401,6 +406,15 @@ func convertToInt64Ptr(num *uint32) *int64 {
 		return nil
 	}
 	return proto.Int64(int64(*num))
+}
+
+func hasCodec(codecs []conformancev1.Codec, target conformancev1.Codec) bool {
+	for _, c := range codecs {
+		if c == target {
+			return true
+		}
+	}
+	return false
 }
 
 func hasRawResponse(reqs []*anypb.Any) bool {

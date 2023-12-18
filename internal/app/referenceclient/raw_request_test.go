@@ -54,6 +54,26 @@ func TestRawRequestSender(t *testing.T) {
 	err = anypb.MarshalFrom(msgPayload, val, proto.MarshalOptions{})
 	require.NoError(t, err)
 
+	var requests sync.Map // map[string]chan *http.Request
+	svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+		testCaseName := req.Header.Get("x-test-case-name")
+		val, ok := requests.Load(testCaseName)
+		reqChan, isChan := val.(chan *http.Request)
+		if !ok || !isChan {
+			respWriter.WriteHeader(http.StatusBadRequest)
+		}
+		reqCopy := req.Clone(req.Context())
+		var data bytes.Buffer
+		_, err := data.ReadFrom(req.Body)
+		if err != nil {
+			respWriter.WriteHeader(http.StatusInternalServerError)
+		}
+		reqCopy.Body = io.NopCloser(&data)
+		reqChan <- reqCopy
+		// no response means implicit 200 okay w/ no body
+	}))
+	t.Cleanup(svr.Close)
+
 	testCases := []struct {
 		name string
 		req  *conformancev1.RawHTTPRequest
@@ -277,25 +297,6 @@ func TestRawRequestSender(t *testing.T) {
 		},
 	}
 
-	var requests sync.Map // map[string]chan *http.Request
-	svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-		testCaseName := req.Header.Get("test-case-name")
-		val, ok := requests.Load(testCaseName)
-		reqChan, isChan := val.(chan *http.Request)
-		if !ok || !isChan {
-			respWriter.WriteHeader(http.StatusBadRequest)
-		}
-		reqCopy := req.Clone(req.Context())
-		var data bytes.Buffer
-		_, err := data.ReadFrom(req.Body)
-		if err != nil {
-			respWriter.WriteHeader(http.StatusInternalServerError)
-		}
-		reqCopy.Body = io.NopCloser(&data)
-		reqChan <- reqCopy
-		// no response means implicit 200 okay w/ no body
-	}))
-
 	for _, testCase := range testCases {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
@@ -307,9 +308,8 @@ func TestRawRequestSender(t *testing.T) {
 
 			sender := &rawRequestSender{
 				transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-					req.Header.Set("test-case-name", testCaseName)
+					req.Header.Set("x-test-case-name", testCaseName)
 					transport := &http.Transport{DisableCompression: true}
-
 					return transport.RoundTrip(req)
 				}),
 				rawRequest: testCase.req,
@@ -412,8 +412,8 @@ func TestRawRequestSender(t *testing.T) {
 			assert.Equal(t, testCase.req.Verb, req.Method)
 
 			// Then headers
-			req.Header.Del("test-case-name") // added by the round tripper above; not in raw request
-			req.Header.Del("user-agent")     // added by http.Transport
+			req.Header.Del("x-test-case-name") // added by the round tripper above; not in raw request
+			req.Header.Del("user-agent")       // added by http.Transport
 			expectedHeaders := http.Header{}
 			internal.AddHeaders(testCase.req.Headers, expectedHeaders)
 			assert.Equal(t, expectedHeaders, req.Header)
