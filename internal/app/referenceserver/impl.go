@@ -268,7 +268,7 @@ func (s *conformanceServer) BidiStream(
 
 		// If this is the first message in the stream, save off the total responses we need to send
 		// plus whether this should be full or half duplex
-		if firstRecv {
+		if firstRecv { //nolint:nestif
 			responseDefinition = req.ResponseDefinition
 			fullDuplex = req.FullDuplex
 			firstRecv = false
