@@ -19,3 +19,4 @@ features:
   - COMPRESSION_DEFLATE
   - COMPRESSION_SNAPPY
   supportsTlsClientCerts: true
+  supportsHalfDuplexBidiOverHttp1: true

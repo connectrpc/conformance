@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -184,7 +185,16 @@ func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFi
 		&conformanceServer{},
 		opts...,
 	))
-	handler := http.Handler(mux)
+	handler := http.Handler(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) &&
+			req.ProtoMajor == 1 {
+			// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
+			// we "trick" the handler into thinking this is HTTP/2. We have to do this because
+			// otherwise, connect-go refuses to handle bidi streams over HTTP 1.1.
+			req.ProtoMajor, req.ProtoMinor = 2, 0
+		}
+		mux.ServeHTTP(respWriter, req)
+	}))
 	if referenceMode {
 		handler = referenceServerChecks(handler, errPrinter)
 		handler = rawResponder(handler, errPrinter)
