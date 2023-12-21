@@ -1,14 +1,26 @@
 {
   "name": "grpcwebclient",
   "private": true,
-  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --project tsconfig.json --module commonjs --outDir ./dist/cjs",
+    "conformance": "npm run build && wdio run ./wdio.conf.ts"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^1.6.0",
+    "@types/node": "^20.10.4",
+    "esbuild": "^0.19.10",
     "google-protobuf": "^3.21.2",
     "grpc-web": "^1.5.0",
+    "prettier": "^3.1.1",
     "tsx": "^4.6.2",
     "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/jasmine": "^5.1.4",
+    "@wdio/cli": "^8.26.2",
+    "@wdio/jasmine-framework": "^8.26.2",
+    "@wdio/local-runner": "^8.26.2",
+    "@wdio/spec-reporter": "^8.26.2",
+    "ts-node": "^10.9.2"
   }
 }
