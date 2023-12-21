@@ -18,7 +18,7 @@ import {
   ClientCompatResponse,
   ClientResponseResult,
 } from "./gen/proto/es/connectrpc/conformance/v1/client_compat_pb.js";
-import invoke from "./invoke.js";
+import invoke from "./impl.js";
 import {
   ServerStreamRequest,
   UnaryRequest,

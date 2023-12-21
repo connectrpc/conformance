@@ -17,11 +17,41 @@ import {
   ClientCompatRequest,
   ClientResponseResult,
 } from "./gen/proto/es/connectrpc/conformance/v1/client_compat_pb.js";
-import { UnaryRequest } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
+import {
+  Header,
+  UnaryRequest,
+} from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
 import {
   UnaryRequest as UR,
   UnaryResponseDefinition,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
+import {
+  convertGooglePayloadToBufPayload,
+  convertBufHeaderToGoogleHeader,
+} from "./converter.js";
+import { Metadata } from "grpc-web";
+
+function convertHeadersToMetadata(hdrs: Header[]): Metadata {
+  const metadata: Metadata = {};
+  hdrs.forEach((hdr: Header) => {
+    const s = hdr.value.join(",");
+    metadata[hdr.name] = s;
+  });
+  return metadata;
+}
+function convertMetadataToHeader(md: Metadata): Header[] {
+  const hdrs: Header[] = [];
+  for (const [name, value] of Object.entries(md)) {
+    hdrs.push(
+      new Header({
+        name,
+        value: [value],
+      }),
+    );
+  }
+
+  return hdrs;
+}
 
 async function unary(
   client: ConformanceServiceClient,
@@ -35,22 +65,62 @@ async function unary(
 
   const ur = new UR();
   const def = new UnaryResponseDefinition();
-  def.setResponseData("goosh");
+
+  const hayders = uReq?.responseDefinition?.responseHeaders.map(
+    convertBufHeaderToGoogleHeader,
+  );
+  const traylers = uReq?.responseDefinition?.responseTrailers.map(
+    convertBufHeaderToGoogleHeader,
+  );
+
+  def.setResponseHeadersList(hayders || []);
+  def.setResponseTrailersList(traylers || []);
+
+  switch (uReq?.responseDefinition?.response.case) {
+    case "responseData":
+      def.setResponseData(uReq?.responseDefinition?.response.value);
+      break;
+    case "error":
+      // @ts-ignore
+      def.setError(uReq?.responseDefinition?.response.value);
+      break;
+  }
+
   ur.setResponseDefinition(def);
 
-  console.log("GOOOOSH");
-  console.log(ur);
+  const metadata: Metadata = convertHeadersToMetadata(req.requestHeaders);
 
-  try {
-    const result = await client.unary(ur);
+  let res: (result: ClientResponseResult) => void;
+  let rej: (reason: any) => void;
+  const prom = new Promise<ClientResponseResult>((resolve, reject) => {
+    res = resolve;
+    rej = reject;
+  });
 
-    const resp = new ClientResponseResult();
+  const resp = new ClientResponseResult({
+    responseHeaders: [],
+    responseTrailers: [],
+    payloads: [],
+    error: undefined,
+  });
+  const result = client.unary(ur, metadata, (err, response) => {
+    resp.payloads.push(convertGooglePayloadToBufPayload(response.getPayload()));
+  });
 
-    return resp;
-  } catch (e) {
-    throw new Error(e + JSON.stringify(ur.toObject()));
-  }
-  // console.log(result);
+  result.on("metadata", (md: Metadata) => {
+    if (md !== undefined) {
+      resp.responseHeaders = convertMetadataToHeader(md);
+    }
+  });
+  result.on("status", (status) => {
+    const md = status.metadata;
+    if (md !== undefined) {
+      resp.responseTrailers = convertMetadataToHeader(md);
+      res(resp);
+    }
+  });
+
+  return prom;
 }
 
 async function serverStream(

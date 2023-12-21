@@ -45,12 +45,12 @@ const (
 func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
 	return func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
-		// if testCaseName == "" {
-		// 	// This is the only hard failure. Without it, we cannot provide feedback.
-		// 	// All other checks below write to stderr to provide feedback.
-		// 	http.Error(respWriter, "missing x-test-case-name header", http.StatusBadRequest)
-		// 	return
-		// }
+		if testCaseName == "" {
+			// This is the only hard failure. Without it, we cannot provide feedback.
+			// All other checks below write to stderr to provide feedback.
+			http.Error(respWriter, "missing x-test-case-name header", http.StatusBadRequest)
+			return
+		}
 
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
 
@@ -63,15 +63,15 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		if codec, ok := enumValue("x-expect-codec", req.Header, v1.Codec(0), feedback); ok {
 			checkCodec(codec, req, feedback)
 		}
-		// if compress, ok := enumValue("x-expect-compression", req.Header, v1.Compression(0), feedback); ok {
-		// 	checkCompression(compress, req, feedback)
-		// }
+		if compress, ok := enumValue("x-expect-compression", req.Header, v1.Compression(0), feedback); ok {
+			checkCompression(compress, req, feedback)
+		}
 
-		// checkTLS(req, feedback)
+		checkTLS(req, feedback)
 
-		// if expectedMethod, _ := getHeader(req.Header, "x-expect-http-method", feedback); req.Method != expectedMethod {
-		// 	feedback.Printf("expected HTTP method %q, got %q", expectedMethod, req.Method)
-		// }
+		if expectedMethod, _ := getHeader(req.Header, "x-expect-http-method", feedback); req.Method != expectedMethod {
+			feedback.Printf("expected HTTP method %q, got %q", expectedMethod, req.Method)
+		}
 
 		handler.ServeHTTP(respWriter, req)
 	}

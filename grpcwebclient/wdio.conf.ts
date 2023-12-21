@@ -26,7 +26,7 @@ exports.config = {
     },
   ],
   logLevel: "debug",
-  outputDir: __dirname + "/steve",
+  outputDir: __dirname + "/logs",
   bail: 0,
   waitforTimeout: 10000,
   connectionRetryTimeout: 120000,

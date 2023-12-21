@@ -1,11 +1,11 @@
-2023-12-21T15:10:08.191Z INFO @wdio/local-runner: Run worker command: run
-2023-12-21T15:10:08.625Z DEBUG @wdio/runner: init remote session
-2023-12-21T15:10:08.676Z DEBUG @wdio/runner: init remote session
-2023-12-21T15:10:08.677Z INFO webdriver: Initiate new session using the WebDriver protocol
-2023-12-21T15:10:08.800Z INFO webdriver: Using Chromedriver v120.0.6099.109 from cache directory /var/folders/8p/hv2glp153b52816l4xsb_w6h0000gn/T
-2023-12-21T15:10:09.810Z INFO @wdio/utils: Started Chromedriver v120.0.6099.109 with params --port=58140 --allowed-origins=* --allowed-ips=0.0.0.0 in 1046ms on port 58140
-2023-12-21T15:10:09.858Z INFO webdriver: [POST] http://0.0.0.0:58140/session
-2023-12-21T15:10:09.859Z INFO webdriver: DATA {
+2023-12-21T22:01:42.699Z INFO @wdio/local-runner: Run worker command: run
+2023-12-21T22:01:43.072Z DEBUG @wdio/runner: init remote session
+2023-12-21T22:01:43.120Z DEBUG @wdio/runner: init remote session
+2023-12-21T22:01:43.120Z INFO webdriver: Initiate new session using the WebDriver protocol
+2023-12-21T22:01:43.231Z INFO webdriver: Using Chromedriver v120.0.6099.109 from cache directory /var/folders/8p/hv2glp153b52816l4xsb_w6h0000gn/T
+2023-12-21T22:01:43.241Z INFO @wdio/utils: Started Chromedriver v120.0.6099.109 with params --port=58553 --allowed-origins=* --allowed-ips=0.0.0.0 in 41ms on port 58553
+2023-12-21T22:01:43.282Z INFO webdriver: [POST] http://0.0.0.0:58553/session
+2023-12-21T22:01:43.282Z INFO webdriver: DATA {
   capabilities: {
     alwaysMatch: { browserName: 'chrome', 'goog:chromeOptions': [Object] },
     firstMatch: [ {} ]
@@ -18,7 +18,7 @@
     }
   }
 }
-2023-12-21T15:10:10.802Z INFO webdriver: COMMAND executeAsyncScript(""use strict";
+2023-12-21T22:01:43.997Z INFO webdriver: COMMAND executeAsyncScript(""use strict";
 (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
@@ -17968,27 +17968,101 @@
     }
   };
 
-  // invoke.ts
-  var import_service_pb3 = __toESM(require_service_pb());
+  // impl.ts
+  var import_service_pb5 = __toESM(require_service_pb());
+
+  // converter.ts
+  var import_service_pb2 = __toESM(require_service_pb());
+  function convertBufHeaderToGoogleHeader(hdr) {
+    const bin = hdr.toBinary();
+    const dest = import_service_pb2.Header.deserializeBinary(bin);
+    dest.setName(hdr.name);
+    dest.setValueList(hdr.value);
+    return dest;
+  }
+  function convertGooglePayloadToBufPayload(src) {
+    if (src === void 0) {
+      return new ConformancePayload();
+    }
+    const bin = src.serializeBinary();
+    return ConformancePayload.fromBinary(bin);
+  }
+
+  // impl.ts
+  function convertHeadersToMetadata(hdrs) {
+    const metadata = {};
+    hdrs.forEach((hdr) => {
+      const s = hdr.value.join(",");
+      metadata[hdr.name] = s;
+    });
+    return metadata;
+  }
+  function convertMetadataToHeader(md) {
+    const hdrs = [];
+    for (const [name, value] of Object.entries(md)) {
+      hdrs.push(
+        new Header({
+          name,
+          value: [value]
+        })
+      );
+    }
+    return hdrs;
+  }
   async function unary(client, req2) {
     const msg = req2.requestMessages[0];
     const uReq = new UnaryRequest();
     if (!msg.unpackTo(uReq)) {
       throw new Error("Could not unpack request message to unary request");
     }
-    const ur = new import_service_pb3.UnaryRequest();
-    const def = new import_service_pb3.UnaryResponseDefinition();
-    def.setResponseData("goosh");
-    ur.setResponseDefinition(def);
-    console.log("GOOOOSH");
-    console.log(ur);
-    try {
-      const result = await client.unary(ur);
-      const resp = new ClientResponseResult();
-      return resp;
-    } catch (e2) {
-      throw new Error(e2 + JSON.stringify(ur.toObject()));
+    const ur = new import_service_pb5.UnaryRequest();
+    const def = new import_service_pb5.UnaryResponseDefinition();
+    const hayders = uReq?.responseDefinition?.responseHeaders.map(
+      convertBufHeaderToGoogleHeader
+    );
+    const traylers = uReq?.responseDefinition?.responseTrailers.map(
+      convertBufHeaderToGoogleHeader
+    );
+    def.setResponseHeadersList(hayders || []);
+    def.setResponseTrailersList(traylers || []);
+    switch (uReq?.responseDefinition?.response.case) {
+      case "responseData":
+        def.setResponseData(uReq?.responseDefinition?.response.value);
+        break;
+      case "error":
+        def.setError(uReq?.responseDefinition?.response.value);
+        break;
     }
+    ur.setResponseDefinition(def);
+    const metadata = convertHeadersToMetadata(req2.requestHeaders);
+    let res;
+    let rej;
+    const prom = new Promise((resolve, reject) => {
+      res = resolve;
+      rej = reject;
+    });
+    const resp = new ClientResponseResult({
+      responseHeaders: [],
+      responseTrailers: [],
+      payloads: [],
+      error: void 0
+    });
+    const result = client.unary(ur, metadata, (err, response) => {
+      resp.payloads.push(convertGooglePayloadToBufPayload(response.getPayload()));
+    });
+    result.on("metadata", (md) => {
+      if (md !== void 0) {
+        resp.responseHeaders = convertMetadataToHeader(md);
+      }
+    });
+    result.on("status", (status) => {
+      const md = status.metadata;
+      if (md !== void 0) {
+        resp.responseTrailers = convertMetadataToHeader(md);
+        res(resp);
+      }
+    });
+    return prom;
   }
   async function serverStream(_, ccr) {
     console.log(ccr);
@@ -18022,7 +18096,7 @@
     const baseUrl = `${scheme}${req2.host}:${req2.port}`;
     return new ConformanceServiceClient(baseUrl);
   }
-  var invoke_default = (req2) => {
+  var impl_default = (req2) => {
     const client = createClient(req2);
     switch (req2.method) {
       case "Unary":
@@ -18058,7 +18132,7 @@
     typeRegistry
   });
   var done = arguments[1];
-  void invoke_default(req).then(
+  void impl_default(req).then(
     (result) => {
       done({
         type: "data",
@@ -18071,8 +18145,8 @@
   );
 })();
 ", <object>)
-2023-12-21T15:10:10.805Z INFO webdriver: [POST] http://0.0.0.0:58140/session/28364d4ad30aea7b19b0a14043adbd30/execute/async
-2023-12-21T15:10:10.805Z INFO webdriver: DATA {
+2023-12-21T22:01:44.001Z INFO webdriver: [POST] http://0.0.0.0:58553/session/b70f50dc4c869fe483dcea6d0ada1d8e/execute/async
+2023-12-21T22:01:44.002Z INFO webdriver: DATA {
   script: '"use strict";\n' +
     '(() => {\n' +
     '  var __create = Object.create;\n' +
@@ -18403,25 +18477,28 @@
     '          this.i(1, e2);\n' +
     '        };\n' +
     '        b2.prototype.i = function(e2, h) {\n' +
-    '          if (0 != this.b'... 750238 more characters,
+    '          if (0 != this.b'... 752361 more characters,
   args: [
-    '{"testName":"grpc web/TLS:false/unary success","httpVersion":"HTTP_VERSION_2","protocol":"PROTOCOL_GRPC_WEB","codec":"CODEC_PROTO","compression":"COMPRESSION_IDENTITY","host":"127.0.0.1","port":58149,"messageReceiveLimit":1048576,"service":"connectrpc.conformance.v1.ConformanceService","method":"Unary","streamType":"STREAM_TYPE_UNARY","requestHeaders":[{"name":"X-Conformance-Test","value":["Value1","Value2"]},{"name":"x-test-case-name","value":["grpc web/TLS:false/unary success"]},{"name":"x-expect-http-version","value":["2"]},{"name":"x-expect-http-method","value":["POST"]},{"name":"x-expect-protocol","value":["3"]},{"name":"x-expect-codec","value":["1"]},{"name":"x-expect-compression","value":["1"]},{"name":"x-expect-tls","value":["false"]}],"requestMessages":[{"responseDefinition":{"responseHeaders":[{"name":"x-custom-header","value":["foo","bar","baz"]}],"responseData":"dGVzdCByZXNwb25zZQ==","responseTrailers":[{"name":"x-custom-trailer","value":["bing","quux"]}]},"@type":"type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}]}'
+    '{"testName":"grpc web/TLS:false/unary success","httpVersion":"HTTP_VERSION_1","protocol":"PROTOCOL_GRPC_WEB","codec":"CODEC_PROTO","compression":"COMPRESSION_IDENTITY","host":"127.0.0.1","port":58561,"messageReceiveLimit":1048576,"service":"connectrpc.conformance.v1.ConformanceService","method":"Unary","streamType":"STREAM_TYPE_UNARY","requestHeaders":[{"name":"X-Conformance-Test","value":["Value1","Value2"]},{"name":"x-test-case-name","value":["grpc web/TLS:false/unary success"]},{"name":"x-expect-http-version","value":["1"]},{"name":"x-expect-http-method","value":["POST"]},{"name":"x-expect-protocol","value":["3"]},{"name":"x-expect-codec","value":["1"]},{"name":"x-expect-compression","value":["1"]},{"name":"x-expect-tls","value":["false"]}],"requestMessages":[{"responseDefinition":{"responseHeaders":[{"name":"x-custom-header","value":["foo","bar","baz"]}],"responseData":"dGVzdCByZXNwb25zZQ==","responseTrailers":[{"name":"x-custom-trailer","value":["bing"]}]},"@type":"type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}]}'
   ]
 }
-2023-12-21T15:10:10.984Z INFO webdriver: RESULT { data: '{}', type: 'data' }
-2023-12-21T15:10:10.996Z INFO webdriver: COMMAND getLogTypes()
-2023-12-21T15:10:10.996Z INFO webdriver: [GET] http://0.0.0.0:58140/session/28364d4ad30aea7b19b0a14043adbd30/se/log/types
-2023-12-21T15:10:10.998Z INFO webdriver: RESULT [ 'browser', 'driver' ]
-2023-12-21T15:10:10.998Z DEBUG @wdio/runner: Fetching logs for browser, driver
-2023-12-21T15:10:10.998Z INFO webdriver: COMMAND getLogs("driver")
-2023-12-21T15:10:10.998Z INFO webdriver: COMMAND getLogs("browser")
-2023-12-21T15:10:10.998Z INFO webdriver: [POST] http://0.0.0.0:58140/session/28364d4ad30aea7b19b0a14043adbd30/se/log
-2023-12-21T15:10:10.999Z INFO webdriver: DATA { type: 'driver' }
-2023-12-21T15:10:10.999Z INFO webdriver: [POST] http://0.0.0.0:58140/session/28364d4ad30aea7b19b0a14043adbd30/se/log
-2023-12-21T15:10:10.999Z INFO webdriver: DATA { type: 'browser' }
-2023-12-21T15:10:11.001Z INFO webdriver: RESULT []
-2023-12-21T15:10:11.001Z INFO webdriver: RESULT []
-2023-12-21T15:10:11.001Z INFO webdriver: COMMAND deleteSession()
-2023-12-21T15:10:11.001Z INFO webdriver: [DELETE] http://0.0.0.0:58140/session/28364d4ad30aea7b19b0a14043adbd30
-2023-12-21T15:10:11.058Z INFO webdriver: RESULT null
-2023-12-21T15:10:11.058Z INFO webdriver: Kill /var/folders/8p/hv2glp153b52816l4xsb_w6h0000gn/T/chromedriver/mac_arm-120.0.6099.109/chromedriver-mac-arm64/chromedriver driver process with command line: --port=58140 --allowed-origins=* --allowed-ips=0.0.0.0
+2023-12-21T22:01:44.163Z INFO webdriver: RESULT {
+  data: '{"responseHeaders":[{"name":"access-control-allow-origin","value":["*"]},{"name":"access-control-expose-headers","value":["*"]},{"name":"date","value":["Thu, 21 Dec 2023 22:01:44 GMT"]},{"name":"grpc-accept-encoding","value":["zstd,snappy,deflate,br,gzip"]},{"name":"server","value":["connectconformance-referenceserver/v1.0.0-rc2-dev-ed15b18-dirty"]},{"name":"transfer-encoding","value":["chunked"]},{"name":"vary","value":["Origin"]},{"name":"x-custom-header","value":["foo, bar, baz"]}],"payloads":[{"data":"dGVzdCByZXNwb25zZQ==","requestInfo":{"requestHeaders":[{"name":"User-Agent","value":["Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/120.0.6099.109 Safari/537.36"]},{"name":"X-Expect-Compression","value":["1"]},{"name":"X-Grpc-Web","value":["1"]},{"name":"X-Expect-Http-Version","value":["1"]},{"name":"Sec-Ch-Ua-Platform","value":["\\"macOS\\""]},{"name":"Sec-Fetch-Site","value":["cross-site"]},{"name":"Connection","value":["keep-alive"]},{"name":"X-User-Agent","value":["grpc-web-javascript/0.1"]},{"name":"X-Expect-Protocol","value":["3"]},{"name":"X-Conformance-Test","value":["Value1,Value2"]},{"name":"Origin","value":["null"]},{"name":"Accept-Encoding","value":["gzip, deflate, br"]},{"name":"X-Expect-Tls","value":["false"]},{"name":"Sec-Fetch-Mode","value":["cors"]},{"name":"Host","value":["127.0.0.1:58561"]},{"name":"Sec-Ch-Ua","value":["\\"Not_A Brand\\";v=\\"8\\", \\"Chromium\\";v=\\"120\\", \\"HeadlessChrome\\";v=\\"120\\""]},{"name":"X-Test-Case-Name","value":["grpc web/TLS:false/unary success"]},{"name":"Content-Type","value":["application/grpc-web+proto"]},{"name":"X-Expect-Codec","value":["1"]},{"name":"X-Expect-Http-Method","value":["POST"]},{"name":"Sec-Fetch-Dest","value":["empty"]},{"name":"Content-Length","value":["82"]},{"name":"Sec-Ch-Ua-Mobile","value":["?0"]},{"name":"Accept","value":["*/*"]}],"requests":[{"responseDefinition":{"responseHeaders":[{"name":"x-custom-header","value":["foo","bar","baz"]}],"responseData":"dGVzdCByZXNwb25zZQ==","responseTrailers":[{"name":"x-custom-trailer","value":["bing"]}]},"@type":"type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}]}}],"responseTrailers":[{"name":"x-custom-trailer","value":["bing"]}]}',
+  type: 'data'
+}
+2023-12-21T22:01:44.178Z INFO webdriver: COMMAND getLogTypes()
+2023-12-21T22:01:44.178Z INFO webdriver: [GET] http://0.0.0.0:58553/session/b70f50dc4c869fe483dcea6d0ada1d8e/se/log/types
+2023-12-21T22:01:44.180Z INFO webdriver: RESULT [ 'browser', 'driver' ]
+2023-12-21T22:01:44.180Z DEBUG @wdio/runner: Fetching logs for browser, driver
+2023-12-21T22:01:44.180Z INFO webdriver: COMMAND getLogs("driver")
+2023-12-21T22:01:44.180Z INFO webdriver: COMMAND getLogs("browser")
+2023-12-21T22:01:44.180Z INFO webdriver: [POST] http://0.0.0.0:58553/session/b70f50dc4c869fe483dcea6d0ada1d8e/se/log
+2023-12-21T22:01:44.180Z INFO webdriver: DATA { type: 'driver' }
+2023-12-21T22:01:44.181Z INFO webdriver: [POST] http://0.0.0.0:58553/session/b70f50dc4c869fe483dcea6d0ada1d8e/se/log
+2023-12-21T22:01:44.181Z INFO webdriver: DATA { type: 'browser' }
+2023-12-21T22:01:44.183Z INFO webdriver: RESULT []
+2023-12-21T22:01:44.183Z INFO webdriver: RESULT []
+2023-12-21T22:01:44.184Z INFO webdriver: COMMAND deleteSession()
+2023-12-21T22:01:44.184Z INFO webdriver: [DELETE] http://0.0.0.0:58553/session/b70f50dc4c869fe483dcea6d0ada1d8e
+2023-12-21T22:01:44.240Z INFO webdriver: RESULT null
+2023-12-21T22:01:44.241Z INFO webdriver: Kill /var/folders/8p/hv2glp153b52816l4xsb_w6h0000gn/T/chromedriver/mac_arm-120.0.6099.109/chromedriver-mac-arm64/chromedriver driver process with command line: --port=58553 --allowed-origins=* --allowed-ips=0.0.0.0

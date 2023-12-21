@@ -1,6 +1,6 @@
 features:
   versions:
-    - HTTP_VERSION_2
+    - HTTP_VERSION_1
   protocols:
     - PROTOCOL_GRPC_WEB
   codecs:

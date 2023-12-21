@@ -223,13 +223,6 @@ func run(
 
 		var servers []processInfo
 		if useReferenceServer {
-			fmt.Println("running ref server")
-			boom := []string{"reference-server",
-				"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
-				"-bind", flags.ServerBind,
-				"-cert", flags.TLSCertFile,
-				"-key", flags.TLSKeyFile}
-			fmt.Println(boom)
 			servers = []processInfo{
 				{
 					name: "reference server",
