@@ -47,7 +47,7 @@ const typeRegistry = createRegistry(
 );
 
 describe("Connect Conformance", () => {
-  it("Connect Conformance", async () => {
+  it("gRPC-web Client", async () => {
     const buildResult = await esbuild.build({
       entryPoints: ["./entry.ts"],
       bundle: true,
@@ -132,8 +132,6 @@ async function run(socket: net.Socket, invokeScript: string) {
         };
       }
     } catch (e) {
-      console.error("caught it here");
-      console.error(e);
       res.result = {
         case: "error",
         value: new ClientErrorResult({ message: (e as Error).message }),

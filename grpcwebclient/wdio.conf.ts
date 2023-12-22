@@ -25,6 +25,7 @@ exports.config = {
       },
     },
   ],
+  logLevel: "error",
   bail: 0,
   waitforTimeout: 10000,
   connectionRetryTimeout: 120000,

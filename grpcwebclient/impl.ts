@@ -23,10 +23,7 @@ import {
   Header,
   UnaryRequest,
 } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
-import {
-  ConformancePayload as ConformancePayloadGoog,
-  UnaryRequest as UnaryRequestGoog,
-} from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
+import { UnaryRequest as UnaryRequestGoog } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "./gen/proto/google/rpc/status_pb.js";
 import { Metadata, RpcError } from "grpc-web";
 
@@ -55,41 +52,6 @@ function stringToUint8Array(str: string): Uint8Array {
   return bufView;
 }
 
-function convertMetadataToDetails(md: Metadata): Header[] {
-  const hdrs: Header[] = [];
-  for (const [name, value] of Object.entries(md)) {
-    hdrs.push(
-      new Header({
-        name,
-        value: [value],
-      }),
-    );
-  }
-
-  return hdrs;
-}
-
-function deets(err: RpcError) {
-  for (const [name, value] of Object.entries(err.metadata)) {
-    if (name === "grpc-status-details-bin") {
-      const s = atob(value);
-      const status = Status.fromBinary(stringToUint8Array(s));
-
-      return status.details;
-    }
-  }
-}
-
-export function convertGooglePayloadToProtoPayload(
-  src: ConformancePayloadGoog | undefined,
-): ConformancePayload {
-  if (src === undefined) {
-    return new ConformancePayload();
-  }
-  const bin = src.serializeBinary();
-  return ConformancePayload.fromBinary(bin);
-}
-
 function convertHeadersToMetadata(hdrs: Header[]): Metadata {
   const metadata: Metadata = {};
   hdrs.forEach((hdr: Header) => {
@@ -98,6 +60,7 @@ function convertHeadersToMetadata(hdrs: Header[]): Metadata {
   });
   return metadata;
 }
+
 function convertMetadataToHeader(md: Metadata): Header[] {
   const hdrs: Header[] = [];
   for (const [name, value] of Object.entries(md)) {
@@ -126,10 +89,8 @@ async function unary(
   const ur = UnaryRequestGoog.deserializeBinary(uReq.toBinary());
 
   let res: (result: ClientResponseResult) => void;
-  let rej: (reason: any) => void;
-  const prom = new Promise<ClientResponseResult>((resolve, reject) => {
+  const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
-    rej = reject;
   });
 
   const resp = new ClientResponseResult({
@@ -144,17 +105,23 @@ async function unary(
     if (err !== null) {
       resp.error = convertGrpcToProtoError(err);
     } else {
-      resp.payloads.push(
-        convertGooglePayloadToProtoPayload(response.getPayload()),
-      );
+      const payload = response.getPayload();
+      if (payload !== undefined) {
+        resp.payloads.push(
+          ConformancePayload.fromBinary(payload.serializeBinary()),
+        );
+      }
     }
   });
 
+  // Response headers (i.e. initial metadata) are sent in the 'metadata' event
   result.on("metadata", (md: Metadata) => {
     if (md !== undefined) {
       resp.responseHeaders = convertMetadataToHeader(md);
     }
   });
+
+  // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   result.on("status", (status) => {
     const md = status.metadata;
     if (md !== undefined) {
