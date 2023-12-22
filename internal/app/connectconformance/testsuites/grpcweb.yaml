@@ -1,8 +1,6 @@
 name: gRPC-web
 relevantHttpVersions:
   - HTTP_VERSION_1
-relevantCompressions:
-  - COMPRESSION_IDENTITY
 relevantCodecs:
   - CODEC_PROTO
 relevantProtocols:
