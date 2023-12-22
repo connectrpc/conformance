@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "build": "tsc --project tsconfig.json --module commonjs --outDir ./dist/cjs",
-    "conformance": "npm run build && wdio run ./wdio.conf.ts"
+    "googleapis": "buf generate buf.build/googleapis/googleapis",
+    "conformance": "npm run googleapis && npm run build && wdio run ./wdio.conf.ts"
   },
   "dependencies": {
     "@bufbuild/protobuf": "^1.6.0",

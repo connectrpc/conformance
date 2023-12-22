@@ -1,0 +1,5 @@
+version: v1
+plugins:
+  - plugin: buf.build/bufbuild/es
+    out: gen/proto
+    opt: target=ts

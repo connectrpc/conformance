@@ -18,18 +18,77 @@ import {
   ClientResponseResult,
 } from "./gen/proto/es/connectrpc/conformance/v1/client_compat_pb.js";
 import {
+  ConformancePayload,
+  Error as ProtoError,
   Header,
   UnaryRequest,
 } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
 import {
-  UnaryRequest as UR,
-  UnaryResponseDefinition,
+  ConformancePayload as ConformancePayloadGoog,
+  UnaryRequest as UnaryRequestGoog,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
-import {
-  convertGooglePayloadToBufPayload,
-  convertBufHeaderToGoogleHeader,
-} from "./converter.js";
-import { Metadata } from "grpc-web";
+import { Status } from "./gen/proto/google/rpc/status_pb.js";
+import { Metadata, RpcError } from "grpc-web";
+
+function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
+  const err = new ProtoError({
+    code: rpcErr.code,
+    message: rpcErr.message,
+  });
+  for (const [name, value] of Object.entries(rpcErr.metadata)) {
+    if (name === "grpc-status-details-bin") {
+      const status = Status.fromBinary(stringToUint8Array(atob(value)));
+
+      err.details = status.details;
+      break;
+    }
+  }
+  return err;
+}
+
+function stringToUint8Array(str: string): Uint8Array {
+  const buf = new ArrayBuffer(str.length);
+  const bufView = new Uint8Array(buf);
+  for (let i = 0; i < str.length; i++) {
+    bufView[i] = str.charCodeAt(i);
+  }
+  return bufView;
+}
+
+function convertMetadataToDetails(md: Metadata): Header[] {
+  const hdrs: Header[] = [];
+  for (const [name, value] of Object.entries(md)) {
+    hdrs.push(
+      new Header({
+        name,
+        value: [value],
+      }),
+    );
+  }
+
+  return hdrs;
+}
+
+function deets(err: RpcError) {
+  for (const [name, value] of Object.entries(err.metadata)) {
+    if (name === "grpc-status-details-bin") {
+      const s = atob(value);
+      const status = Status.fromBinary(stringToUint8Array(s));
+
+      return status.details;
+    }
+  }
+}
+
+export function convertGooglePayloadToProtoPayload(
+  src: ConformancePayloadGoog | undefined,
+): ConformancePayload {
+  if (src === undefined) {
+    return new ConformancePayload();
+  }
+  const bin = src.serializeBinary();
+  return ConformancePayload.fromBinary(bin);
+}
 
 function convertHeadersToMetadata(hdrs: Header[]): Metadata {
   const metadata: Metadata = {};
@@ -63,32 +122,8 @@ async function unary(
     throw new Error("Could not unpack request message to unary request");
   }
 
-  const ur = new UR();
-  const def = new UnaryResponseDefinition();
-
-  const hayders = uReq?.responseDefinition?.responseHeaders.map(
-    convertBufHeaderToGoogleHeader,
-  );
-  const traylers = uReq?.responseDefinition?.responseTrailers.map(
-    convertBufHeaderToGoogleHeader,
-  );
-
-  def.setResponseHeadersList(hayders || []);
-  def.setResponseTrailersList(traylers || []);
-
-  switch (uReq?.responseDefinition?.response.case) {
-    case "responseData":
-      def.setResponseData(uReq?.responseDefinition?.response.value);
-      break;
-    case "error":
-      // @ts-ignore
-      def.setError(uReq?.responseDefinition?.response.value);
-      break;
-  }
-
-  ur.setResponseDefinition(def);
-
-  const metadata: Metadata = convertHeadersToMetadata(req.requestHeaders);
+  // Convert from Protobuf-ES into the gRPC-web compatible library
+  const ur = UnaryRequestGoog.deserializeBinary(uReq.toBinary());
 
   let res: (result: ClientResponseResult) => void;
   let rej: (reason: any) => void;
@@ -103,8 +138,16 @@ async function unary(
     payloads: [],
     error: undefined,
   });
+
+  const metadata: Metadata = convertHeadersToMetadata(req.requestHeaders);
   const result = client.unary(ur, metadata, (err, response) => {
-    resp.payloads.push(convertGooglePayloadToBufPayload(response.getPayload()));
+    if (err !== null) {
+      resp.error = convertGrpcToProtoError(err);
+    } else {
+      resp.payloads.push(
+        convertGooglePayloadToProtoPayload(response.getPayload()),
+      );
+    }
   });
 
   result.on("metadata", (md: Metadata) => {

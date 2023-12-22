@@ -1,12 +1,12 @@
-2023-12-21T22:01:42.190Z INFO @wdio/cli:launcher: Run onPrepare hook
-2023-12-21T22:01:42.191Z INFO @wdio/utils: Setting up browser driver for: chrome@stable
-2023-12-21T22:01:42.191Z INFO @wdio/utils: Setting up browser binaries for: chrome@stable
-2023-12-21T22:01:42.220Z INFO webdriver: Using Chromedriver v120.0.6099.109 from cache directory /var/folders/8p/hv2glp153b52816l4xsb_w6h0000gn/T
-2023-12-21T22:01:42.247Z INFO @wdio/cli:launcher: Run onWorkerStart hook
-2023-12-21T22:01:42.247Z INFO @wdio/local-runner: Start worker 0-0 with arg: run,./wdio.conf.ts
-2023-12-21T22:01:42.248Z DEBUG @wdio/local-runner: Send command run to worker with cid "0-0"
-2023-12-21T22:01:44.358Z DEBUG @wdio/local-runner: Runner 0-0 finished with exit code 0
-2023-12-21T22:01:44.359Z INFO @wdio/cli:launcher: Run onWorkerEnd hook
-2023-12-21T22:01:44.359Z INFO @wdio/cli:launcher: Run onComplete hook
-2023-12-21T22:01:44.382Z INFO @wdio/local-runner: Shutting down spawned worker
-2023-12-21T22:01:44.635Z INFO @wdio/local-runner: Waiting for 0 to shut down gracefully
+2023-12-22T15:57:26.684Z INFO @wdio/cli:launcher: Run onPrepare hook
+2023-12-22T15:57:26.684Z INFO @wdio/utils: Setting up browser driver for: chrome@stable
+2023-12-22T15:57:26.685Z INFO @wdio/utils: Setting up browser binaries for: chrome@stable
+2023-12-22T15:57:26.717Z INFO webdriver: Using Chromedriver v120.0.6099.109 from cache directory /var/folders/8p/hv2glp153b52816l4xsb_w6h0000gn/T
+2023-12-22T15:57:26.747Z INFO @wdio/cli:launcher: Run onWorkerStart hook
+2023-12-22T15:57:26.748Z INFO @wdio/local-runner: Start worker 0-0 with arg: run,./wdio.conf.ts
+2023-12-22T15:57:26.749Z DEBUG @wdio/local-runner: Send command run to worker with cid "0-0"
+2023-12-22T15:57:29.996Z DEBUG @wdio/local-runner: Runner 0-0 finished with exit code 0
+2023-12-22T15:57:29.996Z INFO @wdio/cli:launcher: Run onWorkerEnd hook
+2023-12-22T15:57:29.996Z INFO @wdio/cli:launcher: Run onComplete hook
+2023-12-22T15:57:30.018Z INFO @wdio/local-runner: Shutting down spawned worker
+2023-12-22T15:57:30.269Z INFO @wdio/local-runner: Waiting for 0 to shut down gracefully
