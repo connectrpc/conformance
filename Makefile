@@ -107,7 +107,6 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclie
 .PHONY: rungrpcweb
 rungrpcweb: generate $(BIN)/connectconformance
 	cd grpcwebclient && npm run conformance
-	# $(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode client -- grpcwebclient/app.ts
 
 $(BIN)/connectconformance: Makefile generate
 	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/connectconformance/

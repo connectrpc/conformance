@@ -207,7 +207,6 @@ function createClient(req: ClientCompatRequest) {
   }
   const baseUrl = `${scheme}${req.host}:${req.port}`;
   return new ConformanceServiceClient(baseUrl);
-  // return new ConformanceServiceClient("http://127.0.0.1:23457");
 }
 
 export default (req: ClientCompatRequest) => {

@@ -1,4 +1,4 @@
-name: grpc web
+name: gRPC-web
 relevantHttpVersions:
   - HTTP_VERSION_1
 relevantCompressions:
