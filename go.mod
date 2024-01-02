@@ -3,7 +3,7 @@ module connectrpc.com/conformance
 go 1.20
 
 require (
-	connectrpc.com/connect v1.13.0
+	connectrpc.com/connect v1.14.0
 	github.com/andybalholm/brotli v1.0.6
 	github.com/bufbuild/protoyaml-go v0.1.7
 	github.com/golang/snappy v0.0.4
@@ -13,12 +13,13 @@ require (
 	github.com/quic-go/quic-go v0.40.0
 	github.com/rs/cors v1.10.1
 	github.com/spf13/cobra v1.8.0
+	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/net v0.19.0
 	golang.org/x/sync v0.5.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13
 	google.golang.org/grpc v1.59.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.32.0
 )
 
 require (
@@ -37,7 +38,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/quic-go/qtls-go1-20 v0.4.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	go.uber.org/mock v0.3.0 // indirect
 	golang.org/x/crypto v0.16.0 // indirect
