@@ -3,10 +3,10 @@
   "private": true,
   "scripts": {
     "build": "tsc --project tsconfig.json --module commonjs --outDir ./dist/cjs",
-    "googleapis": "buf generate buf.build/googleapis/googleapis",
-    "conformance": "npm run googleapis && npm run build && wdio run ./wdio.conf.ts"
+    "conformance": "npm run build && wdio run ./wdio.conf.ts"
   },
   "dependencies": {
+    "@buf/googleapis_googleapis.bufbuild_es": "^1.6.0-20231214202519-a86849a25cc0.1",
     "@bufbuild/protobuf": "^1.6.0",
     "@types/node": "^20.10.4",
     "esbuild": "^0.19.10",

@@ -28,7 +28,7 @@ import {
   UnaryRequest as UnaryRequestGoog,
   UnimplementedRequest as UnimplementedRequestGoog,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
-import { Status } from "./gen/proto/google/rpc/status_pb.js";
+import { Status } from "@buf/googleapis_googleapis.bufbuild_es/google/rpc/status_pb.js";
 import { Metadata, RpcError } from "grpc-web";
 
 function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
@@ -184,13 +184,11 @@ async function unimplemented(
 
   const metadata: Metadata = convertHeadersToMetadata(req.requestHeaders);
   client.unimplemented(ur, metadata, (err) => {
-    const resp = new ClientResponseResult({
-      error: undefined,
-    });
-    if (err !== null) {
-      resp.error = convertGrpcToProtoError(err);
-    }
-    res(new ClientResponseResult({}));
+    res(
+      new ClientResponseResult({
+        error: convertGrpcToProtoError(err),
+      }),
+    );
   });
 
   return prom;

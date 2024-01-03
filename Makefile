@@ -49,6 +49,7 @@ build: generate ## Build all packages
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
 	rm -rf internal/gen
+	rm -rf grpcwebclient/gen
 	buf generate proto
 	license-header \
 		--license-type apache \
