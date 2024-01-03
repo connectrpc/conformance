@@ -22,8 +22,12 @@ import {
   Error as ProtoError,
   Header,
   UnaryRequest,
+  UnimplementedRequest,
 } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
-import { UnaryRequest as UnaryRequestGoog } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
+import {
+  UnaryRequest as UnaryRequestGoog,
+  UnimplementedRequest as UnimplementedRequestGoog,
+} from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "./gen/proto/google/rpc/status_pb.js";
 import { Metadata, RpcError } from "grpc-web";
 
@@ -160,11 +164,36 @@ async function bidiStream(): Promise<ClientResponseResult> {
 }
 
 async function unimplemented(
-  _: ConformanceServiceClient,
-  ccr: ClientCompatRequest,
+  client: ConformanceServiceClient,
+  req: ClientCompatRequest,
 ): Promise<ClientResponseResult> {
-  console.log(ccr);
-  return new ClientResponseResult();
+  const msg = req.requestMessages[0];
+  const uReq = new UnimplementedRequest();
+  if (!msg.unpackTo(uReq)) {
+    throw new Error(
+      "Could not unpack request message to unimplemented request",
+    );
+  }
+  // Convert from Protobuf-ES into the gRPC-web compatible library
+  const ur = UnimplementedRequestGoog.deserializeBinary(uReq.toBinary());
+
+  let res: (result: ClientResponseResult) => void;
+  const prom = new Promise<ClientResponseResult>((resolve) => {
+    res = resolve;
+  });
+
+  const metadata: Metadata = convertHeadersToMetadata(req.requestHeaders);
+  client.unimplemented(ur, metadata, (err) => {
+    const resp = new ClientResponseResult({
+      error: undefined,
+    });
+    if (err !== null) {
+      resp.error = convertGrpcToProtoError(err);
+    }
+    res(new ClientResponseResult({}));
+  });
+
+  return prom;
 }
 
 function createClient(req: ClientCompatRequest) {

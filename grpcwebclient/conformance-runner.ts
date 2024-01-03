@@ -116,8 +116,6 @@ async function run(socket: net.Socket, invokeScript: string) {
         req.toJsonString({ typeRegistry }),
       ])) as { type: "data"; data: string } | { type: "error"; error: string };
 
-      // console.error("RESPONSE: ");
-      // console.error(invokeResultJson);
       if (invokeResultJson.type === "data") {
         res.result = {
           case: "response",
