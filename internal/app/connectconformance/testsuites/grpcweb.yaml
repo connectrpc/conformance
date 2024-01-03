@@ -251,6 +251,27 @@ testCases:
         error:
           code: 13
           message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
+# Server Stream Tests ---------------------------------------------------------
+- request:
+    testName: server stream success
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo","bar","baz"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing","quux"]
 # Misc Tests ------------------------------------------------------------------
 - request:
     testName: unimplemented

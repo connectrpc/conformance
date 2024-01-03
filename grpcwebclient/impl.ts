@@ -23,10 +23,12 @@ import {
   Header,
   UnaryRequest,
   UnimplementedRequest,
+  ServerStreamRequest,
 } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
 import {
   UnaryRequest as UnaryRequestGoog,
   UnimplementedRequest as UnimplementedRequestGoog,
+  ServerStreamRequest as ServerStreamRequestGoog,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "@buf/googleapis_googleapis.bufbuild_es/google/rpc/status_pb.js";
 import { Metadata, RpcError } from "grpc-web";
@@ -138,11 +140,33 @@ async function unary(
 }
 
 async function serverStream(
-  _: ConformanceServiceClient,
-  ccr: ClientCompatRequest,
+  client: ConformanceServiceClient,
+  req: ClientCompatRequest,
 ): Promise<ClientResponseResult> {
-  console.log(ccr);
-  return new ClientResponseResult();
+  const msg = req.requestMessages[0];
+  const uReq = new ServerStreamRequest();
+  if (!msg.unpackTo(uReq)) {
+    throw new Error(
+      "Could not unpack request message to server stream request",
+    );
+  }
+
+  // Convert from Protobuf-ES into the gRPC-web compatible library
+  const ur = ServerStreamRequestGoog.deserializeBinary(uReq.toBinary());
+
+  let res: (result: ClientResponseResult) => void;
+  const prom = new Promise<ClientResponseResult>((resolve) => {
+    res = resolve;
+  });
+
+  const resp = new ClientResponseResult({
+    responseHeaders: [],
+    responseTrailers: [],
+    payloads: [],
+    error: undefined,
+  });
+
+  return prom;
 }
 
 async function clientStream(): Promise<ClientResponseResult> {
