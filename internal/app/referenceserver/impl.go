@@ -212,6 +212,8 @@ func (s *conformanceServer) ServerStream(
 				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), req.Peer().Query, []*anypb.Any{msgAsAny})
 			}
 
+			fmt.Println("snoozin")
+
 			// If a response delay was specified, sleep for that amount of ms before responding
 			time.Sleep(responseDelay)
 

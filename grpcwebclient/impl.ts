@@ -88,22 +88,6 @@ function convertMetadataToHeader(md: Metadata): Header[] {
   return hdrs;
 }
 
-function getCancelTiming(req: ClientCompatRequest): number {
-  if (req.cancel == undefined) {
-    return -1;
-  }
-  const cancelTiming = req.cancel.cancelTiming;
-  switch (cancelTiming.case) {
-    case "afterNumResponses":
-      return cancelTiming.value;
-    default:
-      // Since server streaming is the only streaming method supported for grpc-web,
-      // we can just ignore all values other than afterNumResponses since they
-      // apply to client and bidi
-      return -1;
-  }
-}
-
 async function unary(
   client: ConformanceServiceClient,
   req: ClientCompatRequest,
@@ -188,40 +172,21 @@ async function serverStream(
     error: undefined,
   });
 
-  const cancelAfterNumResponses = getCancelTiming(req);
   const metadata: Metadata = buildMetadata(req);
 
   const stream = client.serverStream(ssr, metadata);
-
-  // If the cancel timing specifies after 0 responses, then cancel before
-  // receiving anything
-  if (cancelAfterNumResponses === 0) {
-    stream.cancel();
-    return new Promise<ClientResponseResult>((resolve) => {
-      resolve(resp);
-    });
-  }
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
 
-  let totalRcvd = 0;
   stream.on("data", (response: ServerStreamResponseGoog) => {
     const payload = response.getPayload();
     if (payload !== undefined) {
       resp.payloads.push(
         ConformancePayload.fromBinary(payload.serializeBinary()),
       );
-      totalRcvd += 1;
-      // If afterNumResponses is specified, it will be a number > 0 here.
-      // If it wasn't specified, it will be -1, which means the totalRcvd
-      // will never be equal and we won't cancel.
-      if (totalRcvd === cancelAfterNumResponses) {
-        stream.cancel();
-        res(resp);
-      }
     }
   });
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
@@ -229,11 +194,9 @@ async function serverStream(
     if (md !== undefined) {
       resp.responseHeaders = convertMetadataToHeader(md);
     }
-    res(resp);
   });
   stream.on("error", (err: RpcError) => {
     resp.error = convertGrpcToProtoError(err);
-    res(resp);
   });
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
@@ -242,7 +205,6 @@ async function serverStream(
     if (md !== undefined) {
       resp.responseTrailers = convertMetadataToHeader(md);
     }
-    res(resp);
   });
 
   stream.on("end", function () {
