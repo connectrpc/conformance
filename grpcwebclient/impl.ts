@@ -29,9 +29,10 @@ import {
   UnaryRequest as UnaryRequestGoog,
   UnimplementedRequest as UnimplementedRequestGoog,
   ServerStreamRequest as ServerStreamRequestGoog,
+  ServerStreamResponse as ServerStreamResponseGoog,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "@buf/googleapis_googleapis.bufbuild_es/google/rpc/status_pb.js";
-import { Metadata, RpcError } from "grpc-web";
+import { Metadata, RpcError, Status as GrpcWebStatus } from "grpc-web";
 
 function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   const err = new ProtoError({
@@ -41,7 +42,6 @@ function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   for (const [name, value] of Object.entries(rpcErr.metadata)) {
     if (name === "grpc-status-details-bin") {
       const status = Status.fromBinary(stringToUint8Array(atob(value)));
-
       err.details = status.details;
       break;
     }
@@ -128,7 +128,7 @@ async function unary(
   });
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
-  result.on("status", (status) => {
+  result.on("status", (status: GrpcWebStatus) => {
     const md = status.metadata;
     if (md !== undefined) {
       resp.responseTrailers = convertMetadataToHeader(md);
@@ -152,7 +152,7 @@ async function serverStream(
   }
 
   // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ur = ServerStreamRequestGoog.deserializeBinary(uReq.toBinary());
+  const ssr = ServerStreamRequestGoog.deserializeBinary(uReq.toBinary());
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
@@ -164,6 +164,37 @@ async function serverStream(
     responseTrailers: [],
     payloads: [],
     error: undefined,
+  });
+
+  const metadata: Metadata = convertHeadersToMetadata(req.requestHeaders);
+  const stream = client.serverStream(ssr, metadata);
+  stream.on("data", (response: ServerStreamResponseGoog) => {
+    const payload = response.getPayload();
+    if (payload !== undefined) {
+      resp.payloads.push(
+        ConformancePayload.fromBinary(payload.serializeBinary()),
+      );
+    }
+    res(resp);
+  });
+  // Response headers (i.e. initial metadata) are sent in the 'metadata' event
+  stream.on("metadata", (md: Metadata) => {
+    if (md !== undefined) {
+      resp.responseHeaders = convertMetadataToHeader(md);
+    }
+  });
+
+  // Response trailers (i.e. trailing metadata) are sent in the 'status' event
+  stream.on("status", (status: GrpcWebStatus) => {
+    const md = status.metadata;
+    if (md !== undefined) {
+      resp.responseTrailers = convertMetadataToHeader(md);
+    }
+    res(resp);
+  });
+
+  stream.on("end", function () {
+    res(resp);
   });
 
   return prom;

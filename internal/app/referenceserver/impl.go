@@ -48,7 +48,6 @@ func (s *conformanceServer) Unary(
 	ctx context.Context,
 	req *connect.Request[v1.UnaryRequest],
 ) (*connect.Response[v1.UnaryResponse], error) {
-	// fmt.Printf("Received Request in Go: %+v", req)
 	msgAsAny, err := asAny(req.Msg)
 	if err != nil {
 		return nil, err
