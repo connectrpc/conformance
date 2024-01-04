@@ -48,6 +48,7 @@ func (s *conformanceServer) Unary(
 	ctx context.Context,
 	req *connect.Request[v1.UnaryRequest],
 ) (*connect.Response[v1.UnaryResponse], error) {
+	fmt.Printf("Request: %+v\n", req)
 	msgAsAny, err := asAny(req.Msg)
 	if err != nil {
 		return nil, err
@@ -75,6 +76,8 @@ func (s *conformanceServer) Unary(
 		responseDelay := time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond
 		time.Sleep(responseDelay)
 	}
+
+	fmt.Printf("%+v", resp)
 
 	return resp, nil
 }

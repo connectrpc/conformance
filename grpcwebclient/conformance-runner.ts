@@ -107,7 +107,10 @@ describe("Connect Conformance", () => {
 });
 async function run(socket: net.Socket, invokeScript: string) {
   for await (const next of readReqBuffers(socket)) {
+    console.error("here now binary");
     const req = ClientCompatRequest.fromBinary(next);
+
+    console.error(req);
     const res = new ClientCompatResponse({
       testName: req.testName,
     });
@@ -150,19 +153,23 @@ async function* readReqBuffers(stream: Readable) {
     throw err;
   });
   for (; !stream.readableEnded; ) {
+    console.error("readin");
     const size = stream.read(4) as Buffer | null;
     if (size === null) {
+      console.error("awaiting");
       await new Promise<void>((resolve) => {
         stream.once("readable", resolve);
         stream.once("end", resolve);
       });
       continue;
     }
+    console.error(size);
     let chunk: Buffer | null = null;
     // We are guaranteed to get the next chunk.
     for (;;) {
       chunk = stream.read(size.readUInt32BE()) as Buffer | null;
       if (chunk !== null) {
+        console.error("its not null, we're out");
         break;
       }
       await new Promise((resolve) => stream.once("readable", resolve));
