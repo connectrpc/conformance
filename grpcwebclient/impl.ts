@@ -197,6 +197,7 @@ async function serverStream(
   });
   stream.on("error", (err: RpcError) => {
     resp.error = convertGrpcToProtoError(err);
+    res(resp);
   });
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
