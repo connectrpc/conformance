@@ -8,27 +8,563 @@ relevantProtocols:
 mode: TEST_MODE_CLIENT
 testCases:
 # Unary Tests -----------------------------------------------------------------
+# - request:
+#     testName: unary success
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1", "Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo","bar","baz"]
+#         responseData: "dGVzdCByZXNwb25zZQ=="
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
+#           # Headers work fine, but trailers always return only the last value
+#           # value: ["bing", "quux"]
+#           value: ["bing"]
+# - request:
+#     testName: unary empty definition
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+# - request:
+#     testName: unary no definition
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+# - request:
+#     testName: unary canceled error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 1
+#           message: "canceled"
+# - request:
+#     testName: unary unknown error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 2
+#           message: "unknown"
+# - request:
+#     testName: unary invalid argument error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 3
+#           message: "invalid argument"
+# - request:
+#     testName: unary deadline exceeded error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 4
+#           message: "deadline exceeded"
+# - request:
+#     testName: unary not found error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 5
+#           message: "not found"
+# - request:
+#     testName: unary already exists error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 6
+#           message: "already exists"
+# - request:
+#     testName: unary permission denied error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 7
+#           message: "permission denied"
+# - request:
+#     testName: unary resource exhausted error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 8
+#           message: "resource exhausted"
+# - request:
+#     testName: unary failed precondition error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 9
+#           message: "failed precondition"
+# - request:
+#     testName: unary aborted error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 10
+#           message: "aborted"
+# - request:
+#     testName: unary out of range error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 11
+#           message: "out of range"
+# - request:
+#     testName: unary unimplemented error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 12
+#           message: "unimplemented"
+# - request:
+#     testName: unary internal error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 13
+#           message: "internal"
+# - request:
+#     testName: unary unavailable error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 14
+#           message: "unavailable"
+# - request:
+#     testName: unary data loss error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 15
+#           message: "data loss"
+# - request:
+#     testName: unary unauthenticated error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 16
+#           message: "unauthenticated"
+# - request:
+#     testName: unary error sends headers and trailers
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1","Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo","bar","baz"]
+#         error:
+#           code: 13
+#           message: "unary failed"
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           value: ["bing","quux"]
+# - request:
+#     testName: unary error unicode
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         error:
+#           code: 13
+#           message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
+# - request:
+#     testName: unary timeout
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     timeoutMs: 200
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         responseData: "dGVzdCByZXNwb25zZQ=="
+#         # TODO - Timeouts don't seem to be correctly occurring with any value
+#         # less than 1s here. Flakiness is from about 990ms - 998ms. Anything
+#         # before 990ms consistently fails (i.e. doesn't timeout).
+#         responseDelayMs: 1000
+#   # Override
+#   expectedResponse:
+#     error:
+#       code: 4
+# # Server Stream Tests ---------------------------------------------------------
+# - request:
+#     testName: server stream success
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1","Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo","bar","baz"]
+#         responseData:
+#           - "dGVzdCByZXNwb25zZQ=="
+#           - "dGVzdCByZXNwb25zZQ=="
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
+#           # Headers work fine, but trailers always return only the last value
+#           # value: ["bing", "quux"]
+#           value: ["bing"]
+# - request:
+#     testName: server stream no response
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo","bar","baz"]
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           value: ["bing"]
+# - request:
+#     testName: server stream no definition
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+# - request:
+#     testName: stream canceled error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 1
+#           message: "canceled"
+# - request:
+#     testName: stream unknown error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 2
+#           message: "unknown"
+# - request:
+#     testName: stream invalid argument error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 3
+#           message: "invalid argument"
+# - request:
+#     testName: stream deadline exceeded error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 4
+#           message: "deadline exceeded"
+# - request:
+#     testName: stream not found error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 5
+#           message: "not found"
+# - request:
+#     testName: stream already exists error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 6
+#           message: "already exists"
+# - request:
+#     testName: stream permission denied error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 7
+#           message: "permission denied"
+# - request:
+#     testName: stream resource exhausted error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 8
+#           message: "resource exhausted"
+# - request:
+#     testName: stream failed precondition error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 9
+#           message: "failed precondition"
+# - request:
+#     testName: stream aborted error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 10
+#           message: "aborted"
+# - request:
+#     testName: stream out of range error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 11
+#           message: "out of range"
+# - request:
+#     testName: stream unimplemented error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 12
+#           message: "unimplemented"
+# - request:
+#     testName: stream internal error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 13
+#           message: "internal"
+# - request:
+#     testName: stream unavailable error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 14
+#           message: "unavailable"
+# - request:
+#     testName: stream data loss error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 15
+#           message: "data loss"
+# - request:
+#     testName: stream unauthenticated error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 16
+#           message: "unauthenticated"
+# - request:
+#     testName: server stream error with responses
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1","Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo","bar","baz"]
+#         responseData:
+#           - "dGVzdCByZXNwb25zZQ=="
+#           - "dGVzdCByZXNwb25zZQ=="
+#         error:
+#           code: 13
+#           message: "server stream failed"
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
+#           # Headers work fine, but trailers always return only the last value
+#           # value: ["bing", "quux"]
+#           value: ["bing"]
+# - request:
+#     testName: server stream error with no responses
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1","Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo","bar","baz"]
+#         error:
+#           code: 13
+#           message: "server stream failed"
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
+#           # Headers work fine, but trailers always return only the last value
+#           # value: ["bing", "quux"]
+#           value: ["bing"]
 - request:
-    testName: server stream cancel after zero responses
+    testName: server stream timeout
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
-    cancel:
-      afterNumResponses: 0
+    timeoutMs: 200
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-        responseDelayMs: 100
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo","bar","baz"]
+        responseDelayMs: 1000
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing","quux"]
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: 4
+# Misc Tests ------------------------------------------------------------------
+# - request:
+#     testName: unimplemented
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unimplemented
+#     streamType: STREAM_TYPE_UNARY
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnimplementedRequest
+#   # Override
+#   expectedResponse:
+#     error:
+#       code: 12
