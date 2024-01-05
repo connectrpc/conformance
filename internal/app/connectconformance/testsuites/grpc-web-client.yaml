@@ -6,6 +6,10 @@ relevantCodecs:
 relevantProtocols:
   - PROTOCOL_GRPC_WEB
 mode: TEST_MODE_CLIENT
+# TODO - Need to figure out the issue with reading expanded requests from stdin.
+# For some reason, the reader in conformance-runner.ts just hangs forever when
+# running tests that expand requests to the limit. Therefore, we can't run any
+# client_message_size tests yet.
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
