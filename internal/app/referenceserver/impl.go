@@ -268,7 +268,7 @@ func (s *conformanceServer) BidiStream(
 
 		// If this is the first message in the stream, save off the total responses we need to send
 		// plus whether this should be full or half duplex
-		if firstRecv {
+		if firstRecv { //nolint:nestif
 			responseDefinition = req.ResponseDefinition
 			fullDuplex = req.FullDuplex
 			firstRecv = false
@@ -277,9 +277,14 @@ func (s *conformanceServer) BidiStream(
 			if responseDefinition != nil {
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
-				// Immediately send the headers on the stream so that they can be read by the client
-				if err := stream.Send(nil); err != nil {
-					return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+
+				if fullDuplex {
+					// Immediately send the headers on the stream so that they can be read by the client.
+					// We can only do this for full-duplex. For half-duplex operation, we must let client
+					// complete its upload before trying to send anything.
+					if err := stream.Send(nil); err != nil {
+						return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+					}
 				}
 
 				// Calculate a response delay if specified
@@ -323,6 +328,13 @@ func (s *conformanceServer) BidiStream(
 			}
 			respNum++
 			reqs = nil
+		}
+	}
+
+	if !fullDuplex {
+		// Now that upload is complete, we can immediately send headers for half-duplex calls.
+		if err := stream.Send(nil); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
 		}
 	}
 

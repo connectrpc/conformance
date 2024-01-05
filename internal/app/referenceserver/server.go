@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -164,13 +165,17 @@ func (s *stdHTTPServer) Addr() string {
 // Creates an HTTP server using the provided ServerCompatRequest.
 func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
+	interceptors := []connect.Interceptor{serverNameHandlerInterceptor{}}
+	if referenceMode {
+		interceptors = append(interceptors, rawResponseRecorder{})
+	}
 	opts := []connect.HandlerOption{
 		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
 		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
 		connect.WithCodec(&internal.TextConnectCodec{}),
-		connect.WithInterceptors(serverNameHandlerInterceptor{}),
+		connect.WithInterceptors(interceptors...),
 	}
 	if req.MessageReceiveLimit > 0 {
 		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
@@ -180,9 +185,19 @@ func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFi
 		&conformanceServer{},
 		opts...,
 	))
-	handler := http.Handler(mux)
+	handler := http.Handler(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+		if strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) &&
+			req.ProtoMajor == 1 {
+			// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
+			// we "trick" the handler into thinking this is HTTP/2. We have to do this because
+			// otherwise, connect-go refuses to handle bidi streams over HTTP 1.1.
+			req.ProtoMajor, req.ProtoMinor = 2, 0
+		}
+		mux.ServeHTTP(respWriter, req)
+	}))
 	if referenceMode {
 		handler = referenceServerChecks(handler, errPrinter)
+		handler = rawResponder(handler, errPrinter)
 	}
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
