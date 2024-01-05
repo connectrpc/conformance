@@ -104,6 +104,7 @@ runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserv
 runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient
 	$(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode client -- $(BIN)/referenceclient
 	$(BIN)/connectconformance -v --conf ./testdata/grpc-impls-config.yaml --mode client -- $(BIN)/grpcclient
+	$(MAKE) rungrpcweb
 
 .PHONY: rungrpcweb
 rungrpcweb: generate $(BIN)/connectconformance

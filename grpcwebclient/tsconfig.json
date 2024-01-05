@@ -3,13 +3,6 @@
   "exclude": ["remote"],
   "compilerOptions": {
     "target": "es2016",
-        "lib": [
-                  "ES2017",
-                        // DOM for the fetch and streams API
-                              "DOM",
-                                    // ES2018.AsyncIterable for AsyncIterator
-                                          "ES2018.AsyncIterable"
-                                              ],
     "module": "commonjs",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
