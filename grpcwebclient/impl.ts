@@ -265,12 +265,11 @@ async function unimplemented(
 }
 
 function createClient(req: ClientCompatRequest) {
-  // let scheme = "http://";
-  // if (req.serverTlsCert.length > 0) {
-  //   scheme = "https://";
-  // }
-  // const baseUrl = `${scheme}${req.host}:${req.port}`;
-  const baseUrl = "http://127.0.0.1:23457";
+  let scheme = "http://";
+  if (req.serverTlsCert.length > 0) {
+    scheme = "https://";
+  }
+  const baseUrl = `${scheme}${req.host}:${req.port}`;
   return new ConformanceServiceClient(baseUrl);
 }
 
