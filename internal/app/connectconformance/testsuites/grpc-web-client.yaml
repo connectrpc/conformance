@@ -5,6 +5,8 @@ relevantCodecs:
   - CODEC_PROTO
 relevantProtocols:
   - PROTOCOL_GRPC_WEB
+relevantCompressions:
+  - COMPRESSION_IDENTITY
 mode: TEST_MODE_CLIENT
 # TODO - Need to figure out the issue with reading expanded requests from stdin.
 # For some reason, the reader in conformance-runner.ts just hangs forever when
