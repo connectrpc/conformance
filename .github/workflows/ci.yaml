@@ -28,6 +28,10 @@ jobs:
           path: ~/go/pkg/mod
           key: ${{ runner.os }}-conformance-ci-${{ hashFiles('**/go.sum') }}
           restore-keys: ${{ runner.os }}-conformance-ci-
+      - name: Install npm dependencies
+        run: |
+          cd grpcwebclient
+          npm ci
       - name: Test
         run: make test
       - name: Run Conformance Tests

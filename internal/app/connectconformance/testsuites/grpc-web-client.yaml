@@ -268,9 +268,9 @@ testCases:
       responseDefinition:
         responseData: "dGVzdCByZXNwb25zZQ=="
         # TODO - Timeouts don't seem to be correctly occurring with any value
-        # less than 1s here. Flakiness is from about 990ms - 998ms. Anything
+        # <= 1s here. Flakiness is from about 990ms - 998ms. Anything
         # before 990ms consistently fails (i.e. doesn't timeout).
-        responseDelayMs: 1000
+        responseDelayMs: 1500
   # Override
   expectedResponse:
     error:
@@ -554,7 +554,10 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-        responseDelayMs: 1000
+        # TODO - Timeouts don't seem to be correctly occurring with any value
+        # <= 1s here. Flakiness is from about 990ms - 998ms. Anything
+        # before 990ms consistently fails (i.e. doesn't timeout).
+        responseDelayMs: 1500
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
