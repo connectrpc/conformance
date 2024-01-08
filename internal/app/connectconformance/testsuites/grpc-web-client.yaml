@@ -267,9 +267,11 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
         responseData: "dGVzdCByZXNwb25zZQ=="
-        # TODO - Timeouts don't seem to be correctly occurring with any value
-        # <= 1s here. Flakiness is from about 990ms - 998ms. Anything
-        # before 990ms consistently fails (i.e. doesn't timeout).
+        # We need to set a delay here of at least one second or more to accommodate
+        # logic in grpc-web which sets the timeout on the XHR request to be either
+        # 1s or 110% of the timeout value (whichever is greater).
+        # See https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientbase.js#L335-L342
+        # for more context.
         responseDelayMs: 1500
   # Override
   expectedResponse:
@@ -554,9 +556,11 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-        # TODO - Timeouts don't seem to be correctly occurring with any value
-        # <= 1s here. Flakiness is from about 990ms - 998ms. Anything
-        # before 990ms consistently fails (i.e. doesn't timeout).
+        # We need to set a delay here of at least one second or more to accommodate
+        # logic in grpc-web which sets the timeout on the XHR request to be either
+        # 1s or 110% of the timeout value (whichever is greater).
+        # See https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientbase.js#L335-L342
+        # for more context.
         responseDelayMs: 1500
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
