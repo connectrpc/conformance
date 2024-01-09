@@ -80,8 +80,8 @@ describe("Connect Conformance", () => {
           "client",
           "--conf",
           "../testdata/grpc-web-server-impl-config.yaml",
-          "--test-file",
-          "../internal/app/connectconformance/testsuites/grpc-web-client.yaml",
+          // "--test-file",
+          // "../internal/app/connectconformance/testsuites/grpc-web-client.yaml",
           "-v",
           "./bin/pipe",
           socketName,
@@ -147,23 +147,59 @@ async function* readReqBuffers(stream: Readable) {
     throw err;
   });
   for (; !stream.readableEnded; ) {
-    const size = stream.read(4) as Buffer | null;
-    if (size === null) {
+    // Read 4 bytes from the stream into a buffer, which contains the size of the message to read
+    const sizeBuffer = stream.read(4) as Buffer | null;
+    if (sizeBuffer === null) {
       await new Promise<void>((resolve) => {
-        stream.once("readable", resolve);
-        stream.once("end", resolve);
+        stream.once("readable", () => {
+          resolve();
+        });
+        stream.once("end", () => {
+          resolve();
+        });
       });
       continue;
     }
-    let chunk: Buffer | null = null;
+    let bytes: Buffer | null = null;
     // We are guaranteed to get the next chunk.
     for (;;) {
-      chunk = stream.read(size.readUInt32BE()) as Buffer | null;
-      if (chunk !== null) {
+      let bytesRead = 0;
+      let chunks: Buffer[] = [];
+
+      // Determine how big the message is we need to read (i.e. how many bytes to read from the buffer)
+      const sizeOfMessage = sizeBuffer.readUint32BE();
+      // Continue reading until we've read the whole message
+      // This is needed for large messages greater than the highWaterMark of the buffer
+      while (bytesRead < sizeOfMessage) {
+        await new Promise((resolve) => {
+          stream.once("readable", resolve);
+        });
+
+        // If the number of bytes left to read for the message is greater than the
+        // buffer capacity, then just read the entire buffer (i.e. the readable length).
+        // Otherwise, read the remaining bytes we need for the message.
+        const toRead = Math.min(
+          stream.readableLength,
+          sizeOfMessage - bytesRead,
+        );
+        let chunk = stream.read(toRead) as Buffer | null;
+        if (chunk !== null) {
+          bytesRead += chunk.length;
+          chunks.push(chunk);
+        } else {
+          break;
+        }
+      }
+
+      // Assemble the chunks we've read and return them
+      if (chunks.length > 0) {
+        bytes = Buffer.concat(chunks);
         break;
       }
-      await new Promise((resolve) => stream.once("readable", resolve));
+      await new Promise((resolve) => {
+        stream.once("readable", resolve);
+      });
     }
-    yield chunk;
+    yield bytes;
   }
 }
