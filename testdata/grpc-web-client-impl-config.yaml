@@ -1,0 +1,13 @@
+features:
+  versions:
+    - HTTP_VERSION_1
+  protocols:
+    - PROTOCOL_GRPC_WEB
+  codecs:
+    - CODEC_PROTO
+  compressions:
+    - COMPRESSION_IDENTITY
+  supportsTls: false
+  streamTypes:
+    - STREAM_TYPE_UNARY
+    - STREAM_TYPE_SERVER_STREAM
