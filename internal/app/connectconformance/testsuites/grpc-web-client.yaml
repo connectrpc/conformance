@@ -31,10 +31,16 @@ testCases:
         responseData: "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
-          # Headers work fine, but trailers always return only the last value
-          # value: ["bing", "quux"]
-          value: ["bing"]
+          # There is a bug in the gRPC-web client with handling duplicate trailer metadata for unary success responses.
+          # This is because with a regular success response, the trailers are sent as actual trailers,
+          # which parses the trailers using this code:
+          # https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientreadablestream.js#L367
+          # And since that uses an object keyed to trailer name, it will eliminate dupes.
+          # The error responses correctly return duplicate trailer metadata because with errors, the trailers are
+          # sent as response headers from the server and these headers are not run through the parseHttp1Headers
+          # function linked above. They are instead just set directly onto the returned error's metadata as
+          # returned from the server.
+          value: ["bing", "quux"]
 - request:
     testName: unary empty definition
     service: connectrpc.conformance.v1.ConformanceService
@@ -297,9 +303,10 @@ testCases:
           - "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
-          # Headers work fine, but trailers always return only the last value
-          # value: ["bing", "quux"]
+          # There is a bug in the gRPC-web client with handling duplicate trailer metadata for all server streaming responses.
+          # This is because trailers are sent as actual trailers and which the client parses trailers using this code:
+          # https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientreadablestream.js#L367
+          # And since that uses an object keyed to trailer name, it will eliminate dupes.
           value: ["bing"]
 - request:
     testName: server stream no response
@@ -520,9 +527,10 @@ testCases:
           message: "server stream failed"
         responseTrailers:
         - name: x-custom-trailer
-          # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
-          # Headers work fine, but trailers always return only the last value
-          # value: ["bing", "quux"]
+          # There is a bug in the gRPC-web client with handling duplicate trailer metadata for all server streaming responses.
+          # This is because trailers are sent as actual trailers and which the client parses trailers using this code:
+          # https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientreadablestream.js#L367
+          # And since that uses an object keyed to trailer name, it will eliminate dupes.
           value: ["bing"]
 - request:
     testName: server stream error with no responses
@@ -543,9 +551,10 @@ testCases:
           message: "server stream failed"
         responseTrailers:
         - name: x-custom-trailer
-          # TODO - grpc-web doesn't seem to be able to return multiple values for a single trailer name
-          # Headers work fine, but trailers always return only the last value
-          # value: ["bing", "quux"]
+          # There is a bug in the gRPC-web client with handling duplicate trailer metadata for all server streaming responses.
+          # This is because trailers are sent as actual trailers and which the client parses trailers using this code:
+          # https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientreadablestream.js#L367
+          # And since that uses an object keyed to trailer name, it will eliminate dupes.
           value: ["bing"]
 - request:
     testName: server stream timeout
