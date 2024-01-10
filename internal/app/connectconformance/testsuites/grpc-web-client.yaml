@@ -1,13 +1,7 @@
 name: gRPC-web
-relevantHttpVersions:
-  - HTTP_VERSION_1
+reliesOnMessageReceiveLimit: true
 relevantCodecs:
   - CODEC_PROTO
-relevantProtocols:
-  - PROTOCOL_GRPC_WEB
-relevantCompressions:
-  - COMPRESSION_IDENTITY
-reliesOnMessageReceiveLimit: true
 mode: TEST_MODE_CLIENT
 # TODO - This file is an amalgam of all the tests for unary and server streams that
 # exist in the other test files with the exception of cancellation.yaml.

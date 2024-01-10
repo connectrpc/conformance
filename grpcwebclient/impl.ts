@@ -17,6 +17,7 @@ import {
   ClientCompatRequest,
   ClientResponseResult,
 } from "./gen/proto/es/connectrpc/conformance/v1/client_compat_pb.js";
+import { Compression } from "./gen/proto/es/connectrpc/conformance/v1/config_pb.js";
 import {
   ConformancePayload,
   Error as ProtoError,
@@ -25,13 +26,7 @@ import {
   UnimplementedRequest,
   ServerStreamRequest,
 } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
-import {
-  UnaryRequest as UnaryRequestGoog,
-  UnaryResponse as UnaryResponseGoog,
-  UnimplementedRequest as UnimplementedRequestGoog,
-  ServerStreamRequest as ServerStreamRequestGoog,
-  ServerStreamResponse as ServerStreamResponseGoog,
-} from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
+import * as googService from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "@buf/googleapis_googleapis.bufbuild_es/google/rpc/status_pb.js";
 import { Metadata, RpcError, Status as GrpcWebStatus } from "grpc-web";
 
@@ -40,13 +35,13 @@ function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
     code: rpcErr.code,
     message: rpcErr.message,
   });
-  for (const [name, value] of Object.entries(rpcErr.metadata)) {
-    if (name === "grpc-status-details-bin") {
-      const status = Status.fromBinary(stringToUint8Array(atob(value)));
-      err.details = status.details;
-      break;
-    }
+
+  const value = rpcErr.metadata["grpc-status-details-bin"];
+  if (value) {
+    const status = Status.fromBinary(stringToUint8Array(atob(value)));
+    err.details = status.details;
   }
+
   return err;
 }
 
@@ -71,6 +66,30 @@ function buildMetadata(req: ClientCompatRequest): Metadata {
     deadline.setMilliseconds(deadline.getMilliseconds() + req.timeoutMs);
     metadata.deadline = deadline.getTime().toString();
   }
+
+  switch (req.compression) {
+    case Compression.GZIP:
+      metadata["content-encoding"] = "gzip";
+      break;
+    case Compression.ZSTD:
+      metadata["content-encoding"] = "zstd";
+      break;
+    case Compression.BR:
+      metadata["content-encoding"] = "br";
+      break;
+    case Compression.DEFLATE:
+      metadata["content-encoding"] = "deflate";
+      break;
+    case Compression.SNAPPY:
+      metadata["content-encoding"] = "snappy";
+      break;
+    case Compression.IDENTITY:
+      metadata["content-encoding"] = "identity";
+      break;
+    default:
+    // Do nothing
+  }
+
   return metadata;
 }
 
@@ -99,7 +118,7 @@ async function unary(
   }
 
   // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ur = UnaryRequestGoog.deserializeBinary(uReq.toBinary());
+  const ur = googService.UnaryRequest.deserializeBinary(uReq.toBinary());
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
@@ -117,7 +136,7 @@ async function unary(
   const result = client.unary(
     ur,
     metadata,
-    (err: RpcError, response: UnaryResponseGoog) => {
+    (err: RpcError, response: googService.UnaryResponse) => {
       if (err !== null) {
         resp.error = convertGrpcToProtoError(err);
       } else {
@@ -163,7 +182,9 @@ async function serverStream(
   }
 
   // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ssr = ServerStreamRequestGoog.deserializeBinary(uReq.toBinary());
+  const ssr = googService.ServerStreamRequest.deserializeBinary(
+    uReq.toBinary(),
+  );
 
   const resp = new ClientResponseResult({
     responseHeaders: [],
@@ -181,7 +202,7 @@ async function serverStream(
     res = resolve;
   });
 
-  stream.on("data", (response: ServerStreamResponseGoog) => {
+  stream.on("data", (response: googService.ServerStreamResponse) => {
     const payload = response.getPayload();
     if (payload !== undefined) {
       resp.payloads.push(
@@ -245,7 +266,9 @@ async function unimplemented(
     );
   }
   // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ur = UnimplementedRequestGoog.deserializeBinary(uReq.toBinary());
+  const ur = googService.UnimplementedRequest.deserializeBinary(
+    uReq.toBinary(),
+  );
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
