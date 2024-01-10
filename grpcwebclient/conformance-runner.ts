@@ -105,6 +105,7 @@ describe("Connect Conformance", () => {
     expect(true).toBe(true);
   });
 });
+
 async function run(socket: net.Socket, invokeScript: string) {
   for await (const next of readReqBuffers(socket)) {
     const req = ClientCompatRequest.fromBinary(next);
