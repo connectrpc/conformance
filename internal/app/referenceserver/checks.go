@@ -212,14 +212,13 @@ func checkCompression(expected v1.Compression, req *http.Request, feedback *feed
 		contentType := req.Header.Get("content-type")
 		var encodingHeader string
 		switch {
-		case contentType == grpcContentType ||
-			strings.HasPrefix(contentType, grpcContentTypePrefix):
+		case contentType == grpcContentType || contentType == grpcWebContentType ||
+			strings.HasPrefix(contentType, grpcContentTypePrefix) ||
+			strings.HasPrefix(contentType, grpcWebContentTypePrefix):
 			encodingHeader = "grpc-encoding"
 		case strings.HasPrefix(contentType, connectStreamContentTypePrefix):
 			encodingHeader = "connect-content-encoding"
-		case contentType == grpcWebContentType ||
-			strings.HasPrefix(contentType, grpcWebContentTypePrefix) ||
-			strings.HasPrefix(contentType, connectUnaryContentTypePrefix):
+		case strings.HasPrefix(contentType, connectUnaryContentTypePrefix):
 			encodingHeader = "content-encoding"
 		default:
 			// We already complained about bad content-type when checking protocol.
