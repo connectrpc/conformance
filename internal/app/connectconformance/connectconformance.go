@@ -145,15 +145,15 @@ func run(
 	}
 	svrInstances := serverInstancesSlice(testCaseLib, flags.Verbose)
 
-	// Calculate the entire list of test cases that will be run, including gRPC tests
-	allTestCases := calcAllTestCases(testCaseLib.testCases, useReferenceClient, useReferenceServer)
+	// Calculate all permutations of test cases that will be run, including gRPC tests
+	allPermutations := calcAllPermutations(testCaseLib.testCases, useReferenceClient, useReferenceServer)
 	if flags.Verbose {
-		logPrinter.Printf("Computed %d test case permutations across %d server configurations.", len(allTestCases), len(testCaseLib.casesByServer))
+		logPrinter.Printf("Computed %d test case permutations across %d server configurations.", len(allPermutations), len(testCaseLib.casesByServer))
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
 	// (to prevent accidental typos and inadvertently ignored entries)
-	for _, tc := range allTestCases {
+	for _, tc := range allPermutations {
 		knownFailing.match(strings.Split(tc.Request.TestName, "/"))
 	}
 	unmatched := map[string]struct{}{}
@@ -433,7 +433,7 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCIm
 	return filtered
 }
 
-func calcAllTestCases(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
+func calcAllPermutations(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
 	testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCases))
 
 	for _, testCase := range testCases {
