@@ -144,16 +144,17 @@ func run(
 		return nil, err
 	}
 	svrInstances := serverInstancesSlice(testCaseLib, flags.Verbose)
+
+	// Calculate the entire list of test cases that will be run, including gRPC tests
+	allTestCases := calcAllTestCases(testCaseLib.testCases, useReferenceClient, useReferenceServer)
 	if flags.Verbose {
-		numPermutations := len(testCaseLib.testCases)
-		numPermutations += countGRPCImplTestCases(testCaseLib.testCases, useReferenceClient, useReferenceServer)
-		logPrinter.Printf("Computed %d test case permutations across %d server configurations.", numPermutations, len(testCaseLib.casesByServer))
+		logPrinter.Printf("Computed %d test case permutations across %d server configurations.", len(allTestCases), len(testCaseLib.casesByServer))
 	}
 
 	// Validate keys in knownFailing, to make sure they match actual test names
 	// (to prevent accidental typos and inadvertently ignored entries)
-	for name := range testCaseLib.testCases {
-		knownFailing.match(strings.Split(name, "/"))
+	for _, tc := range allTestCases {
+		knownFailing.match(strings.Split(tc.Request.TestName, "/"))
 	}
 	unmatched := map[string]struct{}{}
 	knownFailing.findUnmatched("", unmatched)
@@ -432,6 +433,37 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCIm
 	return filtered
 }
 
+type Stats struct {
+	allTestCases []*conformancev1.TestCase
+}
+
+func calcAllTestCases(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
+	testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCases))
+
+	for _, testCase := range testCases {
+		testCaseSlice = append(testCaseSlice, testCase)
+	}
+	if clientIsGRPCImpl {
+		// Count the cases where we run grpc-go client against server under test.
+		gRPCClientTests := filterGRPCImplTestCases(testCaseSlice, true, false)
+		testCaseSlice = append(testCaseSlice, gRPCClientTests...)
+	}
+	if serverIsGRPCImpl {
+		// Count the cases where we run client under test against grpc-go server.
+		gRPCServerTests := filterGRPCImplTestCases(testCaseSlice, false, true)
+		testCaseSlice = append(testCaseSlice, gRPCServerTests...)
+	}
+	if clientIsGRPCImpl && serverIsGRPCImpl {
+		// Count the cases where we run grpc-go client against grpc-go server.
+		// (This is only done from a unit test. The CLI doesn't actually allow this.)
+		gRPCClientServerTests := filterGRPCImplTestCases(testCaseSlice, true, true)
+		testCaseSlice = append(testCaseSlice, gRPCClientServerTests...)
+	}
+
+	return testCaseSlice
+}
+
+// TODO - This will be removed
 func countGRPCImplTestCases(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) int {
 	if !clientIsGRPCImpl && !serverIsGRPCImpl {
 		return 0
@@ -443,16 +475,20 @@ func countGRPCImplTestCases(testCases map[string]*conformancev1.TestCase, client
 	var numCases int
 	if clientIsGRPCImpl {
 		// Count the cases where we run grpc-go client against server under test.
-		numCases += len(filterGRPCImplTestCases(testCaseSlice, true, false))
+		clientFilter := filterGRPCImplTestCases(testCaseSlice, true /*isClient*/, false /*isServer*/)
+		numCases += len(clientFilter)
 	}
 	if serverIsGRPCImpl {
 		// Count the cases where we run client under test against grpc-go server.
-		numCases += len(filterGRPCImplTestCases(testCaseSlice, false, true))
+		serverFilter := filterGRPCImplTestCases(testCaseSlice, false, true)
+		numCases += len(serverFilter)
 	}
 	if clientIsGRPCImpl && serverIsGRPCImpl {
 		// Count the cases where we run grpc-go client against grpc-go server.
 		// (This is only done from a unit test. The CLI doesn't actually allow this.)
-		numCases += len(filterGRPCImplTestCases(testCaseSlice, true, true))
+		bothFilter := filterGRPCImplTestCases(testCaseSlice, true, true)
+		numCases += len(bothFilter)
 	}
+
 	return numCases
 }
