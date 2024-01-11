@@ -443,52 +443,23 @@ func calcAllTestCases(testCases map[string]*conformancev1.TestCase, clientIsGRPC
 	for _, testCase := range testCases {
 		testCaseSlice = append(testCaseSlice, testCase)
 	}
+	var gRPCClientTests, gRPCServerTests, gRPCClientServerTests []*conformancev1.TestCase
 	if clientIsGRPCImpl {
 		// Count the cases where we run grpc-go client against server under test.
-		gRPCClientTests := filterGRPCImplTestCases(testCaseSlice, true, false)
-		testCaseSlice = append(testCaseSlice, gRPCClientTests...)
+		gRPCClientTests = filterGRPCImplTestCases(testCaseSlice, true, false)
 	}
 	if serverIsGRPCImpl {
 		// Count the cases where we run client under test against grpc-go server.
-		gRPCServerTests := filterGRPCImplTestCases(testCaseSlice, false, true)
-		testCaseSlice = append(testCaseSlice, gRPCServerTests...)
+		gRPCServerTests = filterGRPCImplTestCases(testCaseSlice, false, true)
 	}
 	if clientIsGRPCImpl && serverIsGRPCImpl {
 		// Count the cases where we run grpc-go client against grpc-go server.
 		// (This is only done from a unit test. The CLI doesn't actually allow this.)
-		gRPCClientServerTests := filterGRPCImplTestCases(testCaseSlice, true, true)
-		testCaseSlice = append(testCaseSlice, gRPCClientServerTests...)
+		gRPCClientServerTests = filterGRPCImplTestCases(testCaseSlice, true, true)
 	}
+	testCaseSlice = append(testCaseSlice, gRPCClientTests...)
+	testCaseSlice = append(testCaseSlice, gRPCServerTests...)
+	testCaseSlice = append(testCaseSlice, gRPCClientServerTests...)
 
 	return testCaseSlice
-}
-
-// TODO - This will be removed
-func countGRPCImplTestCases(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) int {
-	if !clientIsGRPCImpl && !serverIsGRPCImpl {
-		return 0
-	}
-	testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCases))
-	for _, testCase := range testCases {
-		testCaseSlice = append(testCaseSlice, testCase)
-	}
-	var numCases int
-	if clientIsGRPCImpl {
-		// Count the cases where we run grpc-go client against server under test.
-		clientFilter := filterGRPCImplTestCases(testCaseSlice, true /*isClient*/, false /*isServer*/)
-		numCases += len(clientFilter)
-	}
-	if serverIsGRPCImpl {
-		// Count the cases where we run client under test against grpc-go server.
-		serverFilter := filterGRPCImplTestCases(testCaseSlice, false, true)
-		numCases += len(serverFilter)
-	}
-	if clientIsGRPCImpl && serverIsGRPCImpl {
-		// Count the cases where we run grpc-go client against grpc-go server.
-		// (This is only done from a unit test. The CLI doesn't actually allow this.)
-		bothFilter := filterGRPCImplTestCases(testCaseSlice, true, true)
-		numCases += len(bothFilter)
-	}
-
-	return numCases
 }

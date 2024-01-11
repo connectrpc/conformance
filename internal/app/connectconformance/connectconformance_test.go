@@ -61,8 +61,9 @@ func TestRun(t *testing.T) {
 	// Compute expected number of test cases.
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, conformancev1.TestSuite_TEST_MODE_UNSPECIFIED)
 	require.NoError(t, err)
-	expectedNumCases := len(testCaseLib.testCases)
-	expectedNumCases += countGRPCImplTestCases(testCaseLib.testCases, true, true)
+
+	allTestCases := calcAllTestCases(testCaseLib.testCases, true, true)
+	expectedNumCases := len(allTestCases)
 	// 19 test cases as of this writing, but we will likely add more
 	require.GreaterOrEqual(t, expectedNumCases, 19)
 
