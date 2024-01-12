@@ -46,6 +46,13 @@ const typeRegistry = createRegistry(
   ClientCompatResponse,
 );
 
+// We use a single unit test inside a Node process launched by Webdriver to
+// execute the conformance tests. This file is executed by Webdriver and it then
+// spawns a headless browser running the gRPC-web client.
+//
+// The communication between the two process is done via executeAsyncScript from
+// Webdriver's browser API.
+
 describe("Connect Conformance", () => {
   it("gRPC-web Client", async () => {
     const buildResult = await esbuild.build({

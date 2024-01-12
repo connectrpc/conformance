@@ -67,29 +67,6 @@ function buildMetadata(req: ClientCompatRequest): Metadata {
     metadata.deadline = deadline.getTime().toString();
   }
 
-  switch (req.compression) {
-    case Compression.GZIP:
-      metadata["content-encoding"] = "gzip";
-      break;
-    case Compression.ZSTD:
-      metadata["content-encoding"] = "zstd";
-      break;
-    case Compression.BR:
-      metadata["content-encoding"] = "br";
-      break;
-    case Compression.DEFLATE:
-      metadata["content-encoding"] = "deflate";
-      break;
-    case Compression.SNAPPY:
-      metadata["content-encoding"] = "snappy";
-      break;
-    case Compression.IDENTITY:
-      metadata["content-encoding"] = "identity";
-      break;
-    default:
-    // Do nothing
-  }
-
   return metadata;
 }
 

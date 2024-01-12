@@ -28,6 +28,10 @@ import {
   UnimplementedRequest,
 } from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
 
+// This file represents the entry point into the browser code being executed by
+// Webdriver. The conformance-runner file builds all the browser code, using
+// this file as its entry point.
+
 declare global {
   // @ts-expect-error asd
   // eslint-disable-next-line no-shadow-restricted-names
@@ -50,6 +54,12 @@ const typeRegistry = createRegistry(
   ClientResponseResult,
 );
 
+// Read the arguments passed from the executeAsyncScript call
+// The first argument is a JSON string representing the ClientCompatRequest
+// sent from the conformance runner binary. The second argument is a callback
+// to be invoked withe ClientResponseResult returned from the gRPC-web client
+// These arguments are how the conformance runner code communicates with the
+// code running in the Webdriver's headless browser shell.
 const req = ClientCompatRequest.fromJsonString(arguments[0], {
   typeRegistry,
 });
