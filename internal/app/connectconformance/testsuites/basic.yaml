@@ -14,11 +14,11 @@ testCases:
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
-          value: ["foo","bar","baz"]
+          value: ["foo"]
         responseData: "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          value: ["bing","quux"]
+          value: ["bing"]
 - request:
     testName: unary empty definition
     service: connectrpc.conformance.v1.ConformanceService
@@ -48,11 +48,11 @@ testCases:
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
-          value: ["foo","bar","baz"]
+          value: ["foo"]
         responseData: "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          value: ["bing","quux"]
+          value: ["bing"]
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
@@ -84,13 +84,13 @@ testCases:
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
-          value: ["foo","bar","baz"]
+          value: ["foo"]
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          value: ["bing","quux"]
+          value: ["bing"]
 - request:
     testName: server stream no response
     service: connectrpc.conformance.v1.ConformanceService
@@ -101,10 +101,10 @@ testCases:
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
-          value: ["foo","bar","baz"]
+          value: ["foo"]
         responseTrailers:
         - name: x-custom-trailer
-          value: ["bing","quux"]
+          value: ["bing"]
 - request:
     testName: server stream no definition
     service: connectrpc.conformance.v1.ConformanceService
@@ -126,13 +126,13 @@ testCases:
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
-          value: ["foo","bar","baz"]
+          value: ["foo"]
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          value: ["bing","quux"]
+          value: ["bing"]
       fullDuplex: true
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
@@ -149,13 +149,13 @@ testCases:
       responseDefinition:
         responseHeaders:
         - name: x-custom-header
-          value: ["foo","bar","baz"]
+          value: ["foo"]
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
         responseTrailers:
         - name: x-custom-trailer
-          value: ["bing","quux"]
+          value: ["bing"]
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:

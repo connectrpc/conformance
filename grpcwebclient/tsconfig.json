@@ -1,7 +1,7 @@
 {
   "include": ["**/*"],
-  "exclude": ["remote"],
   "compilerOptions": {
+    "allowJs": true,
     "target": "es2016",
     "module": "commonjs",
     "esModuleInterop": true,

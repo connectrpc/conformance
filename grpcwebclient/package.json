@@ -2,7 +2,7 @@
   "name": "grpcwebclient",
   "private": true,
   "scripts": {
-    "build": "tsc --project tsconfig.json --module commonjs --outDir ./dist/cjs",
+    "build": "rm -rf ./dist && tsc --project tsconfig.json --module commonjs --outDir ./dist/cjs",
     "conformance": "npm run build && wdio run ./wdio.conf.ts"
   },
   "dependencies": {
