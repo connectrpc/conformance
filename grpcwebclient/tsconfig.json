@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts"],
+  "include": ["**/*"],
   "exclude": ["remote"],
   "compilerOptions": {
     "target": "es2016",

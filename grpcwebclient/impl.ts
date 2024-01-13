@@ -16,30 +16,28 @@ import { ConformanceServiceClient } from "./gen/proto/connectrpc/conformance/v1/
 import {
   ClientCompatRequest,
   ClientResponseResult,
-} from "./gen/proto/es/connectrpc/conformance/v1/client_compat_pb.js";
-import { Compression } from "./gen/proto/es/connectrpc/conformance/v1/config_pb.js";
+} from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 import {
-  ConformancePayload,
   Error as ProtoError,
   Header,
   UnaryRequest,
   UnimplementedRequest,
   ServerStreamRequest,
-} from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
-import * as googService from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
-import { Status } from "@buf/googleapis_googleapis.bufbuild_es/google/rpc/status_pb.js";
+  ServerStreamResponse,
+  UnaryResponse,
+} from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
+import { Status } from "@buf/googleapis_googleapis.protocolbuffers_js/google/rpc/status_pb.js";
 import { Metadata, RpcError, Status as GrpcWebStatus } from "grpc-web";
 
 function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
-  const err = new ProtoError({
-    code: rpcErr.code,
-    message: rpcErr.message,
-  });
+  const err = new ProtoError();
+  err.setCode(rpcErr.code);
+  err.setMessage(rpcErr.message);
 
   const value = rpcErr.metadata["grpc-status-details-bin"];
   if (value) {
-    const status = Status.fromBinary(stringToUint8Array(atob(value)));
-    err.details = status.details;
+    const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
+    err.setDetailsList(status.getDetailsList());
   }
 
   return err;
@@ -56,14 +54,14 @@ function stringToUint8Array(str: string): Uint8Array {
 
 function buildMetadata(req: ClientCompatRequest): Metadata {
   const metadata: Metadata = {};
-  req.requestHeaders.forEach((hdr: Header) => {
-    const s = hdr.value.join(",");
-    metadata[hdr.name] = s;
+  req.getRequestHeadersList().forEach((hdr: Header) => {
+    const s = hdr.getValueList().join(",");
+    metadata[hdr.getName()] = s;
   });
 
-  if (req.timeoutMs !== undefined && req.timeoutMs > 0) {
+  if (req.getTimeoutMs() !== undefined && req.getTimeoutMs() > 0) {
     let deadline = new Date();
-    deadline.setMilliseconds(deadline.getMilliseconds() + req.timeoutMs);
+    deadline.setMilliseconds(deadline.getMilliseconds() + req.getTimeoutMs());
     metadata.deadline = deadline.getTime().toString();
   }
 
@@ -73,12 +71,10 @@ function buildMetadata(req: ClientCompatRequest): Metadata {
 function convertMetadataToHeader(md: Metadata): Header[] {
   const hdrs: Header[] = [];
   for (const [name, value] of Object.entries(md)) {
-    hdrs.push(
-      new Header({
-        name,
-        value: [value],
-      }),
-    );
+    const hdr = new Header();
+    hdr.setName(name);
+    hdr.setValueList([value]);
+    hdrs.push(hdr);
   }
 
   return hdrs;
@@ -88,40 +84,37 @@ async function unary(
   client: ConformanceServiceClient,
   req: ClientCompatRequest,
 ): Promise<ClientResponseResult> {
-  const msg = req.requestMessages[0];
-  const uReq = new UnaryRequest();
-  if (!msg.unpackTo(uReq)) {
+  const msg = req.getRequestMessagesList()[0];
+  const uReq = msg.unpack(
+    UnaryRequest.deserializeBinary,
+    "connectrpc.conformance.v1.UnaryRequest",
+  );
+  if (!uReq) {
     throw new Error("Could not unpack request message to unary request");
   }
-
-  // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ur = googService.UnaryRequest.deserializeBinary(uReq.toBinary());
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
 
-  const resp = new ClientResponseResult({
-    responseHeaders: [],
-    responseTrailers: [],
-    payloads: [],
-    error: undefined,
-  });
+  const resp = new ClientResponseResult();
+  resp.setResponseHeadersList([]);
+  resp.setResponseTrailersList([]);
+  resp.setPayloadsList([]);
+  resp.setError(undefined);
 
   const metadata: Metadata = buildMetadata(req);
   const result = client.unary(
-    ur,
+    uReq,
     metadata,
-    (err: RpcError, response: googService.UnaryResponse) => {
+    (err: RpcError, response: UnaryResponse) => {
       if (err !== null) {
-        resp.error = convertGrpcToProtoError(err);
+        resp.setError(convertGrpcToProtoError(err));
       } else {
         const payload = response.getPayload();
         if (payload !== undefined) {
-          resp.payloads.push(
-            ConformancePayload.fromBinary(payload.serializeBinary()),
-          );
+          resp.addPayloads(payload);
         }
       }
     },
@@ -130,7 +123,7 @@ async function unary(
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
   result.on("metadata", (md: Metadata) => {
     if (md !== undefined) {
-      resp.responseHeaders = convertMetadataToHeader(md);
+      resp.setResponseHeadersList(convertMetadataToHeader(md));
     }
   });
 
@@ -138,7 +131,7 @@ async function unary(
   result.on("status", (status: GrpcWebStatus) => {
     const md = status.metadata;
     if (md !== undefined) {
-      resp.responseTrailers = convertMetadataToHeader(md);
+      resp.setResponseTrailersList(convertMetadataToHeader(md));
       res(resp);
     }
   });
@@ -150,51 +143,46 @@ async function serverStream(
   client: ConformanceServiceClient,
   req: ClientCompatRequest,
 ): Promise<ClientResponseResult> {
-  const msg = req.requestMessages[0];
-  const uReq = new ServerStreamRequest();
-  if (!msg.unpackTo(uReq)) {
+  const msg = req.getRequestMessagesList()[0];
+  const uReq = msg.unpack(
+    ServerStreamRequest.deserializeBinary,
+    "connectrpc.conformance.v1.ServerStreamRequest",
+  );
+  if (!uReq) {
     throw new Error(
       "Could not unpack request message to server stream request",
     );
   }
 
-  // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ssr = googService.ServerStreamRequest.deserializeBinary(
-    uReq.toBinary(),
-  );
-
-  const resp = new ClientResponseResult({
-    responseHeaders: [],
-    responseTrailers: [],
-    payloads: [],
-    error: undefined,
-  });
+  const resp = new ClientResponseResult();
+  resp.setResponseHeadersList([]);
+  resp.setResponseTrailersList([]);
+  resp.setPayloadsList([]);
+  resp.setError(undefined);
 
   const metadata: Metadata = buildMetadata(req);
 
-  const stream = client.serverStream(ssr, metadata);
+  const stream = client.serverStream(uReq, metadata);
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
 
-  stream.on("data", (response: googService.ServerStreamResponse) => {
+  stream.on("data", (response: ServerStreamResponse) => {
     const payload = response.getPayload();
     if (payload !== undefined) {
-      resp.payloads.push(
-        ConformancePayload.fromBinary(payload.serializeBinary()),
-      );
+      resp.addPayloads(payload);
     }
   });
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
   stream.on("metadata", (md: Metadata) => {
     if (md !== undefined) {
-      resp.responseHeaders = convertMetadataToHeader(md);
+      resp.setResponseHeadersList(convertMetadataToHeader(md));
     }
   });
   stream.on("error", (err: RpcError) => {
-    resp.error = convertGrpcToProtoError(err);
+    resp.setError(convertGrpcToProtoError(err));
     res(resp);
   });
 
@@ -202,7 +190,7 @@ async function serverStream(
   stream.on("status", (status: GrpcWebStatus) => {
     const md = status.metadata;
     if (md !== undefined) {
-      resp.responseTrailers = convertMetadataToHeader(md);
+      resp.setResponseTrailersList(convertMetadataToHeader(md));
     }
   });
 
@@ -214,38 +202,39 @@ async function serverStream(
 }
 
 async function clientStream(): Promise<ClientResponseResult> {
-  return new ClientResponseResult({
-    error: {
-      code: 12,
-      message: "Client Streaming is not supported in gRPC-web",
-    },
-  });
+  const result = new ClientResponseResult();
+  const err = new ProtoError();
+  err.setCode(12);
+  err.setMessage("Client Streaming is not supported in gRPC-web");
+  result.setError(err);
+
+  return result;
 }
 
 async function bidiStream(): Promise<ClientResponseResult> {
-  return new ClientResponseResult({
-    error: {
-      code: 12,
-      message: "Bidi Streaming is not supported in gRPC-web",
-    },
-  });
+  const result = new ClientResponseResult();
+  const err = new ProtoError();
+  err.setCode(12);
+  err.setMessage("Bidi Streaming is not supported in gRPC-web");
+  result.setError(err);
+
+  return result;
 }
 
 async function unimplemented(
   client: ConformanceServiceClient,
   req: ClientCompatRequest,
 ): Promise<ClientResponseResult> {
-  const msg = req.requestMessages[0];
-  const uReq = new UnimplementedRequest();
-  if (!msg.unpackTo(uReq)) {
+  const msg = req.getRequestMessagesList()[0];
+  const uReq = msg.unpack(
+    UnimplementedRequest.deserializeBinary,
+    "connectrpc.conformance.v1.UnimplementedRequest",
+  );
+  if (!uReq) {
     throw new Error(
       "Could not unpack request message to unimplemented request",
     );
   }
-  // Convert from Protobuf-ES into the gRPC-web compatible library
-  const ur = googService.UnimplementedRequest.deserializeBinary(
-    uReq.toBinary(),
-  );
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
@@ -253,12 +242,11 @@ async function unimplemented(
   });
 
   const metadata: Metadata = buildMetadata(req);
-  client.unimplemented(ur, metadata, (err) => {
-    res(
-      new ClientResponseResult({
-        error: convertGrpcToProtoError(err),
-      }),
-    );
+  client.unimplemented(uReq, metadata, (err) => {
+    const result = new ClientResponseResult();
+    result.setError(convertGrpcToProtoError(err));
+
+    res(result);
   });
 
   return prom;
@@ -266,18 +254,18 @@ async function unimplemented(
 
 function createClient(req: ClientCompatRequest) {
   let scheme = "http://";
-  if (req.serverTlsCert.length > 0) {
+  if (req.getServerTlsCert().length > 0) {
     scheme = "https://";
   }
-  const baseUrl = `${scheme}${req.host}:${req.port}`;
+  const baseUrl = `${scheme}${req.getHost()}:${req.getPort()}`;
   return new ConformanceServiceClient(baseUrl);
 }
 
 export default (req: ClientCompatRequest) => {
   const client = createClient(req);
-  switch (req.method) {
+  switch (req.getMethod()) {
     case "Unary":
-      if (req.requestMessages.length !== 1) {
+      if (req.getRequestMessagesList().length !== 1) {
         throw new Error("Unary method requires exactly one request message");
       }
       return unary(client, req);
@@ -290,6 +278,6 @@ export default (req: ClientCompatRequest) => {
     case "Unimplemented":
       return unimplemented(client, req);
     default:
-      throw new Error(`Unknown method: ${req.method}`);
+      throw new Error(`Unknown method: ${req.getMethod()}`);
   }
 };

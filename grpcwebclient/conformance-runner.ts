@@ -25,26 +25,7 @@ import {
   ClientCompatResponse,
   ClientResponseResult,
   ClientErrorResult,
-} from "./gen/proto/es/connectrpc/conformance/v1/client_compat_pb.js";
-import {
-  UnaryRequest,
-  ServerStreamRequest,
-  ClientStreamRequest,
-  BidiStreamRequest,
-  ConformancePayload_RequestInfo,
-  UnimplementedRequest,
-} from "./gen/proto/es/connectrpc/conformance/v1/service_pb.js";
-import { createRegistry } from "@bufbuild/protobuf";
-
-const typeRegistry = createRegistry(
-  UnaryRequest,
-  ServerStreamRequest,
-  ClientStreamRequest,
-  BidiStreamRequest,
-  ConformancePayload_RequestInfo,
-  UnimplementedRequest,
-  ClientCompatResponse,
-);
+} from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 
 // We use a single unit test inside a Node process launched by Webdriver to
 // execute the conformance tests. This file is executed by Webdriver and it then
@@ -115,34 +96,38 @@ describe("Connect Conformance", () => {
 
 async function run(socket: net.Socket, invokeScript: string) {
   for await (const next of readReqBuffers(socket)) {
-    const req = ClientCompatRequest.fromBinary(next);
-    const res = new ClientCompatResponse({
-      testName: req.testName,
-    });
+    const req = ClientCompatRequest.deserializeBinary(next);
+    const res = new ClientCompatResponse();
+    res.setTestName(req.getTestName());
     try {
-      const invokeResultJson = (await browser.executeAsyncScript(invokeScript, [
-        req.toJsonString({ typeRegistry }),
-      ])) as { type: "data"; data: string } | { type: "error"; error: string };
+      // Execute the JavaScript code that was built by esbuild inside the
+      // browser launched by Webdriver. The arguments to executeAsyncScript
+      // are the built JavaScript and an array of arguments to pass to the
+      // script. Here, we pass one argument -- the ClientCompatRequest we
+      // read from stdin
+      //
+      // The return value is a JSON object containing the results of the run
+      const invokeResultJson = await browser.executeAsyncScript(invokeScript, [
+        JSON.stringify(Array.from(next)),
+      ]);
+
+      // If type is 'data', then we have a successful run
       if (invokeResultJson.type === "data") {
-        res.result = {
-          case: "response",
-          value: ClientResponseResult.fromJsonString(invokeResultJson.data, {
-            typeRegistry,
-          }),
-        };
+        const result = ClientResponseResult.deserializeBinary(
+          invokeResultJson.data,
+        );
+        res.setResponse(result);
       } else {
-        res.result = {
-          case: "error",
-          value: new ClientErrorResult({ message: invokeResultJson.error }),
-        };
+        // Otherwise, an error was returned
+        const err = ClientErrorResult.deserializeBinary(invokeResultJson.error);
+        res.setError(err);
       }
     } catch (e) {
-      res.result = {
-        case: "error",
-        value: new ClientErrorResult({ message: (e as Error).message }),
-      };
+      const err = new ClientErrorResult();
+      err.setMessage((e as Error).message);
+      res.setError(err);
     }
-    const resData = res.toBinary();
+    const resData = res.serializeBinary();
     const resSize = Buffer.alloc(4);
     resSize.writeUInt32BE(resData.length);
     socket.write(resSize);
