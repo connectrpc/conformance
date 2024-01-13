@@ -25,7 +25,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 2
+      code: 1
 - request:
     testName: client stream cancel after close send
     service: connectrpc.conformance.v1.ConformanceService
