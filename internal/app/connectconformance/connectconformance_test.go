@@ -61,16 +61,19 @@ func TestRun(t *testing.T) {
 	// Compute expected number of test cases.
 	testCaseLib, err := newTestCaseLibrary(allSuites, configCases, conformancev1.TestSuite_TEST_MODE_UNSPECIFIED)
 	require.NoError(t, err)
-	allPermutations := calcAllPermutations(testCaseLib.testCases, true, true)
+	allPermutations := testCaseLib.allPermutations(true, true)
 	expectedNumCases := len(allPermutations)
 
 	// 19 test cases as of this writing, but we will likely add more
-	require.GreaterOrEqual(t, expectedNumCases, 19)
+	require.GreaterOrEqual(t, expectedNumCases, 40)
 
 	logger := &testPrinter{t}
 	results, err := run(
 		configCases,
-		&knownFailingTrie{},
+		&testTrie{},
+		&testTrie{},
+		nil,
+		nil,
 		allSuites,
 		logger,
 		logger,

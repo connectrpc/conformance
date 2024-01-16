@@ -31,10 +31,9 @@ import (
 //go:embed *.yaml
 var testSuiteFS embed.FS
 
-// LoadTestSuites returns a file system and a slice of file names that
-// represent the embedded corpus of test suites. The file name are the
-// names of test suite YAML files, and the returned file system can be
-// used to read their contents.
+// LoadTestSuites returns a map of file paths to their contents for the
+// embedded corpus of test suites. The file names are the names of test
+// suite YAML files.
 func LoadTestSuites() (map[string][]byte, error) {
 	testSuites := map[string][]byte{}
 	err := fs.WalkDir(testSuiteFS, ".", func(currentPath string, entry fs.DirEntry, err error) error {
@@ -57,19 +56,20 @@ func LoadTestSuites() (map[string][]byte, error) {
 	return testSuites, nil
 }
 
-// LoadTestSuitesFromFile loads the test suites specified in the given path.
-// If the provided path is not found, is a directory, or is not a YAML file, the
+// LoadTestSuitesFromFiles loads the test suites specified in the given paths.
+// If a provided path is not found, is a directory, or is not a YAML file, the
 // function will return an error.
-func LoadTestSuitesFromFile(path string) (map[string][]byte, error) {
-	testSuites := map[string][]byte{}
-	testFile, err := os.ReadFile(path)
-	if err != nil {
-		return nil, err
+func LoadTestSuitesFromFiles(paths []string) (map[string][]byte, error) {
+	testSuites := make(map[string][]byte, len(paths))
+	for _, path := range paths {
+		testFile, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		if filepath.Ext(path) != ".yaml" {
+			return nil, fmt.Errorf("failed to load test data file: %s. file is not in YAML format", path)
+		}
+		testSuites[path] = testFile
 	}
-	if filepath.Ext(path) != ".yaml" {
-		return nil, fmt.Errorf("failed to load test data file: %s. file is not in YAML format", path)
-	}
-
-	testSuites[path] = testFile
 	return testSuites, nil
 }

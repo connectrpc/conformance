@@ -41,10 +41,13 @@ import (
 type Flags struct {
 	ConfigFile       string
 	KnownFailingFile string
+	KnownFlakyFile   string
 	Verbose          bool
 	ClientCommand    []string
 	ServerCommand    []string
-	TestFile         string
+	TestFiles        []string
+	RunPatterns      []string
+	NoRunPatterns    []string
 	MaxServers       uint
 	Parallelism      uint
 	TLSCertFile      string
@@ -71,26 +74,31 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 		logPrinter.Printf("Computed %d config case permutations.", len(configCases))
 	}
 
-	var knownFailingData []byte
-	if flags.KnownFailingFile != "" {
-		var err error
-		if knownFailingData, err = os.ReadFile(flags.KnownFailingFile); err != nil {
-			return false, ensureFileName(err, flags.KnownFailingFile)
-		}
+	knownFailing, err := patternsFromFile(flags.KnownFailingFile)
+	if err != nil {
+		return false, err
 	}
-	knownFailing := parseKnownFailing(knownFailingData)
+	knownFlaky, err := patternsFromFile(flags.KnownFlakyFile)
 	if err != nil {
 		return false, err
 	}
 	if flags.Verbose {
-		logPrinter.Printf("Loaded %d known failing test cases/patterns.", knownFailing.length())
+		if knownFailing.length() > 0 {
+			logPrinter.Printf("Loaded %d known failing test cases/patterns.", knownFailing.length())
+		}
+		if knownFlaky.length() > 0 {
+			logPrinter.Printf("Loaded %d known flaky test cases/patterns.", knownFlaky.length())
+		}
 	}
 
+	runPatterns := parsePatterns(flags.RunPatterns)
+	noRunPatterns := parsePatterns(flags.NoRunPatterns)
+
 	var testSuiteData map[string][]byte
-	if flags.TestFile != "" {
-		testSuiteData, err = testsuites.LoadTestSuitesFromFile(flags.TestFile)
+	if len(flags.TestFiles) > 0 {
+		testSuiteData, err = testsuites.LoadTestSuitesFromFiles(flags.TestFiles)
 		if err != nil {
-			return false, fmt.Errorf("failed to load test suite data from file: %w", err)
+			return false, fmt.Errorf("failed to load test suite data: %w", err)
 		}
 	} else {
 		testSuiteData, err = testsuites.LoadTestSuites()
@@ -110,16 +118,19 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 		logPrinter.Printf("Loaded %d test suites, %d test case templates.", len(allSuites), numCases)
 	}
 
-	results, err := run(configCases, knownFailing, allSuites, logPrinter, errPrinter, flags)
+	results, err := run(configCases, knownFailing, knownFlaky, runPatterns, noRunPatterns, allSuites, logPrinter, errPrinter, flags)
 	if err != nil {
 		return false, err
 	}
 	return results.report(logPrinter), nil
 }
 
-func run(
+func run( //nolint:gocyclo
 	configCases []configCase,
-	knownFailing *knownFailingTrie,
+	knownFailing *testTrie,
+	knownFlaky *testTrie,
+	run *testTrie,
+	noRun *testTrie,
 	allSuites map[string]*conformancev1.TestSuite,
 	logPrinter internal.Printer,
 	errPrinter internal.Printer,
@@ -146,26 +157,51 @@ func run(
 	svrInstances := serverInstancesSlice(testCaseLib, flags.Verbose)
 
 	// Calculate all permutations of test cases that will be run, including gRPC tests
-	allPermutations := calcAllPermutations(testCaseLib.testCases, useReferenceClient, useReferenceServer)
-	if flags.Verbose {
-		logPrinter.Printf("Computed %d test case permutations across %d server configurations.", len(allPermutations), len(testCaseLib.casesByServer))
+	allPermutations := testCaseLib.allPermutations(useReferenceClient, useReferenceServer)
+
+	// Validate keys in knownFailing, runPatterns, and noRunPatterns, to
+	// make sure they match actual test names (to prevent accidental typos
+	// and inadvertently ignored entries)
+	if err := tryMatchPatterns(fmt.Sprintf("file %s", flags.KnownFailingFile), knownFailing, allPermutations); err != nil {
+		return nil, err
+	}
+	if err := tryMatchPatterns(fmt.Sprintf("file %s", flags.KnownFlakyFile), knownFlaky, allPermutations); err != nil {
+		return nil, err
+	}
+	if run != nil {
+		if err := tryMatchPatterns("run patterns", run, allPermutations); err != nil {
+			return nil, err
+		}
+	}
+	if noRun != nil {
+		if err := tryMatchPatterns("no-run patterns", noRun, allPermutations); err != nil {
+			return nil, err
+		}
+	}
+	// we don't allow ambiguity whether a file is known to fail vs known to be flaky
+	if knownFailing.length() > 0 && knownFlaky.length() > 0 {
+		var conflicts []string
+		for _, testCase := range allPermutations {
+			name := testCase.Request.TestName
+			if knownFailing.matchPattern(name) && knownFlaky.matchPattern(name) {
+				conflicts = append(conflicts, name)
+			}
+		}
+		if len(conflicts) > 0 {
+			sort.Strings(conflicts)
+			return nil, fmt.Errorf("known failing and known flaky configs are ambiguous as some test cases are matched as both\n:%v", strings.Join(conflicts, "\n"))
+		}
 	}
 
-	// Validate keys in knownFailing, to make sure they match actual test names
-	// (to prevent accidental typos and inadvertently ignored entries)
-	for _, tc := range allPermutations {
-		knownFailing.match(strings.Split(tc.Request.TestName, "/"))
-	}
-	unmatched := map[string]struct{}{}
-	knownFailing.findUnmatched("", unmatched)
-	if len(unmatched) > 0 {
-		unmatchedSlice := make([]string, 0, len(unmatched))
-		for name := range unmatched {
-			unmatchedSlice = append(unmatchedSlice, name)
+	filter := newFilter(run, noRun)
+	if flags.Verbose {
+		var count int
+		for _, tc := range allPermutations {
+			if filter.accept(tc) {
+				count++
+			}
 		}
-		sort.Strings(unmatchedSlice)
-		return nil, fmt.Errorf("file %s contains unmatched and possibly invalid patterns:\n%v",
-			flags.KnownFailingFile, strings.Join(unmatchedSlice, "\n"))
+		logPrinter.Printf("Running %d test case permutations (of %d computed) across %d server configurations.", count, len(allPermutations), len(testCaseLib.casesByServer))
 	}
 
 	var clientCreds *conformancev1.ClientCompatRequest_TLSCreds
@@ -214,7 +250,7 @@ func run(
 		}
 	}
 
-	results := newResults(knownFailing)
+	results := newResults(knownFailing, knownFlaky)
 
 	for _, clientInfo := range clients {
 		clientProcess, err := runClient(ctx, clientInfo.start)
@@ -262,7 +298,7 @@ func run(
 
 			for _, serverInfo := range servers {
 				for _, svrInstance := range svrInstances {
-					testCases := testCaseLib.casesByServer[svrInstance]
+					testCases := filter.apply(testCaseLib.casesByServer[svrInstance])
 					testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl, serverInfo.isGrpcImpl)
 					if len(testCases) == 0 {
 						continue
@@ -368,13 +404,6 @@ func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logP
 		numCases, with, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
 }
 
-type processInfo struct {
-	name            string
-	start           processStarter
-	isReferenceImpl bool
-	isGrpcImpl      bool
-}
-
 func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
 	if !clientIsGRPCImpl && !serverIsGRPCImpl {
 		return testCases
@@ -433,29 +462,29 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCIm
 	return filtered
 }
 
-func calcAllPermutations(testCases map[string]*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
-	testCaseSlice := make([]*conformancev1.TestCase, 0, len(testCases))
+func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev1.TestCase) error {
+	for _, tc := range testCases {
+		patterns.matchPattern(tc.Request.TestName)
+	}
+	unmatched := patterns.allUnmatched()
+	if len(unmatched) == 0 {
+		return nil
+	}
+	unmatchedSlice := make([]string, 0, len(unmatched))
+	for name := range unmatched {
+		unmatchedSlice = append(unmatchedSlice, name)
+	}
+	sort.Strings(unmatchedSlice)
+	return fmt.Errorf("%s: unmatched and possibly invalid patterns:\n%v", what, strings.Join(unmatchedSlice, "\n"))
+}
 
-	for _, testCase := range testCases {
-		testCaseSlice = append(testCaseSlice, testCase)
+func patternsFromFile(filename string) (*testTrie, error) {
+	var data []byte
+	if filename != "" {
+		var err error
+		if data, err = os.ReadFile(filename); err != nil {
+			return nil, ensureFileName(err, filename)
+		}
 	}
-	var gRPCClientTests, gRPCServerTests, gRPCClientServerTests []*conformancev1.TestCase
-	if clientIsGRPCImpl {
-		// Count the cases where we run grpc-go client against server under test.
-		gRPCClientTests = filterGRPCImplTestCases(testCaseSlice, true, false)
-	}
-	if serverIsGRPCImpl {
-		// Count the cases where we run client under test against grpc-go server.
-		gRPCServerTests = filterGRPCImplTestCases(testCaseSlice, false, true)
-	}
-	if clientIsGRPCImpl && serverIsGRPCImpl {
-		// Count the cases where we run grpc-go client against grpc-go server.
-		// (This is only done from a unit test. The CLI doesn't actually allow this.)
-		gRPCClientServerTests = filterGRPCImplTestCases(testCaseSlice, true, true)
-	}
-	testCaseSlice = append(testCaseSlice, gRPCClientTests...)
-	testCaseSlice = append(testCaseSlice, gRPCServerTests...)
-	testCaseSlice = append(testCaseSlice, gRPCClientServerTests...)
-
-	return testCaseSlice
+	return parsePatternFile(data), nil
 }

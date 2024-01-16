@@ -33,6 +33,9 @@ const (
 	configFlagName        = "conf"
 	testFileFlagName      = "test-file"
 	knownFailingFlagName  = "known-failing"
+	knownFlakyFlagName    = "known-flaky"
+	runFlagName           = "run"
+	noRunFlagName         = "no-run"
 	verboseFlagName       = "verbose"
 	verboseFlagShortName  = "v"
 	versionFlagName       = "version"
@@ -49,7 +52,10 @@ type flags struct {
 	mode             string
 	configFile       string
 	knownFailingFile string
-	testFile         string
+	knownFlakyFile   string
+	testFiles        []string
+	runPatterns      []string
+	noRunPatterns    []string
 	verbose          bool
 	version          bool
 	maxServers       uint
@@ -113,12 +119,24 @@ test cases which have actually been fixed.)
 }
 
 func bind(cmd *cobra.Command, flags *flags) {
-	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client', 'server', or 'both'")
-	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
-	cmd.Flags().StringVar(&flags.testFile, testFileFlagName, "", "a file in YAML format containing tests to run, which will skip running the embedded tests")
-	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
-	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
-	cmd.Flags().BoolVar(&flags.version, versionFlagName, false, "print version and exit")
+	cmd.Flags().StringVar(&flags.mode, modeFlagName, "",
+		"required: the mode of the test to run; must be 'client', 'server', or 'both'")
+	cmd.Flags().StringVar(&flags.configFile, configFlagName, "",
+		"a config file in YAML format with supported features")
+	cmd.Flags().StringArrayVar(&flags.testFiles, testFileFlagName, nil,
+		"a file in YAML format containing tests to run, which will skip running the embedded tests; can be specified more than once")
+	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "",
+		"a file with a list of known-failing test cases; these test cases are expected to fail")
+	cmd.Flags().StringVar(&flags.knownFlakyFile, knownFlakyFlagName, "",
+		"a file with a list of known-flaky test cases; these test cases are allowed (but not necessarily expected) to fail")
+	cmd.Flags().StringArrayVar(&flags.runPatterns, runFlagName, nil,
+		"a pattern indicating the name of test cases to run; when absent, all tests are run (other than indicated by --no-run); can be specified more than once")
+	cmd.Flags().StringArrayVar(&flags.noRunPatterns, noRunFlagName, nil,
+		"a pattern indicating the name of test cases to skip; when absent, no tests are skipped; can be specified more than once")
+	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false,
+		"enables verbose output")
+	cmd.Flags().BoolVar(&flags.version, versionFlagName, false,
+		"print version and exit")
 	cmd.Flags().UintVar(&flags.maxServers, maxServersFlagName, 4,
 		"the maximum number of server processes to be running in parallel")
 	cmd.Flags().UintVarP(&flags.parallel, parallelFlagName, parallelFlagShortName, uint(runtime.GOMAXPROCS(0)*4),
@@ -242,7 +260,10 @@ func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:g
 		&connectconformance.Flags{
 			ConfigFile:       flags.configFile,
 			KnownFailingFile: flags.knownFailingFile,
-			TestFile:         flags.testFile,
+			KnownFlakyFile:   flags.knownFlakyFile,
+			TestFiles:        flags.testFiles,
+			RunPatterns:      flags.runPatterns,
+			NoRunPatterns:    flags.noRunPatterns,
 			Verbose:          flags.verbose,
 			ClientCommand:    clientCommand,
 			ServerCommand:    serverCommand,
