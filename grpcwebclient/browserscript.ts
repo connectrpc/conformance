@@ -286,13 +286,12 @@ function invoke(req: ClientCompatRequest) {
 async function runTestCase(data: number[]): Promise<number[]> {
   const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
 
+  const result = await invoke(request);
+
   const response = new ClientCompatResponse();
   response.setTestName(request.getTestName());
-
-  const result = await invoke(request);
   response.setResponse(result);
 
-  // return ["processed data", data, request.getPort(), request.getTestName()];
   return Array.from(response.serializeBinary());
 }
 

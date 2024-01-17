@@ -1,64 +1,72 @@
-// Copyright 2023-2024 The Connect Authors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+// TODO - End result of all this is that we should end up with this file and browserscript.ts as the only files
+// This runs the runner, the other one runs in Puppeteer
 
+// Import puppeteer
 import type { Readable } from "node:stream";
+import puppeteer from "puppeteer";
+import * as esbuild from "esbuild";
 import {
   ClientCompatRequest,
   ClientCompatResponse,
   ClientResponseResult,
+  ClientErrorResult,
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
-import { fork, spawn } from "node:child_process";
-import path from "path";
-import { remote } from "webdriverio";
 
-export async function run() {
-  const browser = await remote({
-    logLevel: "silent",
-    // outputDir: "./timo",
-    capabilities: {
-      browserName: "chrome",
-      "goog:chromeOptions": {
-        args: ["headless", "disable-gpu"],
-      },
-    },
+export function run() {
+  void main().catch((reason) => {
+    console.error("ITS FAILING");
+    // TODO - Write client error result back and exit
+    throw reason;
   });
-  // process.stderr.write("executing script\n");
-  // const done = await browser.executeAsyncScript(
-  //   "arguments[0]('script executed');",
-  //   [],
-  // );
-  // process.stderr.write(done + "\n");
+}
 
-  // console.log("test");
+async function main() {
+  const browser = await puppeteer.launch({ headless: "new" });
+  const page = await browser.newPage();
+  page.on("pageerror", (err) => {
+    // If an error is raised here, write ClientErrorResult back and exit
+    process.stderr.write(
+      `Uncaught exception in browser client: ${err.stack ?? err}\n`,
+    );
+    process.exit(1);
+  });
 
-  process.stderr.write("reading from stdin\n");
+  await page.addScriptTag({
+    type: "application/javascript",
+    content: await buildBrowserScript(),
+  });
+
   for await (const next of readReqBuffers(process.stdin)) {
     const req = ClientCompatRequest.deserializeBinary(next);
     const res = new ClientCompatResponse();
     res.setTestName(req.getTestName());
 
-    // Send to webdriver here
+    const result = await page.evaluate(function (data) {
+      // @ts-ignore
+      return window.runTestCase(data);
+    }, Array.from(next));
 
-    const result = new ClientResponseResult();
-    res.setResponse(result);
-
-    const resData = res.serializeBinary();
+    const resData = new Uint8Array(result);
     const resSize = Buffer.alloc(4);
     resSize.writeUInt32BE(resData.length);
     process.stdout.write(resSize);
     process.stdout.write(Buffer.from(resData));
   }
+
+  await page.close();
+  await browser.close();
+}
+
+async function buildBrowserScript() {
+  const buildResult = await esbuild.build({
+    entryPoints: ["./browserscript.ts"],
+    bundle: true,
+    write: false,
+  });
+  if (buildResult.outputFiles.length !== 1) {
+    throw new Error("Expected exactly one output file");
+  }
+  return buildResult.outputFiles[0].text;
 }
 
 async function* readReqBuffers(stream: Readable) {
