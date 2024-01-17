@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+process.stderr.write("goot umm");
 const { run } = require("../dist/cjs/pipe.js");
 
 run();
