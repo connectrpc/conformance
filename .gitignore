@@ -3,3 +3,4 @@
 *.svg
 cover.out
 dist/
+node_modules/
