@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-const { run } = require("../dist/cjs/runner.js");
+const { run } = require("../dist/cjs/grpcwebclient.js");
 
 run();
