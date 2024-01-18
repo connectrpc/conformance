@@ -27,14 +27,6 @@ export async function run() {
   const browser = await puppeteer.launch({ headless: "new" });
   const page = await browser.newPage();
 
-  page.on("pageerror", (err) => {
-    // If an error is raised here, write ClientErrorResult back and exit
-    process.stderr.write(
-      `Uncaught exception in browser client: ${err.stack ?? err}\n`,
-    );
-    process.exit(1);
-  });
-
   await page.addScriptTag({
     type: "application/javascript",
     content: await buildBrowserScript(),

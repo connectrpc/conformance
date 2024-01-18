@@ -15,7 +15,6 @@
 import { ConformanceServiceClient } from "./gen/proto/connectrpc/conformance/v1/ServiceServiceClientPb.js";
 import {
   ClientCompatRequest,
-  ClientCompatResponse,
   ClientResponseResult,
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 import {
@@ -29,6 +28,46 @@ import {
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "@buf/googleapis_googleapis.protocolbuffers_js/google/rpc/status_pb.js";
 import { Metadata, RpcError, Status as GrpcWebStatus } from "grpc-web";
+
+// The main entry point into the browser code running in Puppeteer/headless Chrome.
+// This function is invoked by the page.evalulate call in grpcwebclient.
+async function runTestCase(data: number[]): Promise<number[]> {
+  const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
+
+  const result = await invoke(request);
+
+  return Array.from(result.serializeBinary());
+}
+
+function invoke(req: ClientCompatRequest) {
+  const client = createClient(req);
+  switch (req.getMethod()) {
+    case "Unary":
+      if (req.getRequestMessagesList().length !== 1) {
+        throw new Error("Unary method requires exactly one request message");
+      }
+      return unary(client, req);
+    case "ServerStream":
+      return serverStream(client, req);
+    case "ClientStream":
+      return clientStream();
+    case "BidiStream":
+      return bidiStream();
+    case "Unimplemented":
+      return unimplemented(client, req);
+    default:
+      throw new Error(`Unknown method: ${req.getMethod()}`);
+  }
+}
+
+function createClient(req: ClientCompatRequest) {
+  let scheme = "http://";
+  if (req.getServerTlsCert().length > 0) {
+    scheme = "https://";
+  }
+  const baseUrl = `${scheme}${req.getHost()}:${req.getPort()}`;
+  return new ConformanceServiceClient(baseUrl);
+}
 
 function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   const err = new ProtoError();
@@ -251,44 +290,6 @@ async function unimplemented(
   });
 
   return prom;
-}
-
-function createClient(req: ClientCompatRequest) {
-  let scheme = "http://";
-  if (req.getServerTlsCert().length > 0) {
-    scheme = "https://";
-  }
-  const baseUrl = `${scheme}${req.getHost()}:${req.getPort()}`;
-  return new ConformanceServiceClient(baseUrl);
-}
-
-function invoke(req: ClientCompatRequest) {
-  const client = createClient(req);
-  switch (req.getMethod()) {
-    case "Unary":
-      if (req.getRequestMessagesList().length !== 1) {
-        throw new Error("Unary method requires exactly one request message");
-      }
-      return unary(client, req);
-    case "ServerStream":
-      return serverStream(client, req);
-    case "ClientStream":
-      return clientStream();
-    case "BidiStream":
-      return bidiStream();
-    case "Unimplemented":
-      return unimplemented(client, req);
-    default:
-      throw new Error(`Unknown method: ${req.getMethod()}`);
-  }
-}
-
-async function runTestCase(data: number[]): Promise<number[]> {
-  const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
-
-  const result = await invoke(request);
-
-  return Array.from(result.serializeBinary());
 }
 
 // @ts-ignore
