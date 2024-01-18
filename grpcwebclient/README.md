@@ -4,6 +4,3 @@ This directory contains a conformance client built with the [gRPC-web](https://g
 purpose is to corroborate testing results with Connect clients and servers using the gRPC-web protocol.
 
 It is run against both the Connect reference server and the gRPC-Go reference server during conformance tests.
-
-The basic architecture uses [WebdriverIO](https://webdriver.io/) to run a headless Chrome shell, which in turn executes
-the gRPC-web client.
