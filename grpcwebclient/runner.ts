@@ -18,17 +18,11 @@ import * as esbuild from "esbuild";
 import {
   ClientCompatRequest,
   ClientCompatResponse,
+  ClientResponseResult,
+  ClientErrorResult,
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 
-export function run() {
-  void runTestSuite().catch((reason) => {
-    console.error("ITS FAILING");
-    // TODO - Write client error result back and exit
-    throw reason;
-  });
-}
-
-async function runTestSuite() {
+export async function run() {
   const browser = await puppeteer.launch({ headless: "new" });
   const page = await browser.newPage();
   page.on("pageerror", (err) => {
@@ -49,12 +43,23 @@ async function runTestSuite() {
     const res = new ClientCompatResponse();
     res.setTestName(req.getTestName());
 
-    const result = await page.evaluate(function (data) {
-      // @ts-ignore
-      return window.runTestCase(data);
-    }, Array.from(next));
+    try {
+      const result = await page.evaluate(function (data) {
+        // @ts-ignore
+        return window.runTestCase(data);
+      }, Array.from(next));
 
-    const resData = new Uint8Array(result);
+      const resp = ClientResponseResult.deserializeBinary(
+        new Uint8Array(result),
+      );
+      res.setResponse(resp);
+    } catch (e) {
+      const err = new ClientErrorResult();
+      err.setMessage((e as Error).message);
+      res.setError(err);
+    }
+
+    const resData = res.serializeBinary();
     const resSize = Buffer.alloc(4);
     resSize.writeUInt32BE(resData.length);
     process.stdout.write(resSize);

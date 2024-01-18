@@ -284,15 +284,12 @@ function invoke(req: ClientCompatRequest) {
 }
 
 async function runTestCase(data: number[]): Promise<number[]> {
+  throw "OH NOZE";
   const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
 
   const result = await invoke(request);
 
-  const response = new ClientCompatResponse();
-  response.setTestName(request.getTestName());
-  response.setResponse(result);
-
-  return Array.from(response.serializeBinary());
+  return Array.from(result.serializeBinary());
 }
 
 // @ts-ignore
