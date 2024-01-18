@@ -23,8 +23,10 @@ import {
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 
 export async function run() {
+  // Launch a browser. For a non-headless browser, pass false
   const browser = await puppeteer.launch({ headless: "new" });
   const page = await browser.newPage();
+
   page.on("pageerror", (err) => {
     // If an error is raised here, write ClientErrorResult back and exit
     process.stderr.write(
@@ -44,6 +46,9 @@ export async function run() {
     res.setTestName(req.getTestName());
 
     try {
+      // This will call the runTestCase function on the global scope
+      // inside the browser. The arg to the function given to evaluate
+      // is the test case we want to run
       const result = await page.evaluate(function (data) {
         // @ts-ignore
         return window.runTestCase(data);
@@ -72,7 +77,7 @@ export async function run() {
 
 async function buildBrowserScript() {
   const buildResult = await esbuild.build({
-    entryPoints: ["./browserscript.ts"],
+    entryPoints: ["grpcwebclient/browserscript.ts"],
     bundle: true,
     write: false,
   });
