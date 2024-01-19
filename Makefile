@@ -49,6 +49,7 @@ build: generate ## Build all packages
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
 	rm -rf internal/gen
+	rm -rf grpcwebclient/gen
 	buf generate proto
 	license-header \
 		--license-type apache \
@@ -100,9 +101,14 @@ runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserv
 	$(BIN)/connectconformance -v --conf ./testdata/grpc-web-server-impl-config.yaml --mode server -- $(BIN)/grpcserver
 
 .PHONY: runclienttests
-runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient
+runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient buildgrpcweb
 	$(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode client -- $(BIN)/referenceclient
 	$(BIN)/connectconformance -v --conf ./testdata/grpc-impls-config.yaml --mode client -- $(BIN)/grpcclient
+	$(BIN)/connectconformance -v --conf ./testdata/grpc-web-client-impl-config.yaml --known-failing ./grpcwebclient/known_failing.txt --mode client -- ./grpcwebclient/bin/grpcwebclient
+
+.PHONY: buildgrpcweb
+buildgrpcweb: generate
+	cd grpcwebclient && npm run build
 
 $(BIN)/connectconformance: Makefile generate
 	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/connectconformance/
