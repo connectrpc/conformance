@@ -32,11 +32,11 @@ testCases:
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     cancel:
-      afterCloseSendMs: 50
+      afterCloseSendMs: 5
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseHeaders:
         - name: x-custom-header
           value: ["foo"]
@@ -61,7 +61,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseHeaders:
         - name: x-custom-header
           value: ["foo"]
@@ -85,7 +85,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -97,7 +97,7 @@ testCases:
           requests:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
               responseDefinition:
-                responseDelayMs: 100
+                responseDelayMs: 200
                 responseData:
                   - "dGVzdCByZXNwb25zZQ=="
                   - "dGVzdCByZXNwb25zZQ=="
@@ -114,7 +114,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -135,7 +135,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -150,7 +150,7 @@ testCases:
           requests:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               responseDefinition:
-                responseDelayMs: 100
+                responseDelayMs: 200
                 responseData:
                   - "dGVzdCByZXNwb25zZQ=="
                   - "dGVzdCByZXNwb25zZQ=="
@@ -237,7 +237,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -257,7 +257,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 100
+        responseDelayMs: 200
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -271,7 +271,7 @@ testCases:
           requests:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               responseDefinition:
-                responseDelayMs: 100
+                responseDelayMs: 200
                 responseData:
                   - "dGVzdCByZXNwb25zZQ=="
                   - "dGVzdCByZXNwb25zZQ=="
@@ -304,11 +304,11 @@ testCases:
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     cancel:
-      afterCloseSendMs: 0
+      afterCloseSendMs: 5
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 250
+        responseDelayMs: 200
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="

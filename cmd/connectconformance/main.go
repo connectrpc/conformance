@@ -47,6 +47,7 @@ const (
 	tlsKeyFlagName        = "key"
 	portFlagName          = "port"
 	bindFlagName          = "bind"
+	traceFlagName         = "trace"
 )
 
 type flags struct {
@@ -65,6 +66,7 @@ type flags struct {
 	tlsKeyFile           string
 	port                 uint
 	bind                 string
+	trace            bool
 }
 
 func main() {
@@ -157,6 +159,8 @@ func bind(cmd *cobra.Command, flags *flags) {
 		"in client mode, the port number on which the reference server should listen (implies --max-servers=1)")
 	cmd.Flags().StringVar(&flags.bind, bindFlagName, internal.DefaultHost,
 		"in client mode, the bind address on which the reference server should listen (0.0.0.0 means listen on all interfaces)")
+	cmd.Flags().BoolVar(&flags.trace, traceFlagName, false,
+		"if true, full HTTP traces will be captured and shown alongside failing test cases")
 }
 
 func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:gocyclo
@@ -298,6 +302,7 @@ func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:g
 			TLSKeyFile:           flags.tlsKeyFile,
 			ServerPort:           flags.port,
 			ServerBind:           flags.bind,
+			HTTPTrace:            flags.trace,
 		},
 		internal.NewPrinter(os.Stdout),
 		internal.NewPrinter(os.Stderr),

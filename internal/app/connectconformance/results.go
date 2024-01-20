@@ -16,6 +16,7 @@ package connectconformance
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -23,9 +24,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
@@ -42,16 +45,21 @@ const timeoutCheckGracePeriodMillis = 500
 type testResults struct {
 	knownFailing *testTrie
 	knownFlaky   *testTrie
+	tracer       *tracer.Tracer
+
+	traceWaitGroup sync.WaitGroup
 
 	mu             sync.Mutex
 	outcomes       map[string]testOutcome
+	traces         map[string]*tracer.Trace
 	serverSideband map[string]string
 }
 
-func newResults(knownFailing, knownFlaky *testTrie) *testResults {
+func newResults(knownFailing, knownFlaky *testTrie, tracer *tracer.Tracer) *testResults {
 	return &testResults{
 		knownFailing:   knownFailing,
 		knownFlaky:     knownFlaky,
+		tracer:         tracer,
 		outcomes:       map[string]testOutcome{},
 		serverSideband: map[string]string{},
 	}
@@ -74,6 +82,35 @@ func (r *testResults) setOutcomeLocked(testCase string, setupError bool, err err
 		knownFailing:  r.knownFailing.match(strings.Split(testCase, "/")),
 		knownFlaky:    r.knownFlaky.match(strings.Split(testCase, "/")),
 	}
+	r.fetchTrace(testCase)
+}
+
+func (r *testResults) fetchTrace(testCase string) {
+	if r.tracer == nil {
+		return
+	}
+	r.traceWaitGroup.Add(1)
+	go func() {
+		defer r.traceWaitGroup.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		trace, err := r.tracer.Await(ctx, testCase)
+		r.tracer.Clear(testCase)
+		if err != nil {
+			return
+		}
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		outcome := r.outcomes[testCase]
+		if outcome.actualFailure == nil || outcome.setupError || outcome.knownFlaky || outcome.knownFailing {
+			return
+		}
+		if r.traces == nil {
+			r.traces = map[string]*tracer.Trace{}
+		}
+		r.traces[testCase] = trace
+	}()
 }
 
 // failedToStart marks all the given test cases with the given setup error.
@@ -186,6 +223,7 @@ func (r *testResults) processSidebandInfoLocked() {
 }
 
 func (r *testResults) report(printer internal.Printer) bool {
+	r.traceWaitGroup.Wait() // make sure all traces have been received
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(r.serverSideband) > 0 {
@@ -208,6 +246,12 @@ func (r *testResults) report(printer internal.Printer) bool {
 		switch {
 		case !expectError && outcome.actualFailure != nil:
 			printer.Printf("FAILED: %s:\n%s", name, indent(outcome.actualFailure.Error()))
+			trace := r.traces[name]
+			if trace != nil {
+				printer.Printf("---- HTTP Trace ----")
+				trace.Print(printer)
+				printer.Printf("--------------------")
+			}
 			failed++
 		case expectError && outcome.actualFailure == nil:
 			printer.Printf("FAILED: %s was expected to fail but did not", name)

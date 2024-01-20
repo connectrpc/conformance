@@ -194,7 +194,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			results := newResults(&testTrie{}, &testTrie{})
+			results := newResults(&testTrie{}, &testTrie{}, nil)
 
 			var procAddr atomic.Pointer[process] // populated when server process created
 			var actualSvrRequest bytes.Buffer
@@ -271,6 +271,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				discardPrinter{},
 				results,
 				&client,
+				nil,
 			)
 
 			if testCase.svrFailsToStart {
