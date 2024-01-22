@@ -354,6 +354,7 @@ func (s *http3Server) Addr() string {
 	return s.lis.Addr().String()
 }
 
+//nolint:forbidigo // must refer to log package in order to suppress it in net/http server
 func nopLogger() *log.Logger {
 	// TODO: enable logging via -v option or env variable?
 	return log.New(io.Discard, "", 0)

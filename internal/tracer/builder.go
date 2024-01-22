@@ -53,24 +53,24 @@ func (b *builder) add(event Event) {
 	if b.trace.TestName == "" {
 		return
 	}
-	switch e := event.(type) {
+	switch event := event.(type) {
 	case *ResponseStart:
-		b.trace.Response = e.Response
+		b.trace.Response = event.Response
 	case *ResponseError:
-		b.trace.Err = e.Err
+		b.trace.Err = event.Err
 	case *RequestBodyEnd:
 		if b.trace.Err != nil {
-			b.trace.Err = e.Err
+			b.trace.Err = event.Err
 		}
 	case *ResponseBodyEnd:
 		if b.trace.Err != nil {
-			b.trace.Err = e.Err
+			b.trace.Err = event.Err
 		}
 	case *RequestBodyData:
-		e.MessageIndex = b.reqCount
+		event.MessageIndex = b.reqCount
 		b.reqCount++
 	case *ResponseBodyData:
-		e.MessageIndex = b.respCount
+		event.MessageIndex = b.respCount
 		b.respCount++
 	}
 	event.setEventOffset(time.Since(b.start))

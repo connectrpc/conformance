@@ -56,7 +56,7 @@ type Flags struct {
 	TLSKeyFile           string
 	ServerPort           uint
 	ServerBind           string
-	HTTPTrace        bool
+	HTTPTrace            bool
 }
 
 func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer) (bool, error) {

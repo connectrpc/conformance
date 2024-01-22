@@ -50,7 +50,7 @@ func (t *Tracer) Init(testName string) {
 		return
 	}
 	var result traceResult
-	result.ch = make(chan struct{})
+	result.done = make(chan struct{})
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	if t.traces == nil {
@@ -79,13 +79,13 @@ func (t *Tracer) Complete(trace Trace) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 	result := t.traces[trace.TestName]
-	if result == nil || result.ch == nil {
+	if result == nil || result.done == nil {
 		return
 	}
-	ch := result.ch
+	done := result.done
 	result.trace = trace
-	result.ch = nil
-	close(ch)
+	result.done = nil
+	close(done)
 }
 
 // Await waits for the given test to complete and for its trace data to
@@ -99,19 +99,19 @@ func (t *Tracer) Await(ctx context.Context, testName string) (*Trace, error) {
 	}
 	t.mu.Lock()
 	result := t.traces[testName]
-	var ch chan struct{}
+	var done chan struct{}
 	if result != nil {
-		ch = result.ch
+		done = result.done
 	}
 	t.mu.Unlock()
 	if result == nil {
 		return nil, fmt.Errorf("%s: trace already cleared", testName)
 	}
-	if ch == nil {
+	if done == nil {
 		return &result.trace, nil
 	}
 	select {
-	case <-ch:
+	case <-done:
 		return &result.trace, nil
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -127,18 +127,13 @@ type Trace struct {
 	Events   []Event
 }
 
-func (t *Trace) Print(p internal.Printer) {
+func (t *Trace) Print(printer internal.Printer) {
 	for _, event := range t.Events {
-		event.print(p)
+		event.print(printer)
 	}
-	if t.Response == nil {
-		if t.Err != nil {
-
-		}
-	}
-	if len(t.Response.Trailer) > 0 {
-		p.Printf(responsePrefix)
-		printHeaders(responsePrefix, t.Response.Trailer, p)
+	if t.Response != nil && len(t.Response.Trailer) > 0 {
+		printer.Printf(responsePrefix)
+		printHeaders(responsePrefix, t.Response.Trailer, printer)
 	}
 }
 
@@ -176,7 +171,7 @@ type RequestStart struct {
 	eventOffset
 }
 
-func (r *RequestStart) print(p internal.Printer) {
+func (r *RequestStart) print(printer internal.Printer) {
 	urlClone := *r.Request.URL
 	if urlClone.Host == "" {
 		urlClone.Host = "..."
@@ -186,9 +181,9 @@ func (r *RequestStart) print(p internal.Printer) {
 	} else {
 		urlClone.Scheme = "http"
 	}
-	p.Printf("%s %9.3fms %s %s %s", requestPrefix, r.offsetMillis(), r.Request.Method, urlClone.String(), r.Request.Proto)
-	printHeaders(requestPrefix, r.Request.Header, p)
-	p.Printf(requestPrefix)
+	printer.Printf("%s %9.3fms %s %s %s", requestPrefix, r.offsetMillis(), r.Request.Method, urlClone.String(), r.Request.Proto)
+	printHeaders(requestPrefix, r.Request.Header, printer)
+	printer.Printf(requestPrefix)
 }
 
 // RequestBodyData represents some data written to or read from the
@@ -219,8 +214,8 @@ type RequestBodyData struct {
 	eventOffset
 }
 
-func (r *RequestBodyData) print(p internal.Printer) {
-	printData(requestPrefix, r.offsetMillis(), r.MessageIndex, r.Envelope, r.Len, p)
+func (r *RequestBodyData) print(printer internal.Printer) {
+	printData(requestPrefix, r.offsetMillis(), r.MessageIndex, r.Envelope, r.Len, printer)
 }
 
 // RequestBodyEnd represents the end of the request body being reached.
@@ -234,11 +229,11 @@ type RequestBodyEnd struct {
 	eventOffset
 }
 
-func (r *RequestBodyEnd) print(p internal.Printer) {
+func (r *RequestBodyEnd) print(printer internal.Printer) {
 	if r.Err != nil {
-		p.Printf("%s %9.3fms body end (err=%v)", requestPrefix, r.offsetMillis(), r.Err)
+		printer.Printf("%s %9.3fms body end (err=%v)", requestPrefix, r.offsetMillis(), r.Err)
 	} else {
-		p.Printf("%s %9.3fms body end", requestPrefix, r.offsetMillis())
+		printer.Printf("%s %9.3fms body end", requestPrefix, r.offsetMillis())
 	}
 }
 
@@ -251,10 +246,10 @@ type ResponseStart struct {
 	eventOffset
 }
 
-func (r *ResponseStart) print(p internal.Printer) {
-	p.Printf("%s %9.3fms %s", responsePrefix, r.offsetMillis(), r.Response.Status)
-	printHeaders(responsePrefix, r.Response.Header, p)
-	p.Printf(responsePrefix)
+func (r *ResponseStart) print(printer internal.Printer) {
+	printer.Printf("%s %9.3fms %s", responsePrefix, r.offsetMillis(), r.Response.Status)
+	printHeaders(responsePrefix, r.Response.Header, printer)
+	printer.Printf(responsePrefix)
 }
 
 // ResponseError is an event that represents when the response fails. This
@@ -266,8 +261,8 @@ type ResponseError struct {
 	eventOffset
 }
 
-func (r *ResponseError) print(p internal.Printer) {
-	p.Printf("%s %9.3fms failed: %v", responsePrefix, r.offsetMillis(), r.Err)
+func (r *ResponseError) print(printer internal.Printer) {
+	printer.Printf("%s %9.3fms failed: %v", responsePrefix, r.offsetMillis(), r.Err)
 }
 
 // ResponseBodyData represents some data written to or read from the
@@ -298,8 +293,8 @@ type ResponseBodyData struct {
 	eventOffset
 }
 
-func (r *ResponseBodyData) print(p internal.Printer) {
-	printData(responsePrefix, r.offsetMillis(), r.MessageIndex, r.Envelope, r.Len, p)
+func (r *ResponseBodyData) print(printer internal.Printer) {
+	printData(responsePrefix, r.offsetMillis(), r.MessageIndex, r.Envelope, r.Len, printer)
 }
 
 // ResponseBodyEndStream represents the an "end-stream" message in the
@@ -312,11 +307,11 @@ type ResponseBodyEndStream struct {
 	eventOffset
 }
 
-func (r *ResponseBodyEndStream) print(p internal.Printer) {
+func (r *ResponseBodyEndStream) print(printer internal.Printer) {
 	lines := strings.Split(r.Content, "\n")
 	for _, line := range lines {
 		line = strings.Trim(line, "\r")
-		p.Printf("%s %11s   eos: %s", responsePrefix, "", line)
+		printer.Printf("%s %11s   eos: %s", responsePrefix, "", line)
 	}
 }
 
@@ -331,17 +326,17 @@ type ResponseBodyEnd struct {
 	eventOffset
 }
 
-func (r *ResponseBodyEnd) print(p internal.Printer) {
+func (r *ResponseBodyEnd) print(printer internal.Printer) {
 	if r.Err != nil {
-		p.Printf("%s %9.3fms body end (err=%v)", responsePrefix, r.offsetMillis(), r.Err)
+		printer.Printf("%s %9.3fms body end (err=%v)", responsePrefix, r.offsetMillis(), r.Err)
 	} else {
-		p.Printf("%s %9.3fms body end", responsePrefix, r.offsetMillis())
+		printer.Printf("%s %9.3fms body end", responsePrefix, r.offsetMillis())
 	}
 }
 
 type traceResult struct {
 	trace Trace
-	ch    chan struct{}
+	done  chan struct{}
 }
 
 type eventOffset struct {
@@ -356,7 +351,7 @@ func (o *eventOffset) offsetMillis() float64 {
 	return o.Offset.Seconds() * 1000
 }
 
-func printHeaders(prefix string, headers http.Header, p internal.Printer) {
+func printHeaders(prefix string, headers http.Header, printer internal.Printer) {
 	keys := make([]string, 0, len(headers))
 	for key := range headers {
 		keys = append(keys, key)
@@ -364,18 +359,18 @@ func printHeaders(prefix string, headers http.Header, p internal.Printer) {
 	sort.Strings(keys)
 	for _, key := range keys {
 		for _, val := range headers[key] {
-			p.Printf("%s %11s %s: %s", prefix, "", key, val)
+			printer.Printf("%s %11s %s: %s", prefix, "", key, val)
 		}
 	}
 }
 
-func printData(prefix string, offsetMillis float64, index int, env *Envelope, length uint64, p internal.Printer) {
+func printData(prefix string, offsetMillis float64, index int, env *Envelope, length uint64, printer internal.Printer) {
 	if env != nil {
-		p.Printf("%s %9.3fms message #%d: prefix: flags=%d, len=%d", prefix, offsetMillis, index+1, env.Flags, env.Len)
+		printer.Printf("%s %9.3fms message #%d: prefix: flags=%d, len=%d", prefix, offsetMillis, index+1, env.Flags, env.Len)
 		if length > 0 {
-			p.Printf("%s %11s message #%d: data: %d/%d bytes", prefix, "", index+1, length, env.Len)
+			printer.Printf("%s %11s message #%d: data: %d/%d bytes", prefix, "", index+1, length, env.Len)
 		}
 	} else {
-		p.Printf("%s %9.3fms message #%d: data: %d bytes", prefix, offsetMillis, index+1, length)
+		printer.Printf("%s %9.3fms message #%d: data: %d bytes", prefix, offsetMillis, index+1, length)
 	}
 }

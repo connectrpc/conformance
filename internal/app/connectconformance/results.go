@@ -85,6 +85,7 @@ func (r *testResults) setOutcomeLocked(testCase string, setupError bool, err err
 	r.fetchTrace(testCase)
 }
 
+//nolint:contextcheck,nolintlint // intentionally using context.Background; nolintlint incorrectly complains about this
 func (r *testResults) fetchTrace(testCase string) {
 	if r.tracer == nil {
 		return

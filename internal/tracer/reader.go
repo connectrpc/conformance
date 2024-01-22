@@ -198,7 +198,7 @@ func (d *dataTracer) traceMessage(data []byte) (int, bool) {
 			Len:      uint64(d.expecting),
 		})
 	}
-	if d.endStream != nil {
+	if d.endStream != nil { //nolint:nestif
 		_, _ = d.endStream.Write(data[:need])
 		var content string
 		if d.decompressor == nil {

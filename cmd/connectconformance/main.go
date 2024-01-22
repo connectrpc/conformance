@@ -66,7 +66,7 @@ type flags struct {
 	tlsKeyFile           string
 	port                 uint
 	bind                 string
-	trace            bool
+	trace                bool
 }
 
 func main() {
