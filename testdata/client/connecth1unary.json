@@ -15,32 +15,22 @@
         "Value1",
         "Value2"
       ]
+    },
+    {
+        "name": "x-test-case-name",
+        "value": [
+            "Unary Happy Path"
+        ]
     }
   ],
   "requestMessages": [
     {
       "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest",
       "responseDefinition": {
-        "responseHeaders": [
-          {
-            "name": "x-custom-header",
-            "value": [
-              "foo",
-              "bar",
-              "baz"
-            ]
-          }
-        ],
-        "responseData": "dGVzdCByZXNwb25zZQ==",
-        "responseTrailers": [
-          {
-            "name": "x-custom-trailer",
-            "value": [
-              "bing",
-              "quux"
-            ]
-          }
-        ]
+        "rawResponse": {
+            "statusCode": 415
+        },
+        "responseData": "dGVzdCByZXNwb25zZQ=="
       }
     }
   ]

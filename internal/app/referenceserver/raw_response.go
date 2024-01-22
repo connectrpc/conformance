@@ -39,12 +39,19 @@ type rawResponseKey struct{}
 // been stored, those response writer interactions take precedence and no
 // raw response can be sent.)
 func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handler {
+	errorWriter := connect.NewErrorWriter()
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
+		// This is the only hard failure. Without it, we cannot provide feedback.
+		// All other checks below write to stderr to provide feedback.
 		if testCaseName == "" {
-			// This is the only hard failure. Without it, we cannot provide feedback.
-			// All other checks below write to stderr to provide feedback.
-			http.Error(respWriter, "missing x-test-case-name header", http.StatusBadRequest)
+			msg := "missing x-test-case-name header"
+			if errorWriter.IsSupported(req) {
+				invalidArg := connect.NewError(connect.CodeInvalidArgument, errors.New(msg))
+				errorWriter.Write(respWriter, req, invalidArg)
+			} else {
+				http.Error(respWriter, msg, http.StatusBadRequest)
+			}
 			return
 		}
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
