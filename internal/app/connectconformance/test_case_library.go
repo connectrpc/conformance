@@ -21,7 +21,6 @@ import (
 	"math"
 	"path"
 	"sort"
-	"strings"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -315,7 +314,7 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 		}
 		suite := &conformancev1.TestSuite{}
 		if err := opts.Unmarshal(data, suite); err != nil {
-			return nil, ensureFileName(err, testFilePath)
+			return nil, internal.EnsureFileName(err, testFilePath)
 		}
 		for _, testCase := range suite.TestCases {
 			if testCase.Request.RawRequest != nil && suite.Mode != conformancev1.TestSuite_TEST_MODE_SERVER {
@@ -718,11 +717,4 @@ func allValues[T ~int32](m map[int32]string) []T {
 		return vals[i] < vals[j]
 	})
 	return vals
-}
-
-func ensureFileName(err error, filename string) error {
-	if strings.Contains(err.Error(), filename) {
-		return err // already contains filename, nothing else to do
-	}
-	return fmt.Errorf("%s: %w", filename, err)
 }

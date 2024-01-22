@@ -39,21 +39,21 @@ import (
 // Flags are the config values for the test runner that may be provided via
 // command-line flags and arguments.
 type Flags struct {
-	ConfigFile       string
-	KnownFailingFile string
-	KnownFlakyFile   string
-	Verbose          bool
-	ClientCommand    []string
-	ServerCommand    []string
-	TestFiles        []string
-	RunPatterns      []string
-	NoRunPatterns    []string
-	MaxServers       uint
-	Parallelism      uint
-	TLSCertFile      string
-	TLSKeyFile       string
-	ServerPort       uint
-	ServerBind       string
+	ConfigFile           string
+	RunPatterns          []string
+	SkipPatterns         []string
+	KnownFailingPatterns []string
+	KnownFlakyPatterns   []string
+	Verbose              bool
+	ClientCommand        []string
+	ServerCommand        []string
+	TestFiles            []string
+	MaxServers           uint
+	Parallelism          uint
+	TLSCertFile          string
+	TLSKeyFile           string
+	ServerPort           uint
+	ServerBind           string
 }
 
 func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer) (bool, error) {
@@ -61,7 +61,7 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 	if flags.ConfigFile != "" {
 		var err error
 		if configData, err = os.ReadFile(flags.ConfigFile); err != nil {
-			return false, ensureFileName(err, flags.ConfigFile)
+			return false, internal.EnsureFileName(err, flags.ConfigFile)
 		}
 	} else if flags.Verbose {
 		logPrinter.Printf("No config file provided. Using defaults.")
@@ -74,13 +74,15 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 		logPrinter.Printf("Computed %d config case permutations.", len(configCases))
 	}
 
-	knownFailing, err := patternsFromFile(flags.KnownFailingFile)
-	if err != nil {
-		return false, err
+	knownFailing := parsePatterns(flags.KnownFailingPatterns)
+	if knownFailing == nil {
+		// treat as empty
+		knownFailing = &testTrie{}
 	}
-	knownFlaky, err := patternsFromFile(flags.KnownFlakyFile)
-	if err != nil {
-		return false, err
+	knownFlaky := parsePatterns(flags.KnownFlakyPatterns)
+	if knownFlaky == nil {
+		// treat as empty
+		knownFlaky = &testTrie{}
 	}
 	if flags.Verbose {
 		if knownFailing.length() > 0 {
@@ -92,7 +94,7 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 	}
 
 	runPatterns := parsePatterns(flags.RunPatterns)
-	noRunPatterns := parsePatterns(flags.NoRunPatterns)
+	skipPatterns := parsePatterns(flags.SkipPatterns)
 
 	var testSuiteData map[string][]byte
 	if len(flags.TestFiles) > 0 {
@@ -118,7 +120,7 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 		logPrinter.Printf("Loaded %d test suites, %d test case templates.", len(allSuites), numCases)
 	}
 
-	results, err := run(configCases, knownFailing, knownFlaky, runPatterns, noRunPatterns, allSuites, logPrinter, errPrinter, flags)
+	results, err := run(configCases, knownFailing, knownFlaky, runPatterns, skipPatterns, allSuites, logPrinter, errPrinter, flags)
 	if err != nil {
 		return false, err
 	}
@@ -130,7 +132,7 @@ func run( //nolint:gocyclo
 	knownFailing *testTrie,
 	knownFlaky *testTrie,
 	run *testTrie,
-	noRun *testTrie,
+	skip *testTrie,
 	allSuites map[string]*conformancev1.TestSuite,
 	logPrinter internal.Printer,
 	errPrinter internal.Printer,
@@ -162,10 +164,10 @@ func run( //nolint:gocyclo
 	// Validate keys in knownFailing, runPatterns, and noRunPatterns, to
 	// make sure they match actual test names (to prevent accidental typos
 	// and inadvertently ignored entries)
-	if err := tryMatchPatterns(fmt.Sprintf("file %s", flags.KnownFailingFile), knownFailing, allPermutations); err != nil {
+	if err := tryMatchPatterns("known failing", knownFailing, allPermutations); err != nil {
 		return nil, err
 	}
-	if err := tryMatchPatterns(fmt.Sprintf("file %s", flags.KnownFlakyFile), knownFlaky, allPermutations); err != nil {
+	if err := tryMatchPatterns("known flaky", knownFlaky, allPermutations); err != nil {
 		return nil, err
 	}
 	if run != nil {
@@ -173,8 +175,8 @@ func run( //nolint:gocyclo
 			return nil, err
 		}
 	}
-	if noRun != nil {
-		if err := tryMatchPatterns("no-run patterns", noRun, allPermutations); err != nil {
+	if skip != nil {
+		if err := tryMatchPatterns("no-run patterns", skip, allPermutations); err != nil {
 			return nil, err
 		}
 	}
@@ -193,7 +195,7 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	filter := newFilter(run, noRun)
+	filter := newFilter(run, skip)
 	if flags.Verbose {
 		var count int
 		for _, tc := range allPermutations {
@@ -476,15 +478,4 @@ func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev
 	}
 	sort.Strings(unmatchedSlice)
 	return fmt.Errorf("%s: unmatched and possibly invalid patterns:\n%v", what, strings.Join(unmatchedSlice, "\n"))
-}
-
-func patternsFromFile(filename string) (*testTrie, error) {
-	var data []byte
-	if filename != "" {
-		var err error
-		if data, err = os.ReadFile(filename); err != nil {
-			return nil, ensureFileName(err, filename)
-		}
-	}
-	return parsePatternFile(data), nil
 }

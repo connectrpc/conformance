@@ -15,7 +15,6 @@
 package connectconformance
 
 import (
-	"bytes"
 	"strings"
 	"sync/atomic"
 )
@@ -31,26 +30,6 @@ type testTrie struct {
 	// matched is used to verify that all paths in the trie are valid
 	// and correspond to at least one test case
 	matched atomic.Int32
-}
-
-// parsePatternFile creates a testTrie from the given configuration
-// data that represents a set of test name patterns (like the set
-// of known failing test cases).
-func parsePatternFile(data []byte) *testTrie {
-	lines := bytes.Split(data, []byte{'\n'})
-	var patterns testTrie
-	for _, line := range lines {
-		line := bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-		if line[0] == '#' {
-			// comment line
-			continue
-		}
-		patterns.addPattern(string(line))
-	}
-	return &patterns
 }
 
 func parsePatterns(patterns []string) *testTrie {

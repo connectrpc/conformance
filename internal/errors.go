@@ -16,6 +16,8 @@ package internal
 
 import (
 	"errors"
+	"fmt"
+	"strings"
 
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
@@ -96,4 +98,15 @@ func ConvertProtoToConnectError(err *v1.Error) *connect.Error {
 		connectErr.AddDetail(connectDetail)
 	}
 	return connectErr
+}
+
+// EnsureFileName ensures that the given error includes the given filename. If it
+// does not, it wraps the error in one that does include the filename. This is
+// used to ensure that file-system-specific errors have good messages and
+// unambiguously indicate which file was the cause of the error.
+func EnsureFileName(err error, filename string) error {
+	if strings.Contains(err.Error(), filename) {
+		return err // already contains filename, nothing else to do
+	}
+	return fmt.Errorf("%s: %w", filename, err)
 }
