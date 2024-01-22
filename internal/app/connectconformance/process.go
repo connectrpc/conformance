@@ -50,6 +50,13 @@ type processController interface {
 
 type processStarter func(ctx context.Context, pipeStderr bool) (*process, error)
 
+type processInfo struct {
+	name            string
+	start           processStarter
+	isReferenceImpl bool
+	isGrpcImpl      bool
+}
+
 // runCommand returns a process starter that invokes the given command-line in
 // a separate OS process.
 func runCommand(command []string) processStarter {

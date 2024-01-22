@@ -40,16 +40,18 @@ const timeoutCheckGracePeriodMillis = 500
 // log writer. It can also incorporate data provided out-of-band by a reference
 // server, when testing a client implementation.
 type testResults struct {
-	knownFailing *knownFailingTrie
+	knownFailing *testTrie
+	knownFlaky   *testTrie
 
 	mu             sync.Mutex
 	outcomes       map[string]testOutcome
 	serverSideband map[string]string
 }
 
-func newResults(knownFailing *knownFailingTrie) *testResults {
+func newResults(knownFailing, knownFlaky *testTrie) *testResults {
 	return &testResults{
 		knownFailing:   knownFailing,
+		knownFlaky:     knownFlaky,
 		outcomes:       map[string]testOutcome{},
 		serverSideband: map[string]string{},
 	}
@@ -70,6 +72,7 @@ func (r *testResults) setOutcomeLocked(testCase string, setupError bool, err err
 		actualFailure: err,
 		setupError:    setupError,
 		knownFailing:  r.knownFailing.match(strings.Split(testCase, "/")),
+		knownFlaky:    r.knownFlaky.match(strings.Split(testCase, "/")),
 	}
 }
 
@@ -197,16 +200,20 @@ func (r *testResults) report(printer internal.Printer) bool {
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
-		expectError := outcome.knownFailing && !outcome.setupError
+		var expectError bool
+		if !outcome.setupError {
+			expectError = outcome.knownFailing ||
+				(outcome.knownFlaky && outcome.actualFailure != nil)
+		}
 		switch {
 		case !expectError && outcome.actualFailure != nil:
-			printer.Printf("FAILED: %s: %v", name, outcome.actualFailure)
+			printer.Printf("FAILED: %s:\n%s", name, indent(outcome.actualFailure.Error()))
 			failed++
 		case expectError && outcome.actualFailure == nil:
 			printer.Printf("FAILED: %s was expected to fail but did not", name)
 			failed++
 		case expectError && outcome.actualFailure != nil:
-			printer.Printf("INFO: %s failed (as expected): %v", name, outcome.actualFailure)
+			printer.Printf("INFO: %s failed (as expected):\n%s", name, indent(outcome.actualFailure.Error()))
 			expectedFailures++
 		default:
 			succeeded++
@@ -218,7 +225,7 @@ func (r *testResults) report(printer internal.Printer) bool {
 	}
 	printer.Printf("Total cases: %d\n%d passed, %d failed", len(r.outcomes), succeeded, failed)
 	if expectedFailures > 0 {
-		printer.Printf("(%d failed as expected due to being known failures.)", expectedFailures)
+		printer.Printf("(Another %d failed as expected due to being known failures/flakes.)", expectedFailures)
 	}
 	return failed == 0
 }
@@ -234,6 +241,8 @@ type testOutcome struct {
 	setupError bool
 	// true if this test case is known to fail
 	knownFailing bool
+	// true if this test case is known to be flaky
+	knownFlaky bool
 }
 
 type multiErrors []error
@@ -462,4 +471,12 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 		}
 	}
 	return errs
+}
+
+func indent(s string) string {
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		lines[i] = "\t" + line
+	}
+	return strings.Join(lines, "\n")
 }

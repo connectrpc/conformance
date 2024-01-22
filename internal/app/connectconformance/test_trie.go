@@ -15,68 +15,67 @@
 package connectconformance
 
 import (
-	"bytes"
 	"strings"
 	"sync/atomic"
 )
 
-// knownFailingTrie is a trie (aka prefix tree) of patterns of test case
+// testTrie is a trie (aka prefix tree) of patterns of test case
 // names that are known to fail.
-type knownFailingTrie struct {
+type testTrie struct {
 	// If true, this node represents a path that was inserted into the trie.
 	// If false, this node is an intermediate component of a path.
 	present  bool
-	children map[string]*knownFailingTrie
+	children map[string]*testTrie
 
 	// matched is used to verify that all paths in the trie are valid
 	// and correspond to at least one test case
 	matched atomic.Int32
 }
 
-// parseKnownFailing creates a knownFailingTrie from the given configuration
-// data for known failing test cases.
-func parseKnownFailing(data []byte) *knownFailingTrie {
-	lines := bytes.Split(data, []byte{'\n'})
-	var knownFailing knownFailingTrie
-	for _, line := range lines {
-		line := bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
-		if line[0] == '#' {
-			// comment line
-			continue
-		}
-		knownFailing.add(strings.Split(string(line), "/"))
+func parsePatterns(patterns []string) *testTrie {
+	if len(patterns) == 0 {
+		return nil
 	}
-	return &knownFailing
+	var result testTrie
+	for _, pattern := range patterns {
+		result.addPattern(pattern)
+	}
+	return &result
 }
 
-func (k *knownFailingTrie) add(components []string) {
+func (tt *testTrie) addPattern(pattern string) {
+	tt.add(strings.Split(pattern, "/"))
+}
+
+func (tt *testTrie) add(components []string) {
 	if len(components) == 0 {
-		k.present = true
+		tt.present = true
 		return
 	}
-	if k.children == nil {
-		k.children = map[string]*knownFailingTrie{}
+	if tt.children == nil {
+		tt.children = map[string]*testTrie{}
 	}
 	first, rest := components[0], components[1:]
-	child := k.children[first]
+	child := tt.children[first]
 	if child == nil {
-		child = &knownFailingTrie{}
-		k.children[first] = child
+		child = &testTrie{}
+		tt.children[first] = child
 	}
 	child.add(rest)
 }
 
-func (k *knownFailingTrie) match(components []string) bool {
+func (tt *testTrie) matchPattern(pattern string) bool {
+	return tt.match(strings.Split(pattern, "/"))
+}
+
+func (tt *testTrie) match(components []string) bool {
 	if len(components) == 0 {
-		if k.present {
-			k.matched.Add(1)
+		if tt.present {
+			tt.matched.Add(1)
 			return true
 		}
 		// See if there's a double-wildcard that may match the empty remaining components.
-		child := k.children["**"]
+		child := tt.children["**"]
 		if child != nil && child.present {
 			child.matched.Add(1)
 			return true
@@ -84,17 +83,17 @@ func (k *knownFailingTrie) match(components []string) bool {
 		return false
 	}
 	first, rest := components[0], components[1:]
-	child := k.children[first]
+	child := tt.children[first]
 	if child != nil && child.match(rest) {
 		return true
 	}
-	child = k.children["*"]
+	child = tt.children["*"]
 	if child != nil && child.match(rest) {
 		return true
 	}
 
 	// ** can match zero or more components
-	child = k.children["**"]
+	child = tt.children["**"]
 	if child == nil {
 		return false
 	}
@@ -109,11 +108,17 @@ func (k *knownFailingTrie) match(components []string) bool {
 	}
 }
 
-func (k *knownFailingTrie) findUnmatched(prefix string, unmatched map[string]struct{}) {
-	if k.present && k.matched.Load() == 0 {
+func (tt *testTrie) allUnmatched() map[string]struct{} {
+	unmatched := map[string]struct{}{}
+	tt.findUnmatched("", unmatched)
+	return unmatched
+}
+
+func (tt *testTrie) findUnmatched(prefix string, unmatched map[string]struct{}) {
+	if tt.present && tt.matched.Load() == 0 {
 		unmatched[prefix] = struct{}{}
 	}
-	for next, child := range k.children {
+	for next, child := range tt.children {
 		var childPrefix string
 		if prefix == "" {
 			childPrefix = next
@@ -124,12 +129,12 @@ func (k *knownFailingTrie) findUnmatched(prefix string, unmatched map[string]str
 	}
 }
 
-func (k *knownFailingTrie) length() int {
+func (tt *testTrie) length() int {
 	var result int
-	if k.present {
+	if tt.present {
 		result++
 	}
-	for _, child := range k.children {
+	for _, child := range tt.children {
 		result += child.length()
 	}
 	return result

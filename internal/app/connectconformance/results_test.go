@@ -30,29 +30,35 @@ import (
 
 func TestResults_SetOutcome(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("foo/bar/2", true, errors.New("fail"))
 	results.setOutcome("foo/bar/3", false, errors.New("fail"))
 	results.setOutcome("known-to-fail/1", false, nil)
 	results.setOutcome("known-to-fail/2", true, errors.New("fail"))
 	results.setOutcome("known-to-fail/3", false, errors.New("fail"))
+	results.setOutcome("known-to-flake/1", false, nil)
+	results.setOutcome("known-to-flake/2", true, errors.New("flake"))
+	results.setOutcome("known-to-flake/3", false, errors.New("flake"))
 
 	logger := &linePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
 	lines := logger.errorLines()
-	require.Len(t, lines, 5)
-	require.Equal(t, lines[0], "FAILED: foo/bar/2: fail\n")
-	require.Equal(t, lines[1], "FAILED: foo/bar/3: fail\n")
+	require.Len(t, lines, 7)
+	require.Equal(t, lines[0], "FAILED: foo/bar/2:\n\tfail\n")
+	require.Equal(t, lines[1], "FAILED: foo/bar/3:\n\tfail\n")
 	require.Equal(t, lines[2], "FAILED: known-to-fail/1 was expected to fail but did not\n")
-	require.Equal(t, lines[3], "FAILED: known-to-fail/2: fail\n")
-	require.Equal(t, lines[4], "INFO: known-to-fail/3 failed (as expected): fail\n")
+	require.Equal(t, lines[3], "FAILED: known-to-fail/2:\n\tfail\n")
+	require.Equal(t, lines[4], "INFO: known-to-fail/3 failed (as expected):\n\tfail\n")
+	// since known-to-flake/1 is flaky, it is allowed to pass
+	require.Equal(t, lines[5], "FAILED: known-to-flake/2:\n\tflake\n")
+	require.Equal(t, lines[6], "INFO: known-to-flake/3 failed (as expected):\n\tflake\n")
 }
 
 func TestResults_FailedToStart(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	results.failedToStart([]*conformancev1.TestCase{
 		{Request: &conformancev1.ClientCompatRequest{TestName: "foo/bar/1"}},
 		{Request: &conformancev1.ClientCompatRequest{TestName: "known-to-fail/1"}},
@@ -63,14 +69,14 @@ func TestResults_FailedToStart(t *testing.T) {
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 2)
-	require.Equal(t, lines[0], "FAILED: foo/bar/1: fail\n")
+	require.Equal(t, lines[0], "FAILED: foo/bar/1:\n\tfail\n")
 	// Marked as failure even though expected to fail because it failed to start.
-	require.Equal(t, lines[1], "FAILED: known-to-fail/1: fail\n")
+	require.Equal(t, lines[1], "FAILED: known-to-fail/1:\n\tfail\n")
 }
 
 func TestResults_FailRemaining(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("known-to-fail/1", false, errors.New("fail"))
 	results.failRemaining([]*conformancev1.TestCase{
@@ -85,17 +91,17 @@ func TestResults_FailRemaining(t *testing.T) {
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 3)
-	require.Equal(t, lines[0], "FAILED: foo/bar/2: something went wrong\n")
-	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected): fail\n")
+	require.Equal(t, lines[0], "FAILED: foo/bar/2:\n\tsomething went wrong\n")
+	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected):\n\tfail\n")
 	// Marked as failure even though expected to fail because failRemaining is
 	// used when a process under test dies (so this error is not due to lack of
 	// conformance).
-	require.Equal(t, lines[2], "FAILED: known-to-fail/2: something went wrong\n")
+	require.Equal(t, lines[2], "FAILED: known-to-fail/2:\n\tsomething went wrong\n")
 }
 
 func TestResults_Failed(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	results.failed("foo/bar/1", &conformancev1.ClientErrorResult{Message: "fail"})
 	results.failed("known-to-fail/1", &conformancev1.ClientErrorResult{Message: "fail"})
 
@@ -104,13 +110,13 @@ func TestResults_Failed(t *testing.T) {
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 2)
-	require.Equal(t, lines[0], "FAILED: foo/bar/1: fail\n")
-	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected): fail\n")
+	require.Equal(t, lines[0], "FAILED: foo/bar/1:\n\tfail\n")
+	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected):\n\tfail\n")
 }
 
 func TestResults_Assert(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	payload1 := &conformancev1.ClientResponseResult{
 		Payloads: []*conformancev1.ConformancePayload{
 			{Data: []byte{0, 1, 2, 3, 4}},
@@ -133,10 +139,10 @@ func TestResults_Assert(t *testing.T) {
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 6)
-	require.Contains(t, lines[0], "FAILED: foo/bar/1: ")
-	require.Contains(t, lines[1], "FAILED: foo/bar/2: ")
-	require.Contains(t, lines[2], "INFO: known-to-fail/1 failed (as expected): ")
-	require.Contains(t, lines[3], "INFO: known-to-fail/2 failed (as expected): ")
+	require.Contains(t, lines[0], "FAILED: foo/bar/1:\n\t")
+	require.Contains(t, lines[1], "FAILED: foo/bar/2:\n\t")
+	require.Contains(t, lines[2], "INFO: known-to-fail/1 failed (as expected):\n\t")
+	require.Contains(t, lines[3], "INFO: known-to-fail/2 failed (as expected):\n\t")
 	require.Equal(t, lines[4], "FAILED: known-to-fail/3 was expected to fail but did not\n")
 	require.Equal(t, lines[5], "FAILED: known-to-fail/4 was expected to fail but did not\n")
 }
@@ -682,7 +688,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			results := newResults(&knownFailingTrie{})
+			results := newResults(&testTrie{}, &testTrie{})
 
 			expected := &conformancev1.ClientResponseResult{}
 			err := protojson.Unmarshal(([]byte)(testCase.expected), expected)
@@ -716,7 +722,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 
 func TestResults_ServerSideband(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("foo/bar/2", false, errors.New("fail"))
 	results.setOutcome("foo/bar/3", false, nil)
@@ -731,15 +737,15 @@ func TestResults_ServerSideband(t *testing.T) {
 	require.False(t, success)
 	lines := logger.errorLines()
 	require.Len(t, lines, 4)
-	require.Equal(t, lines[0], "FAILED: foo/bar/2: something awkward in wire format; fail\n")
-	require.Equal(t, lines[1], "FAILED: foo/bar/3: something awkward in wire format\n")
-	require.Equal(t, lines[2], "INFO: known-to-fail/1 failed (as expected): something awkward in wire format\n")
-	require.Equal(t, lines[3], "INFO: known-to-fail/2 failed (as expected): fail\n")
+	require.Equal(t, lines[0], "FAILED: foo/bar/2:\n\tsomething awkward in wire format; fail\n")
+	require.Equal(t, lines[1], "FAILED: foo/bar/3:\n\tsomething awkward in wire format\n")
+	require.Equal(t, lines[2], "INFO: known-to-fail/1 failed (as expected):\n\tsomething awkward in wire format\n")
+	require.Equal(t, lines[3], "INFO: known-to-fail/2 failed (as expected):\n\tfail\n")
 }
 
 func TestResults_Report(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing())
+	results := newResults(makeKnownFailing(), makeKnownFlaky())
 	logger := &linePrinter{}
 
 	// No test cases? Report success.
@@ -747,34 +753,45 @@ func TestResults_Report(t *testing.T) {
 	require.True(t, success)
 
 	// Only successful outcomes? Report success.
-	results = newResults(makeKnownFailing())
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("foo/bar/1", false, nil)
 	success = results.report(logger)
 	require.True(t, success)
 
 	// Unexpected failure? Report failure.
-	results = newResults(makeKnownFailing())
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("foo/bar/1", false, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.False(t, success)
 
 	// Unexpected failure during setup? Report failure.
-	results = newResults(makeKnownFailing())
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("foo/bar/1", true, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.False(t, success)
 
 	// Expected failure? Report success.
-	results = newResults(makeKnownFailing())
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("known-to-fail/1", false, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.True(t, success)
 
 	// Setup error from expected failure? Report failure (setup errors never acceptable).
-	results = newResults(makeKnownFailing())
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
 	results.setOutcome("known-to-fail/1", true, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.False(t, success)
+
+	// Flaky? Report success whether it passes or fails
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
+	results.setOutcome("known-to-flake/1", false, nil) // succeeds
+	success = results.report(logger)
+	require.True(t, success)
+
+	results = newResults(makeKnownFailing(), makeKnownFlaky())
+	results.setOutcome("known-to-flake/1", false, errors.New("ruh roh"))
+	success = results.report(logger)
+	require.True(t, success)
 }
 
 func TestCanonicalizeHeaderVals(t *testing.T) {
@@ -833,10 +850,12 @@ func TestCanonicalizeHeaderVals(t *testing.T) {
 	}
 }
 
-func makeKnownFailing() *knownFailingTrie {
-	var trie knownFailingTrie
-	trie.add([]string{"known-to-fail", "**"})
-	return &trie
+func makeKnownFailing() *testTrie {
+	return parsePatterns([]string{"known-to-fail/**"})
+}
+
+func makeKnownFlaky() *testTrie {
+	return parsePatterns([]string{"known-to-flake/**"})
 }
 
 type linePrinter struct {
