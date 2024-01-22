@@ -22,7 +22,8 @@ import (
 
 // builder accumulates events to build a trace.
 type builder struct {
-	start time.Time
+	collector Collector
+	start     time.Time
 
 	mu                  sync.Mutex
 	trace               Trace
@@ -33,14 +34,15 @@ type builder struct {
 // returned builder will already have a RequestStart event, based on
 // the given request, so callers should NOT explicitly call builder.add
 // to add such an event.
-func newBuilder(req *http.Request) *builder {
+func newBuilder(req *http.Request, collector Collector) *builder {
 	testName := req.Header.Get("x-test-case-name")
 	return &builder{
+		collector: collector,
+		start:     time.Now(),
 		trace: Trace{
 			TestName: testName,
 			Events:   []Event{&RequestStart{Request: req}},
 		},
-		start: time.Now(),
 	}
 }
 
@@ -76,7 +78,7 @@ func (b *builder) add(event Event) {
 }
 
 // build builds the trace and provides the data to the given Tracer.
-func (b *builder) build(tracer *Tracer) {
+func (b *builder) build() {
 	b.mu.Lock()
 	trace := b.trace
 	b.trace = Trace{} // reset; subsequent calls to add or build ignored
@@ -85,5 +87,5 @@ func (b *builder) build(tracer *Tracer) {
 	if trace.TestName == "" {
 		return
 	}
-	tracer.Complete(trace)
+	b.collector.Complete(trace)
 }

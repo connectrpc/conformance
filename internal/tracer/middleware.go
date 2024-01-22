@@ -25,36 +25,35 @@ import (
 
 // TracingRoundTripper applies tracing to the given transport. The returned
 // round tripper will record traces of all operations to the given tracer.
-func TracingRoundTripper(transport http.RoundTripper, tracer *Tracer) http.RoundTripper {
+func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.RoundTripper {
 	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-		builder := newBuilder(req)
+		builder := newBuilder(req, collector)
 		req = req.Clone(req.Context())
-		req.Body = newReader(req.Header, req.Body, true, builder, tracer)
+		req.Body = newReader(req.Header, req.Body, true, builder)
 		resp, err := transport.RoundTrip(req)
 		if err != nil {
 			builder.add(&ResponseError{Err: err})
-			builder.build(tracer)
+			builder.build()
 			return nil, err
 		}
 		builder.add(&ResponseStart{Response: resp})
 		respClone := *resp
-		respClone.Body = newReader(resp.Header, resp.Body, false, builder, tracer)
+		respClone.Body = newReader(resp.Header, resp.Body, false, builder)
 		return &respClone, nil
 	})
 }
 
 // TracingHandler applies tracing middleware to the given handler. The returned
 // handler will record traces of all operations to the given tracer.
-func TracingHandler(handler http.Handler, tracer *Tracer) http.Handler {
+func TracingHandler(handler http.Handler, collector Collector) http.Handler {
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-		builder := newBuilder(req)
+		builder := newBuilder(req, collector)
 		req = req.Clone(req.Context())
-		req.Body = newReader(req.Header, req.Body, true, builder, tracer)
+		req.Body = newReader(req.Header, req.Body, true, builder)
 		traceWriter := &tracingResponseWriter{
 			respWriter: respWriter,
 			req:        req,
 			builder:    builder,
-			tracer:     tracer,
 		}
 
 		handler.ServeHTTP(
@@ -70,7 +69,6 @@ type tracingResponseWriter struct {
 	respWriter http.ResponseWriter
 	req        *http.Request
 	builder    *builder
-	tracer     *Tracer
 	started    bool
 	resp       *http.Response
 	finished   bool
@@ -161,7 +159,7 @@ func (t *tracingResponseWriter) tryFinish(err error) {
 	t.dataTracer.emitUnfinished()
 	t.builder.add(&ResponseBodyEnd{Err: err})
 	t.setTrailers()
-	t.builder.build(t.tracer)
+	t.builder.build()
 }
 
 func (t *tracingResponseWriter) setTrailers() {

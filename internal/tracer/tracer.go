@@ -142,6 +142,17 @@ func (t *Trace) Print(p internal.Printer) {
 	}
 }
 
+// Collector is a consumer of traces. This is usually an
+// instance of *Tracer, but is an interface so that the implementation
+// can vary, even allowing decorating or intercepting the method on
+// *Tracer.
+type Collector interface {
+	// Complete accepts a trace once it is completed.
+	Complete(Trace)
+}
+
+var _ Collector = (*Tracer)(nil)
+
 // Event is a single item in a sequence of activity for an HTTP operation.
 type Event interface {
 	setEventOffset(time.Duration)

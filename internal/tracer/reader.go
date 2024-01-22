@@ -34,20 +34,18 @@ const prefixLen = 5
 type tracingReader struct {
 	reader    io.ReadCloser
 	builder   *builder
-	tracer    *Tracer
 	isRequest bool
 	closed    atomic.Bool
 
 	dataTracer dataTracer
 }
 
-func newReader(headers http.Header, reader io.ReadCloser, isRequest bool, builder *builder, tracer *Tracer) io.ReadCloser {
+func newReader(headers http.Header, reader io.ReadCloser, isRequest bool, builder *builder) io.ReadCloser {
 	isStream, decompressor := propertiesFromHeaders(headers)
 	return &tracingReader{
 		reader:    reader,
 		isRequest: isRequest,
 		builder:   builder,
-		tracer:    tracer,
 		dataTracer: dataTracer{
 			isRequest:        isRequest,
 			isStreamProtocol: isStream,
@@ -94,7 +92,7 @@ func (t *tracingReader) tryFinish(err error) {
 
 	// On the response side, when the body reaches the end, whole thing is done.
 	t.builder.add(&ResponseBodyEnd{Err: err})
-	t.builder.build(t.tracer)
+	t.builder.build()
 }
 
 // dataTracer is responsible for translating bytes read/written into trace events.
