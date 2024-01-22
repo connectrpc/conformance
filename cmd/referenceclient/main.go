@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-	err := referenceclient.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr)
+	err := referenceclient.Run(context.Background(), os.Args, os.Stdin, os.Stdout, os.Stderr, nil)
 	if err != nil {
 		log.Fatalf("an error occurred running the reference client: %s", err.Error())
 	}
