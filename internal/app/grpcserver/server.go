@@ -130,10 +130,19 @@ func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listen
 }
 
 func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Listener) error {
+	grpcWebServer := grpcweb.WrapServer(server,
+		// The server needs a lenient cors setup so that it can handle testing
+		// browser clients.
+		grpcweb.WithOriginFunc(func(string) bool {
+			return true
+		}),
+	)
+
 	httpServer := http.Server{
-		Handler:           h2c.NewHandler(grpcweb.WrapServer(server), &http2.Server{}),
+		Handler:           h2c.NewHandler(grpcWebServer, &http2.Server{}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
+
 	var serveError error
 	serveDone := make(chan struct{})
 	go func() {

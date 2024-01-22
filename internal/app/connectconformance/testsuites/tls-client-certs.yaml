@@ -16,10 +16,10 @@ testCases:
           responseDefinition:
             responseHeaders:
               - name: x-custom-header
-                value: ["foo","bar","baz"]
+                value: ["foo"]
             responseData: "dGVzdCByZXNwb25zZQ=="
             responseTrailers:
               - name: x-custom-trailer
-                value: ["bing","quux"]
+                value: ["bing"]
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="

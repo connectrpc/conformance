@@ -1,4 +1,9 @@
 name: Timeouts
+# Note that we need to set a responseDelayMs of at least one second or
+# more to accommodate logic in the gRPC-web client which sets the timeout
+# on the XHR request to be either 1s or 110% of the timeout value (whichever is greater).
+# See https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientbase.js#L335-L342
+# for more context.
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
@@ -11,7 +16,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
         responseData: "dGVzdCByZXNwb25zZQ=="
-        responseDelayMs: 500
+        responseDelayMs: 1500
   # Override
   expectedResponse:
     error:
@@ -27,7 +32,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
         responseData: "dGVzdCByZXNwb25zZQ=="
-        responseDelayMs: 500
+        responseDelayMs: 1500
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
   # Override
@@ -44,7 +49,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       responseDefinition:
-        responseDelayMs: 500
+        responseDelayMs: 1500
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -62,7 +67,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 500
+        responseDelayMs: 1500
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
@@ -82,7 +87,7 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
-        responseDelayMs: 500
+        responseDelayMs: 1500
         responseData:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="

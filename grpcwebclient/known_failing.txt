@@ -1,0 +1,29 @@
+# The gRPC-web client only supports true server streaming when using mode=grpcwebtext, which Connect doesn't support. Server streaming is still possible but all responses are buffered and delivered at the same time
+# so we can't test cancellations after responses. In addition, even cancelling before receiving responses doesn't throw any sort of error, so we can't correctly verify a stream was canceled.
+Cancellation/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/server stream cancel after responses
+Cancellation/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/server stream cancel after zero responses
+Cancellation/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server stream cancel after responses
+Cancellation/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server stream cancel after zero responses
+
+# There is a bug in the gRPC-web client with handling duplicate trailer metadata for unary success responses.
+# This is because with a regular success response, the trailers are sent as actual trailers, which parses the trailers using this code:
+# https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientreadablestream.js#L367
+# And since that uses an object keyed to trailer name, it will eliminate dupes.
+# The error responses correctly return duplicate trailer metadata because with errors, the trailers are
+# sent as response headers from the server and these headers are not run through the parseHttp1Headers
+# function linked above. They are instead just set directly onto the returned error's metadata as returned from the server.
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/unary success with duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/unary success with duplicates
+
+# There is a bug in the gRPC-web client with handling duplicate trailer metadata for all server streaming responses.
+# This is because trailers are sent as actual trailers and which the client parses trailers using this code:
+# https://github.com/grpc/grpc-web/blob/83eec72cc3b6bb4c6d152ace7e246d98b808dd85/javascript/net/grpc/web/grpcwebclientreadablestream.js#L367
+# And since that uses an object keyed to trailer name, it will eliminate dupes.
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/server stream error with no responses and duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/server stream error with responses and duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/server stream no response with duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/(grpc server impl)/server stream success with duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server stream error with no responses and duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server stream error with responses and duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server stream no response with duplicates
+Duplicate Metadata/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server stream success with duplicates
