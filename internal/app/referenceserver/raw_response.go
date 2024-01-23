@@ -48,7 +48,10 @@ func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handle
 			msg := "missing x-test-case-name header"
 			if errorWriter.IsSupported(req) {
 				invalidArg := connect.NewError(connect.CodeInvalidArgument, errors.New(msg))
-				errorWriter.Write(respWriter, req, invalidArg)
+				err := errorWriter.Write(respWriter, req, invalidArg)
+				if err != nil {
+					http.Error(respWriter, err.Error(), http.StatusInternalServerError)
+				}
 			} else {
 				http.Error(respWriter, msg, http.StatusBadRequest)
 			}

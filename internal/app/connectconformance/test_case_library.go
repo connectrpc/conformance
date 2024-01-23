@@ -21,7 +21,6 @@ import (
 	"math"
 	"path"
 	"sort"
-	"strings"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -761,13 +760,6 @@ func allValues[T ~int32](m map[int32]string) []T {
 		return vals[i] < vals[j]
 	})
 	return vals
-}
-
-func ensureFileName(err error, filename string) error {
-	if strings.Contains(err.Error(), filename) {
-		return err // already contains filename, nothing else to do
-	}
-	return fmt.Errorf("%s: %w", filename, err)
 }
 
 func mapHTTPtoConnectCode(httpCode uint32) int32 {
