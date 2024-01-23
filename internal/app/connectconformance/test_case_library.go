@@ -514,7 +514,11 @@ func hasStandardResponseDefinition(reqs []*anypb.Any) bool {
 			return true
 		}
 	case streamResponseDefiner:
-		if msg.GetResponseDefinition().GetResponseHeaders() != nil || msg.GetResponseDefinition().GetResponseTrailers() != nil {
+		if msg.GetResponseDefinition().GetResponseHeaders() != nil ||
+			msg.GetResponseDefinition().GetResponseTrailers() != nil ||
+			msg.GetResponseDefinition().GetResponseData() != nil ||
+			msg.GetResponseDefinition().GetError() != nil ||
+			msg.GetResponseDefinition().GetResponseDelayMs() != 0 {
 			return true
 		}
 	}
