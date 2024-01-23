@@ -36,6 +36,7 @@ import (
 	"connectrpc.com/conformance/internal/compression"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
+	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -47,7 +48,7 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) (retErr error) {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser, trace *tracer.Tracer) (retErr error) {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0))*4, "the number of parallel RPCs to issue")
@@ -109,7 +110,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 			defer wg.Done()
 			defer sema.Release(1)
 
-			result, err := invoke(ctx, &req)
+			result, err := invoke(ctx, &req, trace)
 
 			// Build the result for the out writer.
 			resp := &v1.ClientCompatResponse{
@@ -146,7 +147,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientResponseResult, error) {
+func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Tracer) (*v1.ClientResponseResult, error) {
 	tlsConf, err := createTLSConfig(req)
 	if err != nil {
 		return nil, err
@@ -214,6 +215,9 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientRespons
 		}}
 	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
+	}
+	if trace != nil {
+		transport = tracer.TracingRoundTripper(transport, trace)
 	}
 
 	if req.RawRequest != nil {

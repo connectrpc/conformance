@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"sort"
@@ -32,6 +33,7 @@ import (
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/protobuf/proto"
 )
@@ -54,6 +56,7 @@ type Flags struct {
 	TLSKeyFile           string
 	ServerPort           uint
 	ServerBind           string
+	HTTPTrace            bool
 }
 
 func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer) (bool, error) {
@@ -221,6 +224,11 @@ func run( //nolint:gocyclo
 		}
 	}
 
+	var trace *tracer.Tracer
+	if flags.HTTPTrace {
+		trace = &tracer.Tracer{}
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -232,7 +240,9 @@ func run( //nolint:gocyclo
 				start: runInProcess([]string{
 					"reference-client",
 					"-p", strconv.Itoa(int(flags.Parallelism)),
-				}, referenceclient.Run),
+				}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+					return referenceclient.Run(ctx, args, inReader, outWriter, errWriter, trace)
+				}),
 				isReferenceImpl: true,
 			},
 			{
@@ -252,7 +262,7 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	results := newResults(knownFailing, knownFlaky)
+	results := newResults(knownFailing, knownFlaky, trace)
 
 	for _, clientInfo := range clients {
 		clientProcess, err := runClient(ctx, clientInfo.start)
@@ -272,7 +282,9 @@ func run( //nolint:gocyclo
 						"-bind", flags.ServerBind,
 						"-cert", flags.TLSCertFile,
 						"-key", flags.TLSKeyFile,
-					}, referenceserver.RunInReferenceMode),
+					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+						return referenceserver.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
+					}),
 					isReferenceImpl: true,
 				},
 				{
@@ -349,6 +361,7 @@ func run( //nolint:gocyclo
 							errPrinter,
 							results,
 							clientProcess,
+							trace,
 						)
 					}(ctx, clientInfo, serverInfo, svrInstance)
 				}

@@ -26,6 +26,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -51,6 +52,7 @@ func runTestCasesForServer(
 	errPrinter internal.Printer,
 	results *testResults,
 	client clientRunner,
+	tracer *tracer.Tracer,
 ) {
 	expectations := make(map[string]*conformancev1.ClientResponseResult, len(testCases))
 	for _, testCase := range testCases {
@@ -181,6 +183,7 @@ func runTestCasesForServer(
 			}
 		}
 
+		tracer.Init(req.TestName)
 		wg.Add(1)
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()
