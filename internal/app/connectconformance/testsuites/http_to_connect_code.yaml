@@ -1,15 +1,11 @@
-name: Raw
+name: HTTP to Connect Code Mapping
 mode: TEST_MODE_CLIENT
 testCases:
-# Unary Tests -----------------------------------------------------------------
 - request:
-    testName: unary success
+    testName: unary canceled error
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:

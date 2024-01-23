@@ -544,31 +544,38 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		ResponseTrailers: def.ResponseTrailers,
 	}
 
-	switch respType := def.Response.(type) {
-	case *conformancev1.UnaryResponseDefinition_Error:
-		// If an error was specified, it should be returned in the response
-		expected.Error = respType.Error
+	if def.RawResponse != nil {
+		fmt.Println("harr")
+		expected.Error = &conformancev1.Error{
+			Code: 2,
+		}
+	} else {
+		switch respType := def.Response.(type) {
+		case *conformancev1.UnaryResponseDefinition_Error:
+			// If an error was specified, it should be returned in the response
+			expected.Error = respType.Error
 
-		// Unary responses that return an error should have the request info
-		// in the error details
-		reqInfoAny, err := anypb.New(reqInfo)
-		if err != nil {
-			return connect.NewError(connect.CodeInternal, err)
+			// Unary responses that return an error should have the request info
+			// in the error details
+			reqInfoAny, err := anypb.New(reqInfo)
+			if err != nil {
+				return connect.NewError(connect.CodeInternal, err)
+			}
+			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
+		case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
+			// If response data was specified for the response (or nothing at all),
+			// the server should echo back the request message and headers in the response
+			payload := &conformancev1.ConformancePayload{
+				RequestInfo: reqInfo,
+			}
+			// If response data was specified for the response, it should be returned
+			if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
+				payload.Data = respType.ResponseData
+			}
+			expected.Payloads = []*conformancev1.ConformancePayload{payload}
+		default:
+			return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 		}
-		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
-	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
-		// If response data was specified for the response (or nothing at all),
-		// the server should echo back the request message and headers in the response
-		payload := &conformancev1.ConformancePayload{
-			RequestInfo: reqInfo,
-		}
-		// If response data was specified for the response, it should be returned
-		if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
-			payload.Data = respType.ResponseData
-		}
-		expected.Payloads = []*conformancev1.ConformancePayload{payload}
-	default:
-		return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 	}
 
 	testCase.ExpectedResponse = expected
