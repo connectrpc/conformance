@@ -44,7 +44,7 @@ import (
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-	return run(ctx, true, args, inReader, outWriter, errWriter)
+	return run(ctx, false, args, inReader, outWriter, errWriter)
 }
 
 // RunInReferenceMode is just like Run except that it performs additional checks

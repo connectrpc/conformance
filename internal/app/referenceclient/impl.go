@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -119,19 +118,14 @@ func (i *invoker) unary(
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
 	// Invoke the Unary call
-	fmt.Fprintln(os.Stderr, fmt.Sprintf("%+v", request))
 	resp, err := i.client.Unary(ctx, request)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		fmt.Fprintln(os.Stderr, connectErr)
 		headers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
-		fmt.Fprintln(os.Stderr, protoErr)
 	} else {
 		// If the call was successful, get the headers and trailers
 		headers = internal.ConvertToProtoHeader(resp.Header())
