@@ -545,9 +545,11 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	}
 
 	if def.RawResponse != nil {
-		fmt.Println("harr")
-		expected.Error = &conformancev1.Error{
-			Code: 2,
+		// TODO - Handle other raw response values
+		if def.RawResponse.StatusCode != 0 {
+			expected.Error = &conformancev1.Error{
+				Code: mapHTTPtoConnectCode(def.RawResponse.StatusCode),
+			}
 		}
 	} else {
 		switch respType := def.Response.(type) {
@@ -709,4 +711,33 @@ func ensureFileName(err error, filename string) error {
 		return err // already contains filename, nothing else to do
 	}
 	return fmt.Errorf("%s: %w", filename, err)
+}
+
+func mapHTTPtoConnectCode(httpCode uint32) int32 {
+	var connectCode connect.Code
+	switch httpCode {
+	case 400:
+		connectCode = connect.CodeInvalidArgument
+	case 401:
+		connectCode = connect.CodeUnauthenticated
+	case 403:
+		connectCode = connect.CodePermissionDenied
+	case 404:
+		connectCode = connect.CodeUnimplemented
+	case 408:
+		connectCode = connect.CodeDeadlineExceeded
+	case 409:
+		connectCode = connect.CodeAborted
+	case 412:
+		connectCode = connect.CodeFailedPrecondition
+	case 413, 431:
+		connectCode = connect.CodeResourceExhausted
+	case 415:
+		connectCode = connect.CodeInternal
+	case 429, 502, 503, 504:
+		connectCode = connect.CodeUnavailable
+	default:
+		connectCode = connect.CodeUnknown
+	}
+	return int32(connectCode)
 }
