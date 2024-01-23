@@ -22,17 +22,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseKnownFailing(t *testing.T) {
+func TestParsePatterns(t *testing.T) {
 	t.Parallel()
-	trie := parseKnownFailing([]byte(`
-		# This is a comment
-		This is a test pattern/foo/bar/baz/test-case-name
-		All tests in this suite/**
-		**/all-test-cases-with-this-name
-		Another suite/*/*/*/another-test-case
-		A suite with interior double wildcard/**/foo/bar
-
-		# Another comment`))
+	trie := parsePatterns([]string{
+		"This is a test pattern/foo/bar/baz/test-case-name",
+		"All tests in this suite/**",
+		"**/all-test-cases-with-this-name",
+		"Another suite/*/*/*/another-test-case",
+		"A suite with interior double wildcard/**/foo/bar",
+	})
 
 	testCases := []struct {
 		testName string
@@ -106,17 +104,18 @@ func TestParseKnownFailing(t *testing.T) {
 	}
 }
 
-func TestKnownFailingTrie_FindUnmatched(t *testing.T) {
+func TestTestTrie_FindUnmatched(t *testing.T) {
 	t.Parallel()
-	trie := parseKnownFailing([]byte(`
-		Unmatched test suite/**
-		Simple test suite/that/has/no/wildcards
-		All tests in this suite/**
-		**/all-test-cases-with-this-name
-		**/unmatched-test-case
-		Another suite/*/*/*/another-test-case
-		A suite with interior double wildcard/**/test-case
-		Another unmatched/test/*/with/*/wildcards`))
+	trie := parsePatterns([]string{
+		"Unmatched test suite/**",
+		"Simple test suite/that/has/no/wildcards",
+		"All tests in this suite/**",
+		"**/all-test-cases-with-this-name",
+		"**/unmatched-test-case",
+		"Another suite/*/*/*/another-test-case",
+		"A suite with interior double wildcard/**/test-case",
+		"Another unmatched/test/*/with/*/wildcards",
+	})
 
 	testCaseNames := []string{
 		"Simple test suite/that/has/no/wildcards",

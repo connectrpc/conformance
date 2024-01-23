@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 
+	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/bufbuild/protoyaml-go"
 )
@@ -66,7 +67,7 @@ func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 			Path: configFileName,
 		}
 		if err := opts.Unmarshal(data, &config); err != nil {
-			return nil, ensureFileName(err, configFileName)
+			return nil, internal.EnsureFileName(err, configFileName)
 		}
 	}
 	if config.Features == nil {

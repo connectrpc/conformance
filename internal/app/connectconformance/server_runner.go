@@ -26,6 +26,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -51,6 +52,7 @@ func runTestCasesForServer(
 	errPrinter internal.Printer,
 	results *testResults,
 	client clientRunner,
+	tracer *tracer.Tracer,
 ) {
 	expectations := make(map[string]*conformancev1.ClientResponseResult, len(testCases))
 	for _, testCase := range testCases {
@@ -148,29 +150,40 @@ func runTestCasesForServer(
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
 		req.ClientTlsCreds = clientCreds
+
+		// We always include test name in request header.
+		testCaseHeader := &conformancev1.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}}
+		req.RequestHeaders = append(req.RequestHeaders, testCaseHeader)
+		if req.RawRequest != nil {
+			req.RawRequest.Headers = append(req.RawRequest.Headers, testCaseHeader)
+		}
 		if isReferenceServer {
+			// The reference server wants more metadata in headers, to perform add'l validations.
 			httpMethod := http.MethodPost
 			if req.UseGetHttpMethod {
 				httpMethod = http.MethodGet
 			}
-			req.RequestHeaders = append(
-				req.RequestHeaders,
-				&conformancev1.Header{Name: "x-test-case-name", Value: []string{testCase.Request.TestName}},
-				&conformancev1.Header{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
-				&conformancev1.Header{Name: "x-expect-http-method", Value: []string{httpMethod}},
-				&conformancev1.Header{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
-				&conformancev1.Header{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
-				&conformancev1.Header{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
-				&conformancev1.Header{Name: "x-expect-tls", Value: []string{strconv.FormatBool(len(resp.PemCert) > 0)}},
-			)
+			extraHeaders := []*conformancev1.Header{
+				{Name: "x-expect-http-version", Value: []string{strconv.Itoa(int(req.HttpVersion))}},
+				{Name: "x-expect-http-method", Value: []string{httpMethod}},
+				{Name: "x-expect-protocol", Value: []string{strconv.Itoa(int(req.Protocol))}},
+				{Name: "x-expect-codec", Value: []string{strconv.Itoa(int(req.Codec))}},
+				{Name: "x-expect-compression", Value: []string{strconv.Itoa(int(req.Compression))}},
+				{Name: "x-expect-tls", Value: []string{strconv.FormatBool(len(resp.PemCert) > 0)}},
+			}
 			if clientCreds != nil {
-				req.RequestHeaders = append(
-					req.RequestHeaders,
+				extraHeaders = append(
+					extraHeaders,
 					&conformancev1.Header{Name: "x-expect-client-cert", Value: []string{internal.ClientCertName}},
 				)
 			}
+			req.RequestHeaders = append(req.RequestHeaders, extraHeaders...)
+			if req.RawRequest != nil {
+				req.RawRequest.Headers = append(req.RawRequest.Headers, extraHeaders...)
+			}
 		}
 
+		tracer.Init(req.TestName)
 		wg.Add(1)
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()

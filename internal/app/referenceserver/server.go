@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"net/http"
 	"os"
@@ -34,6 +35,7 @@ import (
 	"connectrpc.com/conformance/internal/compression"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
+	"connectrpc.com/conformance/internal/tracer"
 	connect "connectrpc.com/connect"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
@@ -44,17 +46,17 @@ import (
 
 // Run runs the server according to server config read from the 'in' reader.
 func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-	return run(ctx, false, args, inReader, outWriter, errWriter)
+	return run(ctx, false, args, inReader, outWriter, errWriter, nil)
 }
 
 // RunInReferenceMode is just like Run except that it performs additional checks
 // that only the conformance reference server runs. These checks do not work if
 // the server is run as a server under test, only when run as a reference server.
-func RunInReferenceMode(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-	return run(ctx, true, args, inReader, outWriter, errWriter)
+func RunInReferenceMode(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser, tracer *tracer.Tracer) error {
+	return run(ctx, true, args, inReader, outWriter, errWriter, tracer)
 }
 
-func run(ctx context.Context, referenceMode bool, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+func run(ctx context.Context, referenceMode bool, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser, tracer *tracer.Tracer) error {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	host := flags.String("bind", internal.DefaultHost, "the bind address for the conformance server")
@@ -87,7 +89,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 
 	// Create an HTTP server based on the request
 	errPrinter := internal.NewPrinter(errWriter)
-	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), *tlsCert, *tlsKey, referenceMode, errPrinter)
+	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), *tlsCert, *tlsKey, referenceMode, errPrinter, tracer)
 	if err != nil {
 		return err
 	}
@@ -163,7 +165,7 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer) (httpServer, []byte, error) {
+func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	interceptors := []connect.Interceptor{serverNameHandlerInterceptor{}}
 	if referenceMode {
@@ -198,6 +200,9 @@ func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFi
 	if referenceMode {
 		handler = referenceServerChecks(handler, errPrinter)
 		handler = rawResponder(handler, errPrinter)
+	}
+	if trace != nil {
+		handler = tracer.TracingHandler(handler, trace)
 	}
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
@@ -283,6 +288,7 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		Handler:           handler,
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
+		ErrorLog:          nopLogger(),
 	}
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -301,6 +307,7 @@ func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		Handler:           handler,
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
+		ErrorLog:          nopLogger(),
 	}
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -345,4 +352,10 @@ func (s *http3Server) GracefulShutdown(_ time.Duration) error {
 
 func (s *http3Server) Addr() string {
 	return s.lis.Addr().String()
+}
+
+//nolint:forbidigo // must refer to log package in order to suppress it in net/http server
+func nopLogger() *log.Logger {
+	// TODO: enable logging via -v option or env variable?
+	return log.New(io.Discard, "", 0)
 }

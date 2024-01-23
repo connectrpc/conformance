@@ -388,6 +388,109 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 	// TODO: basic assertions about the embedded test suites?
 }
 
+func TestFilter(t *testing.T) {
+	t.Parallel()
+	allTestCaseNames := []string{
+		"Basic/foo/bar=baz/unary",
+		"Basic/foo/bar=baz/client stream",
+		"Basic/foo/bar=baz/server stream",
+		"Basic/foo/bar=baz/bidi stream",
+		"Basic/foo/bar=baz/(frobnitz)/unary",
+		"Basic/foo/bar=baz/(frobnitz)/client stream",
+		"Basic/foo/bar=baz/(frobnitz)/server stream",
+		"Basic/foo/bar=baz/(frobnitz)/bidi stream",
+		"Cancel/foo/bar=baz/unary",
+		"Cancel/foo/bar=baz/client stream",
+		"Cancel/foo/bar=baz/server stream",
+		"Cancel/foo/bar=baz/bidi stream",
+		"Cancel/foo/bar=baz/(frobnitz)/unary",
+		"Cancel/foo/bar=baz/(frobnitz)/client stream",
+		"Cancel/foo/bar=baz/(frobnitz)/server stream",
+		"Cancel/foo/bar=baz/(frobnitz)/bidi stream",
+		"Timeout/foo/bar=baz/unary",
+		"Timeout/foo/bar=baz/client stream",
+		"Timeout/foo/bar=baz/server stream",
+		"Timeout/foo/bar=baz/bidi stream",
+		"Timeout/foo/bar=baz/(frobnitz)/unary",
+		"Timeout/foo/bar=baz/(frobnitz)/client stream",
+		"Timeout/foo/bar=baz/(frobnitz)/server stream",
+		"Timeout/foo/bar=baz/(frobnitz)/bidi stream",
+	}
+	testCases := []struct {
+		name                       string
+		runPatterns, noRunPatterns []string
+		keepers                    []string
+	}{
+		{
+			name:    "no patterns",
+			keepers: allTestCaseNames,
+		},
+		{
+			name: "run patterns accept nothing",
+			runPatterns: []string{
+				"Foo/Bar/**",
+				"**/blah blah blah", //nolint:dupword
+			},
+			keepers: []string{},
+		},
+		{
+			name: "no-run patterns reject all",
+			noRunPatterns: []string{
+				"**/bar=baz/**",
+			},
+			keepers: []string{},
+		},
+		{
+			name: "combined",
+			runPatterns: []string{
+				"Basic/**",
+				"**/unary",
+			},
+			noRunPatterns: []string{
+				"**/(frobnitz)/**",
+				"**/bidi stream",
+			},
+			keepers: []string{
+				"Basic/foo/bar=baz/unary",
+				"Basic/foo/bar=baz/client stream",
+				"Basic/foo/bar=baz/server stream",
+				"Cancel/foo/bar=baz/unary",
+				"Timeout/foo/bar=baz/unary",
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			candidates := make([]*conformancev1.TestCase, len(allTestCaseNames))
+			for i, testCaseName := range allTestCaseNames {
+				candidates[i] = &conformancev1.TestCase{Request: &conformancev1.ClientCompatRequest{
+					TestName: testCaseName,
+				}}
+			}
+			filter := newFilter(parsePatterns(testCase.runPatterns), parsePatterns(testCase.noRunPatterns))
+			filtered := filter.apply(candidates)
+			assert.Len(t, filtered, len(testCase.keepers))
+			for i, testCaseName := range testCase.keepers {
+				if i >= len(filtered) {
+					break
+				}
+				assert.Equal(t, testCaseName, filtered[i].Request.TestName, "kept test case #%d", i+1)
+			}
+			keptSet := make(map[string]struct{}, len(testCase.keepers))
+			for _, testCaseName := range testCase.keepers {
+				keptSet[testCaseName] = struct{}{}
+			}
+			for i, testCaseName := range allTestCaseNames {
+				_, shouldKeep := keptSet[testCaseName]
+				keep := filter.accept(candidates[i])
+				assert.Equal(t, shouldKeep, keep, "filter.accept(%q)", testCaseName)
+			}
+		})
+	}
+}
+
 func TestExpandRequestData(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {

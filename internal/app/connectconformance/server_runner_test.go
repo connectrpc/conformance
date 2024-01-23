@@ -194,7 +194,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			results := newResults(&knownFailingTrie{})
+			results := newResults(&testTrie{}, &testTrie{}, nil)
 
 			var procAddr atomic.Pointer[process] // populated when server process created
 			var actualSvrRequest bytes.Buffer
@@ -223,14 +223,19 @@ func TestRunTestCasesForServer(t *testing.T) {
 				client.requestHookCount = testCase.svrKillAfter
 				expectedRequests = requests[:testCase.svrKillAfter]
 			}
-			if testCase.isReferenceServer {
-				copyOfRequests := make([]*conformancev1.ClientCompatRequest, len(expectedRequests))
-				// runner adds headers for the reference server
-				for i, req := range expectedRequests {
-					req = proto.Clone(req).(*conformancev1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
-					req.RequestHeaders = append(req.RequestHeaders,
-						&conformancev1.Header{Name: "x-test-case-name", Value: []string{req.TestName}},
-						// we didn't set this above, so they're all zero/unspecified
+			// runner adds headers
+			copyOfRequests := make([]*conformancev1.ClientCompatRequest, len(expectedRequests))
+			for i, req := range expectedRequests {
+				req = proto.Clone(req).(*conformancev1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
+				req.RequestHeaders = append(
+					req.RequestHeaders,
+					&conformancev1.Header{Name: "x-test-case-name", Value: []string{req.TestName}},
+				)
+				// more are set for reference server
+				if testCase.isReferenceServer {
+					// we didn't set these above in request definition, so they're all zero/unspecified
+					req.RequestHeaders = append(
+						req.RequestHeaders,
 						&conformancev1.Header{Name: "x-expect-http-version", Value: []string{"0"}},
 						&conformancev1.Header{Name: "x-expect-http-method", Value: []string{"POST"}},
 						&conformancev1.Header{Name: "x-expect-protocol", Value: []string{"0"}},
@@ -238,10 +243,10 @@ func TestRunTestCasesForServer(t *testing.T) {
 						&conformancev1.Header{Name: "x-expect-compression", Value: []string{"0"}},
 						&conformancev1.Header{Name: "x-expect-tls", Value: []string{"false"}},
 					)
-					copyOfRequests[i] = req
 				}
-				expectedRequests = copyOfRequests
+				copyOfRequests[i] = req
 			}
+			expectedRequests = copyOfRequests
 
 			responsesToSend := responses
 			if testCase.clientCloseAfter > 0 {
@@ -266,6 +271,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				discardPrinter{},
 				results,
 				&client,
+				nil,
 			)
 
 			if testCase.svrFailsToStart {

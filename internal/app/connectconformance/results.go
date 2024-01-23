@@ -16,6 +16,7 @@ package connectconformance
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"reflect"
@@ -23,9 +24,11 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"google.golang.org/protobuf/proto"
@@ -40,16 +43,23 @@ const timeoutCheckGracePeriodMillis = 500
 // log writer. It can also incorporate data provided out-of-band by a reference
 // server, when testing a client implementation.
 type testResults struct {
-	knownFailing *knownFailingTrie
+	knownFailing *testTrie
+	knownFlaky   *testTrie
+	tracer       *tracer.Tracer
+
+	traceWaitGroup sync.WaitGroup
 
 	mu             sync.Mutex
 	outcomes       map[string]testOutcome
+	traces         map[string]*tracer.Trace
 	serverSideband map[string]string
 }
 
-func newResults(knownFailing *knownFailingTrie) *testResults {
+func newResults(knownFailing, knownFlaky *testTrie, tracer *tracer.Tracer) *testResults {
 	return &testResults{
 		knownFailing:   knownFailing,
+		knownFlaky:     knownFlaky,
+		tracer:         tracer,
 		outcomes:       map[string]testOutcome{},
 		serverSideband: map[string]string{},
 	}
@@ -70,7 +80,38 @@ func (r *testResults) setOutcomeLocked(testCase string, setupError bool, err err
 		actualFailure: err,
 		setupError:    setupError,
 		knownFailing:  r.knownFailing.match(strings.Split(testCase, "/")),
+		knownFlaky:    r.knownFlaky.match(strings.Split(testCase, "/")),
 	}
+	r.fetchTrace(testCase)
+}
+
+//nolint:contextcheck,nolintlint // intentionally using context.Background; nolintlint incorrectly complains about this
+func (r *testResults) fetchTrace(testCase string) {
+	if r.tracer == nil {
+		return
+	}
+	r.traceWaitGroup.Add(1)
+	go func() {
+		defer r.traceWaitGroup.Done()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		trace, err := r.tracer.Await(ctx, testCase)
+		r.tracer.Clear(testCase)
+		if err != nil {
+			return
+		}
+
+		r.mu.Lock()
+		defer r.mu.Unlock()
+		outcome := r.outcomes[testCase]
+		if outcome.actualFailure == nil || outcome.setupError || outcome.knownFlaky || outcome.knownFailing {
+			return
+		}
+		if r.traces == nil {
+			r.traces = map[string]*tracer.Trace{}
+		}
+		r.traces[testCase] = trace
+	}()
 }
 
 // failedToStart marks all the given test cases with the given setup error.
@@ -183,6 +224,7 @@ func (r *testResults) processSidebandInfoLocked() {
 }
 
 func (r *testResults) report(printer internal.Printer) bool {
+	r.traceWaitGroup.Wait() // make sure all traces have been received
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if len(r.serverSideband) > 0 {
@@ -197,16 +239,26 @@ func (r *testResults) report(printer internal.Printer) bool {
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
-		expectError := outcome.knownFailing && !outcome.setupError
+		var expectError bool
+		if !outcome.setupError {
+			expectError = outcome.knownFailing ||
+				(outcome.knownFlaky && outcome.actualFailure != nil)
+		}
 		switch {
 		case !expectError && outcome.actualFailure != nil:
-			printer.Printf("FAILED: %s: %v", name, outcome.actualFailure)
+			printer.Printf("FAILED: %s:\n%s", name, indent(outcome.actualFailure.Error()))
+			trace := r.traces[name]
+			if trace != nil {
+				printer.Printf("---- HTTP Trace ----")
+				trace.Print(printer)
+				printer.Printf("--------------------")
+			}
 			failed++
 		case expectError && outcome.actualFailure == nil:
 			printer.Printf("FAILED: %s was expected to fail but did not", name)
 			failed++
 		case expectError && outcome.actualFailure != nil:
-			printer.Printf("INFO: %s failed (as expected): %v", name, outcome.actualFailure)
+			printer.Printf("INFO: %s failed (as expected):\n%s", name, indent(outcome.actualFailure.Error()))
 			expectedFailures++
 		default:
 			succeeded++
@@ -218,7 +270,7 @@ func (r *testResults) report(printer internal.Printer) bool {
 	}
 	printer.Printf("Total cases: %d\n%d passed, %d failed", len(r.outcomes), succeeded, failed)
 	if expectedFailures > 0 {
-		printer.Printf("(%d failed as expected due to being known failures.)", expectedFailures)
+		printer.Printf("(Another %d failed as expected due to being known failures/flakes.)", expectedFailures)
 	}
 	return failed == 0
 }
@@ -234,6 +286,8 @@ type testOutcome struct {
 	setupError bool
 	// true if this test case is known to fail
 	knownFailing bool
+	// true if this test case is known to be flaky
+	knownFlaky bool
 }
 
 type multiErrors []error
@@ -462,4 +516,12 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 		}
 	}
 	return errs
+}
+
+func indent(s string) string {
+	lines := strings.Split(s, "\n")
+	for i, line := range lines {
+		lines[i] = "\t" + line
+	}
+	return strings.Join(lines, "\n")
 }

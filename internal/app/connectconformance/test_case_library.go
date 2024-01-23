@@ -223,6 +223,59 @@ func (lib *testCaseLibrary) groupTestCases() {
 	}
 }
 
+func (lib *testCaseLibrary) allPermutations(clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
+	testCaseSlice := make([]*conformancev1.TestCase, 0, len(lib.testCases))
+	for _, testCase := range lib.testCases {
+		testCaseSlice = append(testCaseSlice, testCase)
+	}
+	results := testCaseSlice
+	if clientIsGRPCImpl {
+		// Count the cases where we run grpc-go client against server under test.
+		results = append(results, filterGRPCImplTestCases(testCaseSlice, true, false)...)
+	}
+	if serverIsGRPCImpl {
+		// Count the cases where we run client under test against grpc-go server.
+		results = append(results, filterGRPCImplTestCases(testCaseSlice, false, true)...)
+	}
+	if clientIsGRPCImpl && serverIsGRPCImpl {
+		// Count the cases where we run grpc-go client against grpc-go server.
+		// (This is only done from a unit test. The CLI doesn't actually allow this.)
+		results = append(results, filterGRPCImplTestCases(testCaseSlice, true, true)...)
+	}
+	return results
+}
+
+type testCaseFilter struct {
+	run, noRun *testTrie
+}
+
+func newFilter(run, noRun *testTrie) *testCaseFilter {
+	return &testCaseFilter{run: run, noRun: noRun}
+}
+
+func (f *testCaseFilter) accept(testCase *conformancev1.TestCase) bool {
+	if f.run != nil && !f.run.matchPattern(testCase.Request.TestName) {
+		return false
+	}
+	if f.noRun != nil && f.noRun.matchPattern(testCase.Request.TestName) {
+		return false
+	}
+	return true
+}
+
+func (f *testCaseFilter) apply(testCases []*conformancev1.TestCase) []*conformancev1.TestCase {
+	if f.run == nil && f.noRun == nil {
+		return testCases // no filtering
+	}
+	results := make([]*conformancev1.TestCase, 0, len(testCases))
+	for _, tc := range testCases {
+		if f.accept(tc) {
+			results = append(results, tc)
+		}
+	}
+	return results
+}
+
 // serverInstance identifies the properties of a server process, so tests
 // can be grouped by target server process.
 type serverInstance struct {
@@ -262,7 +315,7 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 		}
 		suite := &conformancev1.TestSuite{}
 		if err := opts.Unmarshal(data, suite); err != nil {
-			return nil, ensureFileName(err, testFilePath)
+			return nil, internal.EnsureFileName(err, testFilePath)
 		}
 		for _, testCase := range suite.TestCases {
 			if testCase.Request.RawRequest != nil && suite.Mode != conformancev1.TestSuite_TEST_MODE_SERVER {

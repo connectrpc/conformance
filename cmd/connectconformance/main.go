@@ -15,6 +15,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
@@ -33,6 +34,9 @@ const (
 	configFlagName        = "conf"
 	testFileFlagName      = "test-file"
 	knownFailingFlagName  = "known-failing"
+	knownFlakyFlagName    = "known-flaky"
+	runFlagName           = "run"
+	skipFlagName          = "skip"
 	verboseFlagName       = "verbose"
 	verboseFlagShortName  = "v"
 	versionFlagName       = "version"
@@ -43,21 +47,26 @@ const (
 	tlsKeyFlagName        = "key"
 	portFlagName          = "port"
 	bindFlagName          = "bind"
+	traceFlagName         = "trace"
 )
 
 type flags struct {
-	mode             string
-	configFile       string
-	knownFailingFile string
-	testFile         string
-	verbose          bool
-	version          bool
-	maxServers       uint
-	parallel         uint
-	tlsCertFile      string
-	tlsKeyFile       string
-	port             uint
-	bind             string
+	mode                 string
+	configFile           string
+	testFiles            []string
+	runPatterns          []string
+	skipPatterns         []string
+	knownFailingPatterns []string
+	knownFlakyPatterns   []string
+	verbose              bool
+	version              bool
+	maxServers           uint
+	parallel             uint
+	tlsCertFile          string
+	tlsKeyFile           string
+	port                 uint
+	bind                 string
+	trace                bool
 }
 
 func main() {
@@ -98,11 +107,18 @@ or server under test supports. This is used to filter the set of test cases
 that will be executed. If no config file is indicated, default configuration
 will be used.
 
-A file with a list of known-failing test cases may also be provided. For these
-cases, the test runner reverses its assertions: it considers the test case
-failing to be successful; if the test case succeeds, it is considered a failure.
-(The latter aspect makes sure that the file is up-to-date and does not include
-test cases which have actually been fixed.)
+Flags can also be specified to filter the list of test case permutations run
+and change how results are interpreted. These are the --run, --skip,
+--known-failing, and --known-flaky flags. The --run and --skip flags should
+be used when running and troubleshooting specific test cases. For continuous
+integration tests, the --known-failing and --known-flaky flags should be used
+instead. With these, the tests are still run, but failing tests are interpreted
+differently. With --known-failing, the test cases must fail. This is useful to
+make sure that the list of known-failing test cases is updated if/when test
+failures are fixed. All of these flags support reading the list of test case
+patterns from a file using the "@" prefix. So a flag value with this prefix
+should be the path to a text file, which contains names or patterns, one per
+line.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
 			run(flagset, cmd.Flags(), args)
@@ -113,12 +129,24 @@ test cases which have actually been fixed.)
 }
 
 func bind(cmd *cobra.Command, flags *flags) {
-	cmd.Flags().StringVar(&flags.mode, modeFlagName, "", "required: the mode of the test to run; must be 'client', 'server', or 'both'")
-	cmd.Flags().StringVar(&flags.configFile, configFlagName, "", "a config file in YAML format with supported features")
-	cmd.Flags().StringVar(&flags.testFile, testFileFlagName, "", "a file in YAML format containing tests to run, which will skip running the embedded tests")
-	cmd.Flags().StringVar(&flags.knownFailingFile, knownFailingFlagName, "", "a file with a list of known-failing test cases")
-	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false, "enables verbose output")
-	cmd.Flags().BoolVar(&flags.version, versionFlagName, false, "print version and exit")
+	cmd.Flags().StringVar(&flags.mode, modeFlagName, "",
+		"required: the mode of the test to run; must be 'client', 'server', or 'both'")
+	cmd.Flags().StringVar(&flags.configFile, configFlagName, "",
+		"a config file in YAML format with supported features")
+	cmd.Flags().StringArrayVar(&flags.testFiles, testFileFlagName, nil,
+		"a file in YAML format containing tests to run, which will skip running the embedded tests; can be specified more than once")
+	cmd.Flags().StringArrayVar(&flags.runPatterns, runFlagName, nil,
+		"a pattern indicating the name of test cases to run; when absent, all tests are run (other than indicated by --skip); can be specified more than once")
+	cmd.Flags().StringArrayVar(&flags.skipPatterns, skipFlagName, nil,
+		"a pattern indicating the name of test cases to skip; when absent, no tests are skipped; can be specified more than once")
+	cmd.Flags().StringArrayVar(&flags.knownFailingPatterns, knownFailingFlagName, nil,
+		"a pattern indicating the name of test cases that are known to fail; these test cases will be required to fail for the run to be successful; can be specified more than once")
+	cmd.Flags().StringArrayVar(&flags.knownFlakyPatterns, knownFlakyFlagName, nil,
+		"a pattern indicating the name of test cases that are flaky; these test cases are allowed (but not required) to fail; can be specified more than once")
+	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false,
+		"enables verbose output")
+	cmd.Flags().BoolVar(&flags.version, versionFlagName, false,
+		"print version and exit")
 	cmd.Flags().UintVar(&flags.maxServers, maxServersFlagName, 4,
 		"the maximum number of server processes to be running in parallel")
 	cmd.Flags().UintVarP(&flags.parallel, parallelFlagName, parallelFlagShortName, uint(runtime.GOMAXPROCS(0)*4),
@@ -131,6 +159,8 @@ func bind(cmd *cobra.Command, flags *flags) {
 		"in client mode, the port number on which the reference server should listen (implies --max-servers=1)")
 	cmd.Flags().StringVar(&flags.bind, bindFlagName, internal.DefaultHost,
 		"in client mode, the bind address on which the reference server should listen (0.0.0.0 means listen on all interfaces)")
+	cmd.Flags().BoolVar(&flags.trace, traceFlagName, false,
+		"if true, full HTTP traces will be captured and shown alongside failing test cases")
 }
 
 func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:gocyclo
@@ -238,20 +268,41 @@ func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:g
 		cmd[0] = resolvedCommand
 	}
 
+	runPatterns, err := argsToPatterns(flags.runPatterns)
+	if err != nil {
+		fatal("%s", err)
+	}
+	skipPatterns, err := argsToPatterns(flags.skipPatterns)
+	if err != nil {
+		fatal("%s", err)
+	}
+	knownFailingPatterns, err := argsToPatterns(flags.knownFailingPatterns)
+	if err != nil {
+		fatal("%s", err)
+	}
+	knownFlakyPatterns, err := argsToPatterns(flags.knownFlakyPatterns)
+	if err != nil {
+		fatal("%s", err)
+	}
+
 	ok, err := connectconformance.Run(
 		&connectconformance.Flags{
-			ConfigFile:       flags.configFile,
-			KnownFailingFile: flags.knownFailingFile,
-			TestFile:         flags.testFile,
-			Verbose:          flags.verbose,
-			ClientCommand:    clientCommand,
-			ServerCommand:    serverCommand,
-			MaxServers:       flags.maxServers,
-			Parallelism:      flags.parallel,
-			TLSCertFile:      flags.tlsCertFile,
-			TLSKeyFile:       flags.tlsKeyFile,
-			ServerPort:       flags.port,
-			ServerBind:       flags.bind,
+			ConfigFile:           flags.configFile,
+			RunPatterns:          runPatterns,
+			SkipPatterns:         skipPatterns,
+			KnownFailingPatterns: knownFailingPatterns,
+			KnownFlakyPatterns:   knownFlakyPatterns,
+			TestFiles:            flags.testFiles,
+			Verbose:              flags.verbose,
+			ClientCommand:        clientCommand,
+			ServerCommand:        serverCommand,
+			MaxServers:           flags.maxServers,
+			Parallelism:          flags.parallel,
+			TLSCertFile:          flags.tlsCertFile,
+			TLSKeyFile:           flags.tlsKeyFile,
+			ServerPort:           flags.port,
+			ServerBind:           flags.bind,
+			HTTPTrace:            flags.trace,
 		},
 		internal.NewPrinter(os.Stdout),
 		internal.NewPrinter(os.Stderr),
@@ -279,4 +330,42 @@ func errWithFilename(err error, filename string) error {
 	}
 	// make sure error message includes file name
 	return fmt.Errorf("%s: %w", filename, err)
+}
+
+func argsToPatterns(args []string) ([]string, error) {
+	patterns := make([]string, 0, len(args))
+	for _, pattern := range args {
+		filename := strings.TrimPrefix(pattern, "@")
+		if filename == pattern {
+			// no prefix stripped? not a path reference
+			patterns = append(patterns, pattern)
+			continue
+		}
+		var data []byte
+		if filename != "" {
+			var err error
+			if data, err = os.ReadFile(filename); err != nil {
+				return nil, internal.EnsureFileName(err, filename)
+			}
+		}
+		return parsePatternFile(data), nil
+	}
+	return patterns, nil
+}
+
+func parsePatternFile(data []byte) []string {
+	lines := bytes.Split(data, []byte{'\n'})
+	patterns := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line := bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		if line[0] == '#' {
+			// comment line
+			continue
+		}
+		patterns = append(patterns, string(line))
+	}
+	return patterns
 }
