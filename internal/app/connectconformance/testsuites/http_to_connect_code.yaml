@@ -101,16 +101,16 @@ testCases:
       responseDefinition:
         rawResponse:
           statusCode: 429
-# - request:
-#     testName: request header fields too large
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#       responseDefinition:
-#         rawResponse:
-#           statusCode: 431
+- request:
+    testName: request header fields too large
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        rawResponse:
+          statusCode: 431
 - request:
     testName: bad gateway
     service: connectrpc.conformance.v1.ConformanceService
