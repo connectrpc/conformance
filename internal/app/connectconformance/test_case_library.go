@@ -568,9 +568,12 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 
 	if def.RawResponse != nil {
 		// TODO - Handle other raw response values
-		if def.RawResponse.StatusCode != 0 {
+		// If an HTTP error status was specified in the raw response, then the test case is
+		// forcing the return of an HTTP error, which should be mapped to a Connect error
+		// according to the protocol.
+		if def.RawResponse.StatusCode >= 400 && def.RawResponse.StatusCode <= 599 {
 			expected.Error = &conformancev1.Error{
-				Code: mapHTTPtoRPCCode(def.RawResponse.StatusCode, testCase.Request.Protocol),
+				Code: mapHTTPtoConnectCode(def.RawResponse.StatusCode),
 			}
 		}
 	} else {
@@ -728,7 +731,7 @@ func allValues[T ~int32](m map[int32]string) []T {
 	return vals
 }
 
-func mapHTTPtoRPCCode(httpCode uint32, protocol conformancev1.Protocol) int32 {
+func mapHTTPtoConnectCode(httpCode uint32) int32 {
 	var connectCode connect.Code
 	switch httpCode {
 	case 400:
