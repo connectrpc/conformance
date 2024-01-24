@@ -321,15 +321,9 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 				return nil, fmt.Errorf("%s: test case %q has raw request, but that is only allowed when mode is TEST_MODE_SERVER",
 					testFilePath, testCase.Request.TestName)
 			}
-			if hasRawResponse(testCase.Request.RequestMessages) {
-				if suite.Mode != conformancev1.TestSuite_TEST_MODE_CLIENT {
-					return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
-						testFilePath, testCase.Request.TestName)
-				}
-				if hasStandardResponseDefinition(testCase.Request.RequestMessages) {
-					return nil, fmt.Errorf("%s: test case %q has raw response and standard response definition values specified; must be one or the other",
-						testFilePath, testCase.Request.TestName)
-				}
+			if hasRawResponse(testCase.Request.RequestMessages) && suite.Mode != conformancev1.TestSuite_TEST_MODE_CLIENT {
+				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
+					testFilePath, testCase.Request.TestName)
 			}
 			// The expand request directive uses the proto codec for size calculations, so it doesn't make sense to test with other codecs
 			if len(testCase.ExpandRequests) > 0 && (len(suite.RelevantCodecs) > 1 || !hasCodec(suite.RelevantCodecs, conformancev1.Codec_CODEC_PROTO)) {
@@ -496,34 +490,6 @@ func hasRawResponse(reqs []*anypb.Any) bool {
 	return false
 }
 
-func hasStandardResponseDefinition(reqs []*anypb.Any) bool {
-	if len(reqs) == 0 {
-		return false
-	}
-	msg, err := reqs[0].UnmarshalNew()
-	if err != nil {
-		return false // we'll deal with this error later
-	}
-	switch msg := msg.(type) {
-	case unaryResponseDefiner:
-		if msg.GetResponseDefinition().GetResponseHeaders() != nil ||
-			msg.GetResponseDefinition().GetResponseTrailers() != nil ||
-			msg.GetResponseDefinition().GetResponse() != nil ||
-			msg.GetResponseDefinition().GetResponseDelayMs() != 0 {
-			return true
-		}
-	case streamResponseDefiner:
-		if msg.GetResponseDefinition().GetResponseHeaders() != nil ||
-			msg.GetResponseDefinition().GetResponseTrailers() != nil ||
-			msg.GetResponseDefinition().GetResponseData() != nil ||
-			msg.GetResponseDefinition().GetError() != nil ||
-			msg.GetResponseDefinition().GetResponseDelayMs() != 0 {
-			return true
-		}
-	}
-	return false
-}
-
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 	req := testCase.Request.RequestMessages[0]
@@ -604,7 +570,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		// TODO - Handle other raw response values
 		if def.RawResponse.StatusCode != 0 {
 			expected.Error = &conformancev1.Error{
-				Code: mapHTTPtoConnectCode(def.RawResponse.StatusCode),
+				Code: mapHTTPtoRPCCode(def.RawResponse.StatusCode, testCase.Request.Protocol),
 			}
 		}
 	} else {
@@ -762,7 +728,7 @@ func allValues[T ~int32](m map[int32]string) []T {
 	return vals
 }
 
-func mapHTTPtoConnectCode(httpCode uint32) int32 {
+func mapHTTPtoRPCCode(httpCode uint32, protocol conformancev1.Protocol) int32 {
 	var connectCode connect.Code
 	switch httpCode {
 	case 400:

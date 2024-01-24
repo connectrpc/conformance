@@ -29,6 +29,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	"connectrpc.com/conformance/internal/app/grpcclient"
+	"connectrpc.com/conformance/internal/app/grpcserver"
 	"connectrpc.com/conformance/internal/app/referenceclient"
 	"connectrpc.com/conformance/internal/app/referenceserver"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -286,15 +287,15 @@ func run( //nolint:gocyclo
 					}),
 					isReferenceImpl: true,
 				},
-				// {
-				// 	name: "reference server (grpc)",
-				// 	start: runInProcess([]string{
-				// 		"grpc-reference-server",
-				// 		"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
-				// 		"-bind", flags.ServerBind,
-				// 	}, grpcserver.Run),
-				// 	isGrpcImpl: true,
-				// },
+				{
+					name: "reference server (grpc)",
+					start: runInProcess([]string{
+						"grpc-reference-server",
+						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
+						"-bind", flags.ServerBind,
+					}, grpcserver.Run),
+					isGrpcImpl: true,
+				},
 			}
 		} else {
 			servers = []processInfo{
