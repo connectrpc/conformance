@@ -24,6 +24,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -43,6 +44,17 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/sync/semaphore"
 )
+
+type ContextTracer struct {
+	tracer *tracer.Tracer
+}
+
+func (t *ContextTracer) Complete(trace tracer.Trace) {
+
+	fmt.Fprintln(os.Stderr, "Wrapped Trace %+v:", trace)
+
+	t.tracer.Complete(trace)
+}
 
 // Run runs the client according to a client config read from the 'in' reader. The result of the run
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
@@ -216,9 +228,12 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
 	}
-	if trace != nil {
-		transport = tracer.TracingRoundTripper(transport, trace)
-	}
+
+	// TODO - Should we always create the tracing roundtripper?
+	// ct := &ContextTracer{
+	// 	tracer: trace,
+	// }
+	// transport = tracer.TracingRoundTripper(transport, ct)
 
 	if req.RawRequest != nil {
 		transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}
