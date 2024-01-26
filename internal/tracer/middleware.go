@@ -117,7 +117,6 @@ func (t *tracingResponseWriter) WriteHeader(statusCode int) {
 		}
 	}
 	t.resp = &http.Response{
-		Header:        t.respWriter.Header(),
 		Body:          io.NopCloser(bytes.NewBuffer(nil)), // empty body
 		Status:        fmt.Sprintf("%d %s", statusCode, http.StatusText(statusCode)),
 		StatusCode:    statusCode,
@@ -126,9 +125,20 @@ func (t *tracingResponseWriter) WriteHeader(statusCode int) {
 		ProtoMinor:    t.req.ProtoMinor,
 		ContentLength: contentLen,
 		TLS:           t.req.TLS,
-		Trailer:       http.Header{},
 	}
-	for _, trailerNames := range t.Header().Values("Trailer") {
+	// Create snapshot of the headers
+	t.resp.Header = make(http.Header, len(t.Header()))
+	for headerName, headerVals := range t.Header() {
+		if strings.HasPrefix(headerName, http.TrailerPrefix) {
+			continue
+		}
+		headerVals = append([]string(nil), headerVals...) // snapshot the slice
+		t.resp.Header[headerName] = headerVals
+	}
+	// And also seed the trailers with expected trailer keys
+	trailerHeaders := t.Header().Values("Trailer")
+	t.resp.Trailer = make(http.Header, len(trailerHeaders))
+	for _, trailerNames := range trailerHeaders {
 		for _, trailerName := range strings.Split(trailerNames, ",") {
 			trailerName = strings.TrimSpace(trailerName)
 			if trailerName == "" {
@@ -163,18 +173,24 @@ func (t *tracingResponseWriter) tryFinish(err error) {
 }
 
 func (t *tracingResponseWriter) setTrailers() {
+	headersAndTrailers := t.Header() // response writer's headers (counter-intuitively) include trailers, too
+	// First extract any known trailer keys (that were advertised in "Trailer" header).
 	for trailerName := range t.resp.Trailer {
-		t.resp.Trailer[trailerName] = t.resp.Header[trailerName]
+		t.resp.Trailer[trailerName] = headersAndTrailers[trailerName]
 	}
-	for key, vals := range t.resp.Header {
+	// Then get any others, identified by a special prefix in the name.
+	for key, vals := range headersAndTrailers {
 		trailerKey := strings.TrimPrefix(key, http.TrailerPrefix)
 		if trailerKey == key {
 			// no prefix trimmed, so not a trailer
 			continue
 		}
 		existing := t.resp.Trailer[trailerKey]
+		if len(existing) > 0 {
+			// defensive copy, so we don't accidentally mutate the slice in response writer's headers
+			existing = append([]string(nil), existing...)
+		}
 		t.resp.Trailer[trailerKey] = append(existing, vals...)
-		delete(t.resp.Header, key)
 	}
 }
 
