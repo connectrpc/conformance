@@ -183,6 +183,9 @@ func (r *RequestStart) print(printer internal.Printer) {
 	}
 	printer.Printf("%s %9.3fms %s %s %s", requestPrefix, r.offsetMillis(), r.Request.Method, urlClone.String(), r.Request.Proto)
 	printHeaders(requestPrefix, r.Request.Header, printer)
+	if r.Request.ContentLength != -1 {
+		printer.Printf("%s %11s Content-Length: %d", requestPrefix, "", r.Request.ContentLength)
+	}
 	printer.Printf(requestPrefix)
 }
 
@@ -249,12 +252,15 @@ type ResponseStart struct {
 func (r *ResponseStart) print(printer internal.Printer) {
 	printer.Printf("%s %9.3fms %s", responsePrefix, r.offsetMillis(), r.Response.Status)
 	printHeaders(responsePrefix, r.Response.Header, printer)
+	if r.Response.ContentLength != -1 && len(r.Response.Header.Values("Content-Length")) == 0 {
+		printer.Printf("%s %11s Content-Length: %d", requestPrefix, "", r.Response.ContentLength)
+	}
 	printer.Printf(responsePrefix)
 }
 
 // ResponseError is an event that represents when the response fails. This
 // is recorded when the client receives an error instead of a response, like
-// due to a network error.
+// due to a network error. No more events will appear after this.
 type ResponseError struct {
 	Err error
 
@@ -332,6 +338,16 @@ func (r *ResponseBodyEnd) print(printer internal.Printer) {
 	} else {
 		printer.Printf("%s %9.3fms body end", responsePrefix, r.offsetMillis())
 	}
+}
+
+// RequestCanceled represents the instant the request is cancelled by the
+// client. No more events will appear after this.
+type RequestCanceled struct {
+	eventOffset
+}
+
+func (r *RequestCanceled) print(printer internal.Printer) {
+	printer.Printf("%s %9.3fms canceled", requestPrefix, r.offsetMillis())
 }
 
 type traceResult struct {
