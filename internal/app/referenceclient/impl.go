@@ -121,11 +121,11 @@ func (i *invoker) unary(
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
 	fmt.Fprintln(os.Stderr, "Before unary")
-	fmt.Fprintln(os.Stderr, ctx)
+	fmt.Fprintln(os.Stderr, ctx.Value("response"))
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 	fmt.Fprintln(os.Stderr, "After unary")
-	fmt.Fprintln(os.Stderr, ctx)
+	fmt.Fprintln(os.Stderr, ctx.Value("response"))
 
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
