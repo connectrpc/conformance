@@ -20,7 +20,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -184,9 +183,7 @@ func runTestCasesForServer(
 			}
 		}
 
-		fmt.Fprintln(os.Stderr, "initter")
 		tracer.Init(req.TestName)
-		fmt.Fprintln(os.Stderr, "gonz")
 		wg.Add(1)
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()
