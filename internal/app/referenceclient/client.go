@@ -24,6 +24,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -51,6 +52,8 @@ type ContextTracer struct {
 
 func (t *ContextTracer) Complete(trace tracer.Trace) {
 	t.ctx = context.WithValue(t.ctx, "response", trace.Response.StatusCode)
+	fmt.Fprintln(os.Stderr, "Wrapped Trace %+v:", trace.Response)
+
 	t.tracer.Complete(trace)
 }
 
@@ -227,6 +230,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
+	ctx = context.WithValue(ctx, "response", nil)
 	// TODO - Should we always create the tracing roundtripper?
 	ct := &ContextTracer{
 		tracer: trace,
