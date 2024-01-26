@@ -21,13 +21,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
 )
 
@@ -35,7 +33,6 @@ const clientName = "connectconformance-referenceclient"
 
 type invoker struct {
 	client conformancev1connect.ConformanceServiceClient
-	tracer *tracer.Tracer
 }
 
 func (i *invoker) Invoke(
@@ -120,11 +117,8 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	fmt.Fprintln(os.Stderr, "Before unary")
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
-	fmt.Fprintln(os.Stderr, "After unary")
-
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,

@@ -1,14 +1,4 @@
 name: Basic
-relevantProtocols:
-  - PROTOCOL_CONNECT
-relevantCodecs:
-  - CODEC_JSON
-relevantCompressions:
-  - COMPRESSION_IDENTITY
-relevantHttpVersions:
-  - HTTP_VERSION_1
-reliesOnTls: false
-reliesOnTlsClientCerts: false
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
@@ -29,166 +19,166 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing"]
-# - request:
-#     testName: unary empty definition
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#       responseDefinition:
-# - request:
-#     testName: unary no definition
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-# # Client Stream Tests ---------------------------------------------------------
-# - request:
-#     testName: client stream success
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ClientStream
-#     streamType: STREAM_TYPE_CLIENT_STREAM
-#     requestHeaders:
-#     - name: X-Conformance-Test
-#       value: ["Value1","Value2"]
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-#       responseDefinition:
-#         responseHeaders:
-#         - name: x-custom-header
-#           value: ["foo"]
-#         responseData: "dGVzdCByZXNwb25zZQ=="
-#         responseTrailers:
-#         - name: x-custom-trailer
-#           value: ["bing"]
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-#       requestData: "dGVzdCByZXNwb25zZQ=="
-# - request:
-#     testName: client stream empty definition
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ClientStream
-#     streamType: STREAM_TYPE_CLIENT_STREAM
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-#       responseDefinition:
-# - request:
-#     testName: client stream no definition
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ClientStream
-#     streamType: STREAM_TYPE_CLIENT_STREAM
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-# # Server Stream Tests ---------------------------------------------------------
-# - request:
-#     testName: server stream success
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ServerStream
-#     streamType: STREAM_TYPE_SERVER_STREAM
-#     requestHeaders:
-#     - name: X-Conformance-Test
-#       value: ["Value1","Value2"]
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-#       responseDefinition:
-#         responseHeaders:
-#         - name: x-custom-header
-#           value: ["foo"]
-#         responseData:
-#           - "dGVzdCByZXNwb25zZQ=="
-#           - "dGVzdCByZXNwb25zZQ=="
-#         responseTrailers:
-#         - name: x-custom-trailer
-#           value: ["bing"]
-# - request:
-#     testName: server stream no response
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ServerStream
-#     streamType: STREAM_TYPE_SERVER_STREAM
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-#       responseDefinition:
-#         responseHeaders:
-#         - name: x-custom-header
-#           value: ["foo"]
-#         responseTrailers:
-#         - name: x-custom-trailer
-#           value: ["bing"]
-# - request:
-#     testName: server stream no definition
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: ServerStream
-#     streamType: STREAM_TYPE_SERVER_STREAM
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-# # Bidi Stream Tests -----------------------------------------------------------
-# - request:
-#     testName: bidi full duplex stream success
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: BidiStream
-#     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
-#     requestHeaders:
-#     - name: X-Conformance-Test
-#       value: ["Value1","Value2"]
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-#       responseDefinition:
-#         responseHeaders:
-#         - name: x-custom-header
-#           value: ["foo"]
-#         responseData:
-#           - "dGVzdCByZXNwb25zZQ=="
-#           - "dGVzdCByZXNwb25zZQ=="
-#         responseTrailers:
-#         - name: x-custom-trailer
-#           value: ["bing"]
-#       fullDuplex: true
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-#       requestData: "dGVzdCByZXNwb25zZQ=="
-# - request:
-#     testName: bidi half duplex stream success
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: BidiStream
-#     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
-#     requestHeaders:
-#     - name: X-Conformance-Test
-#       value: ["Value1","Value2"]
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-#       responseDefinition:
-#         responseHeaders:
-#         - name: x-custom-header
-#           value: ["foo"]
-#         responseData:
-#           - "dGVzdCByZXNwb25zZQ=="
-#           - "dGVzdCByZXNwb25zZQ=="
-#         responseTrailers:
-#         - name: x-custom-trailer
-#           value: ["bing"]
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-#       requestData: "dGVzdCByZXNwb25zZQ=="
-# - request:
-#     # Note there is no 'full duplex no definition set' test since that is
-#     # logically equivalent to this test and is therefore covered here.
-#     testName: bidi half duplex stream no definition set
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: BidiStream
-#     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
-#     requestHeaders:
-#       - name: X-Conformance-Test
-#         value: ["Value1","Value2"]
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-# # Misc Tests ------------------------------------------------------------------
-# - request:
-#     testName: unimplemented
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unimplemented
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnimplementedRequest
-#   # Override
-#   expectedResponse:
-#     error:
-#       code: 12
+- request:
+    testName: unary empty definition
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+- request:
+    testName: unary no definition
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+# Client Stream Tests ---------------------------------------------------------
+- request:
+    testName: client stream success
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData: "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+- request:
+    testName: client stream empty definition
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+- request:
+    testName: client stream no definition
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+# Server Stream Tests ---------------------------------------------------------
+- request:
+    testName: server stream success
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+- request:
+    testName: server stream no response
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+- request:
+    testName: server stream no definition
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+# Bidi Stream Tests -----------------------------------------------------------
+- request:
+    testName: bidi full duplex stream success
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+- request:
+    testName: bidi half duplex stream success
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestHeaders:
+    - name: X-Conformance-Test
+      value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+- request:
+    # Note there is no 'full duplex no definition set' test since that is
+    # logically equivalent to this test and is therefore covered here.
+    testName: bidi half duplex stream no definition set
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestHeaders:
+      - name: X-Conformance-Test
+        value: ["Value1","Value2"]
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+# Misc Tests ------------------------------------------------------------------
+- request:
+    testName: unimplemented
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unimplemented
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnimplementedRequest
+  # Override
+  expectedResponse:
+    error:
+      code: 12
