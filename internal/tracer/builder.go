@@ -15,7 +15,9 @@
 package tracer
 
 import (
+	"fmt"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 )
@@ -87,5 +89,6 @@ func (b *builder) build() {
 	if trace.TestName == "" {
 		return
 	}
+	fmt.Fprintln(os.Stderr, "Completing trace")
 	b.collector.Complete(trace)
 }

@@ -18,7 +18,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"sort"
 	"strings"
 	"sync"
@@ -47,7 +46,6 @@ type Tracer struct {
 // Init initializes the tracer to accept data for a trace for the given test name.
 // This must be called before Clear, Complete, or Await for the same name.
 func (t *Tracer) Init(testName string) {
-	fmt.Fprintln(os.Stderr, "tracer.Init")
 	if t == nil {
 		return
 	}
@@ -64,7 +62,6 @@ func (t *Tracer) Init(testName string) {
 // Clear clears the data for the given test name. This frees up resources so
 // that the tracer doesn't use more memory than necessary.
 func (t *Tracer) Clear(testName string) {
-	fmt.Fprintln(os.Stderr, "tracer.Clear")
 	if t == nil {
 		return
 	}
@@ -76,7 +73,6 @@ func (t *Tracer) Clear(testName string) {
 // Complete marks a test as complete with the given trace data. If Clear
 // has already been called or Init was never called, this does nothing.
 func (t *Tracer) Complete(trace Trace) {
-	fmt.Fprintln(os.Stderr, "tracer.Complete")
 	if t == nil {
 		return
 	}
@@ -98,7 +94,6 @@ func (t *Tracer) Complete(trace Trace) {
 // an error if Clear has alreadu been called for the test or if Init was
 // never called.
 func (t *Tracer) Await(ctx context.Context, testName string) (*Trace, error) {
-	fmt.Fprintln(os.Stderr, "tracer.Await")
 	if t == nil {
 		return nil, fmt.Errorf("%s: tracing not enabled", testName)
 	}

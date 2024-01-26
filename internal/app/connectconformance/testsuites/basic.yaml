@@ -1,4 +1,14 @@
 name: Basic
+relevantProtocols:
+  - PROTOCOL_CONNECT
+relevantCodecs:
+  - CODEC_JSON
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantHttpVersions:
+  - HTTP_VERSION_1
+reliesOnTls: false
+reliesOnTlsClientCerts: false
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:

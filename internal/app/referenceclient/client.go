@@ -47,11 +47,14 @@ import (
 
 type ContextTracer struct {
 	tracer *tracer.Tracer
+	ctx    context.Context
 }
 
 func (t *ContextTracer) Complete(trace tracer.Trace) {
 
-	fmt.Fprintln(os.Stderr, "Wrapped Trace %+v:", trace)
+	// fmt.Println(t.ctx.Value("response"))
+	t.ctx = context.WithValue(t.ctx, "response", "HTTP 69")
+	fmt.Fprintln(os.Stderr, "Wrapped Trace %+v:", trace.Response)
 
 	t.tracer.Complete(trace)
 }
@@ -229,11 +232,13 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
+	ctx = context.WithValue(ctx, "response", nil)
 	// TODO - Should we always create the tracing roundtripper?
-	// ct := &ContextTracer{
-	// 	tracer: trace,
-	// }
-	// transport = tracer.TracingRoundTripper(transport, ct)
+	ct := &ContextTracer{
+		tracer: trace,
+		ctx:    ctx,
+	}
+	transport = tracer.TracingRoundTripper(transport, ct)
 
 	if req.RawRequest != nil {
 		transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}
