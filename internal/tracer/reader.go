@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"sync/atomic"
 
@@ -61,7 +60,6 @@ func (t *tracingReader) Read(data []byte) (n int, err error) {
 	t.dataTracer.trace(data[:n])
 	if err != nil {
 		if errors.Is(err, io.EOF) {
-			fmt.Fprintln(os.Stderr, "EOF")
 			t.tryFinish(nil)
 		} else {
 			t.tryFinish(err)
@@ -73,10 +71,8 @@ func (t *tracingReader) Read(data []byte) (n int, err error) {
 func (t *tracingReader) Close() error {
 	err := t.reader.Close()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "close noe error")
 		t.tryFinish(fmt.Errorf("close: %w", err))
 	} else {
-		fmt.Fprintln(os.Stderr, "close before fully consumed error")
 		t.tryFinish(errors.New("closed before fully consumed"))
 	}
 	return err
@@ -96,7 +92,6 @@ func (t *tracingReader) tryFinish(err error) {
 
 	// On the response side, when the body reaches the end, whole thing is done.
 	t.builder.add(&ResponseBodyEnd{Err: err})
-	fmt.Fprintln(os.Stderr, "BUILD called here")
 	t.builder.build()
 }
 

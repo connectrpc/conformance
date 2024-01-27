@@ -16,9 +16,7 @@ package tracer
 
 import (
 	"context"
-	"fmt"
 	"net/http"
-	"os"
 
 	"sync/atomic"
 )
@@ -29,10 +27,7 @@ type RespWrapper struct {
 	val atomic.Pointer[http.Response]
 }
 
-// CaptureTrailers returns a context to be used with HTTP operations to capture trailers.
-// Each HTTP operation used with the returned context will store its HTTP trailers into
-// the returned *Trailers value.
-func CaptureResp(ctx context.Context) (context.Context, *RespWrapper) {
+func WithResponseCapture(ctx context.Context) (context.Context, *RespWrapper) {
 	wrappers := &RespWrapper{}
 	ctx = context.WithValue(ctx, respKey{}, wrappers)
 	return ctx, wrappers
@@ -50,7 +45,6 @@ func (t *RespWrapper) Get() *http.Response {
 
 type contextTracer struct {
 	tracer *Tracer
-	// respWrapper RespWrapper
 }
 
 func NewContextTracer(trace *Tracer) *contextTracer {
@@ -60,9 +54,6 @@ func NewContextTracer(trace *Tracer) *contextTracer {
 }
 
 func (t *contextTracer) Complete(trace Trace) {
-	// t.ctx = context.WithValue(t.ctx, "response", trace.Response.StatusCode)
-	fmt.Fprintln(os.Stderr, "Wrapped Trace %+v:", trace.Response)
-
 	if t != nil {
 		t.tracer.Complete(trace)
 	}

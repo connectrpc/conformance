@@ -120,13 +120,16 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx, wire := tracer.CaptureResp(ctx)
+	ctx, wire := tracer.WithResponseCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 
-	fmt.Fprintln(os.Stderr, "WIRE: v")
-	fmt.Fprintln(os.Stderr, wire.Get())
+	httpResp := wire.Get()
+	if httpResp != nil {
+		fmt.Fprintln(os.Stderr, wire.Get())
+	}
+
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
