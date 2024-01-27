@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -31,6 +32,15 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 		req = req.Clone(req.Context())
 		req.Body = newReader(req.Header, req.Body, true, builder)
 		resp, err := transport.RoundTrip(req)
+
+		// This is new --- can this be abstracted or moved into its own thing
+		respWrapper, ok := req.Context().Value(respKey{}).(*RespWrapper)
+		if err != nil || !ok {
+			return resp, err
+		}
+		respWrapper.val.Store(resp)
+		// This is new --- can this be abstracted
+
 		if err != nil {
 			builder.add(&ResponseError{Err: err})
 			builder.build()
@@ -91,6 +101,7 @@ func (t *tracingResponseWriter) Write(data []byte) (int, error) {
 	n, err := t.respWriter.Write(data)
 	t.dataTracer.trace(data[:n])
 	if err != nil {
+		fmt.Fprintln(os.Stderr, "Writing in the response writer")
 		t.tryFinish(err)
 	}
 	return n, err
@@ -158,6 +169,7 @@ func (t *tracingResponseWriter) Flush() {
 }
 
 func (t *tracingResponseWriter) tryFinish(err error) {
+	fmt.Fprintln(os.Stderr, "tryFinish in middleware")
 	if t.finished {
 		return // already finished
 	}

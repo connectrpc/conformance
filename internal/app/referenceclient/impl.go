@@ -35,13 +35,13 @@ const clientName = "connectconformance-referenceclient"
 
 type invoker struct {
 	client conformancev1connect.ConformanceServiceClient
-	tracer *tracer.Tracer
 }
 
 func (i *invoker) Invoke(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
+
 	// If a timeout was specified, create a derived context with that deadline
 	if req.TimeoutMs != nil {
 		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
@@ -120,13 +120,13 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	fmt.Fprintln(os.Stderr, "Before unary")
-	fmt.Fprintln(os.Stderr, ctx.Value("response"))
+	ctx, wire := tracer.CaptureResp(ctx)
+
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
-	fmt.Fprintln(os.Stderr, "After unary")
-	fmt.Fprintln(os.Stderr, ctx.Value("response"))
 
+	fmt.Fprintln(os.Stderr, "WIRE: v")
+	fmt.Fprintln(os.Stderr, wire.Get())
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
