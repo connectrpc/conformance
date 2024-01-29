@@ -44,7 +44,7 @@ const (
 )
 
 func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
-	var callsMu sync.Mutex{}
+	var callsMu sync.Mutex
 	calls := map[string]int{}
 	return func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
