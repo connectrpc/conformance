@@ -21,6 +21,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
@@ -43,6 +44,7 @@ const (
 )
 
 func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
+	var callsMu sync.Mutex{}
 	calls := map[string]int{}
 	return func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
@@ -54,11 +56,15 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		}
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
 
+		callsMu.Lock()
 		count := calls[testCaseName]
+		callsMu.Unlock()
 		if count > 0 {
 			feedback.Printf("client sent another request (#%d) for the same test case", count+1)
 		}
+		callsMu.Lock()
 		calls[testCaseName] = count + 1
+		callsMu.Unlock()
 
 		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, v1.HTTPVersion(0), feedback); ok {
 			checkHTTPVersion(httpVersion, req, feedback)
