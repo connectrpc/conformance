@@ -183,7 +183,7 @@ func (r *RequestStart) print(printer internal.Printer) {
 	}
 	printer.Printf("%s %9.3fms %s %s %s", requestPrefix, r.offsetMillis(), r.Request.Method, urlClone.String(), r.Request.Proto)
 	printHeaders(requestPrefix, r.Request.Header, printer)
-	if r.Request.ContentLength != -1 {
+	if r.Request.ContentLength != -1 && len(r.Request.Header.Values("Content-Length")) == 0 {
 		printer.Printf("%s %11s Content-Length: %d", requestPrefix, "", r.Request.ContentLength)
 	}
 	printer.Printf(requestPrefix)
@@ -253,7 +253,7 @@ func (r *ResponseStart) print(printer internal.Printer) {
 	printer.Printf("%s %9.3fms %s", responsePrefix, r.offsetMillis(), r.Response.Status)
 	printHeaders(responsePrefix, r.Response.Header, printer)
 	if r.Response.ContentLength != -1 && len(r.Response.Header.Values("Content-Length")) == 0 {
-		printer.Printf("%s %11s Content-Length: %d", requestPrefix, "", r.Response.ContentLength)
+		printer.Printf("%s %11s Content-Length: %d", responsePrefix, "", r.Response.ContentLength)
 	}
 	printer.Printf(responsePrefix)
 }

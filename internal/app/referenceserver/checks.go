@@ -43,6 +43,7 @@ const (
 )
 
 func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
+	calls := map[string]int{}
 	return func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
 		if testCaseName == "" {
@@ -51,8 +52,13 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 			http.Error(respWriter, "missing x-test-case-name header", http.StatusBadRequest)
 			return
 		}
-
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
+
+		count := calls[testCaseName]
+		if count > 0 {
+			feedback.Printf("client sent another request (#%d) for the same test case", count+1)
+		}
+		calls[testCaseName] = count + 1
 
 		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, v1.HTTPVersion(0), feedback); ok {
 			checkHTTPVersion(httpVersion, req, feedback)
