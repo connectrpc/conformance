@@ -58,13 +58,11 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 
 		callsMu.Lock()
 		count := calls[testCaseName]
+		calls[testCaseName] = count + 1
 		callsMu.Unlock()
 		if count > 0 {
 			feedback.Printf("client sent another request (#%d) for the same test case", count+1)
 		}
-		callsMu.Lock()
-		calls[testCaseName] = count + 1
-		callsMu.Unlock()
 
 		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, v1.HTTPVersion(0), feedback); ok {
 			checkHTTPVersion(httpVersion, req, feedback)
