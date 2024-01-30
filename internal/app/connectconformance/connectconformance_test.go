@@ -64,8 +64,8 @@ func TestRun(t *testing.T) {
 	allPermutations := testCaseLib.allPermutations(true, true)
 	expectedNumCases := len(allPermutations)
 
-	// 19 test cases as of this writing, but we will likely add more
-	require.GreaterOrEqual(t, expectedNumCases, 40)
+	// 53 test cases as of this writing, but we will likely add more
+	require.GreaterOrEqual(t, expectedNumCases, 53)
 
 	logger := &testPrinter{t}
 	results, err := run(

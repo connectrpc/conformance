@@ -16,6 +16,7 @@ package tracer
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,17 +29,22 @@ import (
 func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.RoundTripper {
 	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		builder := newBuilder(req, collector)
-		req = req.Clone(req.Context())
-		req.Body = newReader(req.Header, req.Body, true, builder)
+		ctx, cancel := context.WithCancel(req.Context())
+		go func() {
+			<-ctx.Done()
+			builder.add(&RequestCanceled{})
+		}()
+		req = req.Clone(ctx)
+		req.Body = newRequestReader(req.Header, req.Body, true, builder)
 		resp, err := transport.RoundTrip(req)
 		if err != nil {
 			builder.add(&ResponseError{Err: err})
-			builder.build()
+			cancel()
 			return nil, err
 		}
 		builder.add(&ResponseStart{Response: resp})
 		respClone := *resp
-		respClone.Body = newReader(resp.Header, resp.Body, false, builder)
+		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
 		return &respClone, nil
 	})
 }
@@ -47,21 +53,39 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 // handler will record traces of all operations to the given tracer.
 func TracingHandler(handler http.Handler, collector Collector) http.Handler {
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
 		builder := newBuilder(req, collector)
-		req = req.Clone(req.Context())
-		req.Body = newReader(req.Header, req.Body, true, builder)
+		defer builder.build() // make sure the trace is complete before returning
+		go func() {
+			<-ctx.Done()
+			builder.add(&RequestCanceled{})
+		}()
+
+		req = req.Clone(ctx)
+		req.Body = newRequestReader(req.Header, req.Body, true, builder)
 		traceWriter := &tracingResponseWriter{
 			respWriter: respWriter,
 			req:        req,
 			builder:    builder,
 		}
+		defer func() {
+			var err error
+			panicVal := recover()
+			if panicVal != nil {
+				err = fmt.Errorf("panic: %v", panicVal)
+			}
+			traceWriter.tryFinish(err)
+			if panicVal != nil {
+				//nolint:forbidigo // just propagating existing panic
+				panic(panicVal)
+			}
+		}()
 
 		handler.ServeHTTP(
 			traceWriter,
 			req,
 		)
-
-		traceWriter.tryFinish(nil)
 	})
 }
 
@@ -167,9 +191,8 @@ func (t *tracingResponseWriter) tryFinish(err error) {
 
 	t.finished = true
 	t.dataTracer.emitUnfinished()
-	t.builder.add(&ResponseBodyEnd{Err: err})
 	t.setTrailers()
-	t.builder.build()
+	t.builder.add(&ResponseBodyEnd{Err: err})
 }
 
 func (t *tracingResponseWriter) setTrailers() {
