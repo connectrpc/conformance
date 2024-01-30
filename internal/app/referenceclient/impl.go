@@ -29,6 +29,7 @@ import (
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const clientName = "connectconformance-referenceclient"
@@ -125,9 +126,14 @@ func (i *invoker) unary(
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 
-	httpResp := wire.Get()
-	if httpResp != nil {
-		fmt.Fprintln(os.Stderr, wire.Get())
+	var statusCode int32
+	var jsonRaw *structpb.Struct
+	deets := wire.Get()
+	if deets != nil {
+		statusCode = deets.StatusCode
+		jsonRaw = deets.RawErrorDetails
+
+		fmt.Fprintf(os.Stderr, "UNARY: %+v\n", deets)
 	}
 
 	if err != nil {
@@ -152,7 +158,8 @@ func (i *invoker) unary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		ActualStatusCode: statusCode,
+		ConnectErrorRaw:  jsonRaw,
 	}, nil
 }
 
@@ -179,8 +186,21 @@ func (i *invoker) idempotentUnary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
+	ctx, wire := tracer.WithResponseCapture(ctx)
+
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
+
+	var statusCode int32
+	var jsonRaw *structpb.Struct
+	deets := wire.Get()
+	if deets != nil {
+		statusCode = deets.StatusCode
+		jsonRaw = deets.RawErrorDetails
+
+		fmt.Fprintf(os.Stderr, "Idempotent: %+v\n", deets)
+	}
+
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -201,7 +221,8 @@ func (i *invoker) idempotentUnary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		ActualStatusCode: statusCode,
+		ConnectErrorRaw:  jsonRaw,
 	}, nil
 }
 
@@ -222,6 +243,8 @@ func (i *invoker) serverStream(
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
+
+	ctx, wire := tracer.WithResponseCapture(ctx)
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
@@ -283,12 +306,25 @@ func (i *invoker) serverStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 		}
 	}
+	var statusCode int32
+	var jsonRaw *structpb.Struct
+	deets := wire.Get()
+	if deets != nil {
+		statusCode = deets.StatusCode
+		jsonRaw = deets.RawErrorDetails
+
+		fmt.Fprintf(os.Stderr, "SERVER STREAM: %+v\n", deets)
+	} else {
+		fmt.Fprintf(os.Stderr, "SERVER SREAM NULLLLLLL")
+	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		ActualStatusCode: statusCode,
+		ConnectErrorRaw:  jsonRaw,
 	}, nil
 }
 

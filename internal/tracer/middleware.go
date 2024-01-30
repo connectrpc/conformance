@@ -31,14 +31,6 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 		req = req.Clone(req.Context())
 		req.Body = newReader(req.Header, req.Body, true, builder)
 		resp, err := transport.RoundTrip(req)
-
-		// This is new --- can this be abstracted or moved into its own thing
-		respWrapper, ok := req.Context().Value(respKey{}).(*RespWrapper)
-		if ok {
-			respWrapper.val.Store(resp)
-		}
-		// This is new --- can this be abstracted
-
 		if err != nil {
 			builder.add(&ResponseError{Err: err})
 			builder.build()
