@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
-
 	"sync/atomic"
 
 	"connectrpc.com/conformance/internal"
@@ -31,6 +30,7 @@ import (
 
 type wireKey struct{}
 
+// WireDetails encapsulates the wire details to track for a roundtrip.
 type WireDetails struct {
 	// The actual HTTP status code observed.
 	StatusCode int32
@@ -45,6 +45,7 @@ type WireWrapper struct {
 	val atomic.Pointer[*WireDetails]
 }
 
+// Get returns the wire details
 func (w *WireWrapper) Get() *WireDetails {
 	respPtr := w.val.Load()
 	if respPtr == nil {
@@ -53,26 +54,21 @@ func (w *WireWrapper) Get() *WireDetails {
 	return *respPtr
 }
 
+// WithWireCapture returns a new context which will contain wire details during
+// a roundtrip.
 func WithWireCapture(ctx context.Context) (context.Context, *WireWrapper) {
 	wrappers := &WireWrapper{}
 	ctx = context.WithValue(ctx, wireKey{}, wrappers)
 	return ctx, wrappers
 }
 
-type endStreamError struct {
-	Error json.RawMessage `json:"error"`
-}
-
 type WireTracer struct {
 	tracer *tracer.Tracer
 }
 
-func NewWireTracer(trace *tracer.Tracer) *WireTracer {
-	return &WireTracer{
-		tracer: trace,
-	}
-}
-
+// Complete intercepts the Complete call for a tracer, extracting wire details
+// from the passed trace. The wire details will be stored in the context acquired byte
+// WithWireCapture and can be retrieved via WireWrapper.Get()
 func (t *WireTracer) Complete(trace tracer.Trace) {
 	respWrapper, ok := trace.Request.Context().Value(wireKey{}).(*WireWrapper)
 	if ok { //nolint:nestif
@@ -94,6 +90,9 @@ func (t *WireTracer) Complete(trace tracer.Trace) {
 					}
 				}
 			} else if strings.HasPrefix(contentType, "application/connect+") {
+				type endStreamError struct {
+					Error json.RawMessage `json:"error"`
+				}
 				// If this is a streaming request, then look through the trace events
 				// for the ResponseBodyEndStream event and parse its content into an
 				// endStreamError to see if there are any error details.
@@ -125,5 +124,13 @@ func (t *WireTracer) Complete(trace tracer.Trace) {
 
 	if t != nil {
 		t.tracer.Complete(trace)
+	}
+}
+
+// NewWireTracer returns a new wire tracer with the given tracer.
+// If trace is nil, all tracer operations will be bypassed.
+func NewWireTracer(trace *tracer.Tracer) *WireTracer {
+	return &WireTracer{
+		tracer: trace,
 	}
 }
