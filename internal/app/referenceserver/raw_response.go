@@ -45,7 +45,7 @@ func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handle
 		// This is the only hard failure. Without it, we cannot provide feedback.
 		// All other checks below write to stderr to provide feedback.
 		if testCaseName == "" {
-			msg := "missing x-test-case-name header"
+			const msg = "missing x-test-case-name header"
 			if errorWriter.IsSupported(req) {
 				invalidArg := connect.NewError(connect.CodeInvalidArgument, errors.New(msg))
 				err := errorWriter.Write(respWriter, req, invalidArg)
