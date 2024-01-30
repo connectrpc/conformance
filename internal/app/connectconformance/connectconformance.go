@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,7 +34,6 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/tracer"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/protobuf/proto"
 )
 
 // Flags are the config values for the test runner that may be provided via
@@ -417,64 +415,6 @@ func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logP
 	}
 	logPrinter.Printf("Running %d tests with %s for server config {%s, %s, TLS:%s}...",
 		numCases, with, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
-}
-
-func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
-	if !clientIsGRPCImpl && !serverIsGRPCImpl {
-		return testCases
-	}
-
-	// The gRPC reference impls do not support everything that the main reference impls do.
-	// So we must filter away any test cases that aren't applicable to the gRPC impls.
-
-	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
-	for _, testCase := range testCases {
-		// Client only supports gRPC protocol. Server also supports gRPC-Web.
-		if clientIsGRPCImpl && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
-			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
-			continue
-		}
-
-		if testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
-			// grpc-web supports HTTP/1 and HTTP/2
-			switch testCase.Request.HttpVersion {
-			case conformancev1.HTTPVersion_HTTP_VERSION_1, conformancev1.HTTPVersion_HTTP_VERSION_2:
-			default:
-				continue
-			}
-		} else if testCase.Request.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
-			// but grpc only supports HTTP/2
-			continue
-		}
-
-		if testCase.Request.Codec != conformancev1.Codec_CODEC_PROTO {
-			continue
-		}
-		if testCase.Request.Compression != conformancev1.Compression_COMPRESSION_IDENTITY &&
-			testCase.Request.Compression != conformancev1.Compression_COMPRESSION_GZIP {
-			continue
-		}
-
-		if len(testCase.Request.ServerTlsCert) > 0 {
-			continue
-		}
-
-		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
-		// Insert a path in the test name to indicate that this is against the gRPC impl.
-		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
-		var elem string
-		switch {
-		case clientIsGRPCImpl && serverIsGRPCImpl:
-			elem = "(grpc impls)"
-		case clientIsGRPCImpl:
-			elem = "(grpc client impl)"
-		case serverIsGRPCImpl:
-			elem = "(grpc server impl)"
-		}
-		filteredCase.Request.TestName = path.Join(dir, elem, base)
-		filtered = append(filtered, filteredCase)
-	}
-	return filtered
 }
 
 func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev1.TestCase) error {

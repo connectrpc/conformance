@@ -202,7 +202,9 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
+        responseDelayMs: 200
         responseData:
+          - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
       fullDuplex: true
@@ -216,7 +218,9 @@ testCases:
           requests:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               responseDefinition:
+                responseDelayMs: 200
                 responseData:
+                  - "dGVzdCByZXNwb25zZQ=="
                   - "dGVzdCByZXNwb25zZQ=="
                   - "dGVzdCByZXNwb25zZQ=="
               fullDuplex: true
