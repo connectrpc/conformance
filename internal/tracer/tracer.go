@@ -172,7 +172,6 @@ type RequestStart struct {
 }
 
 func (r *RequestStart) print(printer internal.Printer) {
-	printer.Printf("REQUEST START")
 	urlClone := *r.Request.URL
 	if urlClone.Host == "" {
 		urlClone.Host = "..."
@@ -219,7 +218,6 @@ type RequestBodyData struct {
 }
 
 func (r *RequestBodyData) print(printer internal.Printer) {
-	printer.Printf("REQUEST BODY DATA")
 	printData(requestPrefix, r.offsetMillis(), r.MessageIndex, r.Envelope, r.Len, printer)
 }
 
@@ -235,7 +233,6 @@ type RequestBodyEnd struct {
 }
 
 func (r *RequestBodyEnd) print(printer internal.Printer) {
-	printer.Printf("REQUEST BODY END")
 	if r.Err != nil {
 		printer.Printf("%s %9.3fms body end (err=%v)", requestPrefix, r.offsetMillis(), r.Err)
 	} else {
@@ -253,7 +250,6 @@ type ResponseStart struct {
 }
 
 func (r *ResponseStart) print(printer internal.Printer) {
-	printer.Printf("RESPONSE START")
 	printer.Printf("%s %9.3fms %s", responsePrefix, r.offsetMillis(), r.Response.Status)
 	printHeaders(responsePrefix, r.Response.Header, printer)
 	if r.Response.ContentLength != -1 && len(r.Response.Header.Values("Content-Length")) == 0 {
@@ -272,7 +268,6 @@ type ResponseError struct {
 }
 
 func (r *ResponseError) print(printer internal.Printer) {
-	printer.Printf("RESPONSE ERROR")
 	printer.Printf("%s %9.3fms failed: %v", responsePrefix, r.offsetMillis(), r.Err)
 }
 
@@ -305,7 +300,6 @@ type ResponseBodyData struct {
 }
 
 func (r *ResponseBodyData) print(printer internal.Printer) {
-	printer.Printf("RESPONSE BODY DATA")
 	printData(responsePrefix, r.offsetMillis(), r.MessageIndex, r.Envelope, r.Len, printer)
 }
 
@@ -320,7 +314,6 @@ type ResponseBodyEndStream struct {
 }
 
 func (r *ResponseBodyEndStream) print(printer internal.Printer) {
-	printer.Printf("RESPONSE BODY ENDSTREAM")
 	lines := strings.Split(r.Content, "\n")
 	for _, line := range lines {
 		line = strings.Trim(line, "\r")
@@ -340,7 +333,6 @@ type ResponseBodyEnd struct {
 }
 
 func (r *ResponseBodyEnd) print(printer internal.Printer) {
-	printer.Printf("RESPONSE BODY END")
 	if r.Err != nil {
 		printer.Printf("%s %9.3fms body end (err=%v)", responsePrefix, r.offsetMillis(), r.Err)
 	} else {

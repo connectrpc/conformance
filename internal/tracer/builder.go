@@ -71,10 +71,6 @@ func (b *builder) add(event Event) {
 			b.trace.Err = event.Err
 		}
 	case *ResponseStart:
-		// booty, _ := io.ReadAll(event.Response.Body)
-		// fmt.Fprintf(os.Stderr, "dagster.io: ", string(booty))
-		// booty2, _ := io.ReadAll(event.Response.Body)
-		// fmt.Fprintf(os.Stderr, "dagster.iotwo: ", string(booty2))
 		b.trace.Response = event.Response
 	case *ResponseError:
 		b.trace.Err = event.Err
