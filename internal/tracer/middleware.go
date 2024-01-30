@@ -24,6 +24,38 @@ import (
 	"strings"
 )
 
+type reusableReader struct {
+	io.Reader
+	readBuf *bytes.Buffer
+	backBuf *bytes.Buffer
+}
+
+func newReusableReader(b []byte) io.Reader {
+	r := bytes.NewReader(b)
+
+	readBuf := bytes.Buffer{}
+	readBuf.ReadFrom(r) // error handling ignored for brevity
+	backBuf := bytes.Buffer{}
+
+	return reusableReader{
+		io.TeeReader(&readBuf, &backBuf),
+		&readBuf,
+		&backBuf,
+	}
+}
+
+func (r reusableReader) Read(p []byte) (int, error) {
+	n, err := r.Reader.Read(p)
+	if err == io.EOF {
+		r.reset()
+	}
+	return n, err
+}
+
+func (r reusableReader) reset() {
+	io.Copy(r.readBuf, r.backBuf) // nolint: errcheck
+}
+
 // TracingRoundTripper applies tracing to the given transport. The returned
 // round tripper will record traces of all operations to the given tracer.
 func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.RoundTripper {
@@ -42,25 +74,22 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 			cancel()
 			return nil, err
 		}
-		// body, _ := io.ReadAll(resp.Body)
-		// fmt.Fprintf(os.Stderr, "dagsboro: ", string(body))
-		// resp.Body = io.NopCloser(bytes.NewReader(body))
-		// booty, _ := io.ReadAll(resp.Body)
-		// fmt.Fprintf(os.Stderr, "dagster.io: ", string(booty))
 
-		respect := *resp
-		cardi, _ := io.ReadAll(respect.Body)
-		respect.Body = io.NopCloser(bytes.NewReader(cardi))
-
-		// bardy, _ := io.ReadAll(evt.Response.Body)
-		// fmt.Fprintf(os.Stderr, "dagestan", string(bardy))
-
+		// Read the response body in full and then replace it with a reusable reader
+		// so that we can read the contents multiple times in any trace or middleware.
+		defer resp.Body.Close()
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+		resp.Body = io.NopCloser(newReusableReader(body))
 		builder.add(&ResponseStart{
-			Response: &respect,
+			Response: resp,
 		})
-		respClone := *resp
 
+		respClone := *resp
 		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
+
 		return &respClone, nil
 	})
 }

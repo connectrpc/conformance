@@ -21,13 +21,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -121,7 +119,7 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx, wire := tracer.WithResponseCapture(ctx)
+	ctx, wire := WithWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
@@ -131,12 +129,9 @@ func (i *invoker) unary(
 	var actualTrailers []*v1.Header
 	wireDetails := wire.Get()
 	if wireDetails != nil {
-		fmt.Fprintf(os.Stderr, "UNARY WIRE DETAILS: %+v\n\n", wireDetails)
 		actualStatusCode = wireDetails.StatusCode
-		connectErrorRaw = wireDetails.RawErrorDetails
 		actualTrailers = wireDetails.Trailers
-	} else {
-		fmt.Fprintf(os.Stderr, "UNARY WIRE DETAILS are NULL")
+		connectErrorRaw = wireDetails.ConnectErrorRaw
 	}
 
 	if err != nil {
@@ -190,7 +185,7 @@ func (i *invoker) idempotentUnary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx, wire := tracer.WithResponseCapture(ctx)
+	ctx, wire := WithWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
@@ -201,8 +196,8 @@ func (i *invoker) idempotentUnary(
 	wireDetails := wire.Get()
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
-		connectErrorRaw = wireDetails.RawErrorDetails
 		actualTrailers = wireDetails.Trailers
+		connectErrorRaw = wireDetails.ConnectErrorRaw
 	}
 
 	if err != nil {
@@ -249,7 +244,7 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	ctx, wire := tracer.WithResponseCapture(ctx)
+	ctx, wire := WithWireCapture(ctx)
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
@@ -316,12 +311,9 @@ func (i *invoker) serverStream(
 	var actualTrailers []*v1.Header
 	wireDetails := wire.Get()
 	if wireDetails != nil {
-		fmt.Fprintf(os.Stderr, "SERVER STREAM WIRE DETAILS: %+v\n\n", wireDetails)
 		actualStatusCode = wireDetails.StatusCode
-		connectErrorRaw = wireDetails.RawErrorDetails
 		actualTrailers = wireDetails.Trailers
-	} else {
-		fmt.Fprintf(os.Stderr, "SERVER STREAM WIRE DETAILS are NULL")
+		connectErrorRaw = wireDetails.ConnectErrorRaw
 	}
 
 	return &v1.ClientResponseResult{
@@ -342,6 +334,7 @@ func (i *invoker) clientStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	ctx, wire := WithWireCapture(ctx)
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
@@ -394,13 +387,24 @@ func (i *invoker) clientStream(
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := wire.Get()
+	if wireDetails != nil {
+		actualStatusCode = wireDetails.StatusCode
+		actualTrailers = wireDetails.Trailers
+		connectErrorRaw = wireDetails.ConnectErrorRaw
+	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		ResponseHeaders:    headers,
+		ResponseTrailers:   trailers,
+		Payloads:           payloads,
+		Error:              protoErr,
+		ActualStatusCode:   actualStatusCode,
+		ActualHttpTrailers: actualTrailers,
+		ConnectErrorRaw:    connectErrorRaw,
 	}, nil
 }
 
@@ -414,6 +418,8 @@ func (i *invoker) bidiStream(
 	result = &v1.ClientResponseResult{
 		ConnectErrorRaw: nil, // TODO
 	}
+
+	ctx, wire := WithWireCapture(ctx)
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
@@ -519,6 +525,19 @@ func (i *invoker) bidiStream(
 		// If the call was successful, save the payloads
 		result.Payloads = append(result.Payloads, msg.Payload)
 	}
+
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := wire.Get()
+	if wireDetails != nil {
+		actualStatusCode = wireDetails.StatusCode
+		actualTrailers = wireDetails.Trailers
+		connectErrorRaw = wireDetails.ConnectErrorRaw
+	}
+	result.ActualStatusCode = actualStatusCode
+	result.ActualHttpTrailers = actualTrailers
+	result.ConnectErrorRaw = connectErrorRaw
 
 	if protoErr != nil {
 		result.Error = protoErr
