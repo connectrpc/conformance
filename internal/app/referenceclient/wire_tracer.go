@@ -45,39 +45,37 @@ type WireWrapper struct {
 	val atomic.Pointer[*WireDetails]
 }
 
-func WithWireCapture(ctx context.Context) (context.Context, *WireWrapper) {
-	wrappers := &WireWrapper{}
-	ctx = context.WithValue(ctx, wireKey{}, wrappers)
-	return ctx, wrappers
-}
-
-func (t *WireWrapper) Get() *WireDetails {
-	respPtr := t.val.Load()
+func (w *WireWrapper) Get() *WireDetails {
+	respPtr := w.val.Load()
 	if respPtr == nil {
 		return nil
 	}
 	return *respPtr
 }
 
+func WithWireCapture(ctx context.Context) (context.Context, *WireWrapper) {
+	wrappers := &WireWrapper{}
+	ctx = context.WithValue(ctx, wireKey{}, wrappers)
+	return ctx, wrappers
+}
+
 type endStreamError struct {
 	Error json.RawMessage `json:"error"`
 }
 
-type wireTracer struct {
+type WireTracer struct {
 	tracer *tracer.Tracer
 }
 
-func NewWireTracer(trace *tracer.Tracer) *wireTracer {
-	return &wireTracer{
+func NewWireTracer(trace *tracer.Tracer) *WireTracer {
+	return &WireTracer{
 		tracer: trace,
 	}
 }
 
-func (t *wireTracer) Complete(trace tracer.Trace) {
-	// p := internal.NewPrinter(os.Stderr)
-	// trace.Print(p)
+func (t *WireTracer) Complete(trace tracer.Trace) {
 	respWrapper, ok := trace.Request.Context().Value(wireKey{}).(*WireWrapper)
-	if ok {
+	if ok { //nolint:nestif
 		if trace.Response != nil {
 			statusCode := int32(trace.Response.StatusCode)
 
@@ -103,11 +101,14 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 					switch eventType := ev.(type) {
 					case *tracer.ResponseBodyEndStream:
 						var endStream endStreamError
-						json.Unmarshal([]byte(eventType.Content), &endStream)
+						if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
+							return
+						}
 						if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
 							return
 						}
-						break
+					default:
+						// Do nothing
 					}
 				}
 			}
@@ -119,9 +120,6 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 			}
 
 			respWrapper.val.Store(&wire)
-			// } else {
-			// 	p := internal.NewPrinter(os.Stderr)
-			// 	trace.Print(p)
 		}
 	}
 

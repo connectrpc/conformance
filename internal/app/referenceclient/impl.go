@@ -40,7 +40,6 @@ func (i *invoker) Invoke(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
 ) (*v1.ClientResponseResult, error) {
-
 	// If a timeout was specified, create a derived context with that deadline
 	if req.TimeoutMs != nil {
 		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
