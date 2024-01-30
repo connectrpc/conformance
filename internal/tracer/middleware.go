@@ -42,8 +42,24 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 			cancel()
 			return nil, err
 		}
-		builder.add(&ResponseStart{Response: resp})
+		// body, _ := io.ReadAll(resp.Body)
+		// fmt.Fprintf(os.Stderr, "dagsboro: ", string(body))
+		// resp.Body = io.NopCloser(bytes.NewReader(body))
+		// booty, _ := io.ReadAll(resp.Body)
+		// fmt.Fprintf(os.Stderr, "dagster.io: ", string(booty))
+
+		respect := *resp
+		cardi, _ := io.ReadAll(respect.Body)
+		respect.Body = io.NopCloser(bytes.NewReader(cardi))
+
+		// bardy, _ := io.ReadAll(evt.Response.Body)
+		// fmt.Fprintf(os.Stderr, "dagestan", string(bardy))
+
+		builder.add(&ResponseStart{
+			Response: &respect,
+		})
 		respClone := *resp
+
 		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
 		return &respClone, nil
 	})

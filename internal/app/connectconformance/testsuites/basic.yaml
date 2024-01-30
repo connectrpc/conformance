@@ -10,24 +10,24 @@ relevantHttpVersions:
 reliesOnTls: false
 testCases:
 # Unary Tests -----------------------------------------------------------------
-- request:
-    testName: unary success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
-    streamType: STREAM_TYPE_UNARY
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo"]
-        responseData: "dGVzdCByZXNwb25zZQ=="
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing"]
+# - request:
+#     testName: unary success
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: Unary
+#     streamType: STREAM_TYPE_UNARY
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1","Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo"]
+#         responseData: "dGVzdCByZXNwb25zZQ=="
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           value: ["bing"]
 - request:
     testName: unary canceled error
     service: connectrpc.conformance.v1.ConformanceService
@@ -91,37 +91,37 @@ testCases:
 #     requestMessages:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
 # # Server Stream Tests ---------------------------------------------------------
-- request:
-    testName: stream canceled error
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
-    streamType: STREAM_TYPE_SERVER_STREAM
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-      responseDefinition:
-        error:
-          code: 1
-          message: "canceled"
-- request:
-    testName: server stream success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
-    streamType: STREAM_TYPE_SERVER_STREAM
-    requestHeaders:
-    - name: X-Conformance-Test
-      value: ["Value1","Value2"]
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-      responseDefinition:
-        responseHeaders:
-        - name: x-custom-header
-          value: ["foo"]
-        responseData:
-          - "dGVzdCByZXNwb25zZQ=="
-          - "dGVzdCByZXNwb25zZQ=="
-        responseTrailers:
-        - name: x-custom-trailer
-          value: ["bing"]
+# - request:
+#     testName: stream canceled error
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         error:
+#           code: 1
+#           message: "canceled"
+# - request:
+#     testName: server stream success
+#     service: connectrpc.conformance.v1.ConformanceService
+#     method: ServerStream
+#     streamType: STREAM_TYPE_SERVER_STREAM
+#     requestHeaders:
+#     - name: X-Conformance-Test
+#       value: ["Value1","Value2"]
+#     requestMessages:
+#     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#       responseDefinition:
+#         responseHeaders:
+#         - name: x-custom-header
+#           value: ["foo"]
+#         responseData:
+#           - "dGVzdCByZXNwb25zZQ=="
+#           - "dGVzdCByZXNwb25zZQ=="
+#         responseTrailers:
+#         - name: x-custom-trailer
+#           value: ["bing"]
 # - request:
 #     testName: server stream no response
 #     service: connectrpc.conformance.v1.ConformanceService

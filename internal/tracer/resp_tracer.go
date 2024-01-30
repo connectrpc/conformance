@@ -17,9 +17,15 @@ package tracer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
+	"os"
+	"strings"
 
 	"sync/atomic"
 
+	"connectrpc.com/conformance/internal"
+	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
@@ -29,6 +35,7 @@ type respKey struct{}
 type WireDetails struct {
 	StatusCode      int32
 	RawErrorDetails *structpb.Struct
+	Trailers        []*v1.Header
 }
 
 type RespWrapper struct {
@@ -67,33 +74,64 @@ func NewContextTracer(trace *Tracer) *contextTracer {
 	}
 }
 
+func isConnectStreaming(trace Trace) bool {
+	contentType := trace.Response.Header.Get("content-type")
+	return strings.HasPrefix(contentType, "application/connect+")
+}
+func isConnectUnary(trace Trace) bool {
+	contentType := trace.Response.Header.Get("content-type")
+	return contentType == "application/json"
+}
+func isConnect(trace Trace) bool {
+	return isConnectUnary(trace) || isConnectStreaming(trace)
+}
+
 func (t *contextTracer) Complete(trace Trace) {
 	respWrapper, ok := trace.Request.Context().Value(respKey{}).(*RespWrapper)
+	p := internal.NewPrinter(os.Stderr)
+
+	trace.Print(p)
+
 	if ok {
+		statusCode := int32(trace.Response.StatusCode)
 		wire := &WireDetails{
-			StatusCode: int32(trace.Response.StatusCode),
+			StatusCode: statusCode,
+			Trailers:   internal.ConvertToProtoHeader(trace.Response.Trailer),
 		}
 
-		for _, ev := range trace.Events {
-			switch eventType := ev.(type) {
-			case *ResponseBodyEndStream:
-				var endStream endStreamError
-				json.Unmarshal([]byte(eventType.Content), &endStream)
-
+		if statusCode != 200 {
+			// Get raw Connect error details only if this is the Connect protocol
+			if isConnectUnary(trace) {
+				body, err := io.ReadAll(trace.Response.Body)
+				if err != nil {
+					return
+				}
+				fmt.Fprintf(os.Stderr, "Das booty", string(body))
 				var jsonRaw structpb.Struct
-				if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
+				if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
+					fmt.Fprintf(os.Stderr, "OH HELL NO", err)
 					return
 				}
 				wire.RawErrorDetails = &jsonRaw
+			} else if isConnectStreaming(trace) {
+				for _, ev := range trace.Events {
+					switch eventType := ev.(type) {
+					case *ResponseBodyEndStream:
+						var endStream endStreamError
+						json.Unmarshal([]byte(eventType.Content), &endStream)
+
+						var jsonRaw structpb.Struct
+						if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
+							return
+						}
+						wire.RawErrorDetails = &jsonRaw
+					}
+				}
 			}
 		}
 		respWrapper.val.Store(&wire)
 
 	}
-
-	// p := internal.NewPrinter(os.Stderr)
-
-	// trace.Print(p)
 
 	if t != nil {
 		t.tracer.Complete(trace)

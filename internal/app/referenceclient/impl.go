@@ -126,14 +126,17 @@ func (i *invoker) unary(
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 
-	var statusCode int32
-	var jsonRaw *structpb.Struct
-	deets := wire.Get()
-	if deets != nil {
-		statusCode = deets.StatusCode
-		jsonRaw = deets.RawErrorDetails
-
-		fmt.Fprintf(os.Stderr, "UNARY: %+v\n", deets)
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := wire.Get()
+	if wireDetails != nil {
+		fmt.Fprintf(os.Stderr, "UNARY WIRE DETAILS: %+v\n\n", wireDetails)
+		actualStatusCode = wireDetails.StatusCode
+		connectErrorRaw = wireDetails.RawErrorDetails
+		actualTrailers = wireDetails.Trailers
+	} else {
+		fmt.Fprintf(os.Stderr, "UNARY WIRE DETAILS are NULL")
 	}
 
 	if err != nil {
@@ -154,12 +157,13 @@ func (i *invoker) unary(
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ActualStatusCode: statusCode,
-		ConnectErrorRaw:  jsonRaw,
+		ResponseHeaders:    headers,
+		ResponseTrailers:   trailers,
+		Payloads:           payloads,
+		Error:              protoErr,
+		ActualStatusCode:   actualStatusCode,
+		ActualHttpTrailers: actualTrailers,
+		ConnectErrorRaw:    connectErrorRaw,
 	}, nil
 }
 
@@ -191,14 +195,14 @@ func (i *invoker) idempotentUnary(
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
 
-	var statusCode int32
-	var jsonRaw *structpb.Struct
-	deets := wire.Get()
-	if deets != nil {
-		statusCode = deets.StatusCode
-		jsonRaw = deets.RawErrorDetails
-
-		fmt.Fprintf(os.Stderr, "Idempotent: %+v\n", deets)
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := wire.Get()
+	if wireDetails != nil {
+		actualStatusCode = wireDetails.StatusCode
+		connectErrorRaw = wireDetails.RawErrorDetails
+		actualTrailers = wireDetails.Trailers
 	}
 
 	if err != nil {
@@ -217,12 +221,13 @@ func (i *invoker) idempotentUnary(
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ActualStatusCode: statusCode,
-		ConnectErrorRaw:  jsonRaw,
+		ResponseHeaders:    headers,
+		ResponseTrailers:   trailers,
+		Payloads:           payloads,
+		Error:              protoErr,
+		ActualStatusCode:   actualStatusCode,
+		ActualHttpTrailers: actualTrailers,
+		ConnectErrorRaw:    connectErrorRaw,
 	}, nil
 }
 
@@ -306,25 +311,27 @@ func (i *invoker) serverStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 		}
 	}
-	var statusCode int32
-	var jsonRaw *structpb.Struct
-	deets := wire.Get()
-	if deets != nil {
-		statusCode = deets.StatusCode
-		jsonRaw = deets.RawErrorDetails
-
-		fmt.Fprintf(os.Stderr, "SERVER STREAM: %+v\n", deets)
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := wire.Get()
+	if wireDetails != nil {
+		fmt.Fprintf(os.Stderr, "SERVER STREAM WIRE DETAILS: %+v\n\n", wireDetails)
+		actualStatusCode = wireDetails.StatusCode
+		connectErrorRaw = wireDetails.RawErrorDetails
+		actualTrailers = wireDetails.Trailers
 	} else {
-		fmt.Fprintf(os.Stderr, "SERVER SREAM NULLLLLLL")
+		fmt.Fprintf(os.Stderr, "SERVER STREAM WIRE DETAILS are NULL")
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		ActualStatusCode: statusCode,
-		ConnectErrorRaw:  jsonRaw,
+		ResponseHeaders:    headers,
+		ResponseTrailers:   trailers,
+		Payloads:           payloads,
+		Error:              protoErr,
+		ActualStatusCode:   actualStatusCode,
+		ActualHttpTrailers: actualTrailers,
+		ConnectErrorRaw:    connectErrorRaw,
 	}, nil
 }
 
