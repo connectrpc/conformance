@@ -325,6 +325,10 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
 					testFilePath, testCase.Request.TestName)
 			}
+			if hasRawResponse(testCase.Request.RequestMessages) && testCase.ExpectedResponse == nil {
+				return nil, fmt.Errorf("%s: test case %q has raw response, but does not specify an explicit expected response",
+					testFilePath, testCase.Request.TestName)
+			}
 			// The expand request directive uses the proto codec for size calculations, so it doesn't make sense to test with other codecs
 			if len(testCase.ExpandRequests) > 0 && (len(suite.RelevantCodecs) > 1 || !hasCodec(suite.RelevantCodecs, conformancev1.Codec_CODEC_PROTO)) {
 				return nil, fmt.Errorf("%s: test case %q specifies expand requests directive, but includes codecs other than CODEC_PROTO",
@@ -566,43 +570,31 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		ResponseTrailers: def.ResponseTrailers,
 	}
 
-	if def.RawResponse != nil {
-		// TODO - Handle other raw response values
-		// If an HTTP error status was specified in the raw response, then the test case is
-		// forcing the return of an HTTP error, which should be mapped to a Connect error
-		// according to the protocol.
-		if def.RawResponse.StatusCode >= 400 && def.RawResponse.StatusCode <= 599 {
-			expected.Error = &conformancev1.Error{
-				Code: mapHTTPtoConnectCode(def.RawResponse.StatusCode),
-			}
-		}
-	} else {
-		switch respType := def.Response.(type) {
-		case *conformancev1.UnaryResponseDefinition_Error:
-			// If an error was specified, it should be returned in the response
-			expected.Error = respType.Error
+	switch respType := def.Response.(type) {
+	case *conformancev1.UnaryResponseDefinition_Error:
+		// If an error was specified, it should be returned in the response
+		expected.Error = respType.Error
 
-			// Unary responses that return an error should have the request info
-			// in the error details
-			reqInfoAny, err := anypb.New(reqInfo)
-			if err != nil {
-				return connect.NewError(connect.CodeInternal, err)
-			}
-			respType.Error.Details = append(respType.Error.Details, reqInfoAny)
-		case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
-			// If response data was specified for the response (or nothing at all),
-			// the server should echo back the request message and headers in the response
-			payload := &conformancev1.ConformancePayload{
-				RequestInfo: reqInfo,
-			}
-			// If response data was specified for the response, it should be returned
-			if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
-				payload.Data = respType.ResponseData
-			}
-			expected.Payloads = []*conformancev1.ConformancePayload{payload}
-		default:
-			return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
+		// Unary responses that return an error should have the request info
+		// in the error details
+		reqInfoAny, err := anypb.New(reqInfo)
+		if err != nil {
+			return connect.NewError(connect.CodeInternal, err)
 		}
+		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
+	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
+		// If response data was specified for the response (or nothing at all),
+		// the server should echo back the request message and headers in the response
+		payload := &conformancev1.ConformancePayload{
+			RequestInfo: reqInfo,
+		}
+		// If response data was specified for the response, it should be returned
+		if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
+			payload.Data = respType.ResponseData
+		}
+		expected.Payloads = []*conformancev1.ConformancePayload{payload}
+	default:
+		return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 	}
 
 	testCase.ExpectedResponse = expected
@@ -729,33 +721,4 @@ func allValues[T ~int32](m map[int32]string) []T {
 		return vals[i] < vals[j]
 	})
 	return vals
-}
-
-func mapHTTPtoConnectCode(httpCode uint32) int32 {
-	var connectCode connect.Code
-	switch httpCode {
-	case 400:
-		connectCode = connect.CodeInvalidArgument
-	case 401:
-		connectCode = connect.CodeUnauthenticated
-	case 403:
-		connectCode = connect.CodePermissionDenied
-	case 404:
-		connectCode = connect.CodeUnimplemented
-	case 408:
-		connectCode = connect.CodeDeadlineExceeded
-	case 409:
-		connectCode = connect.CodeAborted
-	case 412:
-		connectCode = connect.CodeFailedPrecondition
-	case 413, 431:
-		connectCode = connect.CodeResourceExhausted
-	case 415:
-		connectCode = connect.CodeInternal
-	case 429, 502, 503, 504:
-		connectCode = connect.CodeUnavailable
-	default:
-		connectCode = connect.CodeUnknown
-	}
-	return int32(connectCode)
 }
