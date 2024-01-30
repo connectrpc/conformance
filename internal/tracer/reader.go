@@ -35,17 +35,25 @@ type tracingReader struct {
 	reader    io.ReadCloser
 	builder   *builder
 	isRequest bool
+	whenDone  func()
 	closed    atomic.Bool
 
 	dataTracer dataTracer
 }
 
-func newReader(headers http.Header, reader io.ReadCloser, isRequest bool, builder *builder) io.ReadCloser {
+func newRequestReader(headers http.Header, reader io.ReadCloser, isRequest bool, builder *builder) io.ReadCloser {
+	// no action to take when request body is done
+	whenDone := func() {}
+	return newReader(headers, reader, isRequest, builder, whenDone)
+}
+
+func newReader(headers http.Header, reader io.ReadCloser, isRequest bool, builder *builder, whenDone func()) io.ReadCloser {
 	isStream, decompressor := propertiesFromHeaders(headers)
 	return &tracingReader{
 		reader:    reader,
 		isRequest: isRequest,
 		builder:   builder,
+		whenDone:  whenDone,
 		dataTracer: dataTracer{
 			isRequest:        isRequest,
 			isStreamProtocol: isStream,
@@ -82,17 +90,15 @@ func (t *tracingReader) tryFinish(err error) {
 	if !t.closed.CompareAndSwap(false, true) {
 		return // already finished
 	}
+	defer t.whenDone()
 
 	t.dataTracer.emitUnfinished()
 
 	if t.isRequest {
 		t.builder.add(&RequestBodyEnd{Err: err})
-		return
+	} else {
+		t.builder.add(&ResponseBodyEnd{Err: err})
 	}
-
-	// On the response side, when the body reaches the end, whole thing is done.
-	t.builder.add(&ResponseBodyEnd{Err: err})
-	t.builder.build()
 }
 
 // dataTracer is responsible for translating bytes read/written into trace events.

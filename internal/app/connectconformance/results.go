@@ -90,6 +90,14 @@ func (r *testResults) fetchTrace(testCase string) {
 	if r.tracer == nil {
 		return
 	}
+	if strings.Contains(testCase, grpcImplMarker) ||
+		strings.Contains(testCase, grpcClientImplMarker) ||
+		strings.Contains(testCase, grpcServerImplMarker) {
+		// No trace coming from the grpc-go impls.
+		r.tracer.Clear(testCase)
+		return
+	}
+
 	r.traceWaitGroup.Add(1)
 	go func() {
 		defer r.traceWaitGroup.Done()

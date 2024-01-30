@@ -48,30 +48,42 @@ func newBuilder(req *http.Request, collector Collector) *builder {
 
 // add adds the given event to the trace being built.
 func (b *builder) add(event Event) {
+	var finish bool
+	defer func() {
+		// must not call b.build() below, while lock held,
+		// so we do so from deferred function, after lock released
+		if finish {
+			b.build()
+		}
+	}()
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	if b.trace.TestName == "" {
 		return
 	}
 	switch event := event.(type) {
-	case *ResponseStart:
-		b.trace.Response = event.Response
-	case *ResponseError:
-		b.trace.Err = event.Err
+	case *RequestBodyData:
+		event.MessageIndex = b.reqCount
+		b.reqCount++
 	case *RequestBodyEnd:
 		if b.trace.Err != nil {
 			b.trace.Err = event.Err
 		}
+	case *ResponseStart:
+		b.trace.Response = event.Response
+	case *ResponseError:
+		b.trace.Err = event.Err
+		finish = true
+	case *ResponseBodyData:
+		event.MessageIndex = b.respCount
+		b.respCount++
 	case *ResponseBodyEnd:
 		if b.trace.Err != nil {
 			b.trace.Err = event.Err
 		}
-	case *RequestBodyData:
-		event.MessageIndex = b.reqCount
-		b.reqCount++
-	case *ResponseBodyData:
-		event.MessageIndex = b.respCount
-		b.respCount++
+		finish = true
+	case *RequestCanceled:
+		finish = true
 	}
 	event.setEventOffset(time.Since(b.start))
 	b.trace.Events = append(b.trace.Events, event)
