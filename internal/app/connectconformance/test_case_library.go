@@ -332,6 +332,10 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
 					testFilePath, testCase.Request.TestName)
 			}
+			if hasRawResponse(testCase.Request.RequestMessages) && testCase.ExpectedResponse == nil {
+				return nil, fmt.Errorf("%s: test case %q has raw response, but does not specify an explicit expected response",
+					testFilePath, testCase.Request.TestName)
+			}
 			// The expand request directive uses the proto codec for size calculations, so it doesn't make sense to test with other codecs
 			if len(testCase.ExpandRequests) > 0 && (len(suite.RelevantCodecs) > 1 || !hasCodec(suite.RelevantCodecs, conformancev1.Codec_CODEC_PROTO)) {
 				return nil, fmt.Errorf("%s: test case %q specifies expand requests directive, but includes codecs other than CODEC_PROTO",
