@@ -15,18 +15,12 @@
 package referenceclient
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io"
-	"os"
-	"strings"
 	"sync/atomic"
 
-	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/tracer"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -46,6 +40,7 @@ type wireDetails struct {
 
 type wireWrapper struct {
 	val atomic.Pointer[wireDetails]
+	buf *bytes.Buffer
 }
 
 // withWireCapture returns a new context which will contain wire details during
@@ -83,56 +78,59 @@ type wireTracer struct {
 // from the passed trace. The wire details will be stored in the context acquired by
 // withWireCapture and can be retrieved via getWireDetails.
 func (t *wireTracer) Complete(trace tracer.Trace) {
-	if trace.Response != nil { //nolint:nestif
-		statusCode := int32(trace.Response.StatusCode)
+	// wrapper, ok := trace.Request.Context().Value(wireCtxKey{}).(*wireWrapper)
+	// if ok {
+	// 	if trace.Response != nil { //nolint:nestif
+	// 		statusCode := int32(trace.Response.StatusCode)
 
-		var jsonRaw structpb.Struct
-		contentType := trace.Response.Header.Get("content-type")
-		if contentType == "application/json" {
-			if statusCode != 200 {
-				// If this is a unary request, then use the entire response body
-				// as the wire error details.
-				body, err := io.ReadAll(trace.Response.Body)
-				if err != nil {
-					return
-				}
-				if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-					return
-				}
-			}
-		} else if strings.HasPrefix(contentType, "application/connect+") {
-			type endStreamError struct {
-				Error json.RawMessage `json:"error"`
-			}
-			// If this is a streaming request, then look through the trace events
-			// for the ResponseBodyEndStream event and parse its content into an
-			// endStreamError to see if there are any error details.
-			for _, ev := range trace.Events {
-				switch eventType := ev.(type) {
-				case *tracer.ResponseBodyEndStream:
-					var endStream endStreamError
-					if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-						return
-					}
-					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-						return
-					}
-				default:
-					// Do nothing
-				}
-			}
-		}
+	// 		var jsonRaw structpb.Struct
+	// 		contentType := trace.Response.Header.Get("content-type")
+	// 		if contentType == "application/json" {
+	// 			if statusCode != 200 {
+	// 				// If this is a unary request, then use the entire response body
+	// 				// as the wire error details.
+	// 				body, err := io.ReadAll(wrapper.buf)
+	// 				if err != nil {
+	// 					fmt.Fprintf(os.Stderr, "bang gang\n\n", err)
+	// 					return
+	// 				}
+	// 				if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
+	// 					fmt.Fprintf(os.Stderr, "bang gang2\n\n", err)
+	// 					return
+	// 				}
+	// 			}
+	// 		} else if strings.HasPrefix(contentType, "application/connect+") {
+	// 			type endStreamError struct {
+	// 				Error json.RawMessage `json:"error"`
+	// 			}
+	// 			// If this is a streaming request, then look through the trace events
+	// 			// for the ResponseBodyEndStream event and parse its content into an
+	// 			// endStreamError to see if there are any error details.
+	// 			for _, ev := range trace.Events {
+	// 				switch eventType := ev.(type) {
+	// 				case *tracer.ResponseBodyEndStream:
+	// 					var endStream endStreamError
+	// 					if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
+	// 						return
+	// 					}
+	// 					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
+	// 						return
+	// 					}
+	// 				default:
+	// 					// Do nothing
+	// 				}
+	// 			}
+	// 		}
 
-		wire := &wireDetails{
-			StatusCode:      statusCode,
-			Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
-			ConnectErrorRaw: &jsonRaw,
-		}
+	// 		wire := &wireDetails{
+	// 			StatusCode:      statusCode,
+	// 			Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
+	// 			ConnectErrorRaw: &jsonRaw,
+	// 		}
 
-		fmt.Fprintf(os.Stderr, "Setting wire details for %s\n\n", trace.TestName)
-		setWireDetails(trace.Request.Context(), wire)
-		fmt.Fprintf(os.Stderr, "SET wire details for %s\n\n", trace.TestName)
-	}
+	// 		setWireDetails(trace.Request.Context(), wire)
+	// 	}
+	// }
 
 	if t != nil {
 		t.tracer.Complete(trace)

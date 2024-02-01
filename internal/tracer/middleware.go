@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -28,9 +29,9 @@ import (
 // round tripper will record traces of all operations to the given tracer.
 func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.RoundTripper {
 	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		fmt.Fprintf(os.Stderr, "roundtrip start")
 		builder := newBuilder(req, collector)
 		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
 		go func() {
 			<-ctx.Done()
 			builder.add(&RequestCanceled{})
@@ -40,24 +41,13 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 		resp, err := transport.RoundTrip(req)
 		if err != nil {
 			builder.add(&ResponseError{Err: err})
+			cancel()
 			return nil, err
 		}
-
-		defer resp.Body.Close()
-		// Read the response body in full and then replace it with a new in-memory reader
-		// so that we can read the contents multiple times in any trace or middleware.
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		resp.Body = io.NopCloser(bytes.NewReader(body))
-		builder.add(&ResponseStart{
-			Response: resp,
-		})
-
+		builder.add(&ResponseStart{Response: resp})
 		respClone := *resp
-		respClone.Body = newReader(resp.Header, io.NopCloser(bytes.NewReader(body)), false, builder, cancel)
-
+		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
+		fmt.Fprintf(os.Stderr, "roundtrip end")
 		return &respClone, nil
 	})
 }
