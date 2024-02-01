@@ -43,11 +43,13 @@ type WireDetails struct {
 
 type WireWrapper struct {
 	val *WireDetails
-	mtx sync.Mutex // serialize calls to sendRequest
+	mtx sync.Mutex
 }
 
-// Get returns the wire details
+// Get returns the wire details.
 func (w *WireWrapper) Get() *WireDetails {
+	w.mtx.Lock()
+	defer w.mtx.Unlock()
 	if w.val == nil {
 		return nil
 	}
@@ -60,11 +62,13 @@ func (w *WireWrapper) Lock() {
 	w.mtx.Lock()
 }
 
+// Lock releases the internal lock for setting the wire details.
 func (w *WireWrapper) Unlock() {
 	w.mtx.Unlock()
 }
 
-// Set sets the wire details
+// Set sets the wire details. Note that calls to Set should always be
+// preceded by calls to Lock.
 func (w *WireWrapper) Set(details *WireDetails) {
 	w.val = details
 }
@@ -83,9 +87,11 @@ type WireTracer struct {
 
 // Complete intercepts the Complete call for a tracer, extracting wire details
 // from the passed trace. The wire details will be stored in the context acquired byte
-// WithWireCapture and can be retrieved via WireWrapper.Get()
+// WithWireCapture and can be retrieved via WireWrapper.Get().
 func (t *WireTracer) Complete(trace tracer.Trace) {
 	wrapper, ok := trace.Request.Context().Value(wireKey{}).(*WireWrapper)
+	// Lock the mutex on the wrapper so that the client implementation isn't
+	// reading the wire details before we get a chance to populate them here.
 	wrapper.Lock()
 	defer wrapper.Unlock()
 	if ok { //nolint:nestif
