@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
-	"sync/atomic"
+	"sync"
 
 	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -42,24 +42,39 @@ type WireDetails struct {
 }
 
 type WireWrapper struct {
-	val atomic.Pointer[*WireDetails]
+	val *WireDetails
+	mtx sync.Mutex // serialize calls to sendRequest
 }
 
 // Get returns the wire details
 func (w *WireWrapper) Get() *WireDetails {
-	respPtr := w.val.Load()
-	if respPtr == nil {
+	if w.val == nil {
 		return nil
 	}
-	return *respPtr
+	return w.val
+}
+
+// Lock acquires the internal lock for setting the wire details. This should
+// always be called before calling Set.
+func (w *WireWrapper) Lock() {
+	w.mtx.Lock()
+}
+
+func (w *WireWrapper) Unlock() {
+	w.mtx.Unlock()
+}
+
+// Set sets the wire details
+func (w *WireWrapper) Set(details *WireDetails) {
+	w.val = details
 }
 
 // WithWireCapture returns a new context which will contain wire details during
 // a roundtrip.
 func WithWireCapture(ctx context.Context) (context.Context, *WireWrapper) {
-	wrappers := &WireWrapper{}
-	ctx = context.WithValue(ctx, wireKey{}, wrappers)
-	return ctx, wrappers
+	wrapper := &WireWrapper{}
+	ctx = context.WithValue(ctx, wireKey{}, wrapper)
+	return ctx, wrapper
 }
 
 type WireTracer struct {
@@ -70,7 +85,9 @@ type WireTracer struct {
 // from the passed trace. The wire details will be stored in the context acquired byte
 // WithWireCapture and can be retrieved via WireWrapper.Get()
 func (t *WireTracer) Complete(trace tracer.Trace) {
-	respWrapper, ok := trace.Request.Context().Value(wireKey{}).(*WireWrapper)
+	wrapper, ok := trace.Request.Context().Value(wireKey{}).(*WireWrapper)
+	wrapper.Lock()
+	defer wrapper.Unlock()
 	if ok { //nolint:nestif
 		if trace.Response != nil {
 			statusCode := int32(trace.Response.StatusCode)
@@ -118,7 +135,7 @@ func (t *WireTracer) Complete(trace tracer.Trace) {
 				ConnectErrorRaw: &jsonRaw,
 			}
 
-			respWrapper.val.Store(&wire)
+			wrapper.Set(wire)
 		}
 	}
 

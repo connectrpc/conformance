@@ -563,10 +563,25 @@ func (i *invoker) unimplemented(
 	request := connect.NewRequest(ur)
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
+	ctx, wire := WithWireCapture(ctx)
+
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
+
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := wire.Get()
+	if wireDetails != nil {
+		actualStatusCode = wireDetails.StatusCode
+		actualTrailers = wireDetails.Trailers
+		connectErrorRaw = wireDetails.ConnectErrorRaw
+	}
 	return &v1.ClientResponseResult{
-		Error: internal.ConvertErrorToProtoError(err),
+		Error:              internal.ConvertErrorToProtoError(err),
+		ActualStatusCode:   actualStatusCode,
+		ActualHttpTrailers: actualTrailers,
+		ConnectErrorRaw:    connectErrorRaw,
 	}, nil
 }
 
