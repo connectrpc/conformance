@@ -37,6 +37,13 @@ const (
 	// response (which echoes back the request data) won't exceed client limit.
 	clientReceiveLimit = 1024 * 1024 // 1 MB
 	serverReceiveLimit = 200 * 1024  // 200 KB
+
+	// these are inserted into test case permutation names for the permutations
+	// of a test case that use the grpc-go implementation of a reference client
+	// or server.
+	grpcImplMarker       = "(grpc impls)"
+	grpcClientImplMarker = "(grpc client impl)"
+	grpcServerImplMarker = "(grpc server impl)"
 )
 
 //nolint:gochecknoglobals
@@ -323,6 +330,10 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 			}
 			if hasRawResponse(testCase.Request.RequestMessages) && suite.Mode != conformancev1.TestSuite_TEST_MODE_CLIENT {
 				return nil, fmt.Errorf("%s: test case %q has raw response, but that is only allowed when mode is TEST_MODE_CLIENT",
+					testFilePath, testCase.Request.TestName)
+			}
+			if hasRawResponse(testCase.Request.RequestMessages) && testCase.ExpectedResponse == nil {
+				return nil, fmt.Errorf("%s: test case %q has raw response, but does not specify an explicit expected response",
 					testFilePath, testCase.Request.TestName)
 			}
 			// The expand request directive uses the proto codec for size calculations, so it doesn't make sense to test with other codecs
@@ -703,6 +714,64 @@ func generateTestCasePrefix(suite *conformancev1.TestSuite, cfgCase configCase) 
 		components = append(components, fmt.Sprintf("TLS:%v", cfgCase.UseTLS))
 	}
 	return components
+}
+
+func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
+	if !clientIsGRPCImpl && !serverIsGRPCImpl {
+		return testCases
+	}
+
+	// The gRPC reference impls do not support everything that the main reference impls do.
+	// So we must filter away any test cases that aren't applicable to the gRPC impls.
+
+	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
+	for _, testCase := range testCases {
+		// Client only supports gRPC protocol. Server also supports gRPC-Web.
+		if clientIsGRPCImpl && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
+			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
+			continue
+		}
+
+		if testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
+			// grpc-web supports HTTP/1 and HTTP/2
+			switch testCase.Request.HttpVersion {
+			case conformancev1.HTTPVersion_HTTP_VERSION_1, conformancev1.HTTPVersion_HTTP_VERSION_2:
+			default:
+				continue
+			}
+		} else if testCase.Request.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
+			// but grpc only supports HTTP/2
+			continue
+		}
+
+		if testCase.Request.Codec != conformancev1.Codec_CODEC_PROTO {
+			continue
+		}
+		if testCase.Request.Compression != conformancev1.Compression_COMPRESSION_IDENTITY &&
+			testCase.Request.Compression != conformancev1.Compression_COMPRESSION_GZIP {
+			continue
+		}
+
+		if len(testCase.Request.ServerTlsCert) > 0 {
+			continue
+		}
+
+		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
+		// Insert a path in the test name to indicate that this is against the gRPC impl.
+		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
+		var elem string
+		switch {
+		case clientIsGRPCImpl && serverIsGRPCImpl:
+			elem = grpcImplMarker
+		case clientIsGRPCImpl:
+			elem = grpcClientImplMarker
+		case serverIsGRPCImpl:
+			elem = grpcServerImplMarker
+		}
+		filteredCase.Request.TestName = path.Join(dir, elem, base)
+		filtered = append(filtered, filteredCase)
+	}
+	return filtered
 }
 
 func allValues[T ~int32](m map[int32]string) []T {
