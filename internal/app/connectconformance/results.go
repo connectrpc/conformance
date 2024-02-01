@@ -199,6 +199,14 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 		}
 	}
 
+	// If a status code is specified in the expected result, then verify it against the actual status code
+	if expected.ActualStatusCode != 0 {
+		diff := cmp.Diff(expected.ActualStatusCode, actual.ActualStatusCode, protocmp.Transform())
+		if diff != "" {
+			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
+		}
+	}
+
 	r.setOutcome(testCase, false, errs.Result())
 }
 

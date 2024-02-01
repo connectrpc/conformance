@@ -217,10 +217,12 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
-	// Create a new TracingRoundTripper with our WireTracer so that the tests can trace values on the
+	// Create a new TracingRoundTripper with our wireTracer so that the tests can trace values on the
 	// wire. Note that 'trace' could be nil, in which case, any error traces will
 	// simply not be printed.
-	transport = tracer.TracingRoundTripper(transport, NewWireTracer(trace))
+	transport = tracer.TracingRoundTripper(transport, &wireTracer{
+		tracer: trace,
+	})
 
 	if req.RawRequest != nil {
 		transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}

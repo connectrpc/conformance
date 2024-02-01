@@ -17,9 +17,11 @@ package referenceclient
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"os"
 	"strings"
-	"sync"
+	"sync/atomic"
 
 	"connectrpc.com/conformance/internal"
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -28,10 +30,11 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type wireKey struct{}
+// The key associated with the wire details information stored in context.
+type wireCtxKey struct{}
 
-// WireDetails encapsulates the wire details to track for a roundtrip.
-type WireDetails struct {
+// wireDetails encapsulates the wire details to track for a roundtrip.
+type wireDetails struct {
 	// The actual HTTP status code observed.
 	StatusCode int32
 	// The actual trailers observed.
@@ -41,119 +44,97 @@ type WireDetails struct {
 	ConnectErrorRaw *structpb.Struct
 }
 
-type WireWrapper struct {
-	val *WireDetails
-	mtx sync.Mutex
+type wireWrapper struct {
+	val atomic.Pointer[wireDetails]
 }
 
-// Get returns the wire details.
-func (w *WireWrapper) Get() *WireDetails {
-	w.mtx.Lock()
-	defer w.mtx.Unlock()
-	if w.val == nil {
+// withWireCapture returns a new context which will contain wire details during
+// a roundtrip.
+func withWireCapture(ctx context.Context) context.Context {
+	return context.WithValue(ctx, wireCtxKey{}, &wireWrapper{})
+}
+
+// setWireDetails sets the given wire details in the given context.
+func setWireDetails(ctx context.Context, details *wireDetails) {
+	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
+	if !ok {
+		return
+	}
+	wrapper.val.Store(details)
+}
+
+func getWireDetails(ctx context.Context) *wireDetails {
+	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
+	if !ok {
 		return nil
 	}
-	return w.val
+	ptr := wrapper.val.Load()
+	if ptr == nil {
+		return nil
+	}
+	return ptr
 }
 
-// Lock acquires the internal lock for setting the wire details. This should
-// always be called before calling Set.
-func (w *WireWrapper) Lock() {
-	w.mtx.Lock()
-}
-
-// Lock releases the internal lock for setting the wire details.
-func (w *WireWrapper) Unlock() {
-	w.mtx.Unlock()
-}
-
-// Set sets the wire details. Note that calls to Set should always be
-// preceded by calls to Lock.
-func (w *WireWrapper) Set(details *WireDetails) {
-	w.val = details
-}
-
-// WithWireCapture returns a new context which will contain wire details during
-// a roundtrip.
-func WithWireCapture(ctx context.Context) (context.Context, *WireWrapper) {
-	wrapper := &WireWrapper{}
-	ctx = context.WithValue(ctx, wireKey{}, wrapper)
-	return ctx, wrapper
-}
-
-type WireTracer struct {
+type wireTracer struct {
 	tracer *tracer.Tracer
 }
 
 // Complete intercepts the Complete call for a tracer, extracting wire details
-// from the passed trace. The wire details will be stored in the context acquired byte
-// WithWireCapture and can be retrieved via WireWrapper.Get().
-func (t *WireTracer) Complete(trace tracer.Trace) {
-	wrapper, ok := trace.Request.Context().Value(wireKey{}).(*WireWrapper)
-	// Lock the mutex on the wrapper so that the client implementation isn't
-	// reading the wire details before we get a chance to populate them here.
-	wrapper.Lock()
-	defer wrapper.Unlock()
-	if ok { //nolint:nestif
-		if trace.Response != nil {
-			statusCode := int32(trace.Response.StatusCode)
+// from the passed trace. The wire details will be stored in the context acquired by
+// withWireCapture and can be retrieved via getWireDetails.
+func (t *wireTracer) Complete(trace tracer.Trace) {
+	if trace.Response != nil { //nolint:nestif
+		statusCode := int32(trace.Response.StatusCode)
 
-			var jsonRaw structpb.Struct
-			contentType := trace.Response.Header.Get("content-type")
-			if contentType == "application/json" {
-				if statusCode != 200 {
-					// If this is a unary request, then use the entire response body
-					// as the wire error details.
-					body, err := io.ReadAll(trace.Response.Body)
-					if err != nil {
-						return
-					}
-					if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-						return
-					}
+		var jsonRaw structpb.Struct
+		contentType := trace.Response.Header.Get("content-type")
+		if contentType == "application/json" {
+			if statusCode != 200 {
+				// If this is a unary request, then use the entire response body
+				// as the wire error details.
+				body, err := io.ReadAll(trace.Response.Body)
+				if err != nil {
+					return
 				}
-			} else if strings.HasPrefix(contentType, "application/connect+") {
-				type endStreamError struct {
-					Error json.RawMessage `json:"error"`
-				}
-				// If this is a streaming request, then look through the trace events
-				// for the ResponseBodyEndStream event and parse its content into an
-				// endStreamError to see if there are any error details.
-				for _, ev := range trace.Events {
-					switch eventType := ev.(type) {
-					case *tracer.ResponseBodyEndStream:
-						var endStream endStreamError
-						if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-							return
-						}
-						if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-							return
-						}
-					default:
-						// Do nothing
-					}
+				if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
+					return
 				}
 			}
-
-			wire := &WireDetails{
-				StatusCode:      statusCode,
-				Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
-				ConnectErrorRaw: &jsonRaw,
+		} else if strings.HasPrefix(contentType, "application/connect+") {
+			type endStreamError struct {
+				Error json.RawMessage `json:"error"`
 			}
-
-			wrapper.Set(wire)
+			// If this is a streaming request, then look through the trace events
+			// for the ResponseBodyEndStream event and parse its content into an
+			// endStreamError to see if there are any error details.
+			for _, ev := range trace.Events {
+				switch eventType := ev.(type) {
+				case *tracer.ResponseBodyEndStream:
+					var endStream endStreamError
+					if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
+						return
+					}
+					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
+						return
+					}
+				default:
+					// Do nothing
+				}
+			}
 		}
+
+		wire := &wireDetails{
+			StatusCode:      statusCode,
+			Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
+			ConnectErrorRaw: &jsonRaw,
+		}
+
+		fmt.Fprintf(os.Stderr, "Setting wire details for %s\n\n", trace.TestName)
+		setWireDetails(trace.Request.Context(), wire)
+		fmt.Fprintf(os.Stderr, "SET wire details for %s\n\n", trace.TestName)
 	}
 
 	if t != nil {
 		t.tracer.Complete(trace)
-	}
-}
-
-// NewWireTracer returns a new wire tracer with the given tracer.
-// If trace is nil, all tracer operations will be bypassed.
-func NewWireTracer(trace *tracer.Tracer) *WireTracer {
-	return &WireTracer{
-		tracer: trace,
 	}
 }

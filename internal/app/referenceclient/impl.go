@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -118,7 +119,7 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx, wire := WithWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
@@ -126,11 +127,14 @@ func (i *invoker) unary(
 	var actualStatusCode int32
 	var connectErrorRaw *structpb.Struct
 	var actualTrailers []*v1.Header
-	wireDetails := wire.Get()
+	fmt.Fprintf(os.Stderr, "Getting wire details in client impl for %s\n\n", req.TestName)
+	wireDetails := getWireDetails(ctx)
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
 		connectErrorRaw = wireDetails.ConnectErrorRaw
+	} else {
+		fmt.Fprintf(os.Stderr, "Wire details for %s are NIL!\n\n", req.TestName)
 	}
 
 	if err != nil {
@@ -184,7 +188,7 @@ func (i *invoker) idempotentUnary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx, wire := WithWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
@@ -192,7 +196,7 @@ func (i *invoker) idempotentUnary(
 	var actualStatusCode int32
 	var connectErrorRaw *structpb.Struct
 	var actualTrailers []*v1.Header
-	wireDetails := wire.Get()
+	wireDetails := getWireDetails(ctx)
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
@@ -243,7 +247,7 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	ctx, wire := WithWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
@@ -308,7 +312,7 @@ func (i *invoker) serverStream(
 	var actualStatusCode int32
 	var connectErrorRaw *structpb.Struct
 	var actualTrailers []*v1.Header
-	wireDetails := wire.Get()
+	wireDetails := getWireDetails(ctx)
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
@@ -333,7 +337,7 @@ func (i *invoker) clientStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ctx, wire := WithWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
@@ -389,7 +393,7 @@ func (i *invoker) clientStream(
 	var actualStatusCode int32
 	var connectErrorRaw *structpb.Struct
 	var actualTrailers []*v1.Header
-	wireDetails := wire.Get()
+	wireDetails := getWireDetails(ctx)
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
@@ -418,7 +422,7 @@ func (i *invoker) bidiStream(
 		ConnectErrorRaw: nil, // TODO
 	}
 
-	ctx, wire := WithWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
@@ -528,7 +532,7 @@ func (i *invoker) bidiStream(
 	var actualStatusCode int32
 	var connectErrorRaw *structpb.Struct
 	var actualTrailers []*v1.Header
-	wireDetails := wire.Get()
+	wireDetails := getWireDetails(ctx)
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
@@ -563,7 +567,7 @@ func (i *invoker) unimplemented(
 	request := connect.NewRequest(ur)
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	ctx, wire := WithWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
@@ -571,7 +575,7 @@ func (i *invoker) unimplemented(
 	var actualStatusCode int32
 	var connectErrorRaw *structpb.Struct
 	var actualTrailers []*v1.Header
-	wireDetails := wire.Get()
+	wireDetails := getWireDetails(ctx)
 	if wireDetails != nil {
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
