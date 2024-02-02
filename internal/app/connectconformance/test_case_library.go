@@ -600,7 +600,6 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 			payload.Data = respType.ResponseData
 		}
 		expected.Payloads = []*conformancev1.ConformancePayload{payload}
-		expected.ActualStatusCode = 200
 	default:
 		return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 	}
@@ -644,7 +643,6 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 		ResponseHeaders:  def.ResponseHeaders,
 		ResponseTrailers: def.ResponseTrailers,
 		Error:            def.Error,
-		ActualStatusCode: 200, // status codes should always be 200 for streaming responses (even errors)
 	}
 
 	// There should be one payload for every ResponseData the client specified

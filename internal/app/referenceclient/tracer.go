@@ -84,8 +84,8 @@ type wireTracer struct {
 // withWireCapture and can be retrieved via getWireDetails.
 func (t *wireTracer) Complete(trace tracer.Trace) {
 	wrapper, ok := trace.Request.Context().Value(wireCtxKey{}).(*wireWrapper)
-	if ok {
-		if trace.Response != nil { //nolint:nestif
+	if ok { //nolint:nestif
+		if trace.Response != nil {
 			statusCode := int32(trace.Response.StatusCode)
 
 			var jsonRaw structpb.Struct
@@ -116,8 +116,12 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 						if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
 							return
 						}
-						if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-							return
+						// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
+						// into a Struct
+						if len(endStream.Error) > 0 {
+							if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
+								return
+							}
 						}
 					default:
 						// Do nothing

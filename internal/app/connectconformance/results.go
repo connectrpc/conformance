@@ -199,8 +199,8 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 		}
 	}
 
-	// If a status code is specified in the expected result, then verify it against the actual status code
-	if expected.ActualStatusCode != 0 {
+	// If client didn't provide an actual status code, we skip this check.
+	if expected.ActualStatusCode != 0 && actual.ActualStatusCode != 0 {
 		diff := cmp.Diff(expected.ActualStatusCode, actual.ActualStatusCode, protocmp.Transform())
 		if diff != "" {
 			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
@@ -494,7 +494,7 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
 		//       error details transparently (such that the expected details would be a *subset* of
 		//       the actual details)?
-		errs = append(errs, fmt.Errorf("actual error contain %d details; expecing %d",
+		errs = append(errs, fmt.Errorf("actual error contain %d details; expecting %d",
 			len(actual.Details), len(expected.Details)))
 	}
 	// Check as many as we can

@@ -33,7 +33,7 @@ func (w *wireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil || !ok {
 		return resp, err
 	}
-	resp.Body = &wireReader{r: resp.Body, resp: resp, wrapper: wrapper}
+	resp.Body = &wireReader{body: resp.Body, wrapper: wrapper}
 	return resp, nil
 }
 
@@ -48,13 +48,12 @@ func newWireInterceptor(transport http.RoundTripper, trace *tracer.Tracer) http.
 }
 
 type wireReader struct {
-	r       io.ReadCloser
-	resp    *http.Response
+	body    io.ReadCloser
 	wrapper *wireWrapper
 }
 
 func (w *wireReader) Read(p []byte) (int, error) {
-	n, err := w.r.Read(p)
+	n, err := w.body.Read(p)
 
 	// Capture bytes as they are read
 	w.wrapper.buf.Write(p[:n])
@@ -63,5 +62,5 @@ func (w *wireReader) Read(p []byte) (int, error) {
 }
 
 func (w *wireReader) Close() error {
-	return w.r.Close()
+	return w.body.Close()
 }
