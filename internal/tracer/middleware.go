@@ -43,9 +43,8 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 			return nil, err
 		}
 		builder.add(&ResponseStart{Response: resp})
-		respClone := *resp
-		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
-		return &respClone, nil
+		resp.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
+		return resp, nil
 	})
 }
 
