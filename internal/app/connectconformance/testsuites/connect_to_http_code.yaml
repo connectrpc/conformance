@@ -1,0 +1,432 @@
+name: Connect to HTTP Code Mapping
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_CONNECT
+# These tests verify that an explicit Connect code maps to the correct HTTP code
+# according to the protocol.
+testCases:
+- request:
+    testName: unary canceled mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 1
+  expectedResponse:
+    actualStatusCode: 408
+    error:
+      code: 1
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 1
+- request:
+    testName: unary unknown mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 2
+  expectedResponse:
+    actualStatusCode: 500
+    error:
+      code: 2
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 2
+- request:
+    testName: unary invalid argument mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 3
+  expectedResponse:
+    actualStatusCode: 400
+    error:
+      code: 3
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 3
+- request:
+    testName: unary deadline exceeded mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 4
+  expectedResponse:
+    actualStatusCode: 408
+    error:
+      code: 4
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 4
+- request:
+    testName: unary not found mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 5
+  expectedResponse:
+    actualStatusCode: 404
+    error:
+      code: 5
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 5
+- request:
+    testName: unary already exists mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 6
+  expectedResponse:
+    actualStatusCode: 409
+    error:
+      code: 6
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 6
+- request:
+    testName: unary permission denied mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 7
+  expectedResponse:
+    actualStatusCode: 403
+    error:
+      code: 7
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 7
+- request:
+    testName: unary resource exhausted mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 8
+  expectedResponse:
+    actualStatusCode: 429
+    error:
+      code: 8
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 8
+- request:
+    testName: unary failed precondition mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 9
+  expectedResponse:
+    actualStatusCode: 412
+    error:
+      code: 9
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 9
+- request:
+    testName: unary aborted mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 10
+  expectedResponse:
+    actualStatusCode: 409
+    error:
+      code: 10
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 10
+- request:
+    testName: unary out of range mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 11
+  expectedResponse:
+    actualStatusCode: 400
+    error:
+      code: 11
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 11
+- request:
+    testName: unary unimplemented mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 12
+  expectedResponse:
+    actualStatusCode: 404
+    error:
+      code: 12
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 12
+- request:
+    testName: unary internal mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 13
+  expectedResponse:
+    actualStatusCode: 500
+    error:
+      code: 13
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 13
+- request:
+    testName: unary unavailable mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 14
+  expectedResponse:
+    actualStatusCode: 503
+    error:
+      code: 14
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 14
+- request:
+    testName: unary data loss mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 15
+  expectedResponse:
+    actualStatusCode: 500
+    error:
+      code: 15
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 15
+- request:
+    testName: unary unauthenticated mapping
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        error:
+          code: 16
+  expectedResponse:
+    actualStatusCode: 401
+    error:
+      code: 16
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+              responseDefinition:
+                error:
+                  code: 16
+# Server Stream Tests ---------------------------------------------------------
+- request:
+    testName: server stream error returns success http code
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ServerStream
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        error:
+          code: 1
+  expectedResponse:
+    actualStatusCode: 200
+    error:
+      code: 1
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+              responseDefinition:
+                error:
+                  code: 1
+# Client Stream Tests -----------------------------------------------------------
+- request:
+    testName: client stream error returns success http code
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+        error:
+          code: 13
+  expectedResponse:
+    actualStatusCode: 200
+    error:
+      code: 13
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+              responseDefinition:
+                error:
+                  code: 13
+# Bidi Stream Tests -----------------------------------------------------------
+- request:
+    testName: bidi full duplex stream error returns success http code
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        error:
+          code: 13
+      fullDuplex: true
+  expectedResponse:
+    actualStatusCode: 200
+    error:
+      code: 13
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              responseDefinition:
+                error:
+                  code: 13
+              fullDuplex: true
+- request:
+    testName: bidi half duplex stream error returns success http code
+    service: connectrpc.conformance.v1.ConformanceService
+    method: BidiStream
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        error:
+          code: 13
+  expectedResponse:
+    actualStatusCode: 200
+    error:
+      code: 13
+      details: 
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+          requests:
+            - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+              responseDefinition:
+                error:
+                  code: 13
