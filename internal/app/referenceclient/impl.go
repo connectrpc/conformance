@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -395,8 +394,6 @@ func (i *invoker) clientStream(
 		actualStatusCode = wireDetails.StatusCode
 		actualTrailers = wireDetails.Trailers
 		connectErrorRaw = wireDetails.ConnectErrorRaw
-	} else {
-		fmt.Fprintf(os.Stderr, "WIRE DETAILS IS NILLLLLLLLLLLLLLLLLLLL%+v....", wireDetails)
 	}
 
 	return &v1.ClientResponseResult{
