@@ -17,37 +17,51 @@ package referenceclient
 import (
 	"io"
 	"net/http"
+
+	"connectrpc.com/conformance/internal/tracer"
 )
 
-type WireInterceptor struct {
+type wireInterceptor struct {
 	Transport http.RoundTripper
 }
 
-func (w *WireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
+// RoundTrip replaces the response body with a wireReader which captures bytes
+// as they are read.
+func (w *wireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := w.Transport.RoundTrip(req)
 	wrapper, ok := req.Context().Value(wireCtxKey{}).(*wireWrapper)
 	if err != nil || !ok {
 		return resp, err
 	}
-	resp.Body = &capture{r: resp.Body, resp: resp, wrapper: wrapper}
+	resp.Body = &wireReader{r: resp.Body, resp: resp, wrapper: wrapper}
 	return resp, nil
 }
 
-type capture struct {
+// newWireInterceptor creates a new wireInterceptor which wraps the given transport
+// in a TracingRoundTripper.
+func newWireInterceptor(transport http.RoundTripper, trace *tracer.Tracer) http.RoundTripper {
+	return &wireInterceptor{
+		Transport: tracer.TracingRoundTripper(transport, &wireTracer{
+			tracer: trace,
+		}),
+	}
+}
+
+type wireReader struct {
 	r       io.ReadCloser
 	resp    *http.Response
 	wrapper *wireWrapper
 }
 
-func (c *capture) Read(p []byte) (int, error) {
-	n, err := c.r.Read(p)
+func (w *wireReader) Read(p []byte) (int, error) {
+	n, err := w.r.Read(p)
 
 	// Capture bytes as they are read
-	c.wrapper.buf.Write(p[:n])
+	w.wrapper.buf.Write(p[:n])
 
 	return n, err
 }
 
-func (c *capture) Close() error {
-	return c.r.Close()
+func (w *wireReader) Close() error {
+	return w.r.Close()
 }

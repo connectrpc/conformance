@@ -45,6 +45,7 @@ type wireDetails struct {
 
 type wireWrapper struct {
 	val atomic.Pointer[wireDetails]
+	// buf represents the read response body
 	buf *bytes.Buffer
 }
 
@@ -65,16 +66,13 @@ func setWireDetails(ctx context.Context, details *wireDetails) {
 	wrapper.val.Store(details)
 }
 
+// getWireDetails returns the wire details from the given context.
 func getWireDetails(ctx context.Context) *wireDetails {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
 		return nil
 	}
-	ptr := wrapper.val.Load()
-	if ptr == nil {
-		return nil
-	}
-	return ptr
+	return wrapper.val.Load()
 }
 
 type wireTracer struct {
@@ -132,7 +130,6 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 				Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
 				ConnectErrorRaw: &jsonRaw,
 			}
-			// fmt.Fprintf(os.Stderr, "wire details %+v\n", wire)
 
 			setWireDetails(trace.Request.Context(), wire)
 		}
