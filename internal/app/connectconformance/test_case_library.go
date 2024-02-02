@@ -600,7 +600,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 			payload.Data = respType.ResponseData
 		}
 		expected.Payloads = []*conformancev1.ConformancePayload{payload}
-		// expected.ActualStatusCode = 200
+		expected.ActualStatusCode = 200
 	default:
 		return fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType)
 	}

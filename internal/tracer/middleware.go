@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -29,7 +28,6 @@ import (
 // round tripper will record traces of all operations to the given tracer.
 func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.RoundTripper {
 	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-		fmt.Fprintf(os.Stderr, "roundtrip start")
 		builder := newBuilder(req, collector)
 		ctx, cancel := context.WithCancel(req.Context())
 		go func() {
@@ -47,7 +45,6 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 		builder.add(&ResponseStart{Response: resp})
 		respClone := *resp
 		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
-		fmt.Fprintf(os.Stderr, "roundtrip end")
 		return &respClone, nil
 	})
 }
