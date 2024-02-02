@@ -43,6 +43,7 @@ testCases:
 - request:
     testName: client-stream/first-request-exceeds-server-limit
     streamType: STREAM_TYPE_CLIENT_STREAM
+    requestDelayMs: 50 # give server enough time to reject message and client to notice
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
@@ -56,9 +57,11 @@ testCases:
   expectedResponse:
     error:
       code: CODE_RESOURCE_EXHAUSTED
+    numUnsentRequests: 2
 - request:
     testName: client-stream/subsequent-request-exceeds-server-limit
     streamType: STREAM_TYPE_CLIENT_STREAM
+    requestDelayMs: 50
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
@@ -72,6 +75,7 @@ testCases:
   expectedResponse:
     error:
       code: CODE_RESOURCE_EXHAUSTED
+    numUnsentRequests: 1
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/request-equal-to-server-limit
@@ -99,6 +103,7 @@ testCases:
   expectedResponse:
     error:
       code: CODE_RESOURCE_EXHAUSTED
+    numUnsentRequests: 1
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/half-duplex/all-requests-equal-to-server-limit
@@ -117,6 +122,7 @@ testCases:
 - request:
     testName: bidi-stream/half-duplex/first-request-exceeds-server-limit
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestDelayMs: 50
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
@@ -134,9 +140,11 @@ testCases:
   expectedResponse:
     error:
       code: CODE_RESOURCE_EXHAUSTED
+    numUnsentRequests: 2
 - request:
     testName: bidi-stream/half-duplex/subsequent-request-exceeds-server-limit
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestDelayMs: 50
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
@@ -154,6 +162,7 @@ testCases:
   expectedResponse:
     error:
       code: CODE_RESOURCE_EXHAUSTED
+    numUnsentRequests: 1
 - request:
     testName: bidi-stream/full-duplex/all-requests-equal-to-server-limit
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -181,6 +190,7 @@ testCases:
       fullDuplex: true
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
+    requestDelayMs: 50
   expandRequests:
     - sizeRelativeToLimit: 10
     - sizeRelativeToLimit: 0
@@ -189,11 +199,13 @@ testCases:
   expectedResponse:
     error:
       code: CODE_RESOURCE_EXHAUSTED
+    numUnsentRequests: 2
 # TODO - Need a way to populate the expected response payload because the test
 # library padded it with size and we don't know what it looks like here.
 # - request:
 #     testName: bidi-stream/full-duplex/subsequent-request-exceeds-server-limit
 #     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+#    requestDelayMs: 50
 #     requestMessages:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
 #       responseDefinition:
@@ -222,3 +234,4 @@ testCases:
 #               requestData: "dGVzdCByZXNwb25zZQ=="
 #     error:
 #       code: CODE_RESOURCE_EXHAUSTED
+#     numUnsentRequests: 1
