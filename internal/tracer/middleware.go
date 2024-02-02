@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
@@ -44,10 +43,8 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 			return nil, err
 		}
 		builder.add(&ResponseStart{Response: resp})
-		respClone := *resp
-		fmt.Fprintf(os.Stderr, "setting response body in tracer mid========================\n")
-		respClone.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
-		return &respClone, nil
+		resp.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
+		return resp, nil
 	})
 }
 
