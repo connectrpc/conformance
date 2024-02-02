@@ -220,7 +220,12 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 	// Create a new TracingRoundTripper with our wireTracer so that the tests can trace values on the
 	// wire. Note that 'trace' could be nil, in which case, any error traces will
 	// simply not be printed.
-	transport = tracer.TracingRoundTripper(transport, &wireTracer{
+	// transport = &WireInterceptor{
+	// 	Transport: tracer.TracingRoundTripper(transport, &wireTracer{
+	// 		tracer: trace,
+	// 	}),
+	// }
+	transport = tracer.TracingRoundTripper(&WireInterceptor{Transport: transport}, &wireTracer{
 		tracer: trace,
 	})
 

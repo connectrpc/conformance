@@ -2,10 +2,9 @@ name: Test
 relevantCompressions:
   - COMPRESSION_IDENTITY
 relevantProtocols:
-  - PROTOCOL_GRPC
+  - PROTOCOL_CONNECT
 relevantCodecs:
   - CODEC_JSON
-  - CODEC_PROTO
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:

@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"os"
 	"strings"
 	"sync/atomic"
 
@@ -51,7 +53,9 @@ type wireWrapper struct {
 // withWireCapture returns a new context which will contain wire details during
 // a roundtrip.
 func withWireCapture(ctx context.Context) context.Context {
-	return context.WithValue(ctx, wireCtxKey{}, &wireWrapper{})
+	return context.WithValue(ctx, wireCtxKey{}, &wireWrapper{
+		buf: &bytes.Buffer{},
+	})
 }
 
 // setWireDetails sets the given wire details in the given context.
@@ -130,6 +134,7 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 				Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
 				ConnectErrorRaw: &jsonRaw,
 			}
+			fmt.Fprintf(os.Stderr, "wire details %+v\n", wire)
 
 			setWireDetails(trace.Request.Context(), wire)
 		}

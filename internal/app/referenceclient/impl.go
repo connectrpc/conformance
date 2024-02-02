@@ -118,20 +118,20 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	// ctx = withWireCapture(ctx)
+	ctx = withWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 
-	// var actualStatusCode int32
-	// var connectErrorRaw *structpb.Struct
-	// var actualTrailers []*v1.Header
-	// wireDetails := getWireDetails(ctx)
-	// if wireDetails != nil {
-	// 	actualStatusCode = wireDetails.StatusCode
-	// 	actualTrailers = wireDetails.Trailers
-	// 	connectErrorRaw = wireDetails.ConnectErrorRaw
-	// }
+	var actualStatusCode int32
+	var connectErrorRaw *structpb.Struct
+	var actualTrailers []*v1.Header
+	wireDetails := getWireDetails(ctx)
+	if wireDetails != nil {
+		actualStatusCode = wireDetails.StatusCode
+		actualTrailers = wireDetails.Trailers
+		connectErrorRaw = wireDetails.ConnectErrorRaw
+	}
 
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
@@ -151,13 +151,13 @@ func (i *invoker) unary(
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		// ActualStatusCode:   actualStatusCode,
-		// ActualHttpTrailers: actualTrailers,
-		// ConnectErrorRaw:    connectErrorRaw,
+		ResponseHeaders:    headers,
+		ResponseTrailers:   trailers,
+		Payloads:           payloads,
+		Error:              protoErr,
+		ActualStatusCode:   actualStatusCode,
+		ActualHttpTrailers: actualTrailers,
+		ConnectErrorRaw:    connectErrorRaw,
 	}, nil
 }
 
