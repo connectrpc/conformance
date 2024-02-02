@@ -18,9 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
-	"os"
 	"strings"
 	"sync/atomic"
 
@@ -134,7 +132,7 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 				Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
 				ConnectErrorRaw: &jsonRaw,
 			}
-			fmt.Fprintf(os.Stderr, "wire details %+v\n", wire)
+			// fmt.Fprintf(os.Stderr, "wire details %+v\n", wire)
 
 			setWireDetails(trace.Request.Context(), wire)
 		}

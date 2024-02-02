@@ -40,10 +40,12 @@ type capture struct {
 }
 
 func (c *capture) Read(p []byte) (int, error) {
-	// Capture bytes as they are read
-	c.wrapper.buf.Write(p)
+	n, err := c.r.Read(p)
 
-	return c.r.Read(p)
+	// Capture bytes as they are read
+	c.wrapper.buf.Write(p[:n])
+
+	return n, err
 }
 
 func (c *capture) Close() error {
