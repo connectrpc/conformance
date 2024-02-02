@@ -756,6 +756,13 @@ func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCIm
 			continue
 		}
 
+		if testCase.Request.RawRequest != nil && clientIsGRPCImpl {
+			continue
+		}
+		if hasRawResponse(testCase.Request.RequestMessages) && serverIsGRPCImpl {
+			continue
+		}
+
 		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
 		// Insert a path in the test name to indicate that this is against the gRPC impl.
 		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
