@@ -422,9 +422,6 @@ func (i *invoker) bidiStream(
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
-		var actualStatusCode int32
-		var connectErrorRaw *structpb.Struct
-		var actualTrailers []*v1.Header
 		if result != nil {
 			// Read headers and trailers from the stream
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
@@ -432,13 +429,10 @@ func (i *invoker) bidiStream(
 
 			wireDetails := getWireDetails(ctx)
 			if wireDetails != nil {
-				actualStatusCode = wireDetails.StatusCode
-				actualTrailers = wireDetails.Trailers
-				connectErrorRaw = wireDetails.ConnectErrorRaw
+				result.ActualStatusCode = wireDetails.StatusCode
+				result.ActualHttpTrailers = wireDetails.Trailers
+				result.ConnectErrorRaw = wireDetails.ConnectErrorRaw
 			}
-			result.ActualStatusCode = actualStatusCode
-			result.ActualHttpTrailers = actualTrailers
-			result.ConnectErrorRaw = connectErrorRaw
 		}
 	}()
 
