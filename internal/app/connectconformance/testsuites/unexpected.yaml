@@ -9,36 +9,8 @@ relevantCompressions:
 relevantHttpVersions:
   - HTTP_VERSION_1
 testCases:
-# - request:
-#     testName: unmapped HTTP status code
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#       responseDefinition:
-#         rawResponse:
-#           statusCode: 418
-#   expectedResponse:
-#     error:
-#       # unknown
-#       code: 2
-# - request:
-#     testName: nonexistent HTTP status code
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#       responseDefinition:
-#         rawResponse:
-#           statusCode: 800
-#   expectedResponse:
-#     error:
-#       # unknown
-#       code: 2
 - request:
-    testName: unexpected content type 
+    testName: unmapped HTTP status code
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -46,15 +18,27 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
         rawResponse:
-          headers:
-            - name: Content-Type
-              value: ["application/json"]
+          statusCode: 418
+  expectedResponse:
+    error:
+      # unknown
+      code: 2
+- request:
+    testName: nonexistent HTTP status code
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        rawResponse:
+          statusCode: 800
   expectedResponse:
     error:
       # unknown
       code: 2
 # - request:
-#     testName: unexpected content encoding 
+#     testName: unexpected content type 
 #     service: connectrpc.conformance.v1.ConformanceService
 #     method: Unary
 #     streamType: STREAM_TYPE_UNARY
@@ -62,10 +46,32 @@ testCases:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 #       responseDefinition:
 #         rawResponse:
+#           statusCode: 200
+#           unary:
+#             text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}" 
 #           headers:
-#             - name: Content-Encoding
-#               value: ["nonexistent"]
+#             - name: Content-Type
+#               value: ["invalid"]
 #   expectedResponse:
 #     error:
 #       # unknown
 #       code: 2
+- request:
+    testName: unexpected content encoding 
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        rawResponse:
+          statusCode: 200
+          unary:
+            text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}" 
+          headers:
+            - name: Content-Encoding
+              value: ["invalid"]
+  expectedResponse:
+    error:
+      # internal
+      code: 13
