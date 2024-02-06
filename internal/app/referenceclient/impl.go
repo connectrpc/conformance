@@ -402,20 +402,22 @@ func (i *invoker) bidiStream(
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
-		wireDetails, e := getWireDetails(ctx)
-		if e != nil {
-			result = nil
-			err = e
-			return
-		}
 		if result != nil {
+			if err == nil {
+				wireDetails, e := getWireDetails(ctx)
+				if e != nil {
+					result = nil
+					err = e
+					return
+				}
+				result.ActualStatusCode = wireDetails.StatusCode
+				result.ActualHttpTrailers = wireDetails.Trailers
+				result.ConnectErrorRaw = wireDetails.ConnectErrorRaw
+			}
 			// Read headers and trailers from the stream
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
 			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 
-			result.ActualStatusCode = wireDetails.StatusCode
-			result.ActualHttpTrailers = wireDetails.Trailers
-			result.ConnectErrorRaw = wireDetails.ConnectErrorRaw
 		}
 	}()
 
