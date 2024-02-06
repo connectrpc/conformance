@@ -18,7 +18,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
+	"net/http"
 	"strings"
 	"sync/atomic"
 
@@ -43,8 +45,57 @@ type wireDetails struct {
 	ConnectErrorRaw *structpb.Struct
 }
 
+type wireInterceptor struct {
+	Transport http.RoundTripper
+}
+
+// newWireInterceptor creates a new wireInterceptor which wraps the given transport
+// in a TracingRoundTripper.
+func newWireInterceptor(transport http.RoundTripper, trace *tracer.Tracer) http.RoundTripper {
+	return &wireInterceptor{
+		Transport: tracer.TracingRoundTripper(transport, &wireTracer{
+			tracer: trace,
+		}),
+	}
+}
+
+// RoundTrip replaces the response body with a wireReader which captures bytes
+// as they are read.
+func (w *wireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := w.Transport.RoundTrip(req)
+	wrapper, ok := req.Context().Value(wireCtxKey{}).(*wireWrapper)
+	if err != nil || !ok {
+		return resp, err
+	}
+	// If this is a unary error with JSON body, replace the body with a reader
+	// that will save off the body bytes as they are read so that we can access
+	// the body contents in the tracer
+	if resp.StatusCode != 200 && resp.Header.Get("content-type") == "application/json" {
+		resp.Body = &wireReader{body: resp.Body, wrapper: wrapper}
+	}
+	return resp, nil
+}
+
+type wireReader struct {
+	body    io.ReadCloser
+	wrapper *wireWrapper
+}
+
+func (w *wireReader) Read(p []byte) (int, error) {
+	n, err := w.body.Read(p)
+
+	// Capture bytes as they are read
+	w.wrapper.buf.Write(p[:n])
+
+	return n, err
+}
+
+func (w *wireReader) Close() error {
+	return w.body.Close()
+}
+
 type wireWrapper struct {
-	val atomic.Pointer[wireDetails]
+	val atomic.Pointer[tracer.Trace]
 	// buf represents the read response body
 	buf *bytes.Buffer
 }
@@ -57,22 +108,76 @@ func withWireCapture(ctx context.Context) context.Context {
 	})
 }
 
-// setWireDetails sets the given wire details in the given context.
-func setWireDetails(ctx context.Context, details *wireDetails) {
+// setWireTrace sets the given trace in the given context.
+func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
 		return
 	}
-	wrapper.val.Store(details)
+	wrapper.val.Store(trace)
 }
 
-// getWireDetails returns the wire details from the given context.
-func getWireDetails(ctx context.Context) *wireDetails {
+// getWireDetails returns the wire details from the trace in the given context.
+func getWireDetails(ctx context.Context) (*wireDetails, error) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
-		return nil
+		return nil, errors.New("wireWrapper not found in context")
 	}
-	return wrapper.val.Load()
+	trace := wrapper.val.Load()
+	if trace.Response == nil {
+		return nil, errors.New("trace response was nil")
+	}
+	statusCode := int32(trace.Response.StatusCode)
+
+	var jsonRaw structpb.Struct
+	contentType := trace.Response.Header.Get("content-type")
+	if contentType == "application/json" {
+		if statusCode != 200 {
+			// If this is a unary request, then use the entire response body
+			// as the wire error details.
+			body, err := io.ReadAll(wrapper.buf)
+			if err != nil {
+				return nil, err
+			}
+			if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
+				return nil, err
+			}
+		}
+	} else if strings.HasPrefix(contentType, "application/connect+") {
+		type endStreamError struct {
+			Error json.RawMessage `json:"error"`
+		}
+		// If this is a streaming request, then look through the trace events
+		// for the ResponseBodyEndStream event and parse its content into an
+		// endStreamError to see if there are any error details.
+		for _, ev := range trace.Events {
+			switch eventType := ev.(type) {
+			case *tracer.ResponseBodyEndStream:
+				var endStream endStreamError
+				if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
+					return nil, err
+				}
+				// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
+				// into a Struct
+				if len(endStream.Error) > 0 {
+					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
+						return nil, err
+					}
+				}
+			default:
+				// Do nothing
+			}
+		}
+	}
+
+	wire := &wireDetails{
+		StatusCode:      statusCode,
+		Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
+		ConnectErrorRaw: &jsonRaw,
+	}
+
+	return wire, nil
+
 }
 
 type wireTracer struct {
@@ -83,63 +188,9 @@ type wireTracer struct {
 // from the passed trace. The wire details will be stored in the context acquired by
 // withWireCapture and can be retrieved via getWireDetails.
 func (t *wireTracer) Complete(trace tracer.Trace) {
-	wrapper, ok := trace.Request.Context().Value(wireCtxKey{}).(*wireWrapper)
-	if ok { //nolint:nestif
-		if trace.Response != nil {
-			statusCode := int32(trace.Response.StatusCode)
+	setWireTrace(trace.Request.Context(), &trace)
 
-			var jsonRaw structpb.Struct
-			contentType := trace.Response.Header.Get("content-type")
-			if contentType == "application/json" {
-				if statusCode != 200 {
-					// If this is a unary request, then use the entire response body
-					// as the wire error details.
-					body, err := io.ReadAll(wrapper.buf)
-					if err != nil {
-						return
-					}
-					if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-						return
-					}
-				}
-			} else if strings.HasPrefix(contentType, "application/connect+") {
-				type endStreamError struct {
-					Error json.RawMessage `json:"error"`
-				}
-				// If this is a streaming request, then look through the trace events
-				// for the ResponseBodyEndStream event and parse its content into an
-				// endStreamError to see if there are any error details.
-				for _, ev := range trace.Events {
-					switch eventType := ev.(type) {
-					case *tracer.ResponseBodyEndStream:
-						var endStream endStreamError
-						if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-							return
-						}
-						// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
-						// into a Struct
-						if len(endStream.Error) > 0 {
-							if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-								return
-							}
-						}
-					default:
-						// Do nothing
-					}
-				}
-			}
-
-			wire := &wireDetails{
-				StatusCode:      statusCode,
-				Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
-				ConnectErrorRaw: &jsonRaw,
-			}
-
-			setWireDetails(trace.Request.Context(), wire)
-		}
-	}
-
-	if t != nil {
+	if t.tracer != nil {
 		t.tracer.Complete(trace)
 	}
 }

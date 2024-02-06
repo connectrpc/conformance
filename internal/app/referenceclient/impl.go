@@ -27,7 +27,6 @@ import (
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const clientName = "connectconformance-referenceclient"
@@ -123,16 +122,6 @@ func (i *invoker) unary(
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 
-	var actualStatusCode int32
-	var connectErrorRaw *structpb.Struct
-	var actualTrailers []*v1.Header
-	wireDetails := getWireDetails(ctx)
-	if wireDetails != nil {
-		actualStatusCode = wireDetails.StatusCode
-		actualTrailers = wireDetails.Trailers
-		connectErrorRaw = wireDetails.ConnectErrorRaw
-	}
-
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -150,14 +139,19 @@ func (i *invoker) unary(
 		}
 	}
 
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		return nil, err
+	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:    headers,
 		ResponseTrailers:   trailers,
 		Payloads:           payloads,
 		Error:              protoErr,
-		ActualStatusCode:   actualStatusCode,
-		ActualHttpTrailers: actualTrailers,
-		ConnectErrorRaw:    connectErrorRaw,
+		ActualStatusCode:   wireDetails.StatusCode,
+		ActualHttpTrailers: wireDetails.Trailers,
+		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
 	}, nil
 }
 
@@ -189,16 +183,6 @@ func (i *invoker) idempotentUnary(
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
 
-	var actualStatusCode int32
-	var connectErrorRaw *structpb.Struct
-	var actualTrailers []*v1.Header
-	wireDetails := getWireDetails(ctx)
-	if wireDetails != nil {
-		actualStatusCode = wireDetails.StatusCode
-		actualTrailers = wireDetails.Trailers
-		connectErrorRaw = wireDetails.ConnectErrorRaw
-	}
-
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -214,14 +198,18 @@ func (i *invoker) idempotentUnary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return &v1.ClientResponseResult{
 		ResponseHeaders:    headers,
 		ResponseTrailers:   trailers,
 		Payloads:           payloads,
 		Error:              protoErr,
-		ActualStatusCode:   actualStatusCode,
-		ActualHttpTrailers: actualTrailers,
-		ConnectErrorRaw:    connectErrorRaw,
+		ActualStatusCode:   wireDetails.StatusCode,
+		ActualHttpTrailers: wireDetails.Trailers,
+		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
 	}, nil
 }
 
@@ -305,14 +293,10 @@ func (i *invoker) serverStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 		}
 	}
-	var actualStatusCode int32
-	var connectErrorRaw *structpb.Struct
-	var actualTrailers []*v1.Header
-	wireDetails := getWireDetails(ctx)
-	if wireDetails != nil {
-		actualStatusCode = wireDetails.StatusCode
-		actualTrailers = wireDetails.Trailers
-		connectErrorRaw = wireDetails.ConnectErrorRaw
+
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return &v1.ClientResponseResult{
@@ -320,9 +304,9 @@ func (i *invoker) serverStream(
 		ResponseTrailers:   trailers,
 		Payloads:           payloads,
 		Error:              protoErr,
-		ActualStatusCode:   actualStatusCode,
-		ActualHttpTrailers: actualTrailers,
-		ConnectErrorRaw:    connectErrorRaw,
+		ActualStatusCode:   wireDetails.StatusCode,
+		ActualHttpTrailers: wireDetails.Trailers,
+		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
 	}, nil
 }
 
@@ -386,14 +370,10 @@ func (i *invoker) clientStream(
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
-	var actualStatusCode int32
-	var connectErrorRaw *structpb.Struct
-	var actualTrailers []*v1.Header
-	wireDetails := getWireDetails(ctx)
-	if wireDetails != nil {
-		actualStatusCode = wireDetails.StatusCode
-		actualTrailers = wireDetails.Trailers
-		connectErrorRaw = wireDetails.ConnectErrorRaw
+
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	return &v1.ClientResponseResult{
@@ -401,16 +381,16 @@ func (i *invoker) clientStream(
 		ResponseTrailers:   trailers,
 		Payloads:           payloads,
 		Error:              protoErr,
-		ActualStatusCode:   actualStatusCode,
-		ActualHttpTrailers: actualTrailers,
-		ConnectErrorRaw:    connectErrorRaw,
+		ActualStatusCode:   wireDetails.StatusCode,
+		ActualHttpTrailers: wireDetails.Trailers,
+		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
 	}, nil
 }
 
 func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, _ error) {
+) (result *v1.ClientResponseResult, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -422,17 +402,20 @@ func (i *invoker) bidiStream(
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
+		wireDetails, e := getWireDetails(ctx)
+		if e != nil {
+			result = nil
+			err = e
+			return
+		}
 		if result != nil {
 			// Read headers and trailers from the stream
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
 			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 
-			wireDetails := getWireDetails(ctx)
-			if wireDetails != nil {
-				result.ActualStatusCode = wireDetails.StatusCode
-				result.ActualHttpTrailers = wireDetails.Trailers
-				result.ConnectErrorRaw = wireDetails.ConnectErrorRaw
-			}
+			result.ActualStatusCode = wireDetails.StatusCode
+			result.ActualHttpTrailers = wireDetails.Trailers
+			result.ConnectErrorRaw = wireDetails.ConnectErrorRaw
 		}
 	}()
 
@@ -562,20 +545,15 @@ func (i *invoker) unimplemented(
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
 
-	var actualStatusCode int32
-	var connectErrorRaw *structpb.Struct
-	var actualTrailers []*v1.Header
-	wireDetails := getWireDetails(ctx)
-	if wireDetails != nil {
-		actualStatusCode = wireDetails.StatusCode
-		actualTrailers = wireDetails.Trailers
-		connectErrorRaw = wireDetails.ConnectErrorRaw
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		return nil, err
 	}
 	return &v1.ClientResponseResult{
 		Error:              internal.ConvertErrorToProtoError(err),
-		ActualStatusCode:   actualStatusCode,
-		ActualHttpTrailers: actualTrailers,
-		ConnectErrorRaw:    connectErrorRaw,
+		ActualStatusCode:   wireDetails.StatusCode,
+		ActualHttpTrailers: wireDetails.Trailers,
+		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
 	}, nil
 }
 
