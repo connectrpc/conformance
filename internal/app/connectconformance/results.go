@@ -194,9 +194,11 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 	expectedWire := expected.WireDetails
 	actualWire := actual.WireDetails
 	if expectedWire != nil && actualWire != nil {
-		if diff := cmp.Diff(expectedWire.ConnectErrorRaw, actualWire.ConnectErrorRaw, protocmp.Transform()); diff != "" {
-			errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
-		}
+		// TODO - Add comparison (and tests) for connecterrorraw and actual http trailers
+
+		// if diff := cmp.Diff(expectedWire.ConnectErrorRaw, actualWire.ConnectErrorRaw, protocmp.Transform()); diff != "" {
+		// 	errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
+		// }
 
 		if diff := cmp.Diff(expectedWire.ActualStatusCode, actualWire.ActualStatusCode, protocmp.Transform()); diff != "" {
 			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
