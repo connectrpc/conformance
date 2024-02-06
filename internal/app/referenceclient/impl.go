@@ -145,13 +145,11 @@ func (i *invoker) unary(
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:    headers,
-		ResponseTrailers:   trailers,
-		Payloads:           payloads,
-		Error:              protoErr,
-		ActualStatusCode:   wireDetails.StatusCode,
-		ActualHttpTrailers: wireDetails.Trailers,
-		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -203,13 +201,11 @@ func (i *invoker) idempotentUnary(
 		return nil, err
 	}
 	return &v1.ClientResponseResult{
-		ResponseHeaders:    headers,
-		ResponseTrailers:   trailers,
-		Payloads:           payloads,
-		Error:              protoErr,
-		ActualStatusCode:   wireDetails.StatusCode,
-		ActualHttpTrailers: wireDetails.Trailers,
-		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -300,13 +296,11 @@ func (i *invoker) serverStream(
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:    headers,
-		ResponseTrailers:   trailers,
-		Payloads:           payloads,
-		Error:              protoErr,
-		ActualStatusCode:   wireDetails.StatusCode,
-		ActualHttpTrailers: wireDetails.Trailers,
-		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -377,13 +371,11 @@ func (i *invoker) clientStream(
 	}
 
 	return &v1.ClientResponseResult{
-		ResponseHeaders:    headers,
-		ResponseTrailers:   trailers,
-		Payloads:           payloads,
-		Error:              protoErr,
-		ActualStatusCode:   wireDetails.StatusCode,
-		ActualHttpTrailers: wireDetails.Trailers,
-		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -394,9 +386,7 @@ func (i *invoker) bidiStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{
-		ConnectErrorRaw: nil, // TODO
-	}
+	result = &v1.ClientResponseResult{}
 
 	ctx = withWireCapture(ctx)
 
@@ -410,9 +400,7 @@ func (i *invoker) bidiStream(
 					err = e
 					return
 				}
-				result.ActualStatusCode = wireDetails.StatusCode
-				result.ActualHttpTrailers = wireDetails.Trailers
-				result.ConnectErrorRaw = wireDetails.ConnectErrorRaw
+				result.WireDetails = wireDetails
 			}
 			// Read headers and trailers from the stream
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
@@ -552,10 +540,8 @@ func (i *invoker) unimplemented(
 		return nil, err
 	}
 	return &v1.ClientResponseResult{
-		Error:              internal.ConvertErrorToProtoError(err),
-		ActualStatusCode:   wireDetails.StatusCode,
-		ActualHttpTrailers: wireDetails.Trailers,
-		ConnectErrorRaw:    wireDetails.ConnectErrorRaw,
+		Error:       internal.ConvertErrorToProtoError(err),
+		WireDetails: wireDetails,
 	}, nil
 }
 

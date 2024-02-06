@@ -267,18 +267,10 @@ export class ClientResponseResult extends jspb.Message {
   getNumUnsentRequests(): number;
   setNumUnsentRequests(value: number): ClientResponseResult;
 
-  getActualStatusCode(): number;
-  setActualStatusCode(value: number): ClientResponseResult;
-
-  getConnectErrorRaw(): google_protobuf_struct_pb.Struct | undefined;
-  setConnectErrorRaw(value?: google_protobuf_struct_pb.Struct): ClientResponseResult;
-  hasConnectErrorRaw(): boolean;
-  clearConnectErrorRaw(): ClientResponseResult;
-
-  getActualHttpTrailersList(): Array<connectrpc_conformance_v1_service_pb.Header>;
-  setActualHttpTrailersList(value: Array<connectrpc_conformance_v1_service_pb.Header>): ClientResponseResult;
-  clearActualHttpTrailersList(): ClientResponseResult;
-  addActualHttpTrailers(value?: connectrpc_conformance_v1_service_pb.Header, index?: number): connectrpc_conformance_v1_service_pb.Header;
+  getWireDetails(): WireDetails | undefined;
+  setWireDetails(value?: WireDetails): ClientResponseResult;
+  hasWireDetails(): boolean;
+  clearWireDetails(): ClientResponseResult;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ClientResponseResult.AsObject;
@@ -295,9 +287,7 @@ export namespace ClientResponseResult {
     error?: connectrpc_conformance_v1_service_pb.Error.AsObject,
     responseTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
     numUnsentRequests: number,
-    actualStatusCode: number,
-    connectErrorRaw?: google_protobuf_struct_pb.Struct.AsObject,
-    actualHttpTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
+    wireDetails?: WireDetails.AsObject,
   }
 }
 
@@ -316,6 +306,36 @@ export class ClientErrorResult extends jspb.Message {
 export namespace ClientErrorResult {
   export type AsObject = {
     message: string,
+  }
+}
+
+export class WireDetails extends jspb.Message {
+  getActualStatusCode(): number;
+  setActualStatusCode(value: number): WireDetails;
+
+  getConnectErrorRaw(): google_protobuf_struct_pb.Struct | undefined;
+  setConnectErrorRaw(value?: google_protobuf_struct_pb.Struct): WireDetails;
+  hasConnectErrorRaw(): boolean;
+  clearConnectErrorRaw(): WireDetails;
+
+  getActualHttpTrailersList(): Array<connectrpc_conformance_v1_service_pb.Header>;
+  setActualHttpTrailersList(value: Array<connectrpc_conformance_v1_service_pb.Header>): WireDetails;
+  clearActualHttpTrailersList(): WireDetails;
+  addActualHttpTrailers(value?: connectrpc_conformance_v1_service_pb.Header, index?: number): connectrpc_conformance_v1_service_pb.Header;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): WireDetails.AsObject;
+  static toObject(includeInstance: boolean, msg: WireDetails): WireDetails.AsObject;
+  static serializeBinaryToWriter(message: WireDetails, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): WireDetails;
+  static deserializeBinaryFromReader(message: WireDetails, reader: jspb.BinaryReader): WireDetails;
+}
+
+export namespace WireDetails {
+  export type AsObject = {
+    actualStatusCode: number,
+    connectErrorRaw?: google_protobuf_struct_pb.Struct.AsObject,
+    actualHttpTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
   }
 }
 

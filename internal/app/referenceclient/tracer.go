@@ -34,17 +34,6 @@ import (
 // The key associated with the wire details information stored in context.
 type wireCtxKey struct{}
 
-// wireDetails encapsulates the wire details to track for a roundtrip.
-type wireDetails struct {
-	// The actual HTTP status code observed.
-	StatusCode int32
-	// The actual trailers observed.
-	Trailers []*v1.Header
-	// The actual JSON observed on the wire in case of an error from a Connect server.
-	// This will only be non-nil if the protocol is Connect and an error occurred.
-	ConnectErrorRaw *structpb.Struct
-}
-
 type wireInterceptor struct {
 	Transport http.RoundTripper
 }
@@ -118,14 +107,16 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 }
 
 // getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) (*wireDetails, error) {
+func getWireDetails(ctx context.Context) (*v1.WireDetails, error) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
 		return nil, errors.New("wireWrapper not found in context")
 	}
 	trace := wrapper.val.Load()
+	// A nil response in the trace is valid if the HTTP round trip failed.
+	// In that case, we don't want to return any error, just empty wire details.
 	if trace.Response == nil {
-		return nil, errors.New("trace response was nil")
+		return &v1.WireDetails{}, nil
 	}
 	statusCode := int32(trace.Response.StatusCode)
 
@@ -170,14 +161,11 @@ func getWireDetails(ctx context.Context) (*wireDetails, error) {
 		}
 	}
 
-	wire := &wireDetails{
-		StatusCode:      statusCode,
-		Trailers:        internal.ConvertToProtoHeader(trace.Response.Trailer),
-		ConnectErrorRaw: &jsonRaw,
-	}
-
-	return wire, nil
-
+	return &v1.WireDetails{
+		ActualStatusCode:   statusCode,
+		ActualHttpTrailers: internal.ConvertToProtoHeader(trace.Response.Trailer),
+		ConnectErrorRaw:    &jsonRaw,
+	}, nil
 }
 
 type wireTracer struct {

@@ -127,7 +127,6 @@ func (i *invoker) unary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
 	}, nil
 }
 
@@ -138,9 +137,7 @@ func (i *invoker) serverStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{
-		ConnectErrorRaw: nil, // TODO
-	}
+	result = &v1.ClientResponseResult{}
 
 	msg := ccr.RequestMessages[0]
 	req := &v1.ServerStreamRequest{}
@@ -208,9 +205,7 @@ func (i *invoker) clientStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result := &v1.ClientResponseResult{
-		ConnectErrorRaw: nil, // TODO
-	}
+	result := &v1.ClientResponseResult{}
 
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
@@ -274,9 +269,7 @@ func (i *invoker) bidiStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{
-		ConnectErrorRaw: nil, // TODO
-	}
+	result = &v1.ClientResponseResult{}
 
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)

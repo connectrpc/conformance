@@ -191,18 +191,14 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 	errs = append(errs, checkError(expected.Error, actual.Error)...)
 
-	// If client didn't provide actual raw error, we skip this check.
-	if expected.ConnectErrorRaw != nil && actual.ConnectErrorRaw != nil {
-		diff := cmp.Diff(expected.ConnectErrorRaw, actual.ConnectErrorRaw, protocmp.Transform())
-		if diff != "" {
+	expectedWire := expected.WireDetails
+	actualWire := actual.WireDetails
+	if expectedWire != nil && actualWire != nil {
+		if diff := cmp.Diff(expectedWire.ConnectErrorRaw, actualWire.ConnectErrorRaw, protocmp.Transform()); diff != "" {
 			errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
 		}
-	}
 
-	// If client didn't provide an actual status code, we skip this check.
-	if expected.ActualStatusCode != 0 && actual.ActualStatusCode != 0 {
-		diff := cmp.Diff(expected.ActualStatusCode, actual.ActualStatusCode, protocmp.Transform())
-		if diff != "" {
+		if diff := cmp.Diff(expectedWire.ActualStatusCode, actualWire.ActualStatusCode, protocmp.Transform()); diff != "" {
 			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
 		}
 	}
