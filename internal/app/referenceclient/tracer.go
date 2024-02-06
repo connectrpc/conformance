@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -59,7 +58,7 @@ func (w *wireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
 	// If this is a unary error with JSON body, replace the body with a reader
 	// that will save off the body bytes as they are read so that we can access
 	// the body contents in the tracer
-	if resp.StatusCode != 200 && resp.Header.Get("content-type") == "application/json" {
+	if isUnaryJSONError(resp.Header.Get("content-type"), int32(resp.StatusCode)) {
 		resp.Body = &wireReader{body: resp.Body, wrapper: wrapper}
 	}
 	return resp, nil
@@ -107,52 +106,53 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 }
 
 // getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) (*v1.WireDetails, error) {
+func getWireDetails(ctx context.Context) *v1.WireDetails {
+	// TODO - Note that this function swallows any errors experienced when processing
+	// the response, instead opting for just returning a nil wire details.
+	// It might be worth revisiting using the feedback approach to surface these errors.
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
-		return nil, errors.New("wireWrapper not found in context")
+		return nil
 	}
 	trace := wrapper.val.Load()
 	// A nil response in the trace is valid if the HTTP round trip failed.
-	// In that case, we don't want to return any error, just empty wire details.
-	if trace.Response == nil {
-		return &v1.WireDetails{}, nil
+	if trace == nil || trace.Response == nil {
+		return nil
 	}
 	statusCode := int32(trace.Response.StatusCode)
 
 	var jsonRaw structpb.Struct
 	contentType := trace.Response.Header.Get("content-type")
-	if contentType == "application/json" {
-		if statusCode != 200 {
-			// If this is a unary request, then use the entire response body
-			// as the wire error details.
-			body, err := io.ReadAll(wrapper.buf)
-			if err != nil {
-				return nil, err
-			}
-			if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-				return nil, err
-			}
+
+	// If this is a unary request that returned an error, then use the entire
+	// response body as the wire error details.
+	if isUnaryJSONError(contentType, statusCode) { //nolint:nestif
+		body, err := io.ReadAll(wrapper.buf)
+		if err != nil {
+			return nil
+		}
+		if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
+			return nil
 		}
 	} else if strings.HasPrefix(contentType, "application/connect+") {
-		type endStreamError struct {
-			Error json.RawMessage `json:"error"`
-		}
 		// If this is a streaming request, then look through the trace events
 		// for the ResponseBodyEndStream event and parse its content into an
 		// endStreamError to see if there are any error details.
+		type endStreamError struct {
+			Error json.RawMessage `json:"error"`
+		}
 		for _, ev := range trace.Events {
 			switch eventType := ev.(type) {
 			case *tracer.ResponseBodyEndStream:
 				var endStream endStreamError
 				if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-					return nil, err
+					return nil
 				}
 				// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
 				// into a Struct
 				if len(endStream.Error) > 0 {
 					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-						return nil, err
+						return nil
 					}
 				}
 			default:
@@ -165,7 +165,7 @@ func getWireDetails(ctx context.Context) (*v1.WireDetails, error) {
 		ActualStatusCode:   statusCode,
 		ActualHttpTrailers: internal.ConvertToProtoHeader(trace.Response.Trailer),
 		ConnectErrorRaw:    &jsonRaw,
-	}, nil
+	}
 }
 
 type wireTracer struct {
@@ -181,4 +181,10 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 	if t.tracer != nil {
 		t.tracer.Complete(trace)
 	}
+}
+
+// isUnaryJSONError returns whether the given content type and HTTP status code
+// represents a unary JSON error.
+func isUnaryJSONError(contentType string, statusCode int32) bool {
+	return contentType == "application/json" && statusCode != 200
 }

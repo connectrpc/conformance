@@ -142,7 +142,7 @@ message ClientResponseResult {
 
   // The following field is only used by the reference client. If
   // you are implementing a client under test, you may ignore this
-  // field and should not populate it. 
+  // field and should not populate it.
   WireDetails wire_details = 6;
 }
 
