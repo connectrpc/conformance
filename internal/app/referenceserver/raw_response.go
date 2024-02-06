@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"sync"
 
 	"connectrpc.com/conformance/internal"
@@ -115,9 +116,12 @@ func (r *rawResponseWriter) Header() http.Header {
 }
 
 func (r *rawResponseWriter) Write(bytes []byte) (int, error) {
+	fmt.Fprintf(os.Stderr, "Writing raw resp")
 	if r.canSendResponse() {
+		fmt.Fprintf(os.Stderr, "can send resp")
 		return r.respWriter.Write(bytes)
 	}
+	fmt.Fprintf(os.Stderr, "len bytes")
 	return len(bytes), nil
 }
 
