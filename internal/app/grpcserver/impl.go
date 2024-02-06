@@ -62,11 +62,12 @@ func (c *conformanceServiceServer) Unary(
 		if err := grpc.SetTrailer(ctx, trailerMD); err != nil {
 			return nil, err
 		}
-		time.Sleep((time.Duration(req.ResponseDefinition.ResponseDelayMs) * time.Millisecond))
+		time.Sleep(time.Duration(req.ResponseDefinition.ResponseDelayMs) * time.Millisecond)
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
 	payload, grpcErr := parseUnaryResponseDefinition(
+		ctx,
 		req.ResponseDefinition,
 		md,
 		[]*anypb.Any{msgAsAny},
@@ -83,6 +84,7 @@ func (c *conformanceServiceServer) Unary(
 func (c *conformanceServiceServer) ClientStream(
 	stream v1.ConformanceService_ClientStreamServer,
 ) error {
+	ctx := stream.Context()
 	var responseDefinition *v1.UnaryResponseDefinition
 	firstRecv := true
 	var reqs []*anypb.Any
@@ -121,11 +123,11 @@ func (c *conformanceServiceServer) ClientStream(
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
 		stream.SetTrailer(trailerMD)
 
-		time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+		time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
 	}
 
 	md, _ := metadata.FromIncomingContext(stream.Context())
-	payload, err := parseUnaryResponseDefinition(responseDefinition, md, reqs)
+	payload, err := parseUnaryResponseDefinition(ctx, responseDefinition, md, reqs)
 	if err != nil {
 		return err
 	}
@@ -139,6 +141,7 @@ func (c *conformanceServiceServer) ServerStream(
 	req *v1.ServerStreamRequest,
 	stream v1.ConformanceService_ServerStreamServer,
 ) error {
+	ctx := stream.Context()
 	// Convert the request to an Any so that it can be recorded in the payload
 	msgAsAny, err := asAny(req)
 	if err != nil {
@@ -168,12 +171,12 @@ func (c *conformanceServiceServer) ServerStream(
 			// because for server streams, nothing in the request info will change
 			// after the first response.
 			if respNum == 0 {
-				metadata, _ := metadata.FromIncomingContext(stream.Context())
-				requestInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
+				requestInfo := createRequestInfo(ctx, requestMetadata, []*anypb.Any{msgAsAny})
 				resp.Payload.RequestInfo = requestInfo
 			}
 
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+			time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
 
 			if err := stream.Send(resp); err != nil {
 				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
@@ -184,8 +187,8 @@ func (c *conformanceServiceServer) ServerStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				metadata, _ := metadata.FromIncomingContext(stream.Context())
-				reqInfo := createRequestInfo(metadata, []*anypb.Any{msgAsAny})
+				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
+				reqInfo := createRequestInfo(ctx, requestMetadata, []*anypb.Any{msgAsAny})
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
 					return status.Error(codes.Internal, err.Error())
@@ -202,6 +205,7 @@ func (c *conformanceServiceServer) ServerStream(
 func (c *conformanceServiceServer) BidiStream(
 	stream v1.ConformanceService_BidiStreamServer,
 ) error {
+	ctx := stream.Context()
 	var responseDefinition *v1.StreamResponseDefinition
 	fullDuplex := false
 	firstRecv := true
@@ -262,8 +266,8 @@ func (c *conformanceServiceServer) BidiStream(
 			if respNum == 0 {
 				// Only send the full request info (including headers and timeouts)
 				// in the first response
-				metadata, _ := metadata.FromIncomingContext(stream.Context())
-				requestInfo = createRequestInfo(metadata, reqs)
+				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
+				requestInfo = createRequestInfo(ctx, requestMetadata, reqs)
 			} else {
 				// All responses after the first should only include the requests
 				// since that is the only thing that will change between responses
@@ -273,7 +277,7 @@ func (c *conformanceServiceServer) BidiStream(
 				}
 			}
 			resp.Payload.RequestInfo = requestInfo
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+			time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
 
 			if err := stream.Send(resp); err != nil {
 				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
@@ -301,10 +305,10 @@ func (c *conformanceServiceServer) BidiStream(
 			// after the first response (this includes the requests since they've all
 			// been received by this point)
 			if respNum == 0 {
-				metadata, _ := metadata.FromIncomingContext(stream.Context())
-				resp.Payload.RequestInfo = createRequestInfo(metadata, reqs)
+				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
+				resp.Payload.RequestInfo = createRequestInfo(ctx, requestMetadata, reqs)
 			}
-			time.Sleep((time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond))
+			time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
 
 			if err := stream.Send(resp); err != nil {
 				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
@@ -315,8 +319,8 @@ func (c *conformanceServiceServer) BidiStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				metadata, _ := metadata.FromIncomingContext(stream.Context())
-				reqInfo := createRequestInfo(metadata, reqs)
+				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
+				reqInfo := createRequestInfo(ctx, requestMetadata, reqs)
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
 					return status.Error(codes.Internal, err.Error())
@@ -332,11 +336,12 @@ func (c *conformanceServiceServer) BidiStream(
 // Parses the given unary response definition and returns either
 // a built payload or a gRPC error based on the definition.
 func parseUnaryResponseDefinition(
+	ctx context.Context,
 	def *v1.UnaryResponseDefinition,
 	metadata metadata.MD,
 	reqs []*anypb.Any,
 ) (*v1.ConformancePayload, error) {
-	reqInfo := createRequestInfo(metadata, reqs)
+	reqInfo := createRequestInfo(ctx, metadata, reqs)
 	if def == nil {
 		// If the definition is not set at all, there's nothing to respond with.
 		// Just return a payload with the request info
@@ -373,13 +378,23 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-func createRequestInfo(metadata metadata.MD, reqs []*anypb.Any) *v1.ConformancePayload_RequestInfo {
+func createRequestInfo(ctx context.Context, metadata metadata.MD, reqs []*anypb.Any) *v1.ConformancePayload_RequestInfo {
 	headerInfo := grpcutil.ConvertMetadataToProtoHeader(metadata)
+
+	var timeoutMs *int64
+	if deadline, ok := ctx.Deadline(); ok {
+		timeout := time.Until(deadline)
+		if timeout < 0 {
+			timeout = 0
+		}
+		timeoutMs = proto.Int64(timeout.Milliseconds())
+	}
 
 	// Set all observed request headers and requests in the response payload
 	return &v1.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
 		Requests:       reqs,
+		TimeoutMs:      timeoutMs,
 	}
 }
 
