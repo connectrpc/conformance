@@ -139,12 +139,15 @@ func (i *invoker) unary(
 		}
 	}
 
+	wireDetails, feedback := getWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -191,12 +194,15 @@ func (i *invoker) idempotentUnary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	wireDetails, feedback := getWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -281,12 +287,15 @@ func (i *invoker) serverStream(
 		}
 	}
 
+	wireDetails, feedback := getWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -351,12 +360,15 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	wireDetails, feedback := getWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -377,7 +389,7 @@ func (i *invoker) bidiStream(
 			return
 		}
 
-		result.WireDetails = getWireDetails(ctx)
+		result.WireDetails, result.Feedback = getWireDetails(ctx)
 
 		// Read headers and trailers from the stream
 		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
@@ -510,10 +522,24 @@ func (i *invoker) unimplemented(
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
 
+	wireDetails, feedback := getWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		Error:       internal.ConvertErrorToProtoError(err),
-		WireDetails: getWireDetails(ctx),
+		Feedback:    feedback,
+		WireDetails: wireDetails,
 	}, nil
+}
+
+// getWireDetails gets the wire details from the given context and returns any
+// feedback errors that may been encountered.
+func getWireDetails(ctx context.Context) (*v1.WireDetails, []string) {
+	var feedback []string
+	wireDetails, err := buildWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, fmt.Sprintf("failed to compute response wire details: %v", err))
+	}
+	return wireDetails, feedback
 }
 
 // Creates a new invoker around a ConformanceServiceClient.

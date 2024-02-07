@@ -119,12 +119,6 @@ message ClientCompatResponse {
     ClientResponseResult response = 2;
     ClientErrorResult error = 3;
   }
-
-  // This field is used only by the reference client, and it can be used
-  // to provide additional feedback about problems observed in the server
-  // response. If non-empty, the test case is considered failed even if
-  // the result above matches all expectations.
-  repeated string feedback = 4;
 }
 
 // The result of a ClientCompatRequest, which may or may not be successful.
@@ -144,6 +138,12 @@ message ClientResponseResult {
   // you are implementing a client under test, you may ignore this
   // field and should not populate it.
   WireDetails wire_details = 6;
+
+  // This field is used only by the reference client, and it can be used
+  // to provide additional feedback about problems observed in the server
+  // response or in client processing of the response. If non-empty, the test
+  // case is considered failed even if the result above matches all expectations.
+  repeated string feedback = 7;
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due
@@ -153,6 +153,9 @@ message ClientErrorResult {
   string message = 1;
 }
 
+// Details about various values as observed on the wire. This message is used
+// only by the reference client when reporting results and should not be populated
+// by clients under test.
 message WireDetails {
   // The HTTP status code of the response.
   int32 actual_status_code = 1;

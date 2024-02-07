@@ -213,11 +213,6 @@ export class ClientCompatResponse extends jspb.Message {
   hasError(): boolean;
   clearError(): ClientCompatResponse;
 
-  getFeedbackList(): Array<string>;
-  setFeedbackList(value: Array<string>): ClientCompatResponse;
-  clearFeedbackList(): ClientCompatResponse;
-  addFeedback(value: string, index?: number): ClientCompatResponse;
-
   getResultCase(): ClientCompatResponse.ResultCase;
 
   serializeBinary(): Uint8Array;
@@ -233,7 +228,6 @@ export namespace ClientCompatResponse {
     testName: string,
     response?: ClientResponseResult.AsObject,
     error?: ClientErrorResult.AsObject,
-    feedbackList: Array<string>,
   }
 
   export enum ResultCase { 
@@ -272,6 +266,11 @@ export class ClientResponseResult extends jspb.Message {
   hasWireDetails(): boolean;
   clearWireDetails(): ClientResponseResult;
 
+  getFeedbackList(): Array<string>;
+  setFeedbackList(value: Array<string>): ClientResponseResult;
+  clearFeedbackList(): ClientResponseResult;
+  addFeedback(value: string, index?: number): ClientResponseResult;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ClientResponseResult.AsObject;
   static toObject(includeInstance: boolean, msg: ClientResponseResult): ClientResponseResult.AsObject;
@@ -288,6 +287,7 @@ export namespace ClientResponseResult {
     responseTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
     numUnsentRequests: number,
     wireDetails?: WireDetails.AsObject,
+    feedbackList: Array<string>,
   }
 }
 

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -105,19 +106,16 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 	wrapper.val.Store(trace)
 }
 
-// getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) *v1.WireDetails {
-	// TODO - Note that this function swallows any errors experienced when processing
-	// the response, instead opting for just returning a nil wire details.
-	// It might be worth revisiting using the feedback approach to surface these errors.
+// buildWireDetails builds the wire details from the trace in the given context.
+func buildWireDetails(ctx context.Context) (*v1.WireDetails, error) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
-		return nil
+		return nil, errors.New("wire wrapper not found in context")
 	}
 	trace := wrapper.val.Load()
 	// A nil response in the trace is valid if the HTTP round trip failed.
 	if trace == nil || trace.Response == nil {
-		return nil
+		return nil, nil //nolint:nilnil
 	}
 	statusCode := int32(trace.Response.StatusCode)
 
@@ -129,10 +127,10 @@ func getWireDetails(ctx context.Context) *v1.WireDetails {
 	if isUnaryJSONError(contentType, statusCode) { //nolint:nestif
 		body, err := io.ReadAll(wrapper.buf)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-			return nil
+			return nil, err
 		}
 	} else if strings.HasPrefix(contentType, "application/connect+") {
 		// If this is a streaming request, then look through the trace events
@@ -146,13 +144,13 @@ func getWireDetails(ctx context.Context) *v1.WireDetails {
 			case *tracer.ResponseBodyEndStream:
 				var endStream endStreamError
 				if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-					return nil
+					return nil, err
 				}
 				// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
 				// into a Struct
 				if len(endStream.Error) > 0 {
 					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-						return nil
+						return nil, err
 					}
 				}
 			default:
@@ -165,7 +163,7 @@ func getWireDetails(ctx context.Context) *v1.WireDetails {
 		ActualStatusCode:   statusCode,
 		ActualHttpTrailers: internal.ConvertToProtoHeader(trace.Response.Trailer),
 		ConnectErrorRaw:    &jsonRaw,
-	}
+	}, nil
 }
 
 type wireTracer struct {
