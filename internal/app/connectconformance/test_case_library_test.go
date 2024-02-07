@@ -15,11 +15,9 @@
 package connectconformance
 
 import (
-	"encoding/base64"
 	"sort"
 	"testing"
 
-	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
@@ -923,10 +921,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 							ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 								QueryParams: []*conformancev1.Header{
 									{
-										Name:  "message",
-										Value: []string{marshalToString(t, true, unarySuccessReq)},
-									},
-									{
 										Name:  "encoding",
 										Value: []string{"json"},
 									},
@@ -961,10 +955,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 							Requests:       asAnySlice(t, unarySuccessReq),
 							ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 								QueryParams: []*conformancev1.Header{
-									{
-										Name:  "message",
-										Value: []string{marshalToString(t, false, unarySuccessReq)},
-									},
 									{
 										Name:  "encoding",
 										Value: []string{"proto"},
@@ -1001,10 +991,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 							QueryParams: []*conformancev1.Header{
 								{
-									Name:  "message",
-									Value: []string{marshalToString(t, true, unaryErrorReq)},
-								},
-								{
 									Name:  "encoding",
 									Value: []string{"json"},
 								},
@@ -1038,10 +1024,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						Requests:       asAnySlice(t, unaryErrorReq),
 						ConnectGetInfo: &conformancev1.ConformancePayload_ConnectGetInfo{
 							QueryParams: []*conformancev1.Header{
-								{
-									Name:  "message",
-									Value: []string{marshalToString(t, false, unaryErrorReq)},
-								},
 								{
 									Name:  "encoding",
 									Value: []string{"proto"},
@@ -1790,24 +1772,4 @@ func asAnySlice(t *testing.T, msgs ...proto.Message) []*anypb.Any {
 		arr = append(arr, asAny)
 	}
 	return arr
-}
-
-// marshalToString marshals the given proto message to a string mirroring the
-// logic that Connect specifies for GET requests.
-// If asJSON is true, the message is first marshalled to JSON and the bytes are
-// then converted to a string.
-// If asJSON is false, the message is marshalled to binary and the bytes are then
-// base64-encoded as a string.
-func marshalToString(t *testing.T, asJSON bool, msg proto.Message) string {
-	t.Helper()
-	codec := internal.NewCodec(asJSON)
-
-	bytes, err := codec.MarshalStable(msg)
-	require.NoError(t, err)
-
-	if asJSON {
-		return string(bytes)
-	}
-
-	return base64.RawURLEncoding.EncodeToString(bytes)
 }

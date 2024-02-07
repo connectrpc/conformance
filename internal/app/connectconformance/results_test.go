@@ -671,15 +671,15 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 			}`,
 			// It tries to describe everything wrong, all in one shot.
 			expectedErrors: []string{
-				`actual response headers missing "abc"`,
-				`actual response trailers missing "xyz"`,
+				`expecting an error but received none`,
 				`expecting 3 response messages but instead got 1`,
 				`response #1: expecting data 69b71d79f821, got d76df8`,
 				`actual request headers missing "foo"`,
 				`server did not echo back a timeout but one was expected (12345 ms)`,
 				`expecting 1 request messages to be described but instead got 2`,
 				`request #1: did not survive round-trip`,
-				`expecting an error but received none`,
+				`actual response headers missing "abc"`,
+				`actual response trailers missing "xyz"`,
 			},
 		},
 	}
