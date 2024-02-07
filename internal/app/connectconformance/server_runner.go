@@ -196,7 +196,7 @@ func runTestCasesForServer( //nolint:gocyclo
 				results.assert(name, expectations[resp.TestName], resp.GetResponse())
 			}
 			wireDetails := resp.GetResponse().GetWireDetails()
-			if isReferenceClient && wireDetails != nil {
+			if wireDetails != nil {
 				for _, msg := range wireDetails.Feedback {
 					results.recordSideband(resp.TestName, msg)
 				}

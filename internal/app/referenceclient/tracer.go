@@ -106,22 +106,36 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 }
 
 // getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) *v1.WireDetails {
-	// TODO - Note that this function swallows any errors experienced when processing
-	// the response, instead opting for just returning a nil wire details.
-	// It might be worth revisiting using the feedback approach to surface these errors.
-	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
+func getWireDetails(ctx context.Context) (wireDetails *v1.WireDetails) {
+	wireDetails = &v1.WireDetails{}
+	var feedback []string
+	var jsonRaw structpb.Struct
+	var trace *tracer.Trace
+	var statusCode int32
+
+	defer func() {
+		if wireDetails != nil {
+			wireDetails.ActualStatusCode = statusCode
+			wireDetails.ConnectErrorRaw = &jsonRaw
+			wireDetails.Feedback = feedback
+			if trace != nil {
+				wireDetails.ActualHttpTrailers = internal.ConvertToProtoHeader(trace.Response.Trailer)
+			}
+		}
+	}()
+
+	wrapper, ok := ctx.Value("wire").(*wireWrapper)
 	if !ok {
+		feedback = append(feedback, "wire wrapper not found in context")
 		return nil
 	}
-	trace := wrapper.val.Load()
+	trace = wrapper.val.Load()
 	// A nil response in the trace is valid if the HTTP round trip failed.
 	if trace == nil || trace.Response == nil {
 		return nil
 	}
-	statusCode := int32(trace.Response.StatusCode)
+	statusCode = int32(trace.Response.StatusCode)
 
-	var jsonRaw structpb.Struct
 	contentType := trace.Response.Header.Get("content-type")
 
 	// If this is a unary request that returned an error, then use the entire
@@ -161,11 +175,7 @@ func getWireDetails(ctx context.Context) *v1.WireDetails {
 		}
 	}
 
-	return &v1.WireDetails{
-		ActualStatusCode:   statusCode,
-		ActualHttpTrailers: internal.ConvertToProtoHeader(trace.Response.Trailer),
-		ConnectErrorRaw:    &jsonRaw,
-	}
+	return wireDetails
 }
 
 type wireTracer struct {
