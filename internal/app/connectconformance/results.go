@@ -159,6 +159,9 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
 	var errs multiErrors
 
+	errs = append(errs, checkError(expected.Error, actual.Error)...)
+	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
+
 	// TODO - This check is for trailers-only and should really only apply to gRPC and gRPC-Web protocols.
 	// Previously, it checked for error != nil, which is compliant with gRPC. But gRPC-Web does trailers-only
 	// responses with no errors also.
@@ -187,9 +190,6 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 		errs = append(errs, checkHeaders("response headers", expected.ResponseHeaders, actual.ResponseHeaders)...)
 		errs = append(errs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 	}
-
-	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
-	errs = append(errs, checkError(expected.Error, actual.Error)...)
 
 	expectedWire := expected.WireDetails
 	actualWire := actual.WireDetails
@@ -409,12 +409,12 @@ func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_Request
 			if actual == nil || actual.TimeoutMs == nil {
 				errs = append(errs, fmt.Errorf("server did not echo back a timeout but one was expected (%d ms)", expected.GetTimeoutMs()))
 			} else {
-				max := expected.GetTimeoutMs()
-				min := max - timeoutCheckGracePeriodMillis
-				if min < 0 {
-					min = 0
+				maxAllowed := expected.GetTimeoutMs()
+				minAllowed := maxAllowed - timeoutCheckGracePeriodMillis
+				if minAllowed < 0 {
+					minAllowed = 0
 				}
-				if actual.GetTimeoutMs() > max || actual.GetTimeoutMs() < min {
+				if actual.GetTimeoutMs() > maxAllowed || actual.GetTimeoutMs() < minAllowed {
 					errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) that did not match expected (%d ms)", actual.GetTimeoutMs(), expected.GetTimeoutMs()))
 				}
 			}
