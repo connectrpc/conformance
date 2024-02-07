@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -136,13 +137,15 @@ func (i *invoker) unary(
 		}
 	}
 
-	return &v1.ClientResponseResult{
+	rez := &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
 		ConnectErrorRaw:  nil, // TODO
-	}, nil
+	}
+	fmt.Fprintf(os.Stderr, "CRR: %+v", rez)
+	return rez, nil
 }
 
 // TODO - This should be consolidated with the unary implementation since they are
