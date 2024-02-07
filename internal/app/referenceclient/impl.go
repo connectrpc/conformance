@@ -539,7 +539,7 @@ func getWireDetails(ctx context.Context) (*v1.WireDetails, []string) {
 	var feedback []string
 	wireDetails, err := buildWireDetails(ctx)
 	if err != nil {
-		feedback = append(feedback, err.Error())
+		feedback = append(feedback, fmt.Sprintf("failed to compute response wire details: %v", err))
 	}
 	return wireDetails, feedback
 }
