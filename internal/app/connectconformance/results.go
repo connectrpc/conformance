@@ -36,7 +36,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-const timeoutCheckGracePeriodMillis = 500
+const timeoutCheckGracePeriodMillis = 100
 
 // testResults represents the results of running conformance tests. It accumulates
 // the state of passed and failed test cases and also reports failures to a given
