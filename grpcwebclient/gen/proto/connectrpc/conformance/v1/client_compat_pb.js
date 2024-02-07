@@ -128,7 +128,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.connectrpc.conformance.v1.ClientCompatResponse = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, proto.connectrpc.conformance.v1.ClientCompatResponse.repeatedFields_, proto.connectrpc.conformance.v1.ClientCompatResponse.oneofGroups_);
+  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.connectrpc.conformance.v1.ClientCompatResponse.oneofGroups_);
 };
 goog.inherits(proto.connectrpc.conformance.v1.ClientCompatResponse, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -1543,13 +1543,6 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.hasRawRequest = fu
 
 
 /**
- * List of repeated fields within this message type.
- * @private {!Array<number>}
- * @const
- */
-proto.connectrpc.conformance.v1.ClientCompatResponse.repeatedFields_ = [4];
-
-/**
  * Oneof group definitions for this message. Each group defines the field
  * numbers belonging to that group. When of these fields' value is set, all
  * other fields in the group are cleared. During deserialization, if multiple
@@ -1608,8 +1601,7 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.toObject = function(include
   var f, obj = {
     testName: jspb.Message.getFieldWithDefault(msg, 1, ""),
     response: (f = msg.getResponse()) && proto.connectrpc.conformance.v1.ClientResponseResult.toObject(includeInstance, f),
-    error: (f = msg.getError()) && proto.connectrpc.conformance.v1.ClientErrorResult.toObject(includeInstance, f),
-    feedbackList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
+    error: (f = msg.getError()) && proto.connectrpc.conformance.v1.ClientErrorResult.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1659,10 +1651,6 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.deserializeBinaryFromReader
       var value = new proto.connectrpc.conformance.v1.ClientErrorResult;
       reader.readMessage(value,proto.connectrpc.conformance.v1.ClientErrorResult.deserializeBinaryFromReader);
       msg.setError(value);
-      break;
-    case 4:
-      var value = /** @type {string} */ (reader.readString());
-      msg.addFeedback(value);
       break;
     default:
       reader.skipField();
@@ -1714,13 +1702,6 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.serializeBinaryToWriter = f
       3,
       f,
       proto.connectrpc.conformance.v1.ClientErrorResult.serializeBinaryToWriter
-    );
-  }
-  f = message.getFeedbackList();
-  if (f.length > 0) {
-    writer.writeRepeatedString(
-      4,
-      f
     );
   }
 };
@@ -1815,43 +1796,6 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.clearError = func
  */
 proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.hasError = function() {
   return jspb.Message.getField(this, 3) != null;
-};
-
-
-/**
- * repeated string feedback = 4;
- * @return {!Array<string>}
- */
-proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.getFeedbackList = function() {
-  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 4));
-};
-
-
-/**
- * @param {!Array<string>} value
- * @return {!proto.connectrpc.conformance.v1.ClientCompatResponse} returns this
- */
-proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.setFeedbackList = function(value) {
-  return jspb.Message.setField(this, 4, value || []);
-};
-
-
-/**
- * @param {string} value
- * @param {number=} opt_index
- * @return {!proto.connectrpc.conformance.v1.ClientCompatResponse} returns this
- */
-proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.addFeedback = function(value, opt_index) {
-  return jspb.Message.addToRepeatedField(this, 4, value, opt_index);
-};
-
-
-/**
- * Clears the list making it empty but non-null.
- * @return {!proto.connectrpc.conformance.v1.ClientCompatResponse} returns this
- */
-proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.clearFeedbackList = function() {
-  return this.setFeedbackList([]);
 };
 
 
@@ -2389,7 +2333,7 @@ proto.connectrpc.conformance.v1.ClientErrorResult.prototype.setMessage = functio
  * @private {!Array<number>}
  * @const
  */
-proto.connectrpc.conformance.v1.WireDetails.repeatedFields_ = [3];
+proto.connectrpc.conformance.v1.WireDetails.repeatedFields_ = [3,4];
 
 
 
@@ -2425,7 +2369,8 @@ proto.connectrpc.conformance.v1.WireDetails.toObject = function(includeInstance,
     actualStatusCode: jspb.Message.getFieldWithDefault(msg, 1, 0),
     connectErrorRaw: (f = msg.getConnectErrorRaw()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
     actualHttpTrailersList: jspb.Message.toObjectList(msg.getActualHttpTrailersList(),
-    connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance)
+    connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
+    feedbackList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -2475,6 +2420,10 @@ proto.connectrpc.conformance.v1.WireDetails.deserializeBinaryFromReader = functi
       var value = new connectrpc_conformance_v1_service_pb.Header;
       reader.readMessage(value,connectrpc_conformance_v1_service_pb.Header.deserializeBinaryFromReader);
       msg.addActualHttpTrailers(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.addFeedback(value);
       break;
     default:
       reader.skipField();
@@ -2526,6 +2475,13 @@ proto.connectrpc.conformance.v1.WireDetails.serializeBinaryToWriter = function(m
       3,
       f,
       connectrpc_conformance_v1_service_pb.Header.serializeBinaryToWriter
+    );
+  }
+  f = message.getFeedbackList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      4,
+      f
     );
   }
 };
@@ -2621,6 +2577,43 @@ proto.connectrpc.conformance.v1.WireDetails.prototype.addActualHttpTrailers = fu
  */
 proto.connectrpc.conformance.v1.WireDetails.prototype.clearActualHttpTrailersList = function() {
   return this.setActualHttpTrailersList([]);
+};
+
+
+/**
+ * repeated string feedback = 4;
+ * @return {!Array<string>}
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.getFeedbackList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 4));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.connectrpc.conformance.v1.WireDetails} returns this
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.setFeedbackList = function(value) {
+  return jspb.Message.setField(this, 4, value || []);
+};
+
+
+/**
+ * @param {string} value
+ * @param {number=} opt_index
+ * @return {!proto.connectrpc.conformance.v1.WireDetails} returns this
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.addFeedback = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 4, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.connectrpc.conformance.v1.WireDetails} returns this
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.clearFeedbackList = function() {
+  return this.setFeedbackList([]);
 };
 
 

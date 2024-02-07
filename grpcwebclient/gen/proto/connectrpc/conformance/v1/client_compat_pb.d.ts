@@ -213,11 +213,6 @@ export class ClientCompatResponse extends jspb.Message {
   hasError(): boolean;
   clearError(): ClientCompatResponse;
 
-  getFeedbackList(): Array<string>;
-  setFeedbackList(value: Array<string>): ClientCompatResponse;
-  clearFeedbackList(): ClientCompatResponse;
-  addFeedback(value: string, index?: number): ClientCompatResponse;
-
   getResultCase(): ClientCompatResponse.ResultCase;
 
   serializeBinary(): Uint8Array;
@@ -233,7 +228,6 @@ export namespace ClientCompatResponse {
     testName: string,
     response?: ClientResponseResult.AsObject,
     error?: ClientErrorResult.AsObject,
-    feedbackList: Array<string>,
   }
 
   export enum ResultCase { 
@@ -323,6 +317,11 @@ export class WireDetails extends jspb.Message {
   clearActualHttpTrailersList(): WireDetails;
   addActualHttpTrailers(value?: connectrpc_conformance_v1_service_pb.Header, index?: number): connectrpc_conformance_v1_service_pb.Header;
 
+  getFeedbackList(): Array<string>;
+  setFeedbackList(value: Array<string>): WireDetails;
+  clearFeedbackList(): WireDetails;
+  addFeedback(value: string, index?: number): WireDetails;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WireDetails.AsObject;
   static toObject(includeInstance: boolean, msg: WireDetails): WireDetails.AsObject;
@@ -336,6 +335,7 @@ export namespace WireDetails {
     actualStatusCode: number,
     connectErrorRaw?: google_protobuf_struct_pb.Struct.AsObject,
     actualHttpTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
+    feedbackList: Array<string>,
   }
 }
 

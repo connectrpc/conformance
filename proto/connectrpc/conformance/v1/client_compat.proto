@@ -119,12 +119,6 @@ message ClientCompatResponse {
     ClientResponseResult response = 2;
     ClientErrorResult error = 3;
   }
-
-  // This field is used only by the reference client, and it can be used
-  // to provide additional feedback about problems observed in the server
-  // response. If non-empty, the test case is considered failed even if
-  // the result above matches all expectations.
-  repeated string feedback = 4;
 }
 
 // The result of a ClientCompatRequest, which may or may not be successful.
@@ -153,6 +147,9 @@ message ClientErrorResult {
   string message = 1;
 }
 
+// Details about various values as observed on the wire. This message is used
+// only by the reference client when reporting results and should not be populated
+// by clients under test.
 message WireDetails {
   // The HTTP status code of the response.
   int32 actual_status_code = 1;
@@ -163,4 +160,8 @@ message WireDetails {
   // include trailers that conveyed via the body, as done in the gRPC-Web
   // and Connect streaming protocols.
   repeated Header actual_http_trailers = 3;
+  // This field can be used to provide additional feedback about problems
+  // observed in the server response. If non-empty, the test case is considered
+  // failed even if the actual reported test case result matches all expectations.
+  repeated string feedback = 4;
 }
