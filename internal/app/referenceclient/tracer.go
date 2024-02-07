@@ -106,8 +106,8 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 	wrapper.val.Store(trace)
 }
 
-// getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) (*v1.WireDetails, error) {
+// buildWireDetails builds the wire details from the trace in the given context.
+func buildWireDetails(ctx context.Context) (*v1.WireDetails, error) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
 		return nil, errors.New("wire wrapper not found in context")
@@ -115,7 +115,7 @@ func getWireDetails(ctx context.Context) (*v1.WireDetails, error) {
 	trace := wrapper.val.Load()
 	// A nil response in the trace is valid if the HTTP round trip failed.
 	if trace == nil || trace.Response == nil {
-		return nil, nil
+		return nil, nil //nolint:nilnil
 	}
 	statusCode := int32(trace.Response.StatusCode)
 

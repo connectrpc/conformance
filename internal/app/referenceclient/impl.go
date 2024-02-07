@@ -139,11 +139,7 @@ func (i *invoker) unary(
 		}
 	}
 
-	var feedback []string
-	wireDetails, err := getWireDetails(ctx)
-	if err != nil {
-		feedback = append(feedback, err.Error())
-	}
+	wireDetails, feedback := getWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -198,11 +194,7 @@ func (i *invoker) idempotentUnary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	var feedback []string
-	wireDetails, err := getWireDetails(ctx)
-	if err != nil {
-		feedback = append(feedback, err.Error())
-	}
+	wireDetails, feedback := getWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -295,11 +287,7 @@ func (i *invoker) serverStream(
 		}
 	}
 
-	var feedback []string
-	wireDetails, err := getWireDetails(ctx)
-	if err != nil {
-		feedback = append(feedback, err.Error())
-	}
+	wireDetails, feedback := getWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -372,11 +360,7 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	var feedback []string
-	wireDetails, err := getWireDetails(ctx)
-	if err != nil {
-		feedback = append(feedback, err.Error())
-	}
+	wireDetails, feedback := getWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -404,12 +388,7 @@ func (i *invoker) bidiStream(
 		if err != nil {
 			return
 		}
-
-		var feedback []string
-		wireDetails, err := getWireDetails(ctx)
-		if err != nil {
-			feedback = append(feedback, err.Error())
-		}
+		wireDetails, feedback := getWireDetails(ctx)
 
 		result.WireDetails = wireDetails
 		result.Feedback = feedback
@@ -545,17 +524,24 @@ func (i *invoker) unimplemented(
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
 
-	var feedback []string
-	wireDetails, err := getWireDetails(ctx)
-	if err != nil {
-		feedback = append(feedback, err.Error())
-	}
+	wireDetails, feedback := getWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		Error:       internal.ConvertErrorToProtoError(err),
 		Feedback:    feedback,
 		WireDetails: wireDetails,
 	}, nil
+}
+
+// getWireDetails gets the wire details from the given context and returns any
+// feedback errors that may been encountered.
+func getWireDetails(ctx context.Context) (*v1.WireDetails, []string) {
+	var feedback []string
+	wireDetails, err := buildWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, err.Error())
+	}
+	return wireDetails, feedback
 }
 
 // Creates a new invoker around a ConformanceServiceClient.

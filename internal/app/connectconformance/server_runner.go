@@ -41,7 +41,7 @@ import (
 //
 // If isReferenceServer is true, then the server's stderr will be examined as well, to
 // record out-of-band feedback about the client requests.
-func runTestCasesForServer( //nolint:gocyclo
+func runTestCasesForServer(
 	ctx context.Context,
 	isReferenceClient bool,
 	isReferenceServer bool,
@@ -195,7 +195,7 @@ func runTestCasesForServer( //nolint:gocyclo
 			default:
 				results.assert(name, expectations[resp.TestName], resp.GetResponse())
 			}
-			if resp.GetResponse() != nil {
+			if isReferenceClient && resp.GetResponse() != nil {
 				for _, msg := range resp.GetResponse().Feedback {
 					results.recordSideband(resp.TestName, msg)
 				}
