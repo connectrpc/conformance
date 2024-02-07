@@ -15,7 +15,6 @@
 package internal
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -38,15 +37,14 @@ type StreamEncoder interface {
 	Encode(msg proto.Message) error
 }
 
-// codec describes anything that can marshal and unmarshal proto messages.
-type codec interface {
+// Codec describes anything that can marshal and unmarshal proto messages.
+type Codec interface {
 	NewDecoder(io.Reader) StreamDecoder
 	NewEncoder(io.Writer) StreamEncoder
-	MarshalStable(msg proto.Message) ([]byte, error)
 }
 
 // NewCodec returns a new Codec.
-func NewCodec(json bool) codec {
+func NewCodec(json bool) Codec {
 	if json {
 		return &jsonCodec{MarshalOptions: protojson.MarshalOptions{Multiline: true}}
 	}
@@ -112,22 +110,6 @@ func (j *jsonEncoder) Encode(msg proto.Message) error {
 	return nil
 }
 
-// This function is lifted from connect-go since this is the logic it uses
-// to stably marshal a request message into JSON for putting into query params
-// of GET requests.
-// See https://github.com/connectrpc/connect-go/blob/main/codec.go
-func (c *jsonCodec) MarshalStable(msg proto.Message) ([]byte, error) {
-	messageJSON, err := c.Marshal(msg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal message to JSON: %w", err)
-	}
-	compactedJSON := bytes.NewBuffer(messageJSON[:0])
-	if err = json.Compact(compactedJSON, messageJSON); err != nil {
-		return nil, fmt.Errorf("failed to compact marshaled JSON: %w", err)
-	}
-	return compactedJSON.Bytes(), nil
-}
-
 // protoCodec marshals and unmarshals the Protobuf binary format.
 type protoCodec struct {
 	proto.MarshalOptions
@@ -146,15 +128,6 @@ func (c *protoCodec) NewEncoder(out io.Writer) StreamEncoder {
 		opts: c.MarshalOptions,
 		out:  out,
 	}
-}
-
-// This function is lifted from connect-go since this is the logic it uses
-// to stably marshal a request message into binary for putting into query params
-// of GET requests.
-// See https://github.com/connectrpc/connect-go/blob/main/codec.go
-func (c *protoCodec) MarshalStable(msg proto.Message) ([]byte, error) {
-	options := proto.MarshalOptions{Deterministic: true}
-	return options.Marshal(msg)
 }
 
 type protoDecoder struct {

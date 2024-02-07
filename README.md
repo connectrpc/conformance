@@ -13,13 +13,14 @@ compatibility, and conformance across the Connect, gRPC, and gRPC-Web protocols.
 various scenarios with a client-server interaction to ensure the results are as expected across platforms.
 
 Tests are divided into two types: client tests and server tests. Those which verify clients are run against a
-reference server implementation of the Conformance Service written with [connect-go](https://github.com/connectrpc/connect-go).
+reference server implementation of the Conformance Service written with [connect-go].
 
 Likewise, servers under test will be verified by a reference client implementation of the Conformance
 Service also written with connect-go.
 
-To verify compatibility with other protocol implementations, the conformance test also uses reference client
-and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go).
+To verify compatibility with other protocol implementations, the conformance tests also use reference client
+and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go) and a reference
+server implementation that uses the [gRPC-Web Go server](https://github.com/improbable-eng/grpc-web).
 
 Also, please note that this project is currently pre-v1.0.0. As a result, it does not currently make backward compatibility
 guarantees. The goal is to publish a stable release but please be aware we may make changes
@@ -35,21 +36,36 @@ or server in isolation will use the corresponding reference implementation to ve
 
 Below are the basic steps needed for setting up the suite to run against your implementation:
 
-1. The first step is to download the Conformance protos, which can be found on the Buf Schema Registry [here](https://buf.build/connectrpc/conformance).
-   From there, you will need to generate the code for the language you are testing.
+1. The first step is to access an SDK for the Conformance protos. These can be found on the Buf Schema Registry:
+   https://buf.build/connectrpc/conformance. You can download SDKs for some languages
+   [here](https://buf.build/connectrpc/conformance/sdks/main).
 
-2. Once complete, you will need to implement either the service, the client, or both (depending on which you are testing).
+   If you are using a language that is not supported by the BSR's selection of SDKs, you can generate one yourself
+   using the [`buf`](https://buf.build/docs/generate/tutorial) command-line tool.
+   After creating a [`buf.gen.yaml`](https://buf.build/docs/configuration/v1/buf-gen-yaml) file, to configure the
+   code generation, you'll then run `buf generate buf.build/connectrpc/conformance`.
+
+2. Once you have an SDK, with generated code for the
+   [Conformance Service](https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService)
+   and related messages, you will need to implement either the service, the client, or both (depending on which you are testing).
    To do so, follow the instructions specified in the
    [`ConformanceService`](https://buf.build/connectrpc/conformance/file/main:connectrpc/conformance/v1/service.proto) proto.
 
    For working examples, refer to the Go [reference client](./internal/app/referenceclient)
    and [reference server](./internal/app/referenceserver).
 
-3. Next, your file should then be made executable in your target language. For example, if implementing the
-  `ConformanceService` in Go, you would build a binary which executes your client or service.
+3. Your service-under-test or client-under-test needs to be a program that can easily be invoked from the command-line. This
+   is how the conformance test runner will invoke it, too.
 
-4. Finally, visit the repository's [Releases](https://github.com/connectrpc/conformance/releases) page, download
-   the conformance runner binary, and add it to your `$PATH`.
+4. Next, visit this repository's [Releases](https://github.com/connectrpc/conformance/releases) page and download
+   the conformance runner binary: `connectconformance`. You may want to add it to your `$PATH` to make it easier
+   to run interactively from the command-line.
+
+5. Finally, integrate the conformance tests into the continuous integration and testing process for your code,
+   so every change you make can validate that the implementation remains conformant. You can see an example of
+   how this can be done using `make` in the connect-kotlin repo,
+   [here](https://github.com/connectrpc/connect-kotlin/blob/328110c00f791d06798aaa67f142d542bfcf1f27/Makefile#L46) and
+   [here](https://github.com/connectrpc/connect-kotlin/blob/328110c00f791d06798aaa67f142d542bfcf1f27/Makefile#L111-L124).
 
 
 ### Running the tests
@@ -82,18 +98,38 @@ connectconformance --mode both -- <path/to/your/executable/client> ---- <path/to
 
 ## Running the reference tests
 
-To run the suite using the reference client against the reference server and see
-the process in action, use the following command:
+To test this repo and the reference clients and servers, we can use the conformance suite itself.
+To run the suite, using the reference clients against the reference servers, and see the process in
+action, use the following command:
 
 ```bash
 make runconformance
 ```
 
-This will build the necessary binaries and run tests with the following setup:
+This will build the necessary binaries and run tests of the following implementations.
 
-* Connect reference client against a Connect reference server
-* gRPC reference client against a Connect reference server
-* Connect reference client against a gRPC reference server
+* Connect reference client and reference server
+  * These implementations are written using [connect-go], but with numerous extensions that allow
+    them to more closely examine the on-the-wire format of the RPC protocol to make stronger
+    assertions about conformance.
+  * They support all features that can be tested by the conformance tests, which includes all three
+    protocols (Connect, gRPC, gRPC-Web), all HTTP versions (HTTP 1.1, HTTP/2, and even HTTP/3), and
+    a variety of compression encodings ("gzip", "br", "zstd", "deflate" and "snappy").
+* gRPC client and server
+  * These implementations are written using [grpc-go](https://github.com/grpc/grpc-go).
+  * They support the gRPC protocol and HTTP/2. They only support the "proto" codec for message
+    encoding and the "gzip" compression encoding.
+  * The server also supports the gRPC-Web protocol and HTTP 1.1 using the
+    [improbable-eng/grpc-web](https://github.com/improbable-eng/grpc-web) Go implementation. This
+    implementation is listed in the official gRPC-Web documentation as a server/proxy option
+    [here](https://github.com/grpc/grpc-web#proxy-interoperability). (Note that the gRPC client
+    does _not_ support gRPC-Web.)
+  * These implementations are also used against clients-under-test and servers-under-test, to
+    confirm interoperability with official gRPC implementations.
+
+Both of the above clients are tested against both the Connect reference server and the gRPC server.
+The servers are tested against the Connect reference client and the gRPC client. And since the gRPC
+client does not support gRPC-Web, the servers are also tested against the official gRPC-Web JS client.
 
 ## Status: Pre-v1.0.0
 
