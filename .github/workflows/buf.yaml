@@ -16,15 +16,16 @@ jobs:
       - uses: bufbuild/buf-lint-action@v1.1.0
         with:
           input: proto
-  breaking:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: bufbuild/buf-setup-action@v1
-      - uses: bufbuild/buf-breaking-action@v1.1.3
-        with:
-          input: proto
-          against: 'buf.build/connectrpc/conformance'
+  # TODO - Reenable after pushing breaking proto changes to BSR
+  # breaking:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: bufbuild/buf-setup-action@v1
+  #     - uses: bufbuild/buf-breaking-action@v1.1.3
+  #       with:
+  #         input: proto
+  #         against: 'buf.build/connectrpc/conformance'
   push:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'

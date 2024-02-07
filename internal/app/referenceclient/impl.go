@@ -373,13 +373,15 @@ func (i *invoker) bidiStream(
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
-		if result != nil {
-			result.WireDetails = getWireDetails(ctx)
-
-			// Read headers and trailers from the stream
-			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
-			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
+		if err != nil {
+			return
 		}
+
+		result.WireDetails = getWireDetails(ctx)
+
+		// Read headers and trailers from the stream
+		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
+		result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 	}()
 
 	// Add the specified request headers to the request
