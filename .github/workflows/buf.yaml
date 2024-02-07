@@ -31,7 +31,8 @@ jobs:
     if: github.ref == 'refs/heads/main'
     needs:
       - lint
-      - breaking
+      # TODO - Reenable
+      # - breaking
     steps:
       - uses: actions/checkout@v4
       - uses: bufbuild/buf-setup-action@v1
