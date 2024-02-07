@@ -1370,6 +1370,7 @@ type RawHTTPResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// If status code is not specified, it will default to a 200 response code.
 	StatusCode uint32    `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
 	Headers    []*Header `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
 	// Types that are assignable to Body:
