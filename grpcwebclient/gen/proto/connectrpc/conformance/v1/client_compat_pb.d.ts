@@ -266,6 +266,11 @@ export class ClientResponseResult extends jspb.Message {
   hasWireDetails(): boolean;
   clearWireDetails(): ClientResponseResult;
 
+  getFeedbackList(): Array<string>;
+  setFeedbackList(value: Array<string>): ClientResponseResult;
+  clearFeedbackList(): ClientResponseResult;
+  addFeedback(value: string, index?: number): ClientResponseResult;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ClientResponseResult.AsObject;
   static toObject(includeInstance: boolean, msg: ClientResponseResult): ClientResponseResult.AsObject;
@@ -282,6 +287,7 @@ export namespace ClientResponseResult {
     responseTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
     numUnsentRequests: number,
     wireDetails?: WireDetails.AsObject,
+    feedbackList: Array<string>,
   }
 }
 
@@ -317,11 +323,6 @@ export class WireDetails extends jspb.Message {
   clearActualHttpTrailersList(): WireDetails;
   addActualHttpTrailers(value?: connectrpc_conformance_v1_service_pb.Header, index?: number): connectrpc_conformance_v1_service_pb.Header;
 
-  getFeedbackList(): Array<string>;
-  setFeedbackList(value: Array<string>): WireDetails;
-  clearFeedbackList(): WireDetails;
-  addFeedback(value: string, index?: number): WireDetails;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WireDetails.AsObject;
   static toObject(includeInstance: boolean, msg: WireDetails): WireDetails.AsObject;
@@ -335,7 +336,6 @@ export namespace WireDetails {
     actualStatusCode: number,
     connectErrorRaw?: google_protobuf_struct_pb.Struct.AsObject,
     actualHttpTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
-    feedbackList: Array<string>,
   }
 }
 

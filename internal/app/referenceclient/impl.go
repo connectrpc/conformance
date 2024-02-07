@@ -139,12 +139,19 @@ func (i *invoker) unary(
 		}
 	}
 
+	var feedback []string
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, err.Error())
+	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -191,12 +198,19 @@ func (i *invoker) idempotentUnary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	var feedback []string
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, err.Error())
+	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -281,12 +295,19 @@ func (i *invoker) serverStream(
 		}
 	}
 
+	var feedback []string
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, err.Error())
+	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -351,12 +372,19 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	var feedback []string
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, err.Error())
+	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		Feedback:         feedback,
+		WireDetails:      wireDetails,
 	}, nil
 }
 
@@ -377,7 +405,14 @@ func (i *invoker) bidiStream(
 			return
 		}
 
-		result.WireDetails = getWireDetails(ctx)
+		var feedback []string
+		wireDetails, err := getWireDetails(ctx)
+		if err != nil {
+			feedback = append(feedback, err.Error())
+		}
+
+		result.WireDetails = wireDetails
+		result.Feedback = feedback
 
 		// Read headers and trailers from the stream
 		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
@@ -510,9 +545,16 @@ func (i *invoker) unimplemented(
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
 
+	var feedback []string
+	wireDetails, err := getWireDetails(ctx)
+	if err != nil {
+		feedback = append(feedback, err.Error())
+	}
+
 	return &v1.ClientResponseResult{
 		Error:       internal.ConvertErrorToProtoError(err),
-		WireDetails: getWireDetails(ctx),
+		Feedback:    feedback,
+		WireDetails: wireDetails,
 	}, nil
 }
 

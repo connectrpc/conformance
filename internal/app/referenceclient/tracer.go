@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -106,36 +107,19 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 }
 
 // getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) (wireDetails *v1.WireDetails) {
-	wireDetails = &v1.WireDetails{}
-	var feedback []string
-	var jsonRaw structpb.Struct
-	var trace *tracer.Trace
-	var statusCode int32
-
-	defer func() {
-		if wireDetails != nil {
-			wireDetails.ActualStatusCode = statusCode
-			wireDetails.ConnectErrorRaw = &jsonRaw
-			wireDetails.Feedback = feedback
-			if trace != nil {
-				wireDetails.ActualHttpTrailers = internal.ConvertToProtoHeader(trace.Response.Trailer)
-			}
-		}
-	}()
-
-	wrapper, ok := ctx.Value("wire").(*wireWrapper)
+func getWireDetails(ctx context.Context) (*v1.WireDetails, error) {
+	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
-		feedback = append(feedback, "wire wrapper not found in context")
-		return nil
+		return nil, errors.New("wire wrapper not found in context")
 	}
-	trace = wrapper.val.Load()
+	trace := wrapper.val.Load()
 	// A nil response in the trace is valid if the HTTP round trip failed.
 	if trace == nil || trace.Response == nil {
-		return nil
+		return nil, nil
 	}
-	statusCode = int32(trace.Response.StatusCode)
+	statusCode := int32(trace.Response.StatusCode)
 
+	var jsonRaw structpb.Struct
 	contentType := trace.Response.Header.Get("content-type")
 
 	// If this is a unary request that returned an error, then use the entire
@@ -143,10 +127,10 @@ func getWireDetails(ctx context.Context) (wireDetails *v1.WireDetails) {
 	if isUnaryJSONError(contentType, statusCode) { //nolint:nestif
 		body, err := io.ReadAll(wrapper.buf)
 		if err != nil {
-			return nil
+			return nil, err
 		}
 		if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-			return nil
+			return nil, err
 		}
 	} else if strings.HasPrefix(contentType, "application/connect+") {
 		// If this is a streaming request, then look through the trace events
@@ -160,13 +144,13 @@ func getWireDetails(ctx context.Context) (wireDetails *v1.WireDetails) {
 			case *tracer.ResponseBodyEndStream:
 				var endStream endStreamError
 				if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-					return nil
+					return nil, err
 				}
 				// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
 				// into a Struct
 				if len(endStream.Error) > 0 {
 					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-						return nil
+						return nil, err
 					}
 				}
 			default:
@@ -175,7 +159,11 @@ func getWireDetails(ctx context.Context) (wireDetails *v1.WireDetails) {
 		}
 	}
 
-	return wireDetails
+	return &v1.WireDetails{
+		ActualStatusCode:   statusCode,
+		ActualHttpTrailers: internal.ConvertToProtoHeader(trace.Response.Trailer),
+		ConnectErrorRaw:    &jsonRaw,
+	}, nil
 }
 
 type wireTracer struct {
