@@ -388,10 +388,8 @@ func (i *invoker) bidiStream(
 		if err != nil {
 			return
 		}
-		wireDetails, feedback := getWireDetails(ctx)
 
-		result.WireDetails = wireDetails
-		result.Feedback = feedback
+		result.WireDetails, result.Feedback = getWireDetails(ctx)
 
 		// Read headers and trailers from the stream
 		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
