@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -121,7 +120,6 @@ func (i *invoker) unary(
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, err.Error()+"\n\n")
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
