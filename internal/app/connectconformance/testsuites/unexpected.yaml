@@ -2,12 +2,6 @@ name: Unexpected
 mode: TEST_MODE_CLIENT
 relevantProtocols:
   - PROTOCOL_CONNECT
-relevantCodecs:
-  - CODEC_JSON
-relevantCompressions:
-  - COMPRESSION_IDENTITY
-relevantHttpVersions:
-  - HTTP_VERSION_1
 testCases:
 - request:
     testName: unmapped HTTP status code
@@ -37,6 +31,7 @@ testCases:
     error:
       # unknown
       code: 2
+# TODO - This doesn't seem to be failing at all
 # - request:
 #     testName: unexpected content type 
 #     service: connectrpc.conformance.v1.ConformanceService
@@ -46,12 +41,9 @@ testCases:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 #       responseDefinition:
 #         rawResponse:
-#           statusCode: 200
-#           unary:
-#             text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}" 
 #           headers:
 #             - name: Content-Type
-#               value: ["invalid"]
+#               value: ["junk"]
 #   expectedResponse:
 #     error:
 #       # unknown
@@ -65,9 +57,6 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
         rawResponse:
-          statusCode: 200
-          unary:
-            text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}" 
           headers:
             - name: Content-Encoding
               value: ["invalid"]
