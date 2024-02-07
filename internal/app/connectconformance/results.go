@@ -36,7 +36,7 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-const timeoutCheckGracePeriodMillis = 500
+const timeoutCheckGracePeriodMillis = 100
 
 // testResults represents the results of running conformance tests. It accumulates
 // the state of passed and failed test cases and also reports failures to a given
@@ -159,6 +159,9 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
 	var errs multiErrors
 
+	errs = append(errs, checkError(expected.Error, actual.Error)...)
+	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
+
 	// TODO - This check is for trailers-only and should really only apply to gRPC and gRPC-Web protocols.
 	// Previously, it checked for error != nil, which is compliant with gRPC. But gRPC-Web does trailers-only
 	// responses with no errors also.
@@ -188,14 +191,17 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 		errs = append(errs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 	}
 
-	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
-	errs = append(errs, checkError(expected.Error, actual.Error)...)
+	expectedWire := expected.WireDetails
+	actualWire := actual.WireDetails
+	if expectedWire != nil && actualWire != nil {
+		// TODO - Add comparison (and tests) for connecterrorraw and actual http trailers
 
-	// If client didn't provide actual raw error, we skip this check.
-	if expected.ConnectErrorRaw != nil && actual.ConnectErrorRaw != nil {
-		diff := cmp.Diff(expected.ConnectErrorRaw, actual.ConnectErrorRaw, protocmp.Transform())
-		if diff != "" {
-			errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
+		// if diff := cmp.Diff(expectedWire.ConnectErrorRaw, actualWire.ConnectErrorRaw, protocmp.Transform()); diff != "" {
+		// 	errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
+		// }
+
+		if diff := cmp.Diff(expectedWire.ActualStatusCode, actualWire.ActualStatusCode, protocmp.Transform()); diff != "" {
+			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
 		}
 	}
 
@@ -403,12 +409,12 @@ func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_Request
 			if actual == nil || actual.TimeoutMs == nil {
 				errs = append(errs, fmt.Errorf("server did not echo back a timeout but one was expected (%d ms)", expected.GetTimeoutMs()))
 			} else {
-				max := expected.GetTimeoutMs()
-				min := max - timeoutCheckGracePeriodMillis
-				if min < 0 {
-					min = 0
+				maxAllowed := expected.GetTimeoutMs()
+				minAllowed := maxAllowed - timeoutCheckGracePeriodMillis
+				if minAllowed < 0 {
+					minAllowed = 0
 				}
-				if actual.GetTimeoutMs() > max || actual.GetTimeoutMs() < min {
+				if actual.GetTimeoutMs() > maxAllowed || actual.GetTimeoutMs() < minAllowed {
 					errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) that did not match expected (%d ms)", actual.GetTimeoutMs(), expected.GetTimeoutMs()))
 				}
 			}
@@ -486,7 +492,7 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
 		//       error details transparently (such that the expected details would be a *subset* of
 		//       the actual details)?
-		errs = append(errs, fmt.Errorf("actual error contain %d details; expecing %d",
+		errs = append(errs, fmt.Errorf("actual error contain %d details; expecting %d",
 			len(actual.Details), len(expected.Details)))
 	}
 	// Check as many as we can

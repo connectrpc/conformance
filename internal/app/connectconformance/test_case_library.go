@@ -15,7 +15,6 @@
 package connectconformance
 
 import (
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"math"
@@ -524,28 +523,28 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 
 	// If this is a GET test, then the request should be marshalled and in the query params
 	if testCase.Request.UseGetHttpMethod {
-		isJSON := testCase.Request.Codec == conformancev1.Codec_CODEC_JSON
-		// Build a codec based on what is used in the request
-		codec := internal.NewCodec(isJSON)
-		reqAsBytes, err := codec.MarshalStable(definer)
-		if err != nil {
-			return err
-		}
-		var value string
 		var encoding string
-		if isJSON {
-			value = string(reqAsBytes)
+		if testCase.Request.Codec == conformancev1.Codec_CODEC_JSON {
 			encoding = "json"
 		} else {
-			value = base64.RawURLEncoding.EncodeToString(reqAsBytes)
 			encoding = "proto"
 		}
+		// We intentionally exclude the "message" query param: the RPC response, which
+		// echos back the request data, will suffice to check that. Also, we can't
+		// indicate a specific sequence of bytes to expect for "message" because there
+		// isn't a *canonical* encoding for protobuf nor is there necessarily a
+		// canonical encoding of compressed messages. So we just verify that it has
+		// the required "encoding" parameter and then will check the echoed-back request
+		// to verify that the message was otherwise correctly encoded (by virtue of the
+		// fact that it could be correctly decoded by the server).
+		//
+		// We also exclude the "base64" parameter, allowing implementations flexibility
+		// on when to use it. It's mainly valuable to use for binary data, where the
+		// alternative (to just rely on the percent-encoding of URL query strings) will
+		// be more verbose and lead to a larger request line (potentially one that is
+		// too long to fit in a URI).
 		reqInfo.ConnectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: []*conformancev1.Header{
-				{
-					Name:  "message",
-					Value: []string{value},
-				},
 				{
 					Name:  "encoding",
 					Value: []string{encoding},

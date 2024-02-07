@@ -412,6 +412,31 @@ testCases:
         responseTrailers:
         - name: x-custom-trailer
           value: ["bing"]
+# Client Stream Tests -----------------------------------------------------------
+- request:
+    testName: client stream error one request
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+        error:
+          code: 13
+          message: "client stream failed"
+- request:
+    testName: client stream error multiple requests
+    service: connectrpc.conformance.v1.ConformanceService
+    method: ClientStream
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      responseDefinition:
+        error:
+          code: 13
+          message: "client stream failed"
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi full duplex stream error with responses
