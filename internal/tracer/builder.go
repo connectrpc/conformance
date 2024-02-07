@@ -41,6 +41,7 @@ func newBuilder(req *http.Request, collector Collector) *builder {
 		start:     time.Now(),
 		trace: Trace{
 			TestName: testName,
+			Request:  req,
 			Events:   []Event{&RequestStart{Request: req}},
 		},
 	}

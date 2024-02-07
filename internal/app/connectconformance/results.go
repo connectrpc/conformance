@@ -191,11 +191,17 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 		errs = append(errs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 	}
 
-	// If client didn't provide actual raw error, we skip this check.
-	if expected.ConnectErrorRaw != nil && actual.ConnectErrorRaw != nil {
-		diff := cmp.Diff(expected.ConnectErrorRaw, actual.ConnectErrorRaw, protocmp.Transform())
-		if diff != "" {
-			errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
+	expectedWire := expected.WireDetails
+	actualWire := actual.WireDetails
+	if expectedWire != nil && actualWire != nil {
+		// TODO - Add comparison (and tests) for connecterrorraw and actual http trailers
+
+		// if diff := cmp.Diff(expectedWire.ConnectErrorRaw, actualWire.ConnectErrorRaw, protocmp.Transform()); diff != "" {
+		// 	errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
+		// }
+
+		if diff := cmp.Diff(expectedWire.ActualStatusCode, actualWire.ActualStatusCode, protocmp.Transform()); diff != "" {
+			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
 		}
 	}
 
@@ -486,7 +492,7 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
 		//       error details transparently (such that the expected details would be a *subset* of
 		//       the actual details)?
-		errs = append(errs, fmt.Errorf("actual error contain %d details; expecing %d",
+		errs = append(errs, fmt.Errorf("actual error contain %d details; expecting %d",
 			len(actual.Details), len(expected.Details)))
 	}
 	// Check as many as we can

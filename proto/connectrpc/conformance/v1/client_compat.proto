@@ -140,20 +140,10 @@ message ClientResponseResult {
   // sent because an error occurred before finishing the upload.
   int32 num_unsent_requests = 5;
 
-  // The following fields are only used by the reference client. If
-  // you are implementing a client under test, you may ignore these
-  // fields and do not need to populate them. If your client does
-  // populate them, the conformance test runner will ignore them.
-
-  // The HTTP status code of the response.
-  int32 actual_status_code = 6;
-  // When processing an error from a Connect server, this should contain
-  // the actual JSON received on the wire.
-  google.protobuf.Struct connect_error_raw = 7;
-  // Any HTTP trailers observed after the response body. These do NOT
-  // include trailers that conveyed via the body, as done in the gRPC-Web
-  // and Connect streaming protocols.
-  repeated Header actual_http_trailers = 8;
+  // The following field is only used by the reference client. If
+  // you are implementing a client under test, you may ignore this
+  // field and should not populate it.
+  WireDetails wire_details = 6;
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due
@@ -161,4 +151,16 @@ message ClientResponseResult {
 // not being supported. This is completely independent of the actual RPC invocation.
 message ClientErrorResult {
   string message = 1;
+}
+
+message WireDetails {
+  // The HTTP status code of the response.
+  int32 actual_status_code = 1;
+  // When processing an error from a Connect server, this should contain
+  // the actual JSON received on the wire.
+  google.protobuf.Struct connect_error_raw = 2;
+  // Any HTTP trailers observed after the response body. These do NOT
+  // include trailers that conveyed via the body, as done in the gRPC-Web
+  // and Connect streaming protocols.
+  repeated Header actual_http_trailers = 3;
 }

@@ -117,8 +117,11 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
+	ctx = withWireCapture(ctx)
+
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
+
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -141,7 +144,7 @@ func (i *invoker) unary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		WireDetails:      getWireDetails(ctx),
 	}, nil
 }
 
@@ -168,8 +171,11 @@ func (i *invoker) idempotentUnary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
+	ctx = withWireCapture(ctx)
+
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
+
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
 		// so that we can get the headers from the Meta property. Then,
@@ -190,7 +196,7 @@ func (i *invoker) idempotentUnary(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		WireDetails:      getWireDetails(ctx),
 	}, nil
 }
 
@@ -211,6 +217,8 @@ func (i *invoker) serverStream(
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
+
+	ctx = withWireCapture(ctx)
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
@@ -272,12 +280,13 @@ func (i *invoker) serverStream(
 			protoErr = internal.ConvertErrorToProtoError(err)
 		}
 	}
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		WireDetails:      getWireDetails(ctx),
 	}, nil
 }
 
@@ -288,6 +297,7 @@ func (i *invoker) clientStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	ctx = withWireCapture(ctx)
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
@@ -346,28 +356,32 @@ func (i *invoker) clientStream(
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		ConnectErrorRaw:  nil, // TODO
+		WireDetails:      getWireDetails(ctx),
 	}, nil
 }
 
 func (i *invoker) bidiStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, _ error) {
+) (result *v1.ClientResponseResult, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{
-		ConnectErrorRaw: nil, // TODO
-	}
+	result = &v1.ClientResponseResult{}
+
+	ctx = withWireCapture(ctx)
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
-		if result != nil {
-			// Read headers and trailers from the stream
-			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
-			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
+		if err != nil {
+			return
 		}
+
+		result.WireDetails = getWireDetails(ctx)
+
+		// Read headers and trailers from the stream
+		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
+		result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 	}()
 
 	// Add the specified request headers to the request
@@ -491,10 +505,14 @@ func (i *invoker) unimplemented(
 	request := connect.NewRequest(ur)
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
+	ctx = withWireCapture(ctx)
+
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
+
 	return &v1.ClientResponseResult{
-		Error: internal.ConvertErrorToProtoError(err),
+		Error:       internal.ConvertErrorToProtoError(err),
+		WireDetails: getWireDetails(ctx),
 	}, nil
 }
 
