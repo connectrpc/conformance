@@ -1,0 +1,55 @@
+name: Deadline Propagation
+# These are similar to the timeout tests except that they do not actually
+# timeout. Instead these verify that the RPCs complete so that we can check
+# (in the server responses) that the deadline was correctly propagated to
+# the backend via header metadata.
+testCases:
+  - request:
+      testName: unary
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      timeoutMs: 2000
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: client stream
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ClientStream
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      timeoutMs: 2000
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: server stream
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      timeoutMs: 2000
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+              - "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: bidi stream
+      service: connectrpc.conformance.v1.ConformanceService
+      method: BidiStream
+      streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+      timeoutMs: 2000
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+              - "dGVzdCByZXNwb25zZQ=="
+          fullDuplex: true
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          requestData: "dGVzdCByZXNwb25zZQ=="
