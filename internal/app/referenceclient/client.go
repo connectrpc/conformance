@@ -298,7 +298,11 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 			connect.WithSendCompression(compression.Zstd),
 		)
 	case v1.Compression_COMPRESSION_IDENTITY, v1.Compression_COMPRESSION_UNSPECIFIED:
-		// Do nothing
+		// Disable gzip, which is otherwise automatically supported
+		clientOptions = append(
+			clientOptions,
+			connect.WithAcceptCompression(compression.Gzip, nil, nil),
+		)
 	}
 
 	if req.MessageReceiveLimit > 0 {
