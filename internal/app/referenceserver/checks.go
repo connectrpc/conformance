@@ -84,6 +84,13 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		}
 
 		handler.ServeHTTP(respWriter, req)
+
+		// Make sure request body is drained so we can look for any trailers.
+		// This is just best effort since the operation could have already been canceled.
+		_, _ = io.Copy(io.Discard, req.Body)
+		if len(req.Trailer) > 0 {
+			feedback.Printf("request should NOT include any HTTP trailers (%d trailer keys found)", len(req.Trailer))
+		}
 	}
 }
 

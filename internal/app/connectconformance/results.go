@@ -156,7 +156,12 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 
 // assert will examine the actual and expected RPC result and mark the test
 // case as successful or failed accordingly.
-func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
+func (r *testResults) assert(
+	testCase string,
+	definition *conformancev1.TestCase,
+	actual *conformancev1.ClientResponseResult,
+) {
+	expected := definition.ExpectedResponse
 	var errs multiErrors
 
 	errs = append(errs, checkError(expected.Error, actual.Error)...)
