@@ -122,17 +122,19 @@ func TestResults_Assert(t *testing.T) {
 			{Data: []byte{0, 1, 2, 3, 4}},
 		},
 	}
+	testCase1 := &conformancev1.TestCase{ExpectedResponse: payload1}
 	payload2 := &conformancev1.ClientResponseResult{
 		Error: &conformancev1.Error{Code: int32(connect.CodeAborted), Message: proto.String("oops")},
 	}
-	results.assert("foo/bar/1", payload1, payload2)
-	results.assert("foo/bar/2", payload2, payload1)
-	results.assert("foo/bar/3", payload1, payload1)
-	results.assert("foo/bar/4", payload2, payload2)
-	results.assert("known-to-fail/1", payload1, payload2)
-	results.assert("known-to-fail/2", payload2, payload1)
-	results.assert("known-to-fail/3", payload1, payload1)
-	results.assert("known-to-fail/4", payload2, payload2)
+	testCase2 := &conformancev1.TestCase{ExpectedResponse: payload2}
+	results.assert("foo/bar/1", testCase1, payload2)
+	results.assert("foo/bar/2", testCase2, payload1)
+	results.assert("foo/bar/3", testCase1, payload1)
+	results.assert("foo/bar/4", testCase2, payload2)
+	results.assert("known-to-fail/1", testCase1, payload2)
+	results.assert("known-to-fail/2", testCase2, payload1)
+	results.assert("known-to-fail/3", testCase1, payload1)
+	results.assert("known-to-fail/4", testCase2, payload2)
 
 	logger := &linePrinter{}
 	success := results.report(logger)
@@ -690,8 +692,8 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 			t.Parallel()
 			results := newResults(&testTrie{}, &testTrie{}, nil)
 
-			expected := &conformancev1.ClientResponseResult{}
-			err := protojson.Unmarshal(([]byte)(testCase.expected), expected)
+			expected := &conformancev1.TestCase{ExpectedResponse: &conformancev1.ClientResponseResult{}}
+			err := protojson.Unmarshal(([]byte)(testCase.expected), expected.ExpectedResponse)
 			require.NoError(t, err)
 
 			actual := &conformancev1.ClientResponseResult{}
