@@ -36,7 +36,10 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-const timeoutCheckGracePeriodMillis = 100
+// CI environments have been observed to have 150ms of delay between the deadline
+// being set and it being serialized in a request header. This adds a little extra
+// headroom to avoid flaky tests.
+const timeoutCheckGracePeriodMillis = 250
 
 // testResults represents the results of running conformance tests. It accumulates
 // the state of passed and failed test cases and also reports failures to a given

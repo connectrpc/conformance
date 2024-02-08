@@ -69,7 +69,8 @@ export async function run() {
 
 async function buildBrowserScript() {
   const buildResult = await esbuild.build({
-    entryPoints: ["grpcwebclient/browserscript.ts"],
+    // Invoked from repo root, so needs qualified path.
+    entryPoints: ["testing/grpcwebclient/browserscript.ts"],
     bundle: true,
     write: false,
   });

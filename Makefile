@@ -10,7 +10,6 @@ BIN := .tmp/bin
 export PATH := $(BIN):$(PATH)
 export GOBIN := $(abspath $(BIN))
 COPYRIGHT_YEARS := 2023-2024
-LICENSE_IGNORE := -e internal/gen -e _legacy -e testdata/
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 LATEST_VERSION = $(shell git describe --tags --abbrev=0 2>/dev/null)
@@ -49,12 +48,12 @@ build: generate ## Build all packages
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
 	rm -rf internal/gen
-	rm -rf grpcwebclient/gen
+	rm -rf testing/grpcwebclient/gen
 	buf generate proto
 	license-header \
 		--license-type apache \
 		--copyright-holder "The Connect Authors" \
-		--year-range "$(COPYRIGHT_YEARS)" $(LICENSE_IGNORE)
+		--year-range "$(COPYRIGHT_YEARS)"
 
 .PHONY: lint
 lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
@@ -96,19 +95,19 @@ runconformance: runservertests runclienttests
 
 .PHONY: runservertests
 runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserver
-	$(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode server -- $(BIN)/referenceserver
-	$(BIN)/connectconformance -v --conf ./testdata/grpc-impls-config.yaml --mode server -- $(BIN)/grpcserver
-	$(BIN)/connectconformance -v --conf ./testdata/grpc-web-server-impl-config.yaml --mode server -- $(BIN)/grpcserver
+	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode server -- $(BIN)/referenceserver
+	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode server -- $(BIN)/grpcserver
+	$(BIN)/connectconformance -v --conf ./testing/grpc-web-server-impl-config.yaml --mode server -- $(BIN)/grpcserver
 
 .PHONY: runclienttests
 runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient buildgrpcweb
-	$(BIN)/connectconformance -v --conf ./testdata/reference-impls-config.yaml --mode client -- $(BIN)/referenceclient
-	$(BIN)/connectconformance -v --conf ./testdata/grpc-impls-config.yaml --mode client -- $(BIN)/grpcclient
-	$(BIN)/connectconformance -v --conf ./testdata/grpc-web-client-impl-config.yaml --known-failing @./grpcwebclient/known_failing.txt --mode client -- ./grpcwebclient/bin/grpcwebclient
+	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode client -- $(BIN)/referenceclient
+	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode client -- $(BIN)/grpcclient
+	$(BIN)/connectconformance -v --conf ./testing/grpc-web-client-impl-config.yaml --known-failing @./testing/grpcwebclient/known_failing.txt --mode client -- ./testing/grpcwebclient/bin/grpcwebclient
 
 .PHONY: buildgrpcweb
 buildgrpcweb: generate
-	cd grpcwebclient && npm run build
+	cd testing/grpcwebclient && npm run build
 
 $(BIN)/connectconformance: Makefile generate
 	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/connectconformance/

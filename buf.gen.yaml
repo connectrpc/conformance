@@ -14,8 +14,8 @@ plugins:
     out: internal/gen/proto/go
     opt: paths=source_relative
   - plugin: buf.build/grpc/web:v1.5.0
-    out: grpcwebclient/gen/proto
+    out: testing/grpcwebclient/gen/proto
     opt: import_style=typescript,mode=grpcweb
   - plugin: buf.build/protocolbuffers/js:v3.21.2
-    out: grpcwebclient/gen/proto
+    out: testing/grpcwebclient/gen/proto
     opt: import_style=commonjs,binary
