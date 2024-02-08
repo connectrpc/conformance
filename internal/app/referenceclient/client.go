@@ -251,6 +251,13 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 		return nil, errors.New("a codec must be specified")
 	}
 
+	if req.Compression != v1.Compression_COMPRESSION_GZIP {
+		// Gzip is supported by default. So if we're not using it, disable it.
+		clientOptions = append(clientOptions,
+			connect.WithAcceptCompression(compression.Gzip, nil, nil),
+		)
+	}
+
 	switch req.Compression {
 	case v1.Compression_COMPRESSION_BR:
 		clientOptions = append(
@@ -298,11 +305,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 			connect.WithSendCompression(compression.Zstd),
 		)
 	case v1.Compression_COMPRESSION_IDENTITY, v1.Compression_COMPRESSION_UNSPECIFIED:
-		// Disable gzip, which is otherwise automatically supported
-		clientOptions = append(
-			clientOptions,
-			connect.WithAcceptCompression(compression.Gzip, nil, nil),
-		)
+		// No compression; do nothing
 	}
 
 	if req.MessageReceiveLimit > 0 {
