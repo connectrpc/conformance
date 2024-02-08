@@ -30,7 +30,7 @@ jobs:
           restore-keys: ${{ runner.os }}-conformance-ci-
       - name: Install npm dependencies
         run: |
-          cd grpcwebclient
+          cd testing/grpcwebclient
           npm ci
       - name: Test
         run: make test
