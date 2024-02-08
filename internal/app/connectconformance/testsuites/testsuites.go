@@ -28,7 +28,7 @@ import (
 	"strings"
 )
 
-//go:embed *.yaml
+//go:embed data/*.yaml
 var testSuiteFS embed.FS
 
 // LoadTestSuites returns a map of file paths to their contents for the
