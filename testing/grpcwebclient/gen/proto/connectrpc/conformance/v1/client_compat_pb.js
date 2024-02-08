@@ -1846,7 +1846,7 @@ proto.connectrpc.conformance.v1.ClientResponseResult.toObject = function(include
     responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
     connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
     numUnsentRequests: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    wireDetails: (f = msg.getWireDetails()) && proto.connectrpc.conformance.v1.WireDetails.toObject(includeInstance, f),
+    httpStatusCode: jspb.Message.getFieldWithDefault(msg, 6, 0),
     feedbackList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
   };
 
@@ -1909,9 +1909,8 @@ proto.connectrpc.conformance.v1.ClientResponseResult.deserializeBinaryFromReader
       msg.setNumUnsentRequests(value);
       break;
     case 6:
-      var value = new proto.connectrpc.conformance.v1.WireDetails;
-      reader.readMessage(value,proto.connectrpc.conformance.v1.WireDetails.deserializeBinaryFromReader);
-      msg.setWireDetails(value);
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setHttpStatusCode(value);
       break;
     case 7:
       var value = /** @type {string} */ (reader.readString());
@@ -1985,12 +1984,11 @@ proto.connectrpc.conformance.v1.ClientResponseResult.serializeBinaryToWriter = f
       f
     );
   }
-  f = message.getWireDetails();
+  f = /** @type {number} */ (jspb.Message.getField(message, 6));
   if (f != null) {
-    writer.writeMessage(
+    writer.writeInt32(
       6,
-      f,
-      proto.connectrpc.conformance.v1.WireDetails.serializeBinaryToWriter
+      f
     );
   }
   f = message.getFeedbackList();
@@ -2173,30 +2171,29 @@ proto.connectrpc.conformance.v1.ClientResponseResult.prototype.setNumUnsentReque
 
 
 /**
- * optional WireDetails wire_details = 6;
- * @return {?proto.connectrpc.conformance.v1.WireDetails}
+ * optional int32 http_status_code = 6;
+ * @return {number}
  */
-proto.connectrpc.conformance.v1.ClientResponseResult.prototype.getWireDetails = function() {
-  return /** @type{?proto.connectrpc.conformance.v1.WireDetails} */ (
-    jspb.Message.getWrapperField(this, proto.connectrpc.conformance.v1.WireDetails, 6));
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.getHttpStatusCode = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
 };
 
 
 /**
- * @param {?proto.connectrpc.conformance.v1.WireDetails|undefined} value
+ * @param {number} value
  * @return {!proto.connectrpc.conformance.v1.ClientResponseResult} returns this
-*/
-proto.connectrpc.conformance.v1.ClientResponseResult.prototype.setWireDetails = function(value) {
-  return jspb.Message.setWrapperField(this, 6, value);
+ */
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.setHttpStatusCode = function(value) {
+  return jspb.Message.setField(this, 6, value);
 };
 
 
 /**
- * Clears the message field making it undefined.
+ * Clears the field making it undefined.
  * @return {!proto.connectrpc.conformance.v1.ClientResponseResult} returns this
  */
-proto.connectrpc.conformance.v1.ClientResponseResult.prototype.clearWireDetails = function() {
-  return this.setWireDetails(undefined);
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.clearHttpStatusCode = function() {
+  return jspb.Message.setField(this, 6, undefined);
 };
 
 
@@ -2204,7 +2201,7 @@ proto.connectrpc.conformance.v1.ClientResponseResult.prototype.clearWireDetails 
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.connectrpc.conformance.v1.ClientResponseResult.prototype.hasWireDetails = function() {
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.hasHttpStatusCode = function() {
   return jspb.Message.getField(this, 6) != null;
 };
 

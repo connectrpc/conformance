@@ -16,8 +16,7 @@ testCases:
         error:
           code: 1
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 408
+    httpStatusCode: 408
     error:
       code: 1
       details: 
@@ -38,8 +37,7 @@ testCases:
         error:
           code: 2
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 500
+    httpStatusCode: 500
     error:
       code: 2
       details: 
@@ -60,8 +58,7 @@ testCases:
         error:
           code: 3
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 400
+    httpStatusCode: 400
     error:
       code: 3
       details: 
@@ -82,8 +79,7 @@ testCases:
         error:
           code: 4
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 408
+    httpStatusCode: 408
     error:
       code: 4
       details: 
@@ -104,8 +100,7 @@ testCases:
         error:
           code: 5
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 404
+    httpStatusCode: 404
     error:
       code: 5
       details: 
@@ -126,8 +121,7 @@ testCases:
         error:
           code: 6
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 409
+    httpStatusCode: 409
     error:
       code: 6
       details: 
@@ -148,8 +142,7 @@ testCases:
         error:
           code: 7
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 403
+    httpStatusCode: 403
     error:
       code: 7
       details: 
@@ -170,8 +163,7 @@ testCases:
         error:
           code: 8
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 429
+    httpStatusCode: 429
     error:
       code: 8
       details: 
@@ -192,8 +184,7 @@ testCases:
         error:
           code: 9
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 412
+    httpStatusCode: 412
     error:
       code: 9
       details: 
@@ -214,8 +205,7 @@ testCases:
         error:
           code: 10
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 409
+    httpStatusCode: 409
     error:
       code: 10
       details: 
@@ -236,8 +226,7 @@ testCases:
         error:
           code: 11
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 400
+    httpStatusCode: 400
     error:
       code: 11
       details: 
@@ -258,8 +247,7 @@ testCases:
         error:
           code: 12
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 404
+    httpStatusCode: 404
     error:
       code: 12
       details: 
@@ -280,8 +268,7 @@ testCases:
         error:
           code: 13
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 500
+    httpStatusCode: 500
     error:
       code: 13
       details: 
@@ -302,8 +289,7 @@ testCases:
         error:
           code: 14
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 503
+    httpStatusCode: 503
     error:
       code: 14
       details: 
@@ -324,8 +310,7 @@ testCases:
         error:
           code: 15
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 500
+    httpStatusCode: 500
     error:
       code: 15
       details: 
@@ -346,8 +331,7 @@ testCases:
         error:
           code: 16
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 401
+    httpStatusCode: 401
     error:
       code: 16
       details: 
@@ -369,8 +353,7 @@ testCases:
         error:
           code: 1
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 200
+    httpStatusCode: 200
     error:
       code: 1
       details: 
@@ -392,8 +375,7 @@ testCases:
         error:
           code: 13
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 200
+    httpStatusCode: 200
     error:
       code: 13
       details: 
@@ -416,8 +398,7 @@ testCases:
           code: 13
       fullDuplex: true
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 200
+    httpStatusCode: 200
     error:
       code: 13
       details: 
@@ -439,8 +420,7 @@ testCases:
         error:
           code: 13
   expectedResponse:
-    wireDetails:
-      actualStatusCode: 200
+    httpStatusCode: 200
     error:
       code: 13
       details: 
