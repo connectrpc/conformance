@@ -54,9 +54,9 @@ func runTestCasesForServer(
 	client clientRunner,
 	tracer *tracer.Tracer,
 ) {
-	expectations := make(map[string]*conformancev1.ClientResponseResult, len(testCases))
+	testCaseNameSet := make(map[string]struct{}, len(testCases))
 	for _, testCase := range testCases {
-		expectations[testCase.Request.TestName] = testCase.ExpectedResponse
+		testCaseNameSet[testCase.Request.TestName] = struct{}{}
 	}
 
 	procCtx, procCancel := context.WithCancel(ctx)
@@ -84,7 +84,7 @@ func runTestCasesForServer(
 					var isSideband bool
 					parts := strings.SplitN(str, ": ", 2)
 					if len(parts) == 2 {
-						if _, ok := expectations[parts[0]]; ok {
+						if _, ok := testCaseNameSet[parts[0]]; ok {
 							// appears to be valid message in the form "test case: error message"
 							isSideband = true
 							results.recordSideband(parts[0], parts[1])
@@ -136,7 +136,8 @@ func runTestCasesForServer(
 
 	// Send all test cases to the client.
 	var wg sync.WaitGroup
-	for i, testCase := range testCases {
+	for i := range testCases {
+		testCase := testCases[i]
 		if procCtx.Err() != nil {
 			// server crashed: mark remaining tests
 			err := errors.New("server process terminated unexpectedly")
@@ -193,7 +194,7 @@ func runTestCasesForServer(
 			case resp.GetError() != nil:
 				results.failed(name, resp.GetError())
 			default:
-				results.assert(name, expectations[resp.TestName], resp.GetResponse())
+				results.assert(name, testCase, resp.GetResponse())
 			}
 			if isReferenceClient && resp.GetResponse() != nil {
 				for _, msg := range resp.GetResponse().Feedback {
