@@ -360,3 +360,300 @@ testCases:
       responseTrailers:
         - name: x-custom-trailer
           value: [ "bing", "quuz" ]
+  - request:
+      testName: unary/error/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+        responseDefinition:
+          error:
+            code: 3
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      error:
+        code: 3
+        details: 
+          - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+                responseDefinition:
+                  error:
+                    code: 3
+  - request:
+      testName: unary/success/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+        responseDefinition:
+          responseData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: client-stream/error/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ClientStream
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+        responseDefinition:
+          error:
+            code: 13
+            message: "client stream failed"
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+        requestData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      error:
+        code: 13
+        details: 
+          - "@type": type.googleapis.com/connectrpc.conformance.v1.ConformancePayload.RequestInfo
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+                responseDefinition:
+                  error:
+                    code: 13
+                    message: "client stream failed"
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+                requestData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: client-stream/success/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ClientStream
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+        responseDefinition:
+          responseData: "dGVzdCByZXNwb25zZQ=="
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+        requestData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+                requestData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: server-stream/success/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+        responseDefinition:
+          responseData:
+            - "dGVzdCByZXNwb25zZQ=="
+            - "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+                responseDefinition:
+                  responseData:
+                    - "dGVzdCByZXNwb25zZQ=="
+                    - "dGVzdCByZXNwb25zZQ=="
+        - data: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: server-stream/error/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+        responseDefinition:
+          responseData:
+            - "dGVzdCByZXNwb25zZQ=="
+            - "dGVzdCByZXNwb25zZQ=="
+          error:
+            code: 13
+            message: "server stream failed"
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      error:
+        code: 13
+        message: "server stream failed"
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+                responseDefinition:
+                  responseData:
+                    - "dGVzdCByZXNwb25zZQ=="
+                    - "dGVzdCByZXNwb25zZQ=="
+                  error:
+                    code: 13
+                    message: "server stream failed"
+        - data: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: bidi-full-duplex/success/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: BidiStream
+      streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        responseDefinition:
+          responseData:
+            - "dGVzdCByZXNwb25zZQ=="
+            - "dGVzdCByZXNwb25zZQ=="
+        fullDuplex: true
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        requestData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                responseDefinition:
+                  responseData:
+                    - "dGVzdCByZXNwb25zZQ=="
+                    - "dGVzdCByZXNwb25zZQ=="
+                fullDuplex: true
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                requestData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: bidi-full-duplex/error/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: BidiStream
+      streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        responseDefinition:
+          responseData:
+            - "dGVzdCByZXNwb25zZQ=="
+            - "dGVzdCByZXNwb25zZQ=="
+          error:
+            code: 13
+            message: "bidi half duplex stream failed"
+        fullDuplex: true
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        requestData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      error:
+        code: 13
+        message: "bidi half duplex stream failed"
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                responseDefinition:
+                  responseData:
+                    - "dGVzdCByZXNwb25zZQ=="
+                    - "dGVzdCByZXNwb25zZQ=="
+                  error:
+                    code: 13
+                    message: "bidi half duplex stream failed"
+                fullDuplex: true
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                requestData: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: bidi-half-duplex/success/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: BidiStream
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        responseDefinition:
+          responseData:
+            - "dGVzdCByZXNwb25zZQ=="
+            - "dGVzdCByZXNwb25zZQ=="
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        requestData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                responseDefinition:
+                  responseData:
+                    - "dGVzdCByZXNwb25zZQ=="
+                    - "dGVzdCByZXNwb25zZQ=="
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                requestData: "dGVzdCByZXNwb25zZQ=="
+        - data: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: bidi-half-duplex/error/has-correct-wire-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: BidiStream
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        responseDefinition:
+          responseData:
+            - "dGVzdCByZXNwb25zZQ=="
+            - "dGVzdCByZXNwb25zZQ=="
+          error:
+            code: 13
+            message: "bidi half duplex stream failed"
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        requestData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      wireDetails:
+        actualStatusCode: 200
+        actualHttpTrailers: []
+      error:
+        code: 13
+        message: "bidi half duplex stream failed"
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                responseDefinition:
+                  responseData:
+                    - "dGVzdCByZXNwb25zZQ=="
+                    - "dGVzdCByZXNwb25zZQ=="
+                  error:
+                    code: 13
+                    message: "bidi half duplex stream failed"
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+                requestData: "dGVzdCByZXNwb25zZQ=="
+        - data: "dGVzdCByZXNwb25zZQ=="
