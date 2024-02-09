@@ -48,7 +48,18 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser, trace *tracer.Tracer) (retErr error) {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+	return run(ctx, false, args, inReader, outWriter, errWriter, nil)
+}
+
+// RunInReferenceMode is just like Run except that it performs additional checks
+// that only the conformance reference client runs. These checks do not work if
+// the client is run as a client under test, only when run as a reference client.
+func RunInReferenceMode(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser, tracer *tracer.Tracer) error {
+	return run(ctx, true, args, inReader, outWriter, errWriter, tracer)
+}
+
+func run(ctx context.Context, referenceMode bool, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser, trace *tracer.Tracer) (retErr error) {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0))*4, "the number of parallel RPCs to issue")
@@ -110,7 +121,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 			defer wg.Done()
 			defer sema.Release(1)
 
-			result, err := invoke(ctx, &req, trace)
+			result, err := invoke(ctx, &req, referenceMode, trace)
 
 			// Build the result for the out writer.
 			resp := &v1.ClientCompatResponse{
@@ -126,6 +137,11 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 					},
 				}
 			} else {
+				if !referenceMode {
+					// clear out reference-mode-specific details
+					result.HttpStatusCode = nil
+					result.Feedback = nil
+				}
 				resp.Result = &v1.ClientCompatResponse_Response{
 					Response: result,
 				}
@@ -147,7 +163,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Tracer) (*v1.ClientResponseResult, error) {
+func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*v1.ClientResponseResult, error) {
 	tlsConf, err := createTLSConfig(req)
 	if err != nil {
 		return nil, err
@@ -217,14 +233,15 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
-	// Wrap the transport with a wire interceptor and an optional tracer.
-	// The wire interceptor wraps a TracingRoundTripper and intercepts values on the
-	// wire using the tracer framework. Note that 'trace' could be nil, in which case,
-	// any error traces will simply not be printed. The trace itself will still be built.
-	transport = newWireInterceptor(transport, trace)
-
-	if req.RawRequest != nil {
-		transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}
+	if referenceMode {
+		// Wrap the transport with a wire interceptor and an optional tracer.
+		// The wire interceptor wraps a TracingRoundTripper and intercepts values on the
+		// wire using the tracer framework. Note that 'trace' could be nil, in which case,
+		// any error traces will simply not be printed. The trace itself will still be built.
+		transport = newWireInterceptor(transport, trace)
+		if req.RawRequest != nil {
+			transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}
+		}
 	}
 
 	// Create client options based on protocol of the implementation
@@ -314,7 +331,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, trace *tracer.Trac
 
 	switch req.Service {
 	case conformancev1connect.ConformanceServiceName:
-		return newInvoker(transport, serverURL, clientOptions).Invoke(ctx, req)
+		return newInvoker(transport, referenceMode, serverURL, clientOptions).Invoke(ctx, req)
 	default:
 		return nil, errors.New("service name " + req.Service + " is not a valid service")
 	}

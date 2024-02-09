@@ -18,16 +18,13 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
 
+	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/tracer"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/structpb"
 )
 
 // The key associated with the wire details information stored in context.
@@ -58,7 +55,7 @@ func (w *wireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
 	// If this is a unary error with JSON body, replace the body with a reader
 	// that will save off the body bytes as they are read so that we can access
 	// the body contents in the tracer
-	if isUnaryJSONError(resp.Header.Get("content-type"), int32(resp.StatusCode)) {
+	if isUnaryJSONError(resp.Header.Get("content-type"), resp.StatusCode) {
 		resp.Body = &wireReader{body: resp.Body, wrapper: wrapper}
 	}
 	return resp, nil
@@ -106,59 +103,56 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 }
 
 // examineWireDetails examines certain wire details of the call and returns the
-// HTTP status code (if there is one) and feedback that describes issues with
-// other parts of the response.
-func examineWireDetails(ctx context.Context) (*int32, []string) {
+// HTTP status code (or if there is not one). Feedback about the wire details will
+// be printed to the given printer.
+func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCode int, ok bool) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
-		return nil, []string{"Unable to examine wire details. Call context not configured (no wire wrapper found)."}
+		printer.Printf("unable to examine wire details: call context not configured (no wire wrapper found).")
+		return 0, false
 	}
 	trace := wrapper.val.Load()
-	// A nil response in the trace is valid if the HTTP round trip failed.
-	if trace == nil || trace.Response == nil {
-		return nil, nil
+	if trace == nil {
+		printer.Printf("unable to examine wire details: completed trace not found in call context.")
+		return 0, false
 	}
-	statusCode := proto.Int32(int32(trace.Response.StatusCode))
+	if trace.Response == nil {
+		// A nil response in the trace is valid if the HTTP round trip failed.
+		return 0, false
+	}
 
-	var jsonRaw structpb.Struct
+	// Check end-stream and/or error JSON data in the response.
 	contentType := trace.Response.Header.Get("content-type")
-
-	// If this is a unary request that returned an error, then use the entire
-	// response body as the wire error details.
-	if isUnaryJSONError(contentType, *statusCode) { //nolint:nestif
-		body := wrapper.buf.Bytes()
-		if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-			return statusCode, []string{fmt.Sprintf("Connect unary error could not be parsed: %v", err)}
-		}
-	} else if strings.HasPrefix(contentType, "application/connect+") {
-		// If this is a streaming request, then look through the trace events
+	switch {
+	case isUnaryJSONError(contentType, statusCode):
+		// If this is a unary request that returned an error, then use the entire
+		// response body as the wire error details.
+		examineConnectError(wrapper.buf.Bytes(), printer)
+	case strings.HasPrefix(contentType, "application/connect+"):
+		// If this is a streaming Connect request, then look through the trace events
 		// for the ResponseBodyEndStream event and parse its content into an
 		// endStreamError to see if there are any error details.
-		type endStreamError struct {
-			Error json.RawMessage `json:"error"`
+		endStreamContent, ok := getBodyEndStream(trace)
+		if ok {
+			examineConnectEndStream([]byte(endStreamContent), printer)
 		}
-		for _, ev := range trace.Events {
-			switch eventType := ev.(type) {
-			case *tracer.ResponseBodyEndStream:
-				var endStream endStreamError
-				if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-					return statusCode, []string{fmt.Sprintf("Connect end-stream message could not be parsed: %v", err)}
-				}
-				// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
-				// into a Struct
-				if len(endStream.Error) > 0 {
-					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-						return statusCode, []string{fmt.Sprintf("Connect stream error could not be parsed: %v", err)}
-					}
-				}
-			default:
-				// Do nothing
-			}
+	case strings.HasPrefix(contentType, "application/grpc-web"):
+		// For gRPC-Web, capture the trailers in the body. We don't do any case normalization
+		// or trimming of excess whitespace so that the full values are available to check.
+		endStreamContent, ok := getBodyEndStream(trace)
+		if ok {
+			examineGRPCEndStream(endStreamContent, printer)
 		}
 	}
 
-	// TODO: more checks on JSON raw; also add checks for gRPC end-stream message, and for HTTP trailers.
-	return statusCode, nil
+	if contentType != "application/grpc" && !strings.HasPrefix(contentType, "application/grpc+") {
+		// It's not gRPC protocol, so there should be no HTTP trailers.
+		if len(trace.Response.Trailer) > 0 {
+			printer.Printf("response included %d HTTP trailers but should not have any", len(trace.Response.Trailer))
+		}
+	}
+
+	return trace.Response.StatusCode, true
 }
 
 type wireTracer struct {
@@ -178,6 +172,71 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 
 // isUnaryJSONError returns whether the given content type and HTTP status code
 // represents a unary JSON error.
-func isUnaryJSONError(contentType string, statusCode int32) bool {
+func isUnaryJSONError(contentType string, statusCode int) bool {
 	return contentType == "application/json" && statusCode != 200
+}
+
+// getBodyEndStream returns the contents of any end-stream message in the trace.
+// The bool value will be true if an end-stream message is found and otherwise
+// it will be false.
+func getBodyEndStream(trace *tracer.Trace) (string, bool) {
+	for _, event := range trace.Events {
+		endStream, ok := event.(*tracer.ResponseBodyEndStream)
+		if !ok {
+			continue
+		}
+		return endStream.Content, true
+	}
+	return "", false
+}
+
+func examineConnectError(_ json.RawMessage, _ internal.Printer) {
+	// TODO
+}
+
+func examineConnectEndStream(_ json.RawMessage, _ internal.Printer) {
+	// TODO
+}
+
+func examineGRPCEndStream(endStream string, printer internal.Printer) {
+	if !strings.HasSuffix(endStream, "\r\n") {
+		printer.Printf("grpc-web trailers should end with CRLF but does not")
+	}
+	// trim trailing CRLF so we don't have to deal with empty final line after we Split below
+	endStream = strings.TrimSuffix(endStream, "\r\n")
+
+	endStreamLines := strings.Split(endStream, "\r\n")
+	for _, trailerLine := range endStreamLines {
+		parts := strings.SplitN(trailerLine, ":", 2)
+		if len(parts) != 2 {
+			printer.Printf("grpc-web trailers include invalid field (missing colon): %q", trailerLine)
+			continue
+		}
+		key := parts[0]
+		// grpc-web protocol explicitly requires lower-case keys in end-stream message
+		if key != strings.ToLower(key) {
+			printer.Printf("grpc-web trailers include non-lower-case field key: %q", key)
+		}
+		// Leading and trailing whitespace is allowed, but only space and htab:
+		// https://datatracker.ietf.org/doc/html/rfc7230#section-3.2
+		val := strings.Trim(parts[1], " \t")
+		if !isValidHTTPFieldValue(val) {
+			printer.Printf("grpc-web trailers include invalid field (contains invalid non-visible characters): %q", trailerLine)
+		}
+	}
+}
+
+// isValidHTTPFieldValue returns true the given string is a valid
+// HTTP header or trailer value.
+// https://datatracker.ietf.org/doc/html/rfc7230#section-3.2
+func isValidHTTPFieldValue(s string) bool {
+	for _, r := range s {
+		// Visible range is 32 (SPACE ' ') and up, excluding DEL (127).
+		// Horizontal tab (9, '\t') is allowed but outside the visible range.
+		if r != '\t' && (r < 32 || r == 127) {
+			// not valid
+			return false
+		}
+	}
+	return true
 }

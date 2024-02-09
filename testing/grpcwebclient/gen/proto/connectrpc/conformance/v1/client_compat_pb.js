@@ -2415,7 +2415,8 @@ proto.connectrpc.conformance.v1.WireDetails.toObject = function(includeInstance,
     actualStatusCode: jspb.Message.getFieldWithDefault(msg, 1, 0),
     connectErrorRaw: (f = msg.getConnectErrorRaw()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
     actualHttpTrailersList: jspb.Message.toObjectList(msg.getActualHttpTrailersList(),
-    connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance)
+    connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
+    actualGrpcwebTrailers: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -2465,6 +2466,10 @@ proto.connectrpc.conformance.v1.WireDetails.deserializeBinaryFromReader = functi
       var value = new connectrpc_conformance_v1_service_pb.Header;
       reader.readMessage(value,connectrpc_conformance_v1_service_pb.Header.deserializeBinaryFromReader);
       msg.addActualHttpTrailers(value);
+      break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setActualGrpcwebTrailers(value);
       break;
     default:
       reader.skipField();
@@ -2516,6 +2521,13 @@ proto.connectrpc.conformance.v1.WireDetails.serializeBinaryToWriter = function(m
       3,
       f,
       connectrpc_conformance_v1_service_pb.Header.serializeBinaryToWriter
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
+    writer.writeString(
+      4,
+      f
     );
   }
 };
@@ -2611,6 +2623,42 @@ proto.connectrpc.conformance.v1.WireDetails.prototype.addActualHttpTrailers = fu
  */
 proto.connectrpc.conformance.v1.WireDetails.prototype.clearActualHttpTrailersList = function() {
   return this.setActualHttpTrailersList([]);
+};
+
+
+/**
+ * optional string actual_grpcweb_trailers = 4;
+ * @return {string}
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.getActualGrpcwebTrailers = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.connectrpc.conformance.v1.WireDetails} returns this
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.setActualGrpcwebTrailers = function(value) {
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.connectrpc.conformance.v1.WireDetails} returns this
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.clearActualGrpcwebTrailers = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.connectrpc.conformance.v1.WireDetails.prototype.hasActualGrpcwebTrailers = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
