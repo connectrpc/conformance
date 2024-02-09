@@ -1,12 +1,15 @@
 name: Client Message Size
+# Test how a client handles various message sizes 
 mode: TEST_MODE_CLIENT
 reliesOnMessageReceiveLimit: true
+# We only test client message size interactions over the proto codec because
+# the test runner bases request size based on the binary size.
 relevantCodecs:
   - CODEC_PROTO
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
-    testName: unary request equal to client limit
+    testName: unary/request-equal-to-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -17,7 +20,7 @@ testCases:
   expandRequests:
     - sizeRelativeToLimit: 0
 - request:
-    testName: unary request exceeds client limit
+    testName: unary/request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -33,7 +36,7 @@ testCases:
       code: 8
 # Client Stream Tests ---------------------------------------------------------
 - request:
-    testName: client stream all requests equal to client limit
+    testName: client-stream/all-requests-equal-to-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -47,7 +50,7 @@ testCases:
     - sizeRelativeToLimit: 0
     - sizeRelativeToLimit: 0
 - request:
-    testName: client stream first request exceeds client limit
+    testName: client-stream/first-request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -65,7 +68,7 @@ testCases:
     error:
       code: 8
 - request:
-    testName: client stream subsequent request exceeds client limit
+    testName: client-stream/subsequent-request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -84,7 +87,7 @@ testCases:
       code: 8
 # Server Stream Tests ---------------------------------------------------------
 - request:
-    testName: server stream request equal to client limit
+    testName: server-stream/request-equal-to-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -97,7 +100,7 @@ testCases:
   expandRequests:
     - sizeRelativeToLimit: 0
 - request:
-    testName: server stream request exceeds client limit
+    testName: server-stream/request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -115,7 +118,7 @@ testCases:
       code: 8
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
-    testName: bidi half duplex all requests equal to client limit
+    testName: bidi-stream/half-duplex/all-requests-equal-to-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -131,7 +134,7 @@ testCases:
     - sizeRelativeToLimit: 0
     - sizeRelativeToLimit: 0
 - request:
-    testName: bidi half duplex first request exceeds client limit
+    testName: bidi-stream/half-duplex/first-request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -153,7 +156,7 @@ testCases:
     error:
       code: 8
 - request:
-    testName: bidi half duplex subsequent request exceeds client limit
+    testName: bidi-stream/half-duplex/subsequent-request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -175,7 +178,7 @@ testCases:
     error:
       code: 8
 - request:
-    testName: bidi full duplex all requests equal to client limit
+    testName: bidi-stream/full-duplex/all-requests-equal-to-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -192,7 +195,7 @@ testCases:
     - sizeRelativeToLimit: 0
     - sizeRelativeToLimit: 0
 - request:
-    testName: bidi full duplex first request exceeds client limit
+    testName: bidi-stream/full-duplex/first-request-exceeds-client-limit
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -216,7 +219,7 @@ testCases:
 # TODO - Need a way to populate the expected response payload because the test
 # library padded it with size and we don't know what it looks like here.
 # - request:
-#     testName: bidi full duplex subsequent request exceeds client limit
+#     testName: bidi-stream/full-duplex/subsequent-request-exceeds-client-limit
 #     service: connectrpc.conformance.v1.ConformanceService
 #     method: BidiStream
 #     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM

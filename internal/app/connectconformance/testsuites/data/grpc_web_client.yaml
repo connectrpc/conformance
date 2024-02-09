@@ -10,10 +10,9 @@ relevantCompressions:
 # no response, trailers-only responses (trailers in headers), and trailers with
 # different cases (in addition to the "standard" all lower-case).
 testCases:
-
 # Trailers and status are in body (no other response messages)
   - request:
-      testName: unary trailers in body
+      testName: unary/trailers-in-body
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -47,7 +46,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: unary trailers in body, mixed case
+      testName: unary/trailers-in-body-mixed-case
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -81,7 +80,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: unary trailers in body, duplicates
+      testName: unary/trailers-in-body-duplicates
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -116,7 +115,7 @@ testCases:
         value: [ "bing", "quuz" ]
 
   - request:
-      testName: server stream trailers in body
+      testName: server-stream/trailers-in-body
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -150,7 +149,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: server stream trailers in body, mixed case
+      testName: server-stream/trailers-in-body-mixed-case
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -184,7 +183,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: server stream trailers in body, duplicates
+      testName: server-stream/trailers-in-body-duplicates
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -220,7 +219,7 @@ testCases:
 
 # Trailers-only responses, where status and trailers are in HTTP headers
   - request:
-      testName: unary trailers in headers
+      testName: unary/trailers-in-headers
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -255,7 +254,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: unary trailers in headers, duplicates
+      testName: unary/trailers-in-headers-duplicates
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -291,7 +290,7 @@ testCases:
           value: [ "bing", "quuz" ]
 
   - request:
-      testName: server stream trailers in headers
+      testName: server-stream/trailers-in-headers
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -326,7 +325,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: server stream trailers in headers, duplicates
+      testName: server-stream/trailers-in-headers-duplicates
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM

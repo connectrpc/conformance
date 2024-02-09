@@ -1,4 +1,4 @@
-name: Idempotency
+name: Connect Idempotency
 relevantProtocols:
   - PROTOCOL_CONNECT
 relevantCompressions:
@@ -12,7 +12,7 @@ relevantCodecs:
   - CODEC_PROTO
 testCases:
 - request:
-    testName: idempotent unary success proto
+    testName: unary/success
     service: connectrpc.conformance.v1.ConformanceService
     method: IdempotentUnary
     streamType: STREAM_TYPE_UNARY

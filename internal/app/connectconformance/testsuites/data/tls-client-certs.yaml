@@ -4,7 +4,7 @@ reliesOnTlsClientCerts: true
 # This just does the basics with a client-cert, instead of running every test case with them.
 testCases:
   - request:
-      testName: client stream success
+      testName: client-stream/success
       service: connectrpc.conformance.v1.ConformanceService
       method: ClientStream
       streamType: STREAM_TYPE_CLIENT_STREAM
