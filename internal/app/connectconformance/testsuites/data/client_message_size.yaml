@@ -1,6 +1,8 @@
 name: Client Message Size
 mode: TEST_MODE_CLIENT
 reliesOnMessageReceiveLimit: true
+# We only test client message size interactions over the proto codec because
+# the test runner bases request size based on the binary size.
 relevantCodecs:
   - CODEC_PROTO
 testCases:
