@@ -261,10 +261,10 @@ export class ClientResponseResult extends jspb.Message {
   getNumUnsentRequests(): number;
   setNumUnsentRequests(value: number): ClientResponseResult;
 
-  getWireDetails(): WireDetails | undefined;
-  setWireDetails(value?: WireDetails): ClientResponseResult;
-  hasWireDetails(): boolean;
-  clearWireDetails(): ClientResponseResult;
+  getHttpStatusCode(): number;
+  setHttpStatusCode(value: number): ClientResponseResult;
+  hasHttpStatusCode(): boolean;
+  clearHttpStatusCode(): ClientResponseResult;
 
   getFeedbackList(): Array<string>;
   setFeedbackList(value: Array<string>): ClientResponseResult;
@@ -286,8 +286,13 @@ export namespace ClientResponseResult {
     error?: connectrpc_conformance_v1_service_pb.Error.AsObject,
     responseTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
     numUnsentRequests: number,
-    wireDetails?: WireDetails.AsObject,
+    httpStatusCode?: number,
     feedbackList: Array<string>,
+  }
+
+  export enum HttpStatusCodeCase { 
+    _HTTP_STATUS_CODE_NOT_SET = 0,
+    HTTP_STATUS_CODE = 6,
   }
 }
 
