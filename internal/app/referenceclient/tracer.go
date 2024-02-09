@@ -18,15 +18,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
 	"sync/atomic"
 
-	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/tracer"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -105,34 +105,30 @@ func setWireTrace(ctx context.Context, trace *tracer.Trace) {
 	wrapper.val.Store(trace)
 }
 
-// getWireDetails returns the wire details from the trace in the given context.
-func getWireDetails(ctx context.Context) *v1.WireDetails {
-	// TODO - Note that this function swallows any errors experienced when processing
-	// the response, instead opting for just returning a nil wire details.
-	// It might be worth revisiting using the feedback approach to surface these errors.
+// examineWireDetails examines certain wire details of the call and returns the
+// HTTP status code (if there is one) and feedback that describes issues with
+// other parts of the response.
+func examineWireDetails(ctx context.Context) (*int32, []string) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
-		return nil
+		return nil, []string{"Unable to examine wire details. Call context not configured (no wire wrapper found)."}
 	}
 	trace := wrapper.val.Load()
 	// A nil response in the trace is valid if the HTTP round trip failed.
 	if trace == nil || trace.Response == nil {
-		return nil
+		return nil, nil
 	}
-	statusCode := int32(trace.Response.StatusCode)
+	statusCode := proto.Int32(int32(trace.Response.StatusCode))
 
 	var jsonRaw structpb.Struct
 	contentType := trace.Response.Header.Get("content-type")
 
 	// If this is a unary request that returned an error, then use the entire
 	// response body as the wire error details.
-	if isUnaryJSONError(contentType, statusCode) { //nolint:nestif
-		body, err := io.ReadAll(wrapper.buf)
-		if err != nil {
-			return nil
-		}
+	if isUnaryJSONError(contentType, *statusCode) { //nolint:nestif
+		body := wrapper.buf.Bytes()
 		if err := protojson.Unmarshal(body, &jsonRaw); err != nil {
-			return nil
+			return statusCode, []string{fmt.Sprintf("Connect unary error could not be parsed: %v", err)}
 		}
 	} else if strings.HasPrefix(contentType, "application/connect+") {
 		// If this is a streaming request, then look through the trace events
@@ -146,13 +142,13 @@ func getWireDetails(ctx context.Context) *v1.WireDetails {
 			case *tracer.ResponseBodyEndStream:
 				var endStream endStreamError
 				if err := json.Unmarshal([]byte(eventType.Content), &endStream); err != nil {
-					return nil
+					return statusCode, []string{fmt.Sprintf("Connect end-stream message could not be parsed: %v", err)}
 				}
 				// If we unmarshalled any bytes into endStream.Error, then unmarshal _that_
 				// into a Struct
 				if len(endStream.Error) > 0 {
 					if err := protojson.Unmarshal(endStream.Error, &jsonRaw); err != nil {
-						return nil
+						return statusCode, []string{fmt.Sprintf("Connect stream error could not be parsed: %v", err)}
 					}
 				}
 			default:
@@ -161,11 +157,8 @@ func getWireDetails(ctx context.Context) *v1.WireDetails {
 		}
 	}
 
-	return &v1.WireDetails{
-		ActualStatusCode:   statusCode,
-		ActualHttpTrailers: internal.ConvertToProtoHeader(trace.Response.Trailer),
-		ConnectErrorRaw:    &jsonRaw,
-	}
+	// TODO: more checks on JSON raw; also add checks for gRPC end-stream message, and for HTTP trailers.
+	return statusCode, nil
 }
 
 type wireTracer struct {
@@ -174,7 +167,7 @@ type wireTracer struct {
 
 // Complete intercepts the Complete call for a tracer, extracting wire details
 // from the passed trace. The wire details will be stored in the context acquired by
-// withWireCapture and can be retrieved via getWireDetails.
+// withWireCapture and can be retrieved via examineWireDetails.
 func (t *wireTracer) Complete(trace tracer.Trace) {
 	setWireTrace(trace.Request.Context(), &trace)
 

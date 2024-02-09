@@ -36,7 +36,10 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-const timeoutCheckGracePeriodMillis = 100
+// CI environments have been observed to have 150ms of delay between the deadline
+// being set and it being serialized in a request header. This adds a little extra
+// headroom to avoid flaky tests.
+const timeoutCheckGracePeriodMillis = 250
 
 // testResults represents the results of running conformance tests. It accumulates
 // the state of passed and failed test cases and also reports failures to a given
@@ -156,7 +159,12 @@ func (r *testResults) failed(testCase string, err *conformancev1.ClientErrorResu
 
 // assert will examine the actual and expected RPC result and mark the test
 // case as successful or failed accordingly.
-func (r *testResults) assert(testCase string, expected, actual *conformancev1.ClientResponseResult) {
+func (r *testResults) assert(
+	testCase string,
+	definition *conformancev1.TestCase,
+	actual *conformancev1.ClientResponseResult,
+) {
+	expected := definition.ExpectedResponse
 	var errs multiErrors
 
 	errs = append(errs, checkError(expected.Error, actual.Error)...)
@@ -191,18 +199,11 @@ func (r *testResults) assert(testCase string, expected, actual *conformancev1.Cl
 		errs = append(errs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 	}
 
-	expectedWire := expected.WireDetails
-	actualWire := actual.WireDetails
-	if expectedWire != nil && actualWire != nil {
-		// TODO - Add comparison (and tests) for connecterrorraw and actual http trailers
-
-		// if diff := cmp.Diff(expectedWire.ConnectErrorRaw, actualWire.ConnectErrorRaw, protocmp.Transform()); diff != "" {
-		// 	errs = append(errs, fmt.Errorf("raw Connect error does not match: - wanted, + got\n%s", diff))
-		// }
-
-		if diff := cmp.Diff(expectedWire.ActualStatusCode, actualWire.ActualStatusCode, protocmp.Transform()); diff != "" {
-			errs = append(errs, fmt.Errorf("actual HTTP status code does not match: - wanted, + got\n%s", diff))
-		}
+	if expected.HttpStatusCode != nil &&
+		actual.HttpStatusCode != nil &&
+		expected.GetHttpStatusCode() != actual.GetHttpStatusCode() {
+		errs = append(errs, fmt.Errorf("actual HTTP status code does not match: wanted %d; got %d",
+			expected.GetHttpStatusCode(), actual.GetHttpStatusCode()))
 	}
 
 	r.setOutcome(testCase, false, errs.Result())
