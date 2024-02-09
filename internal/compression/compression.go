@@ -18,7 +18,6 @@ import (
 	"compress/gzip"
 	"fmt"
 	"io"
-	"os"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
@@ -38,7 +37,6 @@ const (
 func GetCompressor(compression conformancev1.Compression) (connect.Compressor, error) {
 	switch compression {
 	case conformancev1.Compression_COMPRESSION_UNSPECIFIED, conformancev1.Compression_COMPRESSION_IDENTITY:
-		fmt.Fprintf(os.Stderr, "no op comp")
 		return &noOpCompressor{}, nil
 	case conformancev1.Compression_COMPRESSION_GZIP:
 		return gzip.NewWriter(nil), nil

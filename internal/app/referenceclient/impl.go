@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -140,15 +139,16 @@ func (i *invoker) unary(
 		}
 	}
 
-	rez := &v1.ClientResponseResult{
+	statusCode, feedback := examineWireDetails(ctx)
+
+	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
-	}
-	fmt.Fprintf(os.Stderr, "CRR: %+v", rez)
-	return rez, nil
+		HttpStatusCode:   statusCode,
+		Feedback:         feedback,
+	}, nil
 }
 
 // TODO - This should be consolidated with the unary implementation since they are
@@ -194,12 +194,15 @@ func (i *invoker) idempotentUnary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	statusCode, feedback := examineWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		HttpStatusCode:   statusCode,
+		Feedback:         feedback,
 	}, nil
 }
 
@@ -284,12 +287,15 @@ func (i *invoker) serverStream(
 		}
 	}
 
+	statusCode, feedback := examineWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		HttpStatusCode:   statusCode,
+		Feedback:         feedback,
 	}, nil
 }
 
@@ -354,12 +360,15 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
+	statusCode, feedback := examineWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
 		Error:            protoErr,
-		WireDetails:      getWireDetails(ctx),
+		HttpStatusCode:   statusCode,
+		Feedback:         feedback,
 	}, nil
 }
 
@@ -380,7 +389,7 @@ func (i *invoker) bidiStream(
 			return
 		}
 
-		result.WireDetails = getWireDetails(ctx)
+		result.HttpStatusCode, result.Feedback = examineWireDetails(ctx)
 
 		// Read headers and trailers from the stream
 		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
@@ -513,9 +522,12 @@ func (i *invoker) unimplemented(
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
 
+	statusCode, feedback := examineWireDetails(ctx)
+
 	return &v1.ClientResponseResult{
-		Error:       internal.ConvertErrorToProtoError(err),
-		WireDetails: getWireDetails(ctx),
+		Error:          internal.ConvertErrorToProtoError(err),
+		HttpStatusCode: statusCode,
+		Feedback:       feedback,
 	}, nil
 }
 
