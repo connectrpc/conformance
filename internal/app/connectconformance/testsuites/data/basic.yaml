@@ -2,7 +2,7 @@ name: Basic
 # The Basic suite represents basic success and error response tests across
 # all types of streams.
 testCases:
-# Unary Tests ---------------------------------------------------------
+# Unary Tests -----------------------------------------------------------------
 - request:
     testName: unary/success
     service: connectrpc.conformance.v1.ConformanceService
