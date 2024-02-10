@@ -199,20 +199,55 @@ func examineConnectEndStream(_ json.RawMessage, _ internal.Printer) {
 }
 
 func examineGRPCEndStream(endStream string, printer internal.Printer) {
-	if !strings.HasSuffix(endStream, "\r\n") {
-		printer.Printf("grpc-web trailers should end with CRLF but does not")
-	}
-	// trim trailing CRLF so we don't have to deal with empty final line after we Split below
-	endStream = strings.TrimSuffix(endStream, "\r\n")
+	// We break it using just LF, so we can handle alternate line ending. But we then complain
+	// below if CRLF isn't used.
+	endStreamLines := strings.Split(endStream, "\n")
+	var linesWithoutCR int
+	var blankLines int
+	var endsInBlankLine bool
+	var blankLineAtEnd bool
+	var obsLineFolds int
+	for i, trailerLine := range endStreamLines {
+		// Whole thing should end with CRLF, so last line should be blank
+		if i == len(endStreamLines)-1 {
+			if trailerLine == "" {
+				endsInBlankLine = true
+				continue
+			}
+		} else if !strings.HasSuffix(trailerLine, "\r") {
+			// Note: This is an "else" because we don't check the last line if
+			// it's not blank since that means the whole block did not have a
+			// terminating LF (which means the last line also doesn't need
+			// trailing CR).
+			linesWithoutCR++
+		} else {
+			// Strip trailing CR.
+			trailerLine = strings.TrimSuffix(trailerLine, "\r")
+		}
 
-	endStreamLines := strings.Split(endStream, "\r\n")
-	for _, trailerLine := range endStreamLines {
+		if trailerLine == "" {
+			blankLines++
+			if i == len(endStreamLines)-2 {
+				blankLineAtEnd = true
+			}
+			continue
+		}
+
 		parts := strings.SplitN(trailerLine, ":", 2)
+		key := parts[0]
+		if i > 0 && len(key) > 0 && key[0] == ' ' || key[0] == '\t' {
+			// Obsolete line-folding.
+			// (See spec https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.4)
+			obsLineFolds++
+			continue
+		}
 		if len(parts) != 2 {
 			printer.Printf("grpc-web trailers include invalid field (missing colon): %q", trailerLine)
 			continue
 		}
-		key := parts[0]
+		if !isValidHTTPFieldName(key) {
+			printer.Printf("grpc-web trailers include invalid field; name contains invalid characters: %q", trailerLine)
+		}
 		// grpc-web protocol explicitly requires lower-case keys in end-stream message
 		if key != strings.ToLower(key) {
 			printer.Printf("grpc-web trailers include non-lower-case field key: %q", key)
@@ -221,21 +256,65 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 		// https://datatracker.ietf.org/doc/html/rfc7230#section-3.2
 		val := strings.Trim(parts[1], " \t")
 		if !isValidHTTPFieldValue(val) {
-			printer.Printf("grpc-web trailers include invalid field (contains invalid non-visible characters): %q", trailerLine)
+			printer.Printf("grpc-web trailers include invalid field; value contains invalid characters: %q", trailerLine)
 		}
+	}
+	if obsLineFolds > 0 {
+		printer.Printf("grpc-web trailers use obsolete line-folding")
+	}
+	if blankLines > 0 {
+		if blankLines == 1 && blankLineAtEnd {
+			printer.Printf("grpc-web trailers ends in extra blank line")
+		} else {
+			printer.Printf("grpc-web trailers include blank lines")
+		}
+	}
+	if linesWithoutCR > 0 {
+		printer.Printf("grpc-web trailers have lines with LF line ending instead of CRLF")
+	}
+	if !endsInBlankLine {
+		printer.Printf("grpc-web trailers should end with CRLF but does not")
 	}
 }
 
-// isValidHTTPFieldValue returns true the given string is a valid
+// isValidHTTPFieldValue returns true if the given string is a valid
 // HTTP header or trailer value.
 // https://datatracker.ietf.org/doc/html/rfc7230#section-3.2
 func isValidHTTPFieldValue(s string) bool {
-	for _, r := range s {
+	// Not using "range s" because that uses UTF8 decoding to iterate
+	// through runes. But spec is in terms of bytes.
+	for i := 0; i < len(s); i++ {
+		r := s[i]
 		// Visible range is 32 (SPACE ' ') and up, excluding DEL (127).
 		// Horizontal tab (9, '\t') is allowed but outside the visible range.
 		if r != '\t' && (r < 32 || r == 127) {
 			// not valid
 			return false
+		}
+	}
+	return true
+}
+
+// isValidHTTPFieldName returns true if the given string is a valid
+// HTTP header or trailer key.
+// https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.6 (see rule for token)
+func isValidHTTPFieldName(s string) bool {
+	// Not using "range s" because that uses UTF8 decoding to iterate
+	// through runes. But spec is in terms of bytes.
+	for i := 0; i < len(s); i++ {
+		r := s[i]
+		switch r {
+		case '!', '#', '$', '%', '&', '\'', '*', '+',
+			'-', '.', '^', '_', '`', '|', '~': // allowed special chars
+		default:
+			switch {
+			case r >= '0' && r <= '9': // digit
+			case r >= 'a' && r <= 'z': // alpha
+			case r >= 'A' && r <= 'Z':
+			default:
+				// Not one of the above? Disallowed.
+				return false
+			}
 		}
 	}
 	return true
