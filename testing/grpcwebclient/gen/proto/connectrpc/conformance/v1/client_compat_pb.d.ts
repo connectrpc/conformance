@@ -328,6 +328,11 @@ export class WireDetails extends jspb.Message {
   clearActualHttpTrailersList(): WireDetails;
   addActualHttpTrailers(value?: connectrpc_conformance_v1_service_pb.Header, index?: number): connectrpc_conformance_v1_service_pb.Header;
 
+  getActualGrpcwebTrailers(): string;
+  setActualGrpcwebTrailers(value: string): WireDetails;
+  hasActualGrpcwebTrailers(): boolean;
+  clearActualGrpcwebTrailers(): WireDetails;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WireDetails.AsObject;
   static toObject(includeInstance: boolean, msg: WireDetails): WireDetails.AsObject;
@@ -341,6 +346,12 @@ export namespace WireDetails {
     actualStatusCode: number,
     connectErrorRaw?: google_protobuf_struct_pb.Struct.AsObject,
     actualHttpTrailersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
+    actualGrpcwebTrailers?: string,
+  }
+
+  export enum ActualGrpcwebTrailersCase { 
+    _ACTUAL_GRPCWEB_TRAILERS_NOT_SET = 0,
+    ACTUAL_GRPCWEB_TRAILERS = 4,
   }
 }
 
