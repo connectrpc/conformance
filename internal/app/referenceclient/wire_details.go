@@ -225,18 +225,19 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 	var obsLineFolds int
 	for i, trailerLine := range endStreamLines {
 		// Whole thing should end with CRLF, so last line should be blank
-		if i == len(endStreamLines)-1 {
+		switch {
+		case i == len(endStreamLines)-1:
 			if trailerLine == "" {
 				endsInCRLF = true
 				continue
 			}
-		} else if !strings.HasSuffix(trailerLine, "\r") {
+		case !strings.HasSuffix(trailerLine, "\r"):
 			// Note: This is an "else" because we don't check the last line if
 			// it's not blank since that means the whole block did not have a
 			// terminating LF (which means the last line also doesn't need
 			// trailing CR).
 			linesWithoutCR++
-		} else {
+		default:
 			// Strip trailing CR.
 			trailerLine = strings.TrimSuffix(trailerLine, "\r")
 		}
@@ -300,10 +301,10 @@ func isValidHTTPFieldValue(s string) bool {
 	// Not using "range s" because that uses UTF8 decoding to iterate
 	// through runes. But spec is in terms of bytes.
 	for i := 0; i < len(s); i++ {
-		r := s[i]
+		char := s[i]
 		// Visible range is 32 (SPACE ' ') and up, excluding DEL (127).
 		// Horizontal tab (9, '\t') is allowed but outside the visible range.
-		if r != '\t' && (r < 32 || r == 127) {
+		if char != '\t' && (char < 32 || char == 127) {
 			// not valid
 			return false
 		}
@@ -318,15 +319,15 @@ func isValidHTTPFieldName(s string) bool {
 	// Not using "range s" because that uses UTF8 decoding to iterate
 	// through runes. But spec is in terms of bytes.
 	for i := 0; i < len(s); i++ {
-		r := s[i]
-		switch r {
+		char := s[i]
+		switch char {
 		case '!', '#', '$', '%', '&', '\'', '*', '+',
 			'-', '.', '^', '_', '`', '|', '~': // allowed special chars
 		default:
 			switch {
-			case r >= '0' && r <= '9': // digit
-			case r >= 'a' && r <= 'z': // alpha
-			case r >= 'A' && r <= 'Z':
+			case char >= '0' && char <= '9': // digit
+			case char >= 'a' && char <= 'z': // alpha
+			case char >= 'A' && char <= 'Z':
 			default:
 				// Not one of the above? Disallowed.
 				return false

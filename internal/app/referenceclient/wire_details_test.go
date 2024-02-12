@@ -168,21 +168,21 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			req.Header().Set("x-test-case-name", "foo") // needed to enable tracing
 			_, err := client.Unary(ctx, req)
 			require.Error(t, err)
-			pr := &internal.SimplePrinter{}
-			examineWireDetails(ctx, pr)
+			printer := &internal.SimplePrinter{}
+			examineWireDetails(ctx, printer)
 			if len(testCase.expectedFeedback) == 0 {
 				assert.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err), "unexpected error: %v", err)
-				assert.Empty(t, pr.Messages)
+				assert.Empty(t, printer.Messages)
 			} else {
 				// When there's feedback, the connect-go client may complain about the end-stream message
 				// and report a different code.
 				assert.True(t, connect.CodeOf(err) == connect.CodeAlreadyExists ||
 					connect.CodeOf(err) == connect.CodeInternal,
 					"unexpected error: %v", err)
-				for i := range pr.Messages {
-					pr.Messages[i] = strings.TrimSuffix(pr.Messages[i], "\n")
+				for i := range printer.Messages {
+					printer.Messages[i] = strings.TrimSuffix(printer.Messages[i], "\n")
 				}
-				assert.Empty(t, cmp.Diff(testCase.expectedFeedback, pr.Messages))
+				assert.Empty(t, cmp.Diff(testCase.expectedFeedback, printer.Messages))
 			}
 		})
 	}
