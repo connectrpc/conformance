@@ -28,10 +28,47 @@ to a single protocol are located in files with the protocol as the prefix. For e
 test GET requests for the Connect protocol only. The `grpc_web_client.yaml` contains client tests for the gRPC-web protocol. Files that
 are not prefixed with a protocol name apply to all protocols.
 
+### Naming conventions
 
-This should describe the test suites folder and link to the YAML config schema by way of the relevant message in the BSR generated docs.
+The suites and tests within follow a loose naming convention:
 
-This should describe how the expected responses is auto-generated based on the request details. It usually only needs to be explicitly provided for exception test cases.
+#### Test files
+
+Test files should be named according to the suite inside and the general functionality being tested. In addition:
+
+* If a suite applies only to a certain protocol, the file name should be prefixed with that protocol. If the suite applies
+  to all protocols, this can be omitted.
+* If a suite only contains client or server tests, the file name prefix should include `client` or `server`. If the suite is
+  for both client and server, this can be omitted.
+
+
+For example: `connect_idempotency.yaml` contains a suite for testing idempotency (`GET` support) for the Connect protocol only.
+The `client_message_size.yaml` file contains a suite of client tests only across all protocols. The `connect_client_code_to_http_code.yaml` 
+file is comprised of client tests for the Connect protocol only.
+
+
+#### Tests
+
+Tests should be named according to the following convention:
+
+`{stream type}/{test_description}`
+
+In the case of Bidi tests, you should also add `full_duplex` or `half_duplex` to the test name. For example:
+
+`unary/`
+`server-stream/`
+`bidi-stream/full-duplex/`
+
+The above conventions allow for a more granular control over running tests via the conformance runner. For example, you can run
+only unary tests within a file xxxxx, you can only run suites that apply to the Connect protocol, or you can specify known failing tests for xxxx.
+
+### Expected responses
+
+The expected response for a test is auto-generated based on the request details. The conformance runner will determine what the response 
+should be by the values specified in the test suite and individual test cases. However, you have the ability to explicitly specify your 
+own expected response directly in the test itself. To do so, simply define an `expectedResponse` block for your test case and this will
+override the auto-generated expected response in the test runner. This typically only needs done for exception test cases. For an example,
+take a look at xxxxxxxxxxxxxxxx.
 
 [testsuites]: https://github.com/connectrpc/conformance/blob/main/internal/app/connectconformance/testsuites/data
 [suite-proto]: https://buf.build/connectrpc/conformance/file/main:connectrpc/conformance/v1/suite.proto
