@@ -21,7 +21,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
-	"sync/atomic"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/tracer"
@@ -30,14 +30,16 @@ import (
 // The key associated with the wire details information stored in context.
 type wireCtxKey struct{}
 
-type wireInterceptor struct {
+type wireCaptureTransport struct {
 	Transport http.RoundTripper
 }
 
-// newWireInterceptor creates a new wireInterceptor which wraps the given transport
-// in a TracingRoundTripper.
-func newWireInterceptor(transport http.RoundTripper, trace *tracer.Tracer) http.RoundTripper {
-	return &wireInterceptor{
+// newWireCaptureTransport returns a new round-tripper that delegates to the
+// given one. The returned transport instruments the given one for tracing and
+// the ability to capture wire-level details from that trace. Also see
+// withWireCapture and examineWireDetails.
+func newWireCaptureTransport(transport http.RoundTripper, trace *tracer.Tracer) http.RoundTripper {
+	return &wireCaptureTransport{
 		Transport: tracer.TracingRoundTripper(transport, &wireTracer{
 			tracer: trace,
 		}),
@@ -46,7 +48,7 @@ func newWireInterceptor(transport http.RoundTripper, trace *tracer.Tracer) http.
 
 // RoundTrip replaces the response body with a wireReader which captures bytes
 // as they are read.
-func (w *wireInterceptor) RoundTrip(req *http.Request) (*http.Response, error) {
+func (w *wireCaptureTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	resp, err := w.Transport.RoundTrip(req)
 	wrapper, ok := req.Context().Value(wireCtxKey{}).(*wireWrapper)
 	if err != nil || !ok {
@@ -80,42 +82,57 @@ func (w *wireReader) Close() error {
 }
 
 type wireWrapper struct {
-	val atomic.Pointer[tracer.Trace]
+	traceAvailable chan struct{}
+	trace          tracer.Trace
 	// buf represents the read response body
 	buf *bytes.Buffer
 }
 
 // withWireCapture returns a new context which will contain wire details during
-// a roundtrip.
+// a roundtrip. Use examineWireDetails to extract the details after the operation
+// completes.
 func withWireCapture(ctx context.Context) context.Context {
 	return context.WithValue(ctx, wireCtxKey{}, &wireWrapper{
-		buf: &bytes.Buffer{},
+		traceAvailable: make(chan struct{}),
+		buf:            &bytes.Buffer{},
 	})
 }
 
-// setWireTrace sets the given trace in the given context.
-func setWireTrace(ctx context.Context, trace *tracer.Trace) {
+// setWireTrace sets the given trace in the given context. Should never be called
+// more than once for the same context.
+func setWireTrace(ctx context.Context, trace tracer.Trace) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
 		return
 	}
-	wrapper.val.Store(trace)
+	wrapper.trace = trace
+	close(wrapper.traceAvailable)
 }
 
 // examineWireDetails examines certain wire details of the call and returns the
 // HTTP status code (or if there is not one). Feedback about the wire details will
-// be printed to the given printer.
+// be printed to the given printer. This also records errors to the given printer
+// if the given context was never configured using withWireCapture or if the wire
+// details are not available within 1 second of the call.
 func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCode int, ok bool) {
 	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
 	if !ok {
 		printer.Printf("unable to examine wire details: call context not configured (no wire wrapper found).")
 		return 0, false
 	}
-	trace := wrapper.val.Load()
-	if trace == nil {
+	// Usually, the trace should be already available because examineWireDetails should not be
+	// called until the underlying HTTP operation is complete. However, if the operation times
+	// out (via context deadline exceeded), it is possible for the calling code to think the
+	// operation is complete and call this function, concurrently with the HTTP round-tripper
+	// completing the call and storing the trace. So to avoid a race and avoid flaky instances
+	// where the trace isn't available yet, we allow a one-second grace period.
+	select {
+	case <-wrapper.traceAvailable:
+	case <-time.After(time.Second):
 		printer.Printf("unable to examine wire details: completed trace not found in call context.")
 		return 0, false
 	}
+	trace := wrapper.trace
 	if trace.Response == nil {
 		// A nil response in the trace is valid if the HTTP round trip failed.
 		return 0, false
@@ -163,8 +180,7 @@ type wireTracer struct {
 // from the passed trace. The wire details will be stored in the context acquired by
 // withWireCapture and can be retrieved via examineWireDetails.
 func (t *wireTracer) Complete(trace tracer.Trace) {
-	setWireTrace(trace.Request.Context(), &trace)
-
+	setWireTrace(trace.Request.Context(), trace)
 	if t.tracer != nil {
 		t.tracer.Complete(trace)
 	}
@@ -179,7 +195,7 @@ func isUnaryJSONError(contentType string, statusCode int) bool {
 // getBodyEndStream returns the contents of any end-stream message in the trace.
 // The bool value will be true if an end-stream message is found and otherwise
 // it will be false.
-func getBodyEndStream(trace *tracer.Trace) (string, bool) {
+func getBodyEndStream(trace tracer.Trace) (string, bool) {
 	for _, event := range trace.Events {
 		endStream, ok := event.(*tracer.ResponseBodyEndStream)
 		if !ok {
@@ -204,14 +220,14 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 	endStreamLines := strings.Split(endStream, "\n")
 	var linesWithoutCR int
 	var blankLines int
-	var endsInBlankLine bool
+	var endsInCRLF bool
 	var blankLineAtEnd bool
 	var obsLineFolds int
 	for i, trailerLine := range endStreamLines {
 		// Whole thing should end with CRLF, so last line should be blank
 		if i == len(endStreamLines)-1 {
 			if trailerLine == "" {
-				endsInBlankLine = true
+				endsInCRLF = true
 				continue
 			}
 		} else if !strings.HasSuffix(trailerLine, "\r") {
@@ -272,7 +288,7 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 	if linesWithoutCR > 0 {
 		printer.Printf("grpc-web trailers have lines with LF line ending instead of CRLF")
 	}
-	if !endsInBlankLine {
+	if !endsInCRLF {
 		printer.Printf("grpc-web trailers should end with CRLF but does not")
 	}
 }

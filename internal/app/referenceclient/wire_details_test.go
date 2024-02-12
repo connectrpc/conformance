@@ -159,7 +159,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			}))
 			t.Cleanup(svr.Close)
 			client := conformancev1connect.NewConformanceServiceClient(
-				&http.Client{Transport: newWireInterceptor(svr.Client().Transport, nil)},
+				&http.Client{Transport: newWireCaptureTransport(svr.Client().Transport, nil)},
 				svr.URL,
 				connect.WithGRPCWeb(),
 			)

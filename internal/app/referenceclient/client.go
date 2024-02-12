@@ -238,7 +238,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 		// The wire interceptor wraps a TracingRoundTripper and intercepts values on the
 		// wire using the tracer framework. Note that 'trace' could be nil, in which case,
 		// any error traces will simply not be printed. The trace itself will still be built.
-		transport = newWireInterceptor(transport, trace)
+		transport = newWireCaptureTransport(transport, trace)
 		if req.RawRequest != nil {
 			transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}
 		}
