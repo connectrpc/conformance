@@ -29,13 +29,14 @@ For example:
 Test names should be hyphen-delimited. If a suite contains tests of multiple stream types, the test name should be 
 prefixed with the stream type and a backslash (`/`).
 
+ > [!INFO]  
  > In the case of Bidi tests, you should also add `full_duplex` or `half_duplex` to the test name. 
 
  For example:
 
-`unary/error`
-`server-stream/error-with-responses`
-`bidi-stream/full-duplex/stream-error-returns-success-http-code`
+* `unary/error`
+* `server-stream/error-with-responses`
+* `bidi-stream/full-duplex/stream-error-returns-success-http-code`
 
 If a stream contains tests for just a single stream type, the stream type can be omitted from the test name.
 
