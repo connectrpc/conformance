@@ -3,7 +3,7 @@
 Test cases for the conformance runner are configured in YAML files and are located [here](testsuites). Each file 
 represents a single suite of tests. 
 
-Authoring new test cases involves adding either a new file if a new suite is required or added an additional test case to an 
+Authoring new test cases involves either a new file, if a new suite is warranted, or an additional test case in an 
 existing file/suite. 
 
 ## Naming conventions
