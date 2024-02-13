@@ -16,10 +16,10 @@ package connectconformance
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 	"testing"
 
+	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
@@ -41,10 +41,10 @@ func TestResults_SetOutcome(t *testing.T) {
 	results.setOutcome("known-to-flake/2", true, errors.New("flake"))
 	results.setOutcome("known-to-flake/3", false, errors.New("flake"))
 
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
-	lines := logger.errorLines()
+	lines := errorMessages(logger.Messages)
 	require.Len(t, lines, 7)
 	require.Equal(t, lines[0], "FAILED: foo/bar/2:\n\tfail\n")
 	require.Equal(t, lines[1], "FAILED: foo/bar/3:\n\tfail\n")
@@ -64,10 +64,10 @@ func TestResults_FailedToStart(t *testing.T) {
 		{Request: &conformancev1.ClientCompatRequest{TestName: "known-to-fail/1"}},
 	}, errors.New("fail"))
 
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
-	lines := logger.errorLines()
+	lines := errorMessages(logger.Messages)
 	require.Len(t, lines, 2)
 	require.Equal(t, lines[0], "FAILED: foo/bar/1:\n\tfail\n")
 	// Marked as failure even though expected to fail because it failed to start.
@@ -86,10 +86,10 @@ func TestResults_FailRemaining(t *testing.T) {
 		{Request: &conformancev1.ClientCompatRequest{TestName: "known-to-fail/2"}},
 	}, errors.New("something went wrong"))
 
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
-	lines := logger.errorLines()
+	lines := errorMessages(logger.Messages)
 	require.Len(t, lines, 3)
 	require.Equal(t, lines[0], "FAILED: foo/bar/2:\n\tsomething went wrong\n")
 	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected):\n\tfail\n")
@@ -105,10 +105,10 @@ func TestResults_Failed(t *testing.T) {
 	results.failed("foo/bar/1", &conformancev1.ClientErrorResult{Message: "fail"})
 	results.failed("known-to-fail/1", &conformancev1.ClientErrorResult{Message: "fail"})
 
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
-	lines := logger.errorLines()
+	lines := errorMessages(logger.Messages)
 	require.Len(t, lines, 2)
 	require.Equal(t, lines[0], "FAILED: foo/bar/1:\n\tfail\n")
 	require.Equal(t, lines[1], "INFO: known-to-fail/1 failed (as expected):\n\tfail\n")
@@ -136,10 +136,10 @@ func TestResults_Assert(t *testing.T) {
 	results.assert("known-to-fail/3", testCase1, payload1)
 	results.assert("known-to-fail/4", testCase2, payload2)
 
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
-	lines := logger.errorLines()
+	lines := errorMessages(logger.Messages)
 	require.Len(t, lines, 6)
 	require.Contains(t, lines[0], "FAILED: foo/bar/1:\n\t")
 	require.Contains(t, lines[1], "FAILED: foo/bar/2:\n\t")
@@ -734,10 +734,10 @@ func TestResults_ServerSideband(t *testing.T) {
 	results.recordSideband("foo/bar/3", "something awkward in wire format")
 	results.recordSideband("known-to-fail/1", "something awkward in wire format")
 
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 	success := results.report(logger)
 	require.False(t, success)
-	lines := logger.errorLines()
+	lines := errorMessages(logger.Messages)
 	require.Len(t, lines, 4)
 	require.Equal(t, lines[0], "FAILED: foo/bar/2:\n\tsomething awkward in wire format; fail\n")
 	require.Equal(t, lines[1], "FAILED: foo/bar/3:\n\tsomething awkward in wire format\n")
@@ -748,7 +748,7 @@ func TestResults_ServerSideband(t *testing.T) {
 func TestResults_Report(t *testing.T) {
 	t.Parallel()
 	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
-	logger := &linePrinter{}
+	logger := &internal.SimplePrinter{}
 
 	// No test cases? Report success.
 	success := results.report(logger)
@@ -860,33 +860,12 @@ func makeKnownFlaky() *testTrie {
 	return parsePatterns([]string{"known-to-flake/**"})
 }
 
-type linePrinter struct {
-	lines []string
-}
-
-func (l *linePrinter) Printf(msg string, args ...any) {
-	line := fmt.Sprintf(msg, args...)
-	if !strings.HasSuffix(line, "\n") {
-		line += "\n"
-	}
-	l.lines = append(l.lines, line)
-}
-
-func (l *linePrinter) PrefixPrintf(prefix, msg string, args ...any) {
-	msg = fmt.Sprintf(msg, args...)
-	line := fmt.Sprintf("%s: %s", prefix, msg)
-	if !strings.HasSuffix(line, "\n") {
-		line += "\n"
-	}
-	l.lines = append(l.lines, line)
-}
-
-func (l *linePrinter) errorLines() []string {
-	var lines []string
-	for _, line := range l.lines {
-		if strings.HasPrefix(line, "FAILED: ") || strings.HasPrefix(line, "INFO: ") {
-			lines = append(lines, line)
+func errorMessages(msgs []string) []string {
+	var errs []string
+	for _, msg := range msgs {
+		if strings.HasPrefix(msg, "FAILED: ") || strings.HasPrefix(msg, "INFO: ") {
+			errs = append(errs, msg)
 		}
 	}
-	return lines
+	return errs
 }
