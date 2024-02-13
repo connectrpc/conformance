@@ -29,7 +29,7 @@ For example:
 Test names should be hyphen-delimited. If a suite contains tests of multiple stream types, the test name should be 
 prefixed with the stream type and a backslash (`/`).
 
- > [!INFO]  
+ > [!NOTE]  
  > In the case of Bidi tests, you should also add `full_duplex` or `half_duplex` to the test name. 
 
  For example:
@@ -38,7 +38,7 @@ prefixed with the stream type and a backslash (`/`).
 * `server-stream/error-with-responses`
 * `bidi-stream/full-duplex/stream-error-returns-success-http-code`
 
-If a stream contains tests for just a single stream type, the stream type can be omitted from the test name.
+If a suite contains tests for just a single stream type, the stream type can be omitted from the test name.
 
 These conventions allow for more granular control over running tests via the conformance runner, such as only running tests
 for a specific protocol or only running the unary tests within a suite.
@@ -67,9 +67,12 @@ For a full list of the available configurations for a test suite, see the [Proto
 
 The expected response for a test is auto-generated based on the request details. The conformance runner will determine what the response 
 should be by the values specified in the test suite and individual test cases. However, you have the ability to explicitly specify your 
-own expected response directly in the test definition itself. To do so, simply define an `expectedResponse` block for your test case and this will
-override the auto-generated expected response in the test runner. This typically only needs done for exception test cases. For examples,
-search the [test suites](testsuites) directory for `expectedResponse`.
+own expected response directly in the test definition itself. 
+
+To do so, simply define an `expectedResponse` block for your test case and this will
+override the auto-generated expected response in the test runner. This typically only needs done for exception test cases. 
+
+For examples, search the [test suites](testsuites) directory for the word `expectedResponse`.
 
 [testsuites]: https://github.com/connectrpc/conformance/tree/main/internal/app/connectconformance/testsuites/data
 [suite-proto]: https://buf.build/connectrpc/conformance/file/main:connectrpc/conformance/v1/suite.proto
