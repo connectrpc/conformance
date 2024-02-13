@@ -9,7 +9,7 @@ relevantProtocols:
   - PROTOCOL_CONNECT
 testCases:
 - request:
-    testName: unary/bad-request
+    testName: bad-request
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -24,7 +24,7 @@ testCases:
       # invalid_argument
       code: 3
 - request:
-    testName: unary/unauthorized
+    testName: unauthorized
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -38,7 +38,7 @@ testCases:
       # unauthenticated
       code: 16
 - request:
-    testName: unary/forbidden
+    testName: forbidden
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -52,7 +52,7 @@ testCases:
       # permission_denied
       code: 7
 - request:
-    testName: unary/not-found
+    testName: not-found
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -66,7 +66,7 @@ testCases:
       # unimplemented
       code: 12
 - request:
-    testName: unary/request-timeout
+    testName: request-timeout
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -96,7 +96,7 @@ testCases:
 #     # aborted
 #      code: 10
 - request:
-    testName: unary/precondition-failed
+    testName: precondition-failed
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -110,7 +110,7 @@ testCases:
       # failed_precondition
       code: 9
 - request:
-    testName: unary/payload-too-large
+    testName: payload-too-large
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -140,7 +140,7 @@ testCases:
 #     # internal
 #      code: 13
 - request:
-    testName: unary/too-many-requests
+    testName: too-many-requests
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -154,7 +154,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: unary/request-header-fields-too-large
+    testName: request-header-fields-too-large
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -168,7 +168,7 @@ testCases:
       # resource_exhausted
       code: 8
 - request:
-    testName: unary/bad-gateway
+    testName: bad-gateway
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -182,7 +182,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: unary/service-unavailable
+    testName: service-unavailable
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -196,7 +196,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: unary/gateway-timeout
+    testName: gateway-timeout
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -210,7 +210,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: unary/im-a-teapot
+    testName: im-a-teapot
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY

@@ -2,9 +2,10 @@ name: TLS Client Certs
 reliesOnTls: true
 reliesOnTlsClientCerts: true
 # This just does the basics with a client-cert, instead of running every test case with them.
+# TODO - Add unary and other stream type tests here also
 testCases:
   - request:
-      testName: client-stream/success
+      testName: client-stream
       service: connectrpc.conformance.v1.ConformanceService
       method: ClientStream
       streamType: STREAM_TYPE_CLIENT_STREAM

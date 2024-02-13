@@ -174,7 +174,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
 # Misc Tests ------------------------------------------------------------------
 - request:
-    testName: unary/unimplemented
+    testName: unimplemented
     service: connectrpc.conformance.v1.ConformanceService
     method: Unimplemented
     streamType: STREAM_TYPE_UNARY
