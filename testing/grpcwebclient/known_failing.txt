@@ -13,7 +13,5 @@ Client Cancellation/**/server-stream/**/cancel-after-zero-responses
 # headers, which are not parsed with the above code.
 Duplicate Metadata/**/unary/**/success
 Duplicate Metadata/**/server-stream/**
-gRPC Web Client/**/unary/trailers-in-body-duplicates
-gRPC Web Client/**/server-stream/trailers-in-body-duplicates
-gRPC Web Client/**/unary/trailers-in-body-mixed-case
-gRPC Web Client/**/server-stream/trailers-in-body-mixed-case
+gRPC Web Client/**/trailers-in-body-duplicates
+gRPC Web Client/**/trailers-in-body-mixed-case
