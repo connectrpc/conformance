@@ -165,4 +165,12 @@ message WireDetails {
   // include trailers that conveyed via the body, as done in the gRPC-Web
   // and Connect streaming protocols.
   repeated Header actual_http_trailers = 3;
+  // Any trailers that were transmitted in the final message of the
+  // response body for a gRPC-Web response. This could differ from the
+  // ClientResponseResult.response_trailers field since the RPC client
+  // library might canonicalize keys and it might choose to remove
+  // "grpc-status" et al from the set of metadata. This field will
+  // capture all of the entries and their exact on-the-wire spelling
+  // and formatting.
+  optional string actual_grpcweb_trailers = 4;
 }

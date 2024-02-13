@@ -1,10 +1,11 @@
-name: Cancellation
-# Cancellations only apply to clients under test
+name: Client Cancellation
+# The Cancellation suite tests stream cancellation 
+# and only applies to clients under test
 mode: TEST_MODE_CLIENT
 testCases:
 # Client Stream Tests ---------------------------------------------------------
 - request:
-    testName: client stream cancel before close send
+    testName: client-stream/cancel-before-close-send
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -27,7 +28,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: client stream cancel after close send
+    testName: client-stream/cancel-after-close-send
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -52,7 +53,7 @@ testCases:
       code: 1
 # Server Stream Tests ---------------------------------------------------------
 - request:
-    testName: server stream cancel after zero responses
+    testName: server-stream/cancel-after-zero-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -76,7 +77,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: server stream cancel after responses
+    testName: server-stream/cancel-after-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -126,7 +127,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi full duplex cancel after responses
+    testName: bidi-stream/full-duplex/cancel-after-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -158,7 +159,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi full duplex cancel before close send
+    testName: bidi-stream/full-duplex/cancel-before-close-send
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -193,7 +194,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi full duplex cancel after close send
+    testName: bidi-stream/full-duplex/cancel-after-close-send
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -232,7 +233,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi half duplex cancel after zero responses
+    testName: bidi-stream/half-duplex/cancel-after-zero-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -252,7 +253,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi half duplex cancel after responses
+    testName: bidi-stream/half-duplex/cancel-after-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -284,7 +285,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi half duplex cancel before close send
+    testName: bidi-stream/half-duplex/cancel-before-close-send
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -303,7 +304,7 @@ testCases:
     error:
       code: 1
 - request:
-    testName: bidi half duplex cancel after close send
+    testName: bidi-stream/half-duplex/cancel-after-close-send
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM

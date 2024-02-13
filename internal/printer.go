@@ -17,6 +17,7 @@ package internal
 import (
 	"fmt"
 	"io"
+	"strings"
 	"sync"
 )
 
@@ -38,6 +39,29 @@ type Printer interface {
 // safe for concurrent use.
 func NewPrinter(w io.Writer) Printer {
 	return &safePrinter{w: &peekWriter{w: w}}
+}
+
+// SimplePrinter is a non-thread-safe printer that stores the
+// printed messages in a slice.
+type SimplePrinter struct {
+	Messages []string
+}
+
+func (l *SimplePrinter) Printf(msg string, args ...any) {
+	line := fmt.Sprintf(msg, args...)
+	if !strings.HasSuffix(line, "\n") {
+		line += "\n"
+	}
+	l.Messages = append(l.Messages, line)
+}
+
+func (l *SimplePrinter) PrefixPrintf(prefix, msg string, args ...any) {
+	msg = fmt.Sprintf(msg, args...)
+	line := fmt.Sprintf("%s: %s", prefix, msg)
+	if !strings.HasSuffix(line, "\n") {
+		line += "\n"
+	}
+	l.Messages = append(l.Messages, line)
 }
 
 // safePrinter is a thread-safe printer.

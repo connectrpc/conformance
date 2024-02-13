@@ -27,12 +27,28 @@ import (
 	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
+	"google.golang.org/protobuf/proto"
 )
 
 const clientName = "connectconformance-referenceclient"
 
 type invoker struct {
-	client conformancev1connect.ConformanceServiceClient
+	client        conformancev1connect.ConformanceServiceClient
+	referenceMode bool
+}
+
+// Creates a new invoker around a ConformanceServiceClient.
+func newInvoker(transport http.RoundTripper, referenceMode bool, url *url.URL, opts []connect.ClientOption) *invoker {
+	opts = append(opts, connect.WithInterceptors(userAgentClientInterceptor{}))
+	client := conformancev1connect.NewConformanceServiceClient(
+		&http.Client{Transport: transport},
+		url.String(),
+		opts...,
+	)
+	return &invoker{
+		client:        client,
+		referenceMode: referenceMode,
+	}
 }
 
 func (i *invoker) Invoke(
@@ -117,7 +133,7 @@ func (i *invoker) unary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx = withWireCapture(ctx)
+	ctx = i.withWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.Unary(ctx, request)
@@ -139,7 +155,7 @@ func (i *invoker) unary(
 		}
 	}
 
-	statusCode, feedback := examineWireDetails(ctx)
+	statusCode, feedback := i.examineWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -174,7 +190,7 @@ func (i *invoker) idempotentUnary(
 	var trailers []*v1.Header
 	payloads := make([]*v1.ConformancePayload, 0, 1)
 
-	ctx = withWireCapture(ctx)
+	ctx = i.withWireCapture(ctx)
 
 	// Invoke the Unary call
 	resp, err := i.client.IdempotentUnary(ctx, request)
@@ -194,7 +210,7 @@ func (i *invoker) idempotentUnary(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	statusCode, feedback := examineWireDetails(ctx)
+	statusCode, feedback := i.examineWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -209,7 +225,7 @@ func (i *invoker) idempotentUnary(
 func (i *invoker) serverStream(
 	ctx context.Context,
 	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+) (result *v1.ClientResponseResult, _ error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -224,7 +240,9 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	ctx = withWireCapture(ctx)
+	result = &v1.ClientResponseResult{}
+
+	ctx = i.withWireCapture(ctx)
 
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
@@ -239,13 +257,25 @@ func (i *invoker) serverStream(
 			Error:           protoErr,
 		}, nil
 	}
-	var protoErr *v1.Error
-	var headers []*v1.Header
-	var trailers []*v1.Header
-	var payloads []*v1.ConformancePayload
+	defer func() {
+		// Always make sure stream is closed on exit.
+		closeErr := stream.Close()
+		if err != nil {
+			return
+		}
+		if result.Error == nil && closeErr != nil {
+			result.Error = internal.ConvertErrorToProtoError(closeErr)
+		}
+		if err == nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
+			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
+			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx)
+		}
+	}()
 
 	if ssr.ResponseDefinition != nil {
-		payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
+		result.Payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
 	timing, err := internal.GetCancelTiming(req.Cancel)
@@ -262,7 +292,7 @@ func (i *invoker) serverStream(
 		totalRcvd++
 		// If the call was successful, get the returned payloads
 		// and the headers and trailers
-		payloads = append(payloads, stream.Msg().Payload)
+		result.Payloads = append(result.Payloads, stream.Msg().Payload)
 
 		// If AfterNumResponses is specified, it will be a number > 0 here.
 		// If it wasn't specified, it will be -1, which means the totalRcvd
@@ -273,30 +303,10 @@ func (i *invoker) serverStream(
 	}
 	if stream.Err() != nil {
 		// If an error was returned, convert it to a proto Error
-		protoErr = internal.ConvertErrorToProtoError(stream.Err())
+		result.Error = internal.ConvertErrorToProtoError(stream.Err())
 	}
 
-	// Read headers and trailers from the stream
-	headers = internal.ConvertToProtoHeader(stream.ResponseHeader())
-	trailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
-
-	err = stream.Close()
-	if err != nil {
-		if protoErr == nil {
-			protoErr = internal.ConvertErrorToProtoError(err)
-		}
-	}
-
-	statusCode, feedback := examineWireDetails(ctx)
-
-	return &v1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		HttpStatusCode:   statusCode,
-		Feedback:         feedback,
-	}, nil
+	return result, nil
 }
 
 func (i *invoker) clientStream(
@@ -306,7 +316,7 @@ func (i *invoker) clientStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	ctx = withWireCapture(ctx)
+	ctx = i.withWireCapture(ctx)
 	stream := i.client.ClientStream(ctx)
 
 	// Add the specified request headers to the request
@@ -360,7 +370,7 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	statusCode, feedback := examineWireDetails(ctx)
+	statusCode, feedback := i.examineWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -381,19 +391,24 @@ func (i *invoker) bidiStream(
 
 	result = &v1.ClientResponseResult{}
 
-	ctx = withWireCapture(ctx)
+	ctx = i.withWireCapture(ctx)
 
 	stream := i.client.BidiStream(ctx)
 	defer func() {
+		// Always make sure stream is closed on exit.
+		closeErr := stream.CloseResponse()
 		if err != nil {
 			return
 		}
-
-		result.HttpStatusCode, result.Feedback = examineWireDetails(ctx)
-
-		// Read headers and trailers from the stream
-		result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
-		result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
+		if result.Error == nil && closeErr != nil {
+			result.Error = internal.ConvertErrorToProtoError(closeErr)
+		}
+		if err == nil {
+			// Read headers and trailers from the stream
+			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
+			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
+			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx)
+		}
 	}()
 
 	// Add the specified request headers to the request
@@ -494,13 +509,7 @@ func (i *invoker) bidiStream(
 
 	if protoErr != nil {
 		result.Error = protoErr
-		return result, nil
 	}
-
-	if err := stream.CloseResponse(); err != nil {
-		result.Error = internal.ConvertErrorToProtoError(err)
-	}
-
 	return result, nil
 }
 
@@ -517,12 +526,12 @@ func (i *invoker) unimplemented(
 	request := connect.NewRequest(ur)
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	ctx = withWireCapture(ctx)
+	ctx = i.withWireCapture(ctx)
 
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, request)
 
-	statusCode, feedback := examineWireDetails(ctx)
+	statusCode, feedback := i.examineWireDetails(ctx)
 
 	return &v1.ClientResponseResult{
 		Error:          internal.ConvertErrorToProtoError(err),
@@ -531,17 +540,24 @@ func (i *invoker) unimplemented(
 	}, nil
 }
 
-// Creates a new invoker around a ConformanceServiceClient.
-func newInvoker(transport http.RoundTripper, url *url.URL, opts []connect.ClientOption) *invoker {
-	opts = append(opts, connect.WithInterceptors(userAgentClientInterceptor{}))
-	client := conformancev1connect.NewConformanceServiceClient(
-		&http.Client{Transport: transport},
-		url.String(),
-		opts...,
-	)
-	return &invoker{
-		client: client,
+func (i *invoker) withWireCapture(ctx context.Context) context.Context {
+	if !i.referenceMode {
+		return ctx
 	}
+	return withWireCapture(ctx)
+}
+
+func (i *invoker) examineWireDetails(ctx context.Context) (*int32, []string) {
+	if !i.referenceMode {
+		return nil, nil
+	}
+	printer := &internal.SimplePrinter{}
+	statusCode, ok := examineWireDetails(ctx, printer)
+	var statusCodePtr *int32
+	if ok {
+		statusCodePtr = proto.Int32(int32(statusCode))
+	}
+	return statusCodePtr, printer.Messages
 }
 
 // userAgentClientInterceptor adds to the user-agent header on outgoing requests.

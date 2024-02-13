@@ -239,7 +239,7 @@ func run( //nolint:gocyclo
 					"reference-client",
 					"-p", strconv.Itoa(int(flags.Parallelism)),
 				}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-					return referenceclient.Run(ctx, args, inReader, outWriter, errWriter, trace)
+					return referenceclient.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
 				}),
 				isReferenceImpl: true,
 			},

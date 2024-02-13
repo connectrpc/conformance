@@ -7,7 +7,7 @@ name: Timeouts
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
-    testName: unary timeout
+    testName: unary
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -23,7 +23,7 @@ testCases:
       code: 4
 # Client Stream Tests ---------------------------------------------------------
 - request:
-    testName: client stream timeout
+    testName: client-stream
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -41,7 +41,7 @@ testCases:
       code: 4
 # Server Stream Tests ---------------------------------------------------------
 - request:
-    testName: server stream timeout
+    testName: server-stream
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -59,7 +59,7 @@ testCases:
       code: 4
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
-    testName: bidi full duplex timeout
+    testName: bidi-stream/full-duplex
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -79,7 +79,7 @@ testCases:
     error:
       code: 4
 - request:
-    testName: bidi half duplex timeout
+    testName: bidi-stream/half-duplex
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM

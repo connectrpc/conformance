@@ -2,8 +2,8 @@
 # support. Server streaming is still possible but all responses are buffered and delivered at the same time so
 # we can't test cancellations after responses. In addition, even cancelling before receiving responses doesn't
 # throw any sort of error, so we can't correctly verify a stream was canceled.
-Cancellation/**/server stream cancel after responses
-Cancellation/**/server stream cancel after zero responses
+Client Cancellation/**/server-stream/**/cancel-after-responses
+Client Cancellation/**/server-stream/**/cancel-after-zero-responses
 
 # There is a bug in the gRPC-web client with handling duplicate trailer metadata for responses where trailers
 # are encoded in the body, which are parsed using this code:
@@ -11,12 +11,7 @@ Cancellation/**/server stream cancel after zero responses
 # And since that uses an object keyed to trailer name, it will eliminate dupes. Responses that use a
 # "trailers only" response can succeed, however, because those trailers are actually encoded as HTTP
 # headers, which are not parsed with the above code.
-Duplicate Metadata/**/unary success with duplicates
-Duplicate Metadata/**/server stream error with no responses and duplicates
-Duplicate Metadata/**/server stream error with responses and duplicates
-Duplicate Metadata/**/server stream no response with duplicates
-Duplicate Metadata/**/server stream success with duplicates
-gRPC Web Client/**/unary trailers in body, duplicates
-gRPC Web Client/**/server stream trailers in body, duplicates
-gRPC Web Client/**/unary trailers in body, mixed case
-gRPC Web Client/**/server stream trailers in body, mixed case
+Duplicate Metadata/**/unary/**/success
+Duplicate Metadata/**/server-stream/**
+gRPC Web Client/**/trailers-in-body-duplicates
+gRPC Web Client/**/trailers-in-body-mixed-case
