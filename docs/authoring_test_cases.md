@@ -30,7 +30,8 @@ Test names should be hyphen-delimited. If a suite contains tests of multiple str
 prefixed with the stream type and a backslash (`/`).
 
  > [!NOTE]  
- > In the case of Bidi tests, you should also add `full_duplex` or `half_duplex` to the test name. 
+ > In the case of Bidi tests with separate cases for half-duplex operation vs. full-duplex
+ > operation, you should also add `full_duplex` or `half_duplex` to the test name. 
 
  For example:
 
