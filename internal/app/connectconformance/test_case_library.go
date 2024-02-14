@@ -160,7 +160,7 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCa
 							if _, ok := configCases[cfgCase]; ok {
 								namePrefix := generateTestCasePrefix(suite, cfgCase)
 								if err := lib.expandCases(cfgCase, namePrefix, suite.TestCases); err != nil {
-									return err
+									return fmt.Errorf("failed to expand test cases for suite %s: %w", suite.Name, err)
 								}
 							}
 						}
@@ -174,6 +174,18 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCa
 
 func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev1.TestCase) error {
 	for _, testCase := range testCases {
+		if testCase.Request.TestName == "" {
+			return errors.New("suite contains a test with no name")
+		}
+		if testCase.Request.Service == "" {
+			return fmt.Errorf("test %s has no service specified", testCase.Request.TestName)
+		}
+		if testCase.Request.Method == "" {
+			return fmt.Errorf("test %s has no method specified", testCase.Request.TestName)
+		}
+		if testCase.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
+			return fmt.Errorf("test %s has no stream type specified", testCase.Request.TestName)
+		}
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
 		}
@@ -441,7 +453,7 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 	// message in this situation, where the response data value is some fixed string (such as "no response definition")
 	// and whose request info will still be present, but we expect it to indicate zero request messages.
 	if len(testCase.Request.RequestMessages) == 0 {
-		return nil
+		return fmt.Errorf("test %s has no request messages specified", testCase.Request.TestName)
 	}
 
 	switch testCase.Request.StreamType {
@@ -616,6 +628,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println("on it")
 
 	definer, ok := concreteReq.(streamResponseDefiner)
 	if !ok {
