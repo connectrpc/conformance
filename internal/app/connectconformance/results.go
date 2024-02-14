@@ -167,8 +167,6 @@ func (r *testResults) assert(
 	expected := definition.ExpectedResponse
 	var errs multiErrors
 
-	fmt.Println(expected)
-
 	errs = append(errs, checkError(expected.Error, actual.Error)...)
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
