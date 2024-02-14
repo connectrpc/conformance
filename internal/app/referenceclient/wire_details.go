@@ -237,28 +237,8 @@ func getBodyEndStream(trace tracer.Trace) (string, bool) {
 
 func examineConnectError(errJSON json.RawMessage, printer internal.Printer) {
 	var connErr *connectError
-	if err := json.Unmarshal(errJSON, &connErr); err != nil {
-		printer.Printf("connect error JSON is malformed: %v", err)
-		return
-	}
-	if connErr == nil {
-		printer.Printf("connect error JSON: expecting an object but got <nil>")
-		return
-	}
-	// Extra checks, since encoding/json above is lenient.
-	if _, err := checkNoDuplicateKeys("", json.NewDecoder(bytes.NewReader(errJSON))); err != nil {
-		printer.Printf("connect error JSON: %v", err)
-		return
-	}
-	var asAny map[string]any
-	if err := json.Unmarshal(errJSON, &asAny); err != nil {
-		// note: since above unmarshal step succeeded, this should never fail
-		printer.Printf("connect error JSON is malformed: %v", err)
-		return
-	}
 	var hasCode, hasDetails bool
-	for _, key := range sortedKeys(asAny) {
-		val := asAny[key]
+	okay := examineJSON(errJSON, &connErr, "connect error JSON", printer, func(key string, val any) {
 		switch key {
 		case "code":
 			hasCode = true
@@ -290,6 +270,9 @@ func examineConnectError(errJSON json.RawMessage, printer internal.Printer) {
 		default:
 			printer.Printf("connect error JSON: invalid key %q", key)
 		}
+	})
+	if !okay {
+		return
 	}
 	// There is one required field.
 	if !hasCode {
@@ -305,47 +288,32 @@ func examineConnectError(errJSON json.RawMessage, printer internal.Printer) {
 
 func examineConnectErrorDetail(i int, detailJSON json.RawMessage, printer internal.Printer) {
 	var detail *connectErrorDetail
-	if err := json.Unmarshal(detailJSON, &detail); err != nil {
-		printer.Printf("connect error JSON: details[%d] is malformed: %v", i, err)
-		return
-	}
-	if detail == nil {
-		printer.Printf("connect error JSON: details[%d]: expecting an object but got <nil>", i)
-		return
-	}
-	// Extra checks, since encoding/json above is lenient.
-	var asAny map[string]any
-	if err := json.Unmarshal(detailJSON, &asAny); err != nil {
-		// note: since above unmarshal step succeeded, this should never fail
-		printer.Printf("connect error JSON: details[%d] is malformed: %v", i, err)
-		return
-	}
+	prefix := fmt.Sprintf("connect error JSON: details[%d]", i)
 	var decodedVal []byte
 	var hasType, hasValue, hasDebug bool
-	for _, key := range sortedKeys(asAny) {
-		val := asAny[key]
+	okay := examineJSON(detailJSON, &detail, prefix, printer, func(key string, val any) {
 		switch key {
 		case "type":
 			hasType = true
 			str, ok := val.(string)
 			if !ok {
-				printer.Printf(`connect error JSON: details[%d]: value for key "type" is a %T instead of a string`, i, val)
+				printer.Printf(`%s: value for key "type" is a %T instead of a string`, prefix, val)
 				break
 			}
 			if !protoreflect.FullName(str).IsValid() {
-				printer.Printf(`connect error JSON: details[%d]: value for key "type", %q, is not a valid type name`, i, val)
+				printer.Printf(`%s: value for key "type", %q, is not a valid type name`, prefix, val)
 				break
 			}
 		case "value":
 			hasValue = true
 			str, ok := val.(string)
 			if !ok {
-				printer.Printf(`connect error JSON: details[%d]: value for key "value" is a %T instead of a string`, i, val)
+				printer.Printf(`%s: value for key "value" is a %T instead of a string`, prefix, val)
 				break
 			}
 			decoded, err := base64.RawStdEncoding.DecodeString(str)
 			if err != nil {
-				printer.Printf(`connect error JSON: details[%d]: value for key "value", %q, is not valid unpadded base64-encoding: %v`, i, val, err)
+				printer.Printf(`%s: value for key "value", %q, is not valid unpadded base64-encoding: %v`, prefix, val, err)
 				break
 			}
 			decodedVal = decoded
@@ -356,8 +324,11 @@ func examineConnectErrorDetail(i int, detailJSON json.RawMessage, printer intern
 			// further checks here. We'll check below that the debug field
 			// (if present) actually agrees with the value field.
 		default:
-			printer.Printf("connect error JSON: details[%d]: invalid key %q", i, key)
+			printer.Printf("%s: invalid key %q", prefix, key)
 		}
+	})
+	if !okay {
+		return
 	}
 	// Two required fields:
 	if !hasType {
@@ -366,7 +337,7 @@ func examineConnectErrorDetail(i int, detailJSON json.RawMessage, printer intern
 	if !hasValue {
 		printer.Printf(`connect error JSON: details[%d]: missing required key "value"`, i)
 	}
-	if detail.Type != nil && detail.Value != nil && hasDebug {
+	if detail != nil && detail.Type != nil && detail.Value != nil && hasDebug {
 		// Let's check the debug data by using it as JSON to unmarshal a message, and
 		// then also unmarshal the bytes in value. If they are not equal messages,
 		// there is an issues with the debug JSON data.
@@ -426,25 +397,9 @@ func examineConnectErrorDetailDebugData(i int, msgName string, data []byte, debu
 }
 
 func examineConnectEndStream(endStreamJSON json.RawMessage, printer internal.Printer) {
-	var endStream connectEndStream
-	if err := json.Unmarshal(endStreamJSON, &endStream); err != nil {
-		printer.Printf("connect end stream JSON is malformed: %v", err)
-		return
-	}
-	// Extra checks, since encoding/json above is lenient.
-	if _, err := checkNoDuplicateKeys("", json.NewDecoder(bytes.NewReader(endStreamJSON))); err != nil {
-		printer.Printf("connect end stream JSON: %v", err)
-		return
-	}
-	var asAny map[string]any
-	if err := json.Unmarshal(endStreamJSON, &asAny); err != nil {
-		// note: since above unmarshal step succeeded, this should never fail
-		printer.Printf("connect end stream JSON is malformed: %v", err)
-		return
-	}
+	var endStream *connectEndStream
 	var hasError bool
-	for _, key := range sortedKeys(asAny) {
-		val := asAny[key]
+	okay := examineJSON(endStreamJSON, &endStream, "connect end stream JSON", printer, func(key string, val any) {
 		switch key {
 		case "error":
 			if _, isObj := val.(map[string]any); !isObj {
@@ -480,6 +435,9 @@ func examineConnectEndStream(endStreamJSON json.RawMessage, printer internal.Pri
 		default:
 			printer.Printf("connect end stream JSON: invalid key %q", key)
 		}
+	})
+	if !okay {
+		return
 	}
 	if hasError {
 		examineConnectError(endStream.Error, printer)
@@ -605,6 +563,33 @@ func isValidHTTPFieldName(s string) bool {
 				return false
 			}
 		}
+	}
+	return true
+}
+
+func examineJSON[T any](rawJSON []byte, dest **T, messagePrefix string, printer internal.Printer, forEachKey func(key string, val any)) bool {
+	if err := json.Unmarshal(rawJSON, dest); err != nil {
+		printer.Printf("%s: %v", messagePrefix, err)
+		return false
+	}
+	// Extra checks, since encoding/json above is lenient.
+	if *dest == nil {
+		printer.Printf("%s: expecting an object but got <nil>", messagePrefix)
+		return false
+	}
+	if _, err := checkNoDuplicateKeys("", json.NewDecoder(bytes.NewReader(rawJSON))); err != nil {
+		printer.Printf("%s: %v", messagePrefix, err)
+		return false
+	}
+	var asAny map[string]any
+	if err := json.Unmarshal(rawJSON, &asAny); err != nil {
+		// note: since above unmarshal step succeeded, this should never fail
+		printer.Printf("%s: %v", messagePrefix, err)
+		return false
+	}
+	for _, key := range sortedKeys(asAny) {
+		val := asAny[key]
+		forEachKey(key, val)
 	}
 	return true
 }

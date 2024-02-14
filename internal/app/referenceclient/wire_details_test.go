@@ -99,14 +99,14 @@ func TestExamineConnectError(t *testing.T) {
 			name:      "incorrect type for code",
 			endStream: `{"code": 1, "message": "abc"}`,
 			expectedFeedback: []string{
-				`connect error JSON is malformed: json: cannot unmarshal number into Go struct field connectError.code of type string`,
+				`connect error JSON: json: cannot unmarshal number into Go struct field connectError.code of type string`,
 			},
 		},
 		{
 			name:      "incorrect type for message",
 			endStream: `{"code": "unavailable", "message": 12345}`,
 			expectedFeedback: []string{
-				`connect error JSON is malformed: json: cannot unmarshal number into Go struct field connectError.message of type string`,
+				`connect error JSON: json: cannot unmarshal number into Go struct field connectError.message of type string`,
 			},
 		},
 		{
@@ -120,7 +120,7 @@ func TestExamineConnectError(t *testing.T) {
 					}
 				}`,
 			expectedFeedback: []string{
-				`connect error JSON is malformed: json: cannot unmarshal object into Go struct field connectError.details of type []json.RawMessage`,
+				`connect error JSON: json: cannot unmarshal object into Go struct field connectError.details of type []json.RawMessage`,
 			},
 		},
 		{
@@ -374,7 +374,7 @@ func TestExamineConnectEndStream(t *testing.T) {
 			endStream: `
 				{"metadata":[{"key": "header", "value": "abc"}, {"key": "header", "value": "abc"}]}`,
 			expectedFeedback: []string{
-				`connect end stream JSON is malformed: json: cannot unmarshal array into Go struct field connectEndStream.metadata of type map[string][]string`,
+				`connect end stream JSON: json: cannot unmarshal array into Go struct field connectEndStream.metadata of type map[string][]string`,
 			},
 		},
 		{
