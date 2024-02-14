@@ -39,15 +39,23 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: basic-unary
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY
                       - request:
                             testName: basic-client-stream
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: ClientStream
                             streamType: STREAM_TYPE_CLIENT_STREAM
                       - request:
                             testName: basic-server-stream
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: ServerStream
                             streamType: STREAM_TYPE_SERVER_STREAM
                       - request:
                             testName: basic-bidi-stream
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: BidStream
                             streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
 		"tls.yaml": `
                     name: TLS
@@ -55,15 +63,23 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: tls-unary
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY
                       - request:
                             testName: tls-client-stream
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: ClientStream
                             streamType: STREAM_TYPE_CLIENT_STREAM
                       - request:
                             testName: tls-server-stream
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: ServerStream
                             streamType: STREAM_TYPE_SERVER_STREAM
                       - request:
                             testName: tls-bidi-stream
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: BidiStream
                             streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`,
 		"tls-client-certs.yaml": `
                     name: TLS Client Certs
@@ -72,6 +88,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: tls-client-cert-unary
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 		"connect-get.yaml": `
                     name: Connect GET
@@ -80,6 +98,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: connect-get-unary
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 		"connect-version-client-required.yaml": `
                     name: Connect Version Required (client)
@@ -89,6 +109,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: unary-without-connect-version-header
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 		"connect-version-server-required.yaml": `
                     name: Connect Version Required (server)
@@ -98,6 +120,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: unary-without-connect-version-header
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 		"connect-version-client-not-required.yaml": `
                     name: Connect Version Optional (client)
@@ -107,6 +131,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: unary-without-connect-version-header
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 		"connect-version-server-not-required.yaml": `
                     name: Connect Version Optional (server)
@@ -116,6 +142,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: unary-without-connect-version-header
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 		"max-receive-limit": `
                     name: Max Receive Size (server)
@@ -124,6 +152,8 @@ func TestNewTestCaseLibrary(t *testing.T) {
                     testCases:
                       - request:
                             testName: unary-exceeds-limit
+                            service: connectrpc.conformance.v1.ConformanceService
+                            method: Unary
                             streamType: STREAM_TYPE_UNARY`,
 	}
 	testSuiteData := make(map[string][]byte, len(testData))
