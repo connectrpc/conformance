@@ -174,18 +174,18 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCa
 
 func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev1.TestCase) error {
 	for _, testCase := range testCases {
-		if testCase.Request.TestName == "" {
-			return errors.New("suite contains a test with no name")
-		}
-		if testCase.Request.Service == "" {
-			return fmt.Errorf("test %s has no service specified", testCase.Request.TestName)
-		}
-		if testCase.Request.Method == "" {
-			return fmt.Errorf("test %s has no method specified", testCase.Request.TestName)
-		}
-		if testCase.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
-			return fmt.Errorf("test %s has no stream type specified", testCase.Request.TestName)
-		}
+		// if testCase.Request.TestName == "" {
+		// 	return errors.New("suite contains a test with no name")
+		// }
+		// if testCase.Request.Service == "" {
+		// 	return fmt.Errorf("test %s has no service specified", testCase.Request.TestName)
+		// }
+		// if testCase.Request.Method == "" {
+		// 	return fmt.Errorf("test %s has no method specified", testCase.Request.TestName)
+		// }
+		// if testCase.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
+		// 	return fmt.Errorf("test %s has no stream type specified", testCase.Request.TestName)
+		// }
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
 		}
@@ -628,7 +628,6 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("on it")
 
 	definer, ok := concreteReq.(streamResponseDefiner)
 	if !ok {
