@@ -19,22 +19,20 @@ can be used to constrain the tests run by the conformance runner or to signal va
 may be needed to execute the tests. The runner will use these directives to expand the tests in the suite into multiple
 permutations. This means that a single test defined in a suite will be run several times across various permutations.
 
-A rundown of the available directives:
-
 The below directives are used to constrain tests within a suite:
 
 * `mode` can be used to specify a suite as applying only to a specific mode (i.e. client or server). For example,
   if you are writing a suite to target only clients under test, you would specify `mode: TEST_MODE_CLIENT` and the
   tests in the suite will be run only when the `mode` specified to the runner on the command line is `client`. If not 
-  specified, tests are run regardless of the `mode` set on the command line.
+  specified in a suite, tests are run regardless of the command line `mode`.
 
-* `relevantProtocols` is used to limit tests only to a specific protocol, such as Connect, gRPC, or gRPC-web. If not
+* `relevantProtocols` is used to limit tests only to a specific protocol, such as **Connect**, **gRPC**, or **gRPC-web**. If not
   specified, tests are run for all protocols.
 
-* `relevantHttpVersions` is used to limit tests to certain HTTP versions, such as HTTP 1.1, HTTP/2, or HTTP/3. If not
+* `relevantHttpVersions` is used to limit tests to certain HTTP versions, such as **HTTP 1.1**, **HTTP/2**, or **HTTP/3**. If not
   specified, tests are run for all HTTP versions.
 
-* `relevantCodecs` is used to limit tests to certain codec formats, such as JSON or binary. If not specified, tests are
+* `relevantCodecs` is used to limit tests to certain codec formats, such as **JSON** or **binary**. If not specified, tests are
    run for all codecs.
 
 * `relevantCompressions` is used to limit tests to certain compression algorithms, such as **gzip**, **brotli**, or **snappy**. If not
