@@ -31,11 +31,14 @@ The below directives are used to constrain tests within a suite:
 * `relevantProtocols` is used to limit tests only to a specific protocol, such as Connect, gRPC, or gRPC-web. If not
   specified, tests are run for all protocols.
 
-* `relevantHttpVersions` is used to limit tests to certain HTTP versions, such as HTTP 1.1, HTTP/2, or HTTP/3.
+* `relevantHttpVersions` is used to limit tests to certain HTTP versions, such as HTTP 1.1, HTTP/2, or HTTP/3. If not
+  specified, tests are run for all HTTP versions.
 
-* `relevantCodecs` is used to limit tests to certain codec formats, such as JSON or binary.
+* `relevantCodecs` is used to limit tests to certain codec formats, such as JSON or binary. If not specified, tests are
+   run for all codecs.
 
-* `relevantCompressions` is used to limit tests to certain compression algorithms, such as **gzip**, **brotli**, or **snappy**.
+* `relevantCompressions` is used to limit tests to certain compression algorithms, such as **gzip**, **brotli**, or **snappy**. If not
+  specified, tests are run for all compressions.
 
 * `connectVersionMode` allows you to either require or ignore validation of the Connect version header or query param. This
   should be left unspecified if the suite is agnostic to this validation behavior.
@@ -43,15 +46,16 @@ The below directives are used to constrain tests within a suite:
 The below `reliesOn` directives are used to signal to the test runner how the reference client or server should be
 configured when running tests:
 
-* `reliesOnTls` specifies that a suite relies on TLS. 
+* `reliesOnTls` specifies that a suite relies on TLS. Defaults to `false`.
 
 * `reliesOnTlsClientCerts` specifies that the suite relies on the _client_ using TLS certificates to authenticate with 
-  the server. Note that if this is set to `true`, `reliesOnTls` must also be `true`.
+  the server. Note that if this is set to `true`, `reliesOnTls` must also be `true`. Defaults to `false`.
 
-* `reliesOnConnectGet` specifies that the suite relies on the Connect GET protocol.
+* `reliesOnConnectGet` specifies that the suite relies on the Connect GET protocol. Defaults to `false`.
 
 * `reliesOnMessageReceiveLimit` specifies that the suite relies on support for limiting the size of received messages.
-  When `true`, the `mode` property must be set to indicate whether the client or server should support the limit.  
+  When `true`, the `mode` property must be set to indicate whether the client or server should support the limit. Defaults
+  to `false`.
 
 ## Test cases
 
@@ -135,33 +139,40 @@ To tests denoting an explicit response, search the [test suites](testsuites) dir
 
 ## Example 
 
-Taking all of the above into account, here is an example test suite:
+Taking all of the above into account, here is an example test suite that verifies a server returns the specified headers
+and trailers. The below test will only run when `mode` is `server` and will be limited to the Connect protocol using the
+JSON format and `identity` compression. In addition, it will require the server verify the Connect version header.
 
 ```yaml
-name: TLS Client Certs
-# This just does the basics with a client-cert, instead of running every test case with them.
-# TODO - Add unary and other stream type tests here also
+name: Example Test Suite
+# Constrain to only servers under test.
+mode: TEST_MODE_SERVER
+# Constrain these tests to only run over the Connect protocol.
+relevantProtocols:
+  - PROTOCOL_CONNECT
+# Constrain these tests to only use 'identity' compression.
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+# Constrain these tests to only use the JSON codec.
+relevantCodecs:
+  - CODEC_JSON
+connectVersionMode:  CONNECT_VERSION_MODE_REQUIRE
 testCases:
   - request:
-      testName: client-stream
+      testName: returns-headers-and-trailers
       service: connectrpc.conformance.v1.ConformanceService
-      method: ClientStream
-      streamType: STREAM_TYPE_CLIENT_STREAM
-      requestHeaders:
-        - name: X-Conformance-Test
-          value: ["Value1","Value2"]
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
       requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             responseHeaders:
-              - name: x-custom-header
-                value: ["foo"]
+            - name: x-custom-header
+              value: ["foo"]
             responseData: "dGVzdCByZXNwb25zZQ=="
             responseTrailers:
-              - name: x-custom-trailer
-                value: ["bing"]
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
-          requestData: "dGVzdCByZXNwb25zZQ=="
+            - name: x-custom-trailer
+              value: ["bing"]
 ```
 
 [testsuites]: https://github.com/connectrpc/conformance/tree/main/internal/app/connectconformance/testsuites/data
