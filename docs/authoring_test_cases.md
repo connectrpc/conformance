@@ -62,7 +62,7 @@ which defines the request which will be sent to a client during the test run. Ea
 fields:
 
 * `testName` - For naming conventions, see [below](#naming-conventions).
-* `service` - This will most likely be the fully-qualified path to the `ConformanceService`.
+* `service` - The fully-qualified path of the service this test will interact with, typically the `ConformanceService`.
 * `method` - This is a string specifying the method on `service` that will be called.
 * `streamType` - One of `STREAM_TYPE_UNARY`, `STREAM_TYPE_CLIENT_STREAM`, `STREAM_TYPE_SERVER_STREAM`, 
   `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`, or `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`.
@@ -103,7 +103,7 @@ prefixed with the stream type and a backslash (`/`).
 
  > [!NOTE]  
  > In the case of Bidi tests with separate cases for half-duplex operation vs. full-duplex
- > operation, you should also add `full_duplex` or `half_duplex` to the test name. 
+ > operation, you should also add `full-duplex` or `half-duplex` to the test name. 
 
  For example:
 
@@ -133,13 +133,13 @@ good examples of this.
 If you do need to specify an explicit response, simply define an `expectedResponse` block for your test case and this will
 override the auto-generated expected response in the test runner. 
 
-To tests denoting an explicit response, search the [test suites](testsuites) directory for the word `expectedResponse`.
+To see tests denoting an explicit response, search the [test suites](testsuites) directory for the word `expectedResponse`.
 
 ## Example 
 
 Taking all of the above into account, here is an example test suite that verifies a server returns the specified headers
 and trailers. The below test will only run when `mode` is `server` and will be limited to the Connect protocol using the
-JSON format and `identity` compression. In addition, it will require the server verify the Connect version header.
+JSON format and identity compression. In addition, it will require the server verify the Connect version header.
 
 ```yaml
 name: Example Test Suite
@@ -154,6 +154,7 @@ relevantCompressions:
 # Constrain these tests to only use the JSON codec.
 relevantCodecs:
   - CODEC_JSON
+# Require Connect version header verification.
 connectVersionMode:  CONNECT_VERSION_MODE_REQUIRE
 testCases:
   - request:
