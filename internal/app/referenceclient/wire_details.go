@@ -17,18 +17,27 @@ package referenceclient
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/tracer"
+	"connectrpc.com/connect"
+	"github.com/google/go-cmp/cmp"
+	"golang.org/x/exp/constraints"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/reflect/protoregistry"
+	"google.golang.org/protobuf/testing/protocmp"
+	"google.golang.org/protobuf/types/known/anypb"
 )
-
-// The key associated with the wire details information stored in context.
-type wireCtxKey struct{}
 
 type wireCaptureTransport struct {
 	Transport http.RoundTripper
@@ -88,6 +97,26 @@ type wireWrapper struct {
 	buf *bytes.Buffer
 }
 
+type connectError struct {
+	Code    *string           `json:"code"`
+	Message *string           `json:"message"`
+	Details []json.RawMessage `json:"details"`
+}
+
+type connectErrorDetail struct {
+	Type  *string         `json:"type"`
+	Value *string         `json:"value"`
+	Debug json.RawMessage `json:"debug"`
+}
+
+type connectEndStream struct {
+	Error    json.RawMessage     `json:"error"`
+	Metadata map[string][]string `json:"metadata"`
+}
+
+// The key associated with the wire details information stored in context.
+type wireCtxKey struct{}
+
 // withWireCapture returns a new context which will contain wire details during
 // a roundtrip. Use examineWireDetails to extract the details after the operation
 // completes.
@@ -141,7 +170,7 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 	// Check end-stream and/or error JSON data in the response.
 	contentType := trace.Response.Header.Get("content-type")
 	switch {
-	case isUnaryJSONError(contentType, statusCode):
+	case isUnaryJSONError(contentType, trace.Response.StatusCode):
 		// If this is a unary request that returned an error, then use the entire
 		// response body as the wire error details.
 		examineConnectError(wrapper.buf.Bytes(), printer)
@@ -189,7 +218,7 @@ func (t *wireTracer) Complete(trace tracer.Trace) {
 // isUnaryJSONError returns whether the given content type and HTTP status code
 // represents a unary JSON error.
 func isUnaryJSONError(contentType string, statusCode int) bool {
-	return contentType == "application/json" && statusCode != 200
+	return contentType == "application/json" && statusCode != http.StatusOK
 }
 
 // getBodyEndStream returns the contents of any end-stream message in the trace.
@@ -206,12 +235,213 @@ func getBodyEndStream(trace tracer.Trace) (string, bool) {
 	return "", false
 }
 
-func examineConnectError(_ json.RawMessage, _ internal.Printer) {
-	// TODO
+func examineConnectError(errJSON json.RawMessage, printer internal.Printer) {
+	var connErr *connectError
+	var hasCode, hasDetails bool
+	okay := examineJSON(errJSON, &connErr, "connect error JSON", printer, func(key string, val any) {
+		switch key {
+		case "code":
+			hasCode = true
+			strVal, ok := val.(string)
+			if !ok {
+				printer.Printf(`connect error JSON: value for key "code" is a %T instead of a string`, val)
+				break
+			}
+			var found bool
+			// Valid RPC codes range from 1 to 16. (Zero means no an error; negative and >16 are illegal values.)
+			for code := connect.Code(1); code <= 16; code++ {
+				if strVal == code.String() {
+					found = true
+					break
+				}
+			}
+			if !found {
+				printer.Printf(`connect error JSON: value for key "code" is not a recognized error code name: %q`, val)
+			}
+		case "message":
+			if _, isStr := val.(string); !isStr {
+				printer.Printf(`connect error JSON: value for key "message" is a %T instead of a string`, val)
+			}
+		case "details":
+			hasDetails = true
+			if _, isSlice := val.([]any); !isSlice {
+				printer.Printf(`connect error JSON: value for key "details" is a %T instead of a slice`, val)
+			}
+		default:
+			printer.Printf("connect error JSON: invalid key %q", key)
+		}
+	})
+	if !okay {
+		return
+	}
+	// There is one required field.
+	if !hasCode {
+		printer.Printf(`connect error JSON: missing required key "code"`)
+	}
+	// Also check enclosed details.
+	if hasDetails {
+		for i, detail := range connErr.Details {
+			examineConnectErrorDetail(i, detail, printer)
+		}
+	}
 }
 
-func examineConnectEndStream(_ json.RawMessage, _ internal.Printer) {
-	// TODO
+func examineConnectErrorDetail(i int, detailJSON json.RawMessage, printer internal.Printer) {
+	var detail *connectErrorDetail
+	prefix := fmt.Sprintf("connect error JSON: details[%d]", i)
+	var decodedVal []byte
+	var hasType, hasValue, hasDebug bool
+	okay := examineJSON(detailJSON, &detail, prefix, printer, func(key string, val any) {
+		switch key {
+		case "type":
+			hasType = true
+			str, ok := val.(string)
+			if !ok {
+				printer.Printf(`%s: value for key "type" is a %T instead of a string`, prefix, val)
+				break
+			}
+			if !protoreflect.FullName(str).IsValid() {
+				printer.Printf(`%s: value for key "type", %q, is not a valid type name`, prefix, val)
+				break
+			}
+		case "value":
+			hasValue = true
+			str, ok := val.(string)
+			if !ok {
+				printer.Printf(`%s: value for key "value" is a %T instead of a string`, prefix, val)
+				break
+			}
+			decoded, err := base64.RawStdEncoding.DecodeString(str)
+			if err != nil {
+				printer.Printf(`%s: value for key "value", %q, is not valid unpadded base64-encoding: %v`, prefix, val, err)
+				break
+			}
+			decodedVal = decoded
+		case "debug":
+			hasDebug = len(detail.Debug) > 0
+			// Since a detail message could be a google.protobuf.Value, it
+			// could technically be *any* kind of JSON value here. So no
+			// further checks here. We'll check below that the debug field
+			// (if present) actually agrees with the value field.
+		default:
+			printer.Printf("%s: invalid key %q", prefix, key)
+		}
+	})
+	if !okay {
+		return
+	}
+	// Two required fields:
+	if !hasType {
+		printer.Printf(`connect error JSON: details[%d]: missing required key "type"`, i)
+	}
+	if !hasValue {
+		printer.Printf(`connect error JSON: details[%d]: missing required key "value"`, i)
+	}
+	if detail != nil && detail.Type != nil && detail.Value != nil && hasDebug {
+		// Let's check the debug data by using it as JSON to unmarshal a message, and
+		// then also unmarshal the bytes in value. If they are not equal messages,
+		// there is an issues with the debug JSON data.
+		examineConnectErrorDetailDebugData(i, *detail.Type, decodedVal, detail.Debug, printer)
+	}
+}
+
+func examineConnectErrorDetailDebugData(i int, msgName string, data []byte, debugJSON []byte, printer internal.Printer) {
+	msgType, err := protoregistry.GlobalTypes.FindMessageByName(protoreflect.FullName(msgName))
+	if err != nil {
+		printer.Printf("connect error JSON: details[%d]: could not check debug data because message type %q could not be resolved: %v", i, msgName, err)
+		return
+	}
+	msgFromValue := msgType.New()
+	if err := proto.Unmarshal(data, msgFromValue.Interface()); err != nil {
+		printer.Printf("connect error JSON: details[%d]: could not unmarshal message %q from value: %v", i, msgName, err)
+		return
+	}
+	msgFromDebug := msgType.New()
+	if err := protojson.Unmarshal(debugJSON, msgFromDebug.Interface()); err != nil {
+		// It is possible that the debug data is actually a google.protobuf.Any, and the "@type" property
+		// is causing the above unmarshal step to fail. So we'll try unmarshaling from Any next to see
+		// if that is successful.
+		//
+		// NOTE: this fallback logic doesn't really work if the actual message type is a
+		// google.protobuf.Value or google.protobuf.Struct. These types allow arbitrary JSON and will
+		// accept the data in the above step, even if it has the extra "@type" property. Luckily, that
+		// is not an issue since none of the conformance test cases try to use these types as error
+		// details.
+		//
+		// TODO: This fallback is mainly to accommodate the current connect-go implementation, which
+		//       includes the "@type" attribute because it just marshals the Any error detail message
+		//       for the debug value. But we'd prefer that attribute NOT be in the debug value, in which
+		//       case we could remove this fallback from here and let these checks be a bit more strict.
+		var anyMsg anypb.Any
+		if anyErr := protojson.Unmarshal(debugJSON, &anyMsg); anyErr != nil {
+			// It's not a valid Any either. So report the original error
+			printer.Printf("connect error JSON: details[%d]: could not unmarshal message %q from debug JSON: %v", i, msgName, err)
+			return
+		}
+		typeNameFromAny := anyMsg.TypeUrl[strings.LastIndexByte(anyMsg.TypeUrl, '/')+1:]
+		if typeNameFromAny != msgName {
+			printer.Printf("connect error JSON: details[%d]: debug data indicates type %q but should indicate type %q", i, typeNameFromAny, msgName)
+			return
+		}
+		msgFromAny, err := anyMsg.UnmarshalNew()
+		if err != nil {
+			printer.Printf("connect error JSON: details[%d]: could not unmarshal message %q from debug JSON: %v", i, msgName, err)
+			return
+		}
+		msgFromDebug = msgFromAny.ProtoReflect()
+	}
+	diff := cmp.Diff(msgFromValue.Interface(), msgFromDebug.Interface(), protocmp.Transform())
+	if diff != "" {
+		printer.Printf("connect error JSON: details[%d]: debug data does not match value: - value, + debug\n%s", i, diff)
+	}
+}
+
+func examineConnectEndStream(endStreamJSON json.RawMessage, printer internal.Printer) {
+	var endStream *connectEndStream
+	var hasError bool
+	okay := examineJSON(endStreamJSON, &endStream, "connect end stream JSON", printer, func(key string, val any) {
+		switch key {
+		case "error":
+			if _, isObj := val.(map[string]any); !isObj {
+				printer.Printf(`connect end stream JSON: value for key "error" is a %T instead of a map/object`, val)
+				break
+			}
+			hasError = true
+		case "metadata":
+			mapVal, ok := val.(map[string]any)
+			if !ok {
+				printer.Printf(`connect end stream JSON: value for key "metadata" is a %T instead of a map/object`, val)
+			}
+			for name, values := range mapVal {
+				if !isValidHTTPFieldName(name) {
+					printer.Printf(`connect end stream JSON: metadata[%q]: entry key is not a valid HTTP field name`, name)
+				}
+				valSlice, ok := values.([]any)
+				if !ok {
+					printer.Printf(`connect end stream JSON: metadata[%q]: value is a %T instead of an array of strings`, name, values)
+					continue
+				}
+				for i, val := range valSlice {
+					valStr, ok := val.(string)
+					if !ok {
+						printer.Printf(`connect end stream JSON: metadata[%q]: value #%d is a %T instead of a string`, name, i+1, val)
+						continue
+					}
+					if !isValidHTTPFieldValue(valStr) {
+						printer.Printf(`connect end stream JSON: metadata[%q]: value #%d is not a valid HTTP field value: %q`, name, i+1, val)
+					}
+				}
+			}
+		default:
+			printer.Printf("connect end stream JSON: invalid key %q", key)
+		}
+	})
+	if !okay {
+		return
+	}
+	if hasError {
+		examineConnectError(endStream.Error, printer)
+	}
 }
 
 func examineGRPCEndStream(endStream string, printer internal.Printer) {
@@ -335,4 +565,106 @@ func isValidHTTPFieldName(s string) bool {
 		}
 	}
 	return true
+}
+
+func examineJSON[T any](rawJSON []byte, dest **T, messagePrefix string, printer internal.Printer, forEachKey func(key string, val any)) bool {
+	if err := json.Unmarshal(rawJSON, dest); err != nil {
+		printer.Printf("%s: %v", messagePrefix, err)
+		return false
+	}
+	// Extra checks, since encoding/json above is lenient.
+	if *dest == nil {
+		printer.Printf("%s: expecting an object but got <nil>", messagePrefix)
+		return false
+	}
+	if _, err := checkNoDuplicateKeys("", json.NewDecoder(bytes.NewReader(rawJSON))); err != nil {
+		printer.Printf("%s: %v", messagePrefix, err)
+		return false
+	}
+	var asAny map[string]any
+	if err := json.Unmarshal(rawJSON, &asAny); err != nil {
+		// note: since above unmarshal step succeeded, this should never fail
+		printer.Printf("%s: %v", messagePrefix, err)
+		return false
+	}
+	for _, key := range sortedKeys(asAny) {
+		val := asAny[key]
+		forEachKey(key, val)
+	}
+	return true
+}
+
+func sortedKeys[K constraints.Ordered, V any](m map[K]V) []K {
+	keys := make([]K, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Slice(keys, func(i, j int) bool {
+		return keys[i] < keys[j]
+	})
+	return keys
+}
+
+// checkNoDuplicateKeys checks that the data read by the given decoder does
+// not contain any JSON objects/maps that have duplicate keys. The "encoding/json"
+// package does not check and will simply overwrite earlier values with later ones.
+func checkNoDuplicateKeys(what string, dec *json.Decoder) (json.Token, error) {
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, err
+	}
+	if tok != json.Delim('{') { //nolint:nestif
+		if tok == json.Delim('[') {
+			// consume entire array, checking each element
+			var i int
+			for {
+				elemWhat := fmt.Sprintf("%s[%d]", what, i)
+				tok, err := checkNoDuplicateKeys(elemWhat, dec)
+				if err != nil {
+					return nil, err
+				}
+				if tok == json.Delim(']') {
+					break
+				}
+				i++
+			}
+		}
+		// Not an object, so it's now fully consumed.
+		return tok, nil
+	}
+	// The value must be an object. So look at all keys to make sure there are no duplicates.
+	var prefix string
+	if what != "" {
+		prefix = what + ": "
+	}
+	keys := map[string]struct{}{}
+	for {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		if tok == json.Delim('}') {
+			return tok, nil // done
+		}
+		key, ok := tok.(string)
+		if !ok {
+			// This should not be possible since the encoding/json package handles
+			// validating this aspect of JSON structure.
+			return nil, fmt.Errorf("%stoken for object key has type %T instead of string", prefix, tok)
+		}
+		if _, exists := keys[key]; exists {
+			return nil, fmt.Errorf("%scontains duplicate key %q", prefix, key)
+		}
+		keys[key] = struct{}{}
+		// recursively check the field value
+		var elemWhat string
+		if what == "" {
+			elemWhat = key
+		} else {
+			elemWhat = fmt.Sprintf("%s.%s", what, key)
+		}
+		if _, err := checkNoDuplicateKeys(elemWhat, dec); err != nil {
+			return nil, err
+		}
+	}
 }
