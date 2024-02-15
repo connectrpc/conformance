@@ -4,7 +4,7 @@ name: Duplicate Metadata
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
-    testName: unary success with duplicates
+    testName: unary/success
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -22,7 +22,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: unary error with duplicates
+    testName: unary/error
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -42,7 +42,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: client stream success with duplicates
+    testName: client-stream/success
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -62,7 +62,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: client stream error with duplicates
+    testName: client-stream/error
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -84,7 +84,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: server stream success with duplicates
+    testName: server-stream/success
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -104,7 +104,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: server stream no response with duplicates
+    testName: server-stream/no-response
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -118,7 +118,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: server stream error with responses and duplicates
+    testName: server-stream/error-with-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -141,7 +141,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: server stream error with no responses and duplicates
+    testName: server-stream/error-with-no-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -161,7 +161,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing","quux"]
 - request:
-    testName: bidi full duplex stream success with duplicates
+    testName: bidi-stream/full-duplex/success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -184,7 +184,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi full duplex stream error with responses and duplicates
+    testName: bidi-stream/full-duplex/error-with-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -210,7 +210,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi full duplex stream error no responses with duplicates
+    testName: bidi-stream/full-duplex/error-no-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -231,7 +231,7 @@ testCases:
           value: ["bing", "quux"]
       fullDuplex: true
 - request:
-    testName: bidi half duplex stream success with duplicates
+    testName: bidi-stream/half-duplex/success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -253,7 +253,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi half duplex stream error with responses and duplicates
+    testName: bidi-stream/half-duplex/error-with-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -278,7 +278,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi half duplex stream error with no responses and duplicates
+    testName: bidi-stream/half-duplex/error-with-no-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM

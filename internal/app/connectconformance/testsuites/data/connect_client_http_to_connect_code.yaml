@@ -1,15 +1,15 @@
 name: HTTP to Connect Code Mapping
-mode: TEST_MODE_CLIENT
-relevantProtocols:
-  - PROTOCOL_CONNECT
 # If a Connect server returns a non-200 HTTP code for unary requests without an
 # explicit Connect error code, the client must synthesize the HTTP code to a 
 # Connect code. These tests cases verify that mapping by forcing the server to
 # return a specified HTTP code and then test whether the client correct returns
 # the required Connect code.
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_CONNECT
 testCases:
 - request:
-    testName: bad request
+    testName: bad-request
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -52,7 +52,7 @@ testCases:
       # permission_denied
       code: 7
 - request:
-    testName: not found
+    testName: not-found
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -66,7 +66,7 @@ testCases:
       # unimplemented
       code: 12
 - request:
-    testName: request timeout
+    testName: request-timeout
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -96,7 +96,7 @@ testCases:
 #     # aborted
 #      code: 10
 - request:
-    testName: precondition failed
+    testName: precondition-failed
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -110,7 +110,7 @@ testCases:
       # failed_precondition
       code: 9
 - request:
-    testName: payload too large
+    testName: payload-too-large
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -140,7 +140,7 @@ testCases:
 #     # internal
 #      code: 13
 - request:
-    testName: too many requests
+    testName: too-many-requests
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -154,7 +154,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: request header fields too large
+    testName: request-header-fields-too-large
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -168,7 +168,7 @@ testCases:
       # resource_exhausted
       code: 8
 - request:
-    testName: bad gateway
+    testName: bad-gateway
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -182,7 +182,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: service unavailable
+    testName: service-unavailable
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -196,7 +196,7 @@ testCases:
       # unavailable
       code: 14
 - request:
-    testName: gateway timeout
+    testName: gateway-timeout
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -209,3 +209,17 @@ testCases:
     error:
       # unavailable
       code: 14
+- request:
+    testName: im-a-teapot
+    service: connectrpc.conformance.v1.ConformanceService
+    method: Unary
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        rawResponse:
+          statusCode: 418
+  expectedResponse:
+    error:
+      # unknown
+      code: 2

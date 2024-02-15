@@ -5,7 +5,7 @@ name: Deadline Propagation
 # the backend via header metadata.
 testCases:
   - request:
-      testName: unary
+      testName: unary/success
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -15,7 +15,7 @@ testCases:
           responseDefinition:
             responseData: "dGVzdCByZXNwb25zZQ=="
   - request:
-      testName: client stream
+      testName: client-stream/success
       service: connectrpc.conformance.v1.ConformanceService
       method: ClientStream
       streamType: STREAM_TYPE_CLIENT_STREAM
@@ -27,7 +27,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
           requestData: "dGVzdCByZXNwb25zZQ=="
   - request:
-      testName: server stream
+      testName: server-stream/success
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -39,7 +39,7 @@ testCases:
               - "dGVzdCByZXNwb25zZQ=="
               - "dGVzdCByZXNwb25zZQ=="
   - request:
-      testName: bidi stream
+      testName: bidi-stream/full-duplex/success
       service: connectrpc.conformance.v1.ConformanceService
       method: BidiStream
       streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM

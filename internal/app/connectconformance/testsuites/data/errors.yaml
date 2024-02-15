@@ -6,7 +6,7 @@ name: Errors
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
-    testName: unary canceled error
+    testName: unary/canceled
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -17,7 +17,7 @@ testCases:
           code: 1
           message: "canceled"
 - request:
-    testName: unary unknown error
+    testName: unary/unknown
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -28,7 +28,7 @@ testCases:
           code: 2
           message: "unknown"
 - request:
-    testName: unary invalid argument error
+    testName: unary/invalid-argument
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -39,7 +39,7 @@ testCases:
           code: 3
           message: "invalid argument"
 - request:
-    testName: unary deadline exceeded error
+    testName: unary/deadline-exceeded
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -50,7 +50,7 @@ testCases:
           code: 4
           message: "deadline exceeded"
 - request:
-    testName: unary not found error
+    testName: unary/not-found
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -61,7 +61,7 @@ testCases:
           code: 5
           message: "not found"
 - request:
-    testName: unary already exists error
+    testName: unary/already-exists
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -72,7 +72,7 @@ testCases:
           code: 6
           message: "already exists"
 - request:
-    testName: unary permission denied error
+    testName: unary/permission-denied
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -83,7 +83,7 @@ testCases:
           code: 7
           message: "permission denied"
 - request:
-    testName: unary resource exhausted error
+    testName: unary/resource-exhausted
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -94,7 +94,7 @@ testCases:
           code: 8
           message: "resource exhausted"
 - request:
-    testName: unary failed precondition error
+    testName: unary/failed-precondition
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -105,7 +105,7 @@ testCases:
           code: 9
           message: "failed precondition"
 - request:
-    testName: unary aborted error
+    testName: unary/aborted
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -116,7 +116,7 @@ testCases:
           code: 10
           message: "aborted"
 - request:
-    testName: unary out of range error
+    testName: unary/out-of-range
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -127,7 +127,7 @@ testCases:
           code: 11
           message: "out of range"
 - request:
-    testName: unary unimplemented error
+    testName: unary/unimplemented
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -138,7 +138,7 @@ testCases:
           code: 12
           message: "unimplemented"
 - request:
-    testName: unary internal error
+    testName: unary/internal
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -149,7 +149,7 @@ testCases:
           code: 13
           message: "internal"
 - request:
-    testName: unary unavailable error
+    testName: unary/unavailable
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -160,7 +160,7 @@ testCases:
           code: 14
           message: "unavailable"
 - request:
-    testName: unary data loss error
+    testName: unary/data-loss
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -171,7 +171,7 @@ testCases:
           code: 15
           message: "data loss"
 - request:
-    testName: unary unauthenticated error
+    testName: unary/unauthenticated
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -182,7 +182,7 @@ testCases:
           code: 16
           message: "unauthenticated"
 - request:
-    testName: unary error unicode
+    testName: unary/unicode-error-message
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -194,7 +194,7 @@ testCases:
           message: "\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\n"
 # Server Stream Tests ---------------------------------------------------------
 - request:
-    testName: stream canceled error
+    testName: server-stream/canceled
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -205,7 +205,7 @@ testCases:
           code: 1
           message: "canceled"
 - request:
-    testName: stream unknown error
+    testName: server-stream/unknown
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -216,7 +216,7 @@ testCases:
           code: 2
           message: "unknown"
 - request:
-    testName: stream invalid argument error
+    testName: server-stream/invalid-argument
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -227,7 +227,7 @@ testCases:
           code: 3
           message: "invalid argument"
 - request:
-    testName: stream deadline exceeded error
+    testName: server-stream/deadline-exceeded
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -238,7 +238,7 @@ testCases:
           code: 4
           message: "deadline exceeded"
 - request:
-    testName: stream not found error
+    testName: server-stream/not-found
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -249,7 +249,7 @@ testCases:
           code: 5
           message: "not found"
 - request:
-    testName: stream already exists error
+    testName: server-stream/already-exists
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -260,7 +260,7 @@ testCases:
           code: 6
           message: "already exists"
 - request:
-    testName: stream permission denied error
+    testName: server-stream/permission-denied
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -271,7 +271,7 @@ testCases:
           code: 7
           message: "permission denied"
 - request:
-    testName: stream resource exhausted error
+    testName: server-stream/resource-exhausted
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -282,7 +282,7 @@ testCases:
           code: 8
           message: "resource exhausted"
 - request:
-    testName: stream failed precondition error
+    testName: server-stream/failed-precondition
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -293,7 +293,7 @@ testCases:
           code: 9
           message: "failed precondition"
 - request:
-    testName: stream aborted error
+    testName: server-stream/aborted
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -304,7 +304,7 @@ testCases:
           code: 10
           message: "aborted"
 - request:
-    testName: stream out of range error
+    testName: server-stream/out-of-range
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -315,7 +315,7 @@ testCases:
           code: 11
           message: "out of range"
 - request:
-    testName: stream unimplemented error
+    testName: server-stream/unimplemented
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -326,7 +326,7 @@ testCases:
           code: 12
           message: "unimplemented"
 - request:
-    testName: stream internal error
+    testName: server-stream/internal
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -337,7 +337,7 @@ testCases:
           code: 13
           message: "internal"
 - request:
-    testName: stream unavailable error
+    testName: server-stream/unavailable
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -348,7 +348,7 @@ testCases:
           code: 14
           message: "unavailable"
 - request:
-    testName: stream data loss error
+    testName: server-stream/data-loss
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -359,7 +359,7 @@ testCases:
           code: 15
           message: "data loss"
 - request:
-    testName: stream unauthenticated error
+    testName: server-stream/unauthenticated
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -370,7 +370,7 @@ testCases:
           code: 16
           message: "unauthenticated"
 - request:
-    testName: server stream error with responses
+    testName: server-stream/error-with-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -393,7 +393,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing"]
 - request:
-    testName: server stream error with no responses
+    testName: server-stream/error-with-no-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -414,7 +414,7 @@ testCases:
           value: ["bing"]
 # Client Stream Tests -----------------------------------------------------------
 - request:
-    testName: client stream error one request
+    testName: client-stream/error-one-request
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -425,7 +425,7 @@ testCases:
           code: 13
           message: "client stream failed"
 - request:
-    testName: client stream error multiple requests
+    testName: client-stream/error-multiple-requests
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -439,7 +439,7 @@ testCases:
       requestData: "dGVzdCByZXNwb25zZQ=="
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
-    testName: bidi full duplex stream error with responses
+    testName: bidi-stream/full-duplex/error-with-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -465,7 +465,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi full duplex stream error no responses
+    testName: bidi-stream/full-duplex/error-no-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -486,7 +486,7 @@ testCases:
           value: ["bing"]
       fullDuplex: true
 - request:
-    testName: bidi half duplex stream error with responses
+    testName: bidi-stream/half-duplex/error-with-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -511,7 +511,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi half duplex stream error with no responses
+    testName: bidi-stream/half-duplex/error-with-no-responses
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM

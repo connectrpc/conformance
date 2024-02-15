@@ -1,8 +1,10 @@
 name: Basic
+# The Basic suite represents basic success and error response tests across
+# all types of streams.
 testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
-    testName: unary success
+    testName: unary/success
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -20,7 +22,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing"]
 - request:
-    testName: unary empty definition
+    testName: unary/empty-definition
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -28,7 +30,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
 - request:
-    testName: unary no definition
+    testName: unary/no-definition
     service: connectrpc.conformance.v1.ConformanceService
     method: Unary
     streamType: STREAM_TYPE_UNARY
@@ -36,7 +38,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 # Client Stream Tests ---------------------------------------------------------
 - request:
-    testName: client stream success
+    testName: client-stream/success
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -56,7 +58,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: client stream empty definition
+    testName: client-stream/empty-definition
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -64,7 +66,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
 - request:
-    testName: client stream no definition
+    testName: client-stream/no-definition
     service: connectrpc.conformance.v1.ConformanceService
     method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -72,7 +74,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
 # Server Stream Tests ---------------------------------------------------------
 - request:
-    testName: server stream success
+    testName: server-stream/success
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -92,7 +94,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing"]
 - request:
-    testName: server stream no response
+    testName: server-stream/no-response
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -106,7 +108,7 @@ testCases:
         - name: x-custom-trailer
           value: ["bing"]
 - request:
-    testName: server stream no definition
+    testName: server-stream/no-definition
     service: connectrpc.conformance.v1.ConformanceService
     method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -114,7 +116,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
-    testName: bidi full duplex stream success
+    testName: bidi-stream/full-duplex/success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -137,7 +139,7 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
-    testName: bidi half duplex stream success
+    testName: bidi-stream/half-duplex/success
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -161,7 +163,7 @@ testCases:
 - request:
     # Note there is no 'full duplex no definition set' test since that is
     # logically equivalent to this test and is therefore covered here.
-    testName: bidi half duplex stream no definition set
+    testName: bidi-stream/half-duplex/no-definition
     service: connectrpc.conformance.v1.ConformanceService
     method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
