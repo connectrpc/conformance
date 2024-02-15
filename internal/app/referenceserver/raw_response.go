@@ -156,7 +156,12 @@ func (r *rawResponseWriter) finish(feedback *feedbackPrinter) {
 	for _, hdr := range resp.Trailers {
 		r.respWriter.Header().Add("Trailer", hdr.Name)
 	}
-	r.respWriter.WriteHeader(int(resp.StatusCode))
+	statusCode := int(resp.StatusCode)
+	// If no status code was specified in the raw response, default to 200
+	if statusCode == 0 {
+		statusCode = 200
+	}
+	r.respWriter.WriteHeader(statusCode)
 	switch contents := resp.Body.(type) {
 	case *v1.RawHTTPResponse_Unary:
 		_ = internal.WriteRawMessageContents(contents.Unary, r.respWriter)
