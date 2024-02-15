@@ -400,6 +400,7 @@ message StreamContents {
 // custom responses with odd properties (including certain kinds of
 // malformed responses) to test edge cases in clients.
 message RawHTTPResponse {
+  // If status code is not specified, it will default to a 200 response code.
   uint32 status_code = 1;
   repeated Header headers = 2;
   oneof body {
