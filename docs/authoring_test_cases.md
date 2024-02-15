@@ -202,6 +202,6 @@ testCases:
 [client-compat-request]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ClientCompatRequest
 [raw-http-request]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.RawHTTPRequest
 [raw-http-response]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.RawHTTPResponse
-[test-suite]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.TestSuite)
+[test-suite]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.TestSuite
 [connectrpc-repo]: https://buf.build/connectrpc/conformance
 [json-docs]: https://protobuf.dev/programming-guides/proto3/#json
