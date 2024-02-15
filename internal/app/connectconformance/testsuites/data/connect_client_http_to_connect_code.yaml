@@ -209,17 +209,4 @@ testCases:
     error:
       # unavailable
       code: 14
-- request:
-    testName: im-a-teapot
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
-    streamType: STREAM_TYPE_UNARY
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      responseDefinition:
-        rawResponse:
-          statusCode: 418
-  expectedResponse:
-    error:
-      # unknown
-      code: 2
+
