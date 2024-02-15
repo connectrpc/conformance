@@ -62,7 +62,7 @@ which defines the request which will be sent to a client during the test run. Ea
 fields:
 
 * `testName` - For naming conventions, see [below](#naming-conventions).
-* `service` - The fully-qualified path of the service this test will interact with, typically the `ConformanceService`.
+* `service` - The fully-qualified name of the service this test will interact with. For now, this is always `connectrpc.conformance.v1.ConformanceService`.
 * `method` - This is a string specifying the method on `service` that will be called.
 * `streamType` - One of `STREAM_TYPE_UNARY`, `STREAM_TYPE_CLIENT_STREAM`, `STREAM_TYPE_SERVER_STREAM`, 
   `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`, or `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`.
