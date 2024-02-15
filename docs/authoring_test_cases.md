@@ -1,6 +1,6 @@
 # Authoring test cases
 
-Test cases for the conformance runner are configured in YAML files and are located [here][testsuites]. Each file 
+Test cases for the conformance runner are configured in YAML files and are located [here][test-suite-dir]. Each file 
 represents a single suite of tests. 
 
 Authoring new test cases involves either a new file, if a new suite is warranted, or an additional test case in an 
@@ -10,11 +10,15 @@ For the Protobuf definitions for the conformance runner, see the [connectrpc rep
 
 ## Test suites
 
-A suite represents a series of tests that all test the same general functionality (cancellation, timeouts, etc.). When
-defining a test suite in a YAML file, the only values that are required are the suite name (which should be unique across all suites)
-and at least one test case.
+A suite represents a series of tests that all test the same general functionality (cancellation, timeouts, etc.). Each 
+test suite YAML file represents a [`connectrpc.conformance.v1.TestSuite`][test-suite] message. So the schema of the 
+`TestSuite` message defines the schema of the YAML file. The representation of a Protobuf message in YAML is the same as its
+[JSON format][json-docs].
 
-Each suite can be configured with various directives which will apply to all tests within that suite. These directives
+When defining a test suite in a YAML file, the only values that are required are the suite name (which should be unique 
+across all suites) and at least one test case.
+
+In addition, each suite can be configured with various directives which will apply to all tests within that suite. These directives
 can be used to constrain the tests run by the conformance runner or to signal various configurations to the runner that
 may be needed to execute the tests. The runner will use these directives to expand the tests in the suite into multiple
 permutations. This means that a single test defined in a suite will be run several times across various permutations.
@@ -44,7 +48,8 @@ The below directives are used to constrain tests within a suite:
 The below `reliesOn` directives are used to signal to the test runner how the reference client or server should be
 configured when running tests:
 
-* `reliesOnTls` specifies that a suite relies on TLS. Defaults to `false`.
+* `reliesOnTls` specifies that a suite relies on TLS. If `true`, the test cases will not be run against non-TLS server 
+  configurations. Defaults to `false`.
 
 * `reliesOnTlsClientCerts` specifies that the suite relies on the _client_ using TLS certificates to authenticate with 
   the server. Note that if this is set to `true`, `reliesOnTls` must also be `true`. Defaults to `false`.
@@ -68,15 +73,34 @@ fields:
   `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`, or `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`.
 
 Once the above are specified, you can then define your request. For a full list of fields to specify in the request,
-see the [`ClientCompatRequest`][client-compat-proto] message in the Conformance Protobuf definitions.
+see the [`ClientCompatRequest`][client-compat-request] message in the Conformance Protobuf definitions.
+
+### Raw payloads
+
+There are two message types in the test case schema worth noting here - [`RawHTTPRequest`][raw-http-request] and 
+[`RawHTTPResponse`][raw-http-response]. Both allow for the ability to define a round-trip outside the scope of the 
+Connect framework. They are used for sending or receiving anomalous payloads during a test.
+
+#### `RawHTTPRequest`
+
+The [`RawHTTPRequest`][raw-http-request] message can be set on the `request` property in a test case. Its purpose is to model a raw HTTP 
+request. This can be used to craft custom requests with odd properties (including certain kinds of malformed requests) 
+to test edge cases in servers. This value is only handled by the reference client and should only appear in files where 
+`mode` is set to `TEST_MODE_SERVER`.
+
+#### `RawHTTPResponse`
+
+The [`RawHTTPResponse`][raw-http-response] message is the analog to [`RawHTTPRequest`][raw-http-request]. It can be set in the response definition for a unary 
+or streaming RPC type and its purpose is to model a raw HTTP response. This can be used to craft custom responses with 
+odd properties (including returning aberrant HTTP codes or certain kinds of malformed responses) to test edge cases in 
+clients. This value is only handled by the reference server and should only appear in files where `mode` is set to 
+`TEST_MODE_CLIENT`.
 
  > [!IMPORTANT]  
  > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases.
- > These fields include:
- > * Fields 1 through 8 in the message definition. These fields are automatically populated by the test runner.
+ > * Fields 1 through 8 in the message definition are automatically populated by the test runner.
  >   If a test is specific to one of these values, it should instead be indicated in the directives for the test suite
  >   itself.
- > * Field 20 (`raw_request`). This field is only used by the reference client for sending anomalous requests.
 
 ## Naming conventions
 
@@ -84,7 +108,7 @@ Test suites and their tests within follow a loose naming convention.
 
 ### Test files (Suites)
 
-Test files should be named according to the suite inside and the general functionality being tested. In addition:
+Test files should be named according to the suite inside and the general functionality being tested. Additionally:
 
 * If a suite applies only to a certain protocol, the file name should be prefixed with that protocol. If the suite applies
   to all protocols, this can be omitted.
@@ -133,13 +157,13 @@ good examples of this.
 If you do need to specify an explicit response, simply define an `expectedResponse` block for your test case and this will
 override the auto-generated expected response in the test runner. 
 
-To see tests denoting an explicit response, search the [test suites](testsuites) directory for the word `expectedResponse`.
+To see tests denoting an explicit response, search the [test suites][test-suite-dir] directory for the word `expectedResponse`.
 
 ## Example 
 
 Taking all of the above into account, here is an example test suite that verifies a server returns the specified headers
 and trailers. The below test will only run when `mode` is `server` and will be limited to the Connect protocol using the
-JSON format and identity compression. In addition, it will require the server verify the Connect version header.
+JSON format and identity compression. Also, it will require the server verify the Connect version header.
 
 ```yaml
 name: Example Test Suite
@@ -174,7 +198,10 @@ testCases:
               value: ["bing"]
 ```
 
-[testsuites]: https://github.com/connectrpc/conformance/tree/main/internal/app/connectconformance/testsuites/data
-[suite-proto]: https://buf.build/connectrpc/conformance/file/main:connectrpc/conformance/v1/suite.proto
-[client-compat-proto]: https://buf.build/connectrpc/conformance/file/main:connectrpc/conformance/v1/client_compat.proto
+[test-suite-dir]: https://github.com/connectrpc/conformance/tree/main/internal/app/connectconformance/testsuites/data
+[client-compat-request]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ClientCompatRequest
+[raw-http-request]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.RawHTTPRequest
+[raw-http-response]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.RawHTTPResponse
+[test-suite]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.TestSuite)
 [connectrpc-repo]: https://buf.build/connectrpc/conformance
+[json-docs]: https://protobuf.dev/programming-guides/proto3/#json
