@@ -11,9 +11,8 @@ For the Protobuf definitions for the conformance runner, see the [connectrpc rep
 ## Test suites
 
 A suite represents a series of tests that all test the same general functionality (cancellation, timeouts, etc.). Each 
-test suite YAML file represents a [`connectrpc.conformance.v1.TestSuite`][test-suite] message. So the schema of the 
-`TestSuite` message defines the schema of the YAML file. The representation of a Protobuf message in YAML is the same as its
-[JSON format][json-docs].
+test suite YAML file represents a [`TestSuite`][test-suite] message and the schema of this message defines the schema 
+of the YAML file. The representation of a Protobuf message in YAML is the same as its [JSON format][json-docs].
 
 When defining a test suite in a YAML file, the only values that are required are the suite name (which should be unique 
 across all suites) and at least one test case.
