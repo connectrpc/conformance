@@ -93,7 +93,7 @@ message ClientCompatRequest {
   // same type URL.
   repeated google.protobuf.Any request_messages = 16;
   // The timeout, in milliseconds, for the request. This is equivalent to a
-  // deadline for the request.
+  // deadline for the request. If unset, there will be no timeout.
   optional uint32 timeout_ms = 17;
   // Wait this many milliseconds before sending a request message.
   // For client- or bidi-streaming requests, this delay should be
