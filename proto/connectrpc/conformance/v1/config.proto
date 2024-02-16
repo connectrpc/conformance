@@ -32,9 +32,9 @@ message Config {
   repeated ConfigCase exclude_cases = 3;
 }
 
-// Features define the feature set that a client or server support. They are
-// used to determine the tests that are possible to be run in a client-server
-// combination. They are defined in YAML files and are specified as part of the
+// Features define the feature set that a client or server supports. They are
+// used to determine the server configurations and test casess that are 
+// will be run. They are defined in YAML files and are specified as part of the
 // --conf flag to the test runner.
 message Features {
   // TODO: we could probably model some of the constraints on what are valid vs.
