@@ -107,8 +107,8 @@ clients. This value is only handled by the reference server and should only appe
  > * `server_tls_cert`
  > * `client_tls_creds`
  > * `message_receive_limit`
- >   If a test is specific to one of these values, it should instead be indicated in the directives for the test suite
- >   itself.
+ >
+ > If a test is specific to one of these values, it should instead be indicated in the directives for the test suite itself.
 
 ## Naming conventions
 
