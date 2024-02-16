@@ -50,7 +50,7 @@ type ClientCompatRequest struct {
 	// When writing test cases, this is a required field.
 	TestName string `protobuf:"bytes,1,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
 	// Test suite YAML definitions should NOT set values for these next
-	// eight fields (fields 2 - 9). They are automatically populated by the test
+	// nine fields (fields 2 - 10). They are automatically populated by the test
 	// runner. If a test is specific to one of these values, it should instead be
 	// indicated in the test suite itself (where it defines the required
 	// features and relevant values for these fields).
@@ -307,9 +307,15 @@ type ClientCompatResponse struct {
 
 	// The test name that this response applies to.
 	TestName string `protobuf:"bytes,1,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
-	// These fields determine the outcome of the request. Note that an `error`
-	// should only be reported for unexpected internal errors. RPC errors, such
-	// as Connect error codes, should be reported as part of the `response`.
+	// These fields determine the outcome of the request.
+	//
+	// With regards to errors, any unexpected errors that prevent the client from
+	// issuing the RPC and following the instructions implied by the request can
+	// be reported as an error. These would be errors creating an RPC client from
+	// the request parameters or unsupported/illegal values in the request
+	// (e.g. a unary request that defines zero or multiple request messages).
+	//
+	// However, once the RPC is issued, any resulting error should instead be encoded in response.
 	//
 	// Types that are assignable to Result:
 	//
@@ -520,7 +526,9 @@ type ClientErrorResult struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// A message describing the error that occurred.
+	// A message describing the error that occurred. This string will be shown to
+	// users running conformance tests so it should include any relevant details
+	// that may help troubleshoot or remedy the error.
 	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 }
 
