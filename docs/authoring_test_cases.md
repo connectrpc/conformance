@@ -47,7 +47,9 @@ The below directives are used to constrain tests within a suite:
 The below `reliesOn` directives are used to signal to the test runner how the reference client or server should be
 configured when running tests:
 
-* `reliesOnTls` specifies that a suite relies on TLS. If `true`, the test cases will not be run against non-TLS server 
+* `reliesOnTls` specifies that a suite relies on TLS. 
+If `true`, 
+the test cases will not be run against non-TLS server 
   configurations. Defaults to `false`.
 
 * `reliesOnTlsClientCerts` specifies that the suite relies on the _client_ using TLS certificates to authenticate with 
@@ -97,7 +99,7 @@ clients. This value is only handled by the reference server and should only appe
 
  > [!IMPORTANT]  
  > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases.
- > * Fields 1 through 8 in the message definition are automatically populated by the test runner.
+ > * Fields 2 through 9 in the message definition are automatically populated by the test runner.
  >   If a test is specific to one of these values, it should instead be indicated in the directives for the test suite
  >   itself.
 
