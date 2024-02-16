@@ -341,7 +341,9 @@ message Error {
 message Header {
   // Header/trailer name (key).
   string name = 1;
-  // Header/trailer value.
+  // Header/trailer value. This is repeated to explicitly support headers and
+  // trailers where a key is repeated. In such a case, these values must be in
+  // the same order as which values appeared in the header or trailer block.
   repeated string value = 2;
 }
 
