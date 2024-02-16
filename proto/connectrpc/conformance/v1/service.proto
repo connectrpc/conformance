@@ -289,6 +289,8 @@ message UnimplementedRequest {}
 message UnimplementedResponse {}
 
 message ConformancePayload {
+  // Any response data specified in the response definition to the server should be
+  // echoed back here.
   bytes data = 1;
 
   // Echoes back information about the request stream observed so far.
@@ -316,24 +318,29 @@ message ConformancePayload {
     ConnectGetInfo connect_get_info = 4;
   }
   message ConnectGetInfo {
+    // The query params observed in the request URL.
     repeated Header query_params = 1;
   }
 }
 
 // An error definition used for specifying a desired error response
 message Error {
+  // The error code.
   int32 code = 1;
   // If this value is absent in a test case response definition, the contents of the
   // actual error message will not be checked. This is useful for certain kinds of
   // error conditions where the exact message to be used is not specified, only the
   // code.
   optional string message = 2;
+  // Error details.
   repeated google.protobuf.Any details = 3;
 }
 
 // A tuple of name and values (ASCII) for a header or trailer entry.
 message Header {
+  // Header/trailer name (key).
   string name = 1;
+  // Header/trailer value.
   repeated string value = 2;
 }
 
@@ -341,18 +348,23 @@ message Header {
 // custom requests with odd properties (including certain kinds of
 // malformed requests) to test edge cases in servers.
 message RawHTTPRequest {
+  // The HTTP verb (i.e. GET , POST).
   string verb = 1;
+  // The URI to send the request to.
   string uri = 2;
+  // Any headers to set on the request.
   repeated Header headers = 3;
 
   // These query params will be encoded and added to the uri before
   // the request is sent.
   repeated Header raw_query_params = 4;
-  repeated EncodedQueryParam encoded_query_params = 5;
   // This provides an easier way to define a complex binary query param
   // than having to write literal base64-encoded bytes in raw_query_params.
+  repeated EncodedQueryParam encoded_query_params = 5;
   message EncodedQueryParam {
+    // Query param name.
     string name = 1;
+    // Query param value.
     MessageContents value = 2;
     // If true, the message contents will be base64-encoded and the
     // resulting string used as the query parameter value.
@@ -388,6 +400,7 @@ message MessageContents {
 
 // StreamContents represents a sequence of messages in a request body.
 message StreamContents {
+  // The messages in the stream.
   repeated StreamItem items = 1;
   message StreamItem {
     uint32 flags = 1; // must be in the range 0 to 255.
@@ -402,6 +415,7 @@ message StreamContents {
 message RawHTTPResponse {
   // If status code is not specified, it will default to a 200 response code.
   uint32 status_code = 1;
+  // Headers to be set on the response.
   repeated Header headers = 2;
   oneof body {
     // The body is a single message.
@@ -410,5 +424,6 @@ message RawHTTPResponse {
     // prefix before each item in the stream.
     StreamContents stream = 4;
   }
+  // Trailers to be set on the response.
   repeated Header trailers = 5;
 }

@@ -32,42 +32,61 @@ message Config {
   repeated ConfigCase exclude_cases = 3;
 }
 
+// Features define the feature set that a client or server support. They are
+// used to determine the tests that are possible to be run in a client-server
+// combination. They are defined in YAML files and are specified as part of the
+// --conf flag to the test runner.
 message Features {
   // TODO: we could probably model some of the constraints on what are valid vs.
   //       invalid (i.e. conflicting/impossible) features using protovalidate rules
 
+  // Supported HTTP versions.
   // If empty, HTTP 1.1 and HTTP/2 are assumed.
   repeated HTTPVersion versions = 1;
+  // Supported protocols.
   // If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
   repeated Protocol protocols = 2;
+  // Supported codecs.
   // If empty, "proto" and "json" are assumed.
   repeated Codec codecs = 3;
+  // Supported compression algorithms.
   // If empty, "identity" and "gzip" are assumed.
   repeated Compression compressions = 4;
+  // Supported stream types.
   // If empty, all stream types are assumed. This is usually for
   // clients, since some client environments may not be able to
   // support certain kinds of streaming operations, especially
   // bidirectional streams.
   repeated StreamType stream_types = 5;
+  // Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
   // If absent, true is assumed.
   optional bool supports_h2c = 6;
+  // Whether TLS is supported.
   // If absent, true is assumed.
   optional bool supports_tls = 7;
+  // Whether the client supports TLS certificates.
   // If absent, false is assumed. This should not be set if
   // supports_tls is false.
   optional bool supports_tls_client_certs = 8;
+  // Whether trailers are supported.
   // If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
   optional bool supports_trailers = 9;
+  // Whether half duplex bidi streams are supported over HTTP/1.1.
   // If absent, false is assumed.
   optional bool supports_half_duplex_bidi_over_http1 = 10;
+  // Whether Connect via GET is supported.
   // If absent, true is assumed.
   optional bool supports_connect_get = 11;
+  // Whether the Connect version header (Connect-Protocol-Version) is required.
   // If absent, false is assumed.
   optional bool requires_connect_version_header = 12;
+  // Whether a message receive limit is supported.
   // If absent, true is assumed.
   optional bool supports_message_receive_limit = 13;
 }
 
+// ConfigCase represents a resolved configuration case for a single test based
+// on features specified.
 message ConfigCase {
   // TODO: we could probably model some of the constraints on what is a valid
   //       vs. invalid config case using protovalidate rules
