@@ -178,7 +178,8 @@ message ClientResponseResult {
   // to provide additional feedback about problems observed in the server
   // response or in client processing of the response. If non-empty, the test
   // case is considered failed even if the result above matches all expectations.
-  // If you are implementing a client-under-test, you may ignore this field.
+  // If you are implementing a client-under-test, you should ignore this field
+  // and leave it unset.
   repeated string feedback = 7;
 }
 
