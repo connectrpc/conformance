@@ -31,7 +31,7 @@ message TestSuite {
   // in conjunction with the `--mode` flag passed to the conformance runner
   // binary. If the mode on the suite is set to client, the tests will only be
   // run if `--mode client` is set on the command to the test runner.
-  // Likewise if mode is server.
+  // Likewise if mode is server. If this is unset, the test case will be run in both modes.
   TestMode mode = 2;
   enum TestMode {
     // Used when the test suite does not apply to a particular mode. Such tests
