@@ -332,7 +332,8 @@ message Error {
   // error conditions where the exact message to be used is not specified, only the
   // code.
   optional string message = 2;
-  // Error details.
+  // Errors in Connect and gRPC protocols can have arbitrary messages
+  // attached to them, which are known as error details.
   repeated google.protobuf.Any details = 3;
 }
 
