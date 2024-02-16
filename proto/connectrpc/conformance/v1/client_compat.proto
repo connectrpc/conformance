@@ -171,7 +171,8 @@ message ClientResponseResult {
   int32 num_unsent_requests = 5;
   // The following field is only set by the reference client. It communicates
   // the underlying HTTP status code of the server's response.
-  // If you are implementing a client-under-test, you may ignore this field.
+  // If you are implementing a client-under-test, you should ignore this field
+  // and leave it unset.
   optional int32 http_status_code = 6;
   // This field is used only by the reference client, and it can be used
   // to provide additional feedback about problems observed in the server
