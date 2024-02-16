@@ -80,6 +80,9 @@ message ClientCompatRequest {
   // when making the request.
   bool use_get_http_method = 14;
   // Any request headers that should be sent as part of the request.
+  // These include only custom header metadata. Headers that are
+  // part of the relevant protocol (such as "content-type", etc) should
+  // not be stated here.
   repeated Header request_headers = 15;
   // The actual request messages that will sent to the server.
   // The type URL for all entries should be equal to the request type of the
