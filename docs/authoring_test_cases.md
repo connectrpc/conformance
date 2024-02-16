@@ -74,6 +74,21 @@ fields:
 Once the above are specified, you can then define your request. For a full list of fields to specify in the request,
 see the [`ClientCompatRequest`][client-compat-request] message in the Conformance Protobuf definitions.
 
+ > [!IMPORTANT]  
+ > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases because they are 
+ > automatically populated by the test runner. These fields are:
+ > * `http_version`
+ > * `protocol`
+ > * `codec`
+ > * `compression`
+ > * `host`
+ > * `port`
+ > * `server_tls_cert`
+ > * `client_tls_creds`
+ > * `message_receive_limit`
+ >
+ > If a test is specific to one of these values, it should instead be indicated in the directives for the test suite itself.
+
 ### Raw payloads
 
 There are two message types in the test case schema worth noting here - [`RawHTTPRequest`][raw-http-request] and 
@@ -94,21 +109,6 @@ or streaming RPC type and its purpose is to model a raw HTTP response. This can 
 odd properties (including returning aberrant HTTP codes or certain kinds of malformed responses) to test edge cases in 
 clients. This value is only handled by the reference server and should only appear in files where `mode` is set to 
 `TEST_MODE_CLIENT`.
-
- > [!IMPORTANT]  
- > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases because they are 
- > automatically populated by the test runner. These fields are:
- > * `http_version`
- > * `protocol`
- > * `codec`
- > * `compression`
- > * `host`
- > * `port`
- > * `server_tls_cert`
- > * `client_tls_creds`
- > * `message_receive_limit`
- >
- > If a test is specific to one of these values, it should instead be indicated in the directives for the test suite itself.
 
 ## Naming conventions
 
