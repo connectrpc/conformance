@@ -84,8 +84,8 @@ message ClientCompatRequest {
   // The actual request messages that will sent to the server.
   // The type URL for all entries should be equal to the request type of the
   // method.
-  // There will be exactly one for unary and server-stream methods and 
-  // one-to-many for client- and bidi-stream methods.
+  // There must be exactly one for unary and server-stream methods but 
+  // can be zero or more for client- and bidi-stream methods.
   // For client- and bidi-stream methods, all entries will have the
   // same type URL.
   repeated google.protobuf.Any request_messages = 16;
