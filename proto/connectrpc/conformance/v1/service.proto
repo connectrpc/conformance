@@ -326,6 +326,7 @@ message ConformancePayload {
 // An error definition used for specifying a desired error response
 message Error {
   // The error code.
+  // For a list of Connect error codes see: https://connectrpc.com/docs/protocol#error-codes
   int32 code = 1;
   // If this value is absent in a test case response definition, the contents of the
   // actual error message will not be checked. This is useful for certain kinds of

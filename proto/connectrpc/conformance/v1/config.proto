@@ -33,7 +33,7 @@ message Config {
 }
 
 // Features define the feature set that a client or server supports. They are
-// used to determine the server configurations and test casess that are 
+// used to determine the server configurations and test cases that 
 // will be run. They are defined in YAML files and are specified as part of the
 // --conf flag to the test runner.
 message Features {

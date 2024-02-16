@@ -96,8 +96,17 @@ clients. This value is only handled by the reference server and should only appe
 `TEST_MODE_CLIENT`.
 
  > [!IMPORTANT]  
- > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases.
- > * Fields 2 through 9 in the message definition are automatically populated by the test runner.
+ > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases because they are 
+ > automatically populated by the test runner. These fields are:
+ > * `http_version`
+ > * `protocol`
+ > * `codec`
+ > * `compression`
+ > * `host`
+ > * `port`
+ > * `server_tls_cert`
+ > * `client_tls_creds`
+ > * `message_receive_limit`
  >   If a test is specific to one of these values, it should instead be indicated in the directives for the test suite
  >   itself.
 

@@ -382,39 +382,56 @@ func (x *Config) GetExcludeCases() []*ConfigCase {
 	return nil
 }
 
+// Features define the feature set that a client or server supports. They are
+// used to determine the server configurations and test cases that
+// will be run. They are defined in YAML files and are specified as part of the
+// --conf flag to the test runner.
 type Features struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Supported HTTP versions.
 	// If empty, HTTP 1.1 and HTTP/2 are assumed.
 	Versions []HTTPVersion `protobuf:"varint,1,rep,packed,name=versions,proto3,enum=connectrpc.conformance.v1.HTTPVersion" json:"versions,omitempty"`
+	// Supported protocols.
 	// If empty, all three are assumed: Connect, gRPC, and gRPC-Web.
 	Protocols []Protocol `protobuf:"varint,2,rep,packed,name=protocols,proto3,enum=connectrpc.conformance.v1.Protocol" json:"protocols,omitempty"`
+	// Supported codecs.
 	// If empty, "proto" and "json" are assumed.
 	Codecs []Codec `protobuf:"varint,3,rep,packed,name=codecs,proto3,enum=connectrpc.conformance.v1.Codec" json:"codecs,omitempty"`
+	// Supported compression algorithms.
 	// If empty, "identity" and "gzip" are assumed.
 	Compressions []Compression `protobuf:"varint,4,rep,packed,name=compressions,proto3,enum=connectrpc.conformance.v1.Compression" json:"compressions,omitempty"`
+	// Supported stream types.
 	// If empty, all stream types are assumed. This is usually for
 	// clients, since some client environments may not be able to
 	// support certain kinds of streaming operations, especially
 	// bidirectional streams.
 	StreamTypes []StreamType `protobuf:"varint,5,rep,packed,name=stream_types,json=streamTypes,proto3,enum=connectrpc.conformance.v1.StreamType" json:"stream_types,omitempty"`
+	// Whether H2C (unencrypted, non-TLS HTTP/2 over cleartext) is supported.
 	// If absent, true is assumed.
 	SupportsH2C *bool `protobuf:"varint,6,opt,name=supports_h2c,json=supportsH2c,proto3,oneof" json:"supports_h2c,omitempty"`
+	// Whether TLS is supported.
 	// If absent, true is assumed.
 	SupportsTls *bool `protobuf:"varint,7,opt,name=supports_tls,json=supportsTls,proto3,oneof" json:"supports_tls,omitempty"`
+	// Whether the client supports TLS certificates.
 	// If absent, false is assumed. This should not be set if
 	// supports_tls is false.
 	SupportsTlsClientCerts *bool `protobuf:"varint,8,opt,name=supports_tls_client_certs,json=supportsTlsClientCerts,proto3,oneof" json:"supports_tls_client_certs,omitempty"`
+	// Whether trailers are supported.
 	// If absent, true is assumed. If false, implies that gRPC protocol is not allowed.
 	SupportsTrailers *bool `protobuf:"varint,9,opt,name=supports_trailers,json=supportsTrailers,proto3,oneof" json:"supports_trailers,omitempty"`
+	// Whether half duplex bidi streams are supported over HTTP/1.1.
 	// If absent, false is assumed.
 	SupportsHalfDuplexBidiOverHttp1 *bool `protobuf:"varint,10,opt,name=supports_half_duplex_bidi_over_http1,json=supportsHalfDuplexBidiOverHttp1,proto3,oneof" json:"supports_half_duplex_bidi_over_http1,omitempty"`
+	// Whether Connect via GET is supported.
 	// If absent, true is assumed.
 	SupportsConnectGet *bool `protobuf:"varint,11,opt,name=supports_connect_get,json=supportsConnectGet,proto3,oneof" json:"supports_connect_get,omitempty"`
+	// Whether the Connect version header (Connect-Protocol-Version) is required.
 	// If absent, false is assumed.
 	RequiresConnectVersionHeader *bool `protobuf:"varint,12,opt,name=requires_connect_version_header,json=requiresConnectVersionHeader,proto3,oneof" json:"requires_connect_version_header,omitempty"`
+	// Whether a message receive limit is supported.
 	// If absent, true is assumed.
 	SupportsMessageReceiveLimit *bool `protobuf:"varint,13,opt,name=supports_message_receive_limit,json=supportsMessageReceiveLimit,proto3,oneof" json:"supports_message_receive_limit,omitempty"`
 }
@@ -542,6 +559,10 @@ func (x *Features) GetSupportsMessageReceiveLimit() bool {
 	return false
 }
 
+// ConfigCase represents a single resolved configuration case. When tests are
+// run, the Config and the supported features therein are used to compute all
+// of the cases relevant to the implementation under test. These configuration
+// cases are then used to select which test cases are applicable.
 type ConfigCase struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache

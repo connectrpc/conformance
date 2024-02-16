@@ -897,6 +897,8 @@ type ConformancePayload struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// Any response data specified in the response definition to the server should be
+	// echoed back here.
 	Data []byte `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
 	// Echoes back information about the request stream observed so far.
 	RequestInfo *ConformancePayload_RequestInfo `protobuf:"bytes,2,opt,name=request_info,json=requestInfo,proto3" json:"request_info,omitempty"`
@@ -954,12 +956,16 @@ type Error struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The error code.
+	// For a list of Connect error codes see: https://connectrpc.com/docs/protocol#error-codes
 	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
 	// If this value is absent in a test case response definition, the contents of the
 	// actual error message will not be checked. This is useful for certain kinds of
 	// error conditions where the exact message to be used is not specified, only the
 	// code.
-	Message *string      `protobuf:"bytes,2,opt,name=message,proto3,oneof" json:"message,omitempty"`
+	Message *string `protobuf:"bytes,2,opt,name=message,proto3,oneof" json:"message,omitempty"`
+	// Errors in Connect and gRPC protocols can have arbitrary messages
+	// attached to them, which are known as error details.
 	Details []*anypb.Any `protobuf:"bytes,3,rep,name=details,proto3" json:"details,omitempty"`
 }
 
@@ -1022,7 +1028,11 @@ type Header struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name  string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Header/trailer name (key).
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Header/trailer value. This is repeated to explicitly support headers and
+	// trailers where a key is repeated. In such a case, these values must be in
+	// the same order as which values appeared in the header or trailer block.
 	Value []string `protobuf:"bytes,2,rep,name=value,proto3" json:"value,omitempty"`
 }
 
@@ -1080,12 +1090,17 @@ type RawHTTPRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Verb    string    `protobuf:"bytes,1,opt,name=verb,proto3" json:"verb,omitempty"`
-	Uri     string    `protobuf:"bytes,2,opt,name=uri,proto3" json:"uri,omitempty"`
+	// The HTTP verb (i.e. GET , POST).
+	Verb string `protobuf:"bytes,1,opt,name=verb,proto3" json:"verb,omitempty"`
+	// The URI to send the request to.
+	Uri string `protobuf:"bytes,2,opt,name=uri,proto3" json:"uri,omitempty"`
+	// Any headers to set on the request.
 	Headers []*Header `protobuf:"bytes,3,rep,name=headers,proto3" json:"headers,omitempty"`
 	// These query params will be encoded and added to the uri before
 	// the request is sent.
-	RawQueryParams     []*Header                           `protobuf:"bytes,4,rep,name=raw_query_params,json=rawQueryParams,proto3" json:"raw_query_params,omitempty"`
+	RawQueryParams []*Header `protobuf:"bytes,4,rep,name=raw_query_params,json=rawQueryParams,proto3" json:"raw_query_params,omitempty"`
+	// This provides an easier way to define a complex binary query param
+	// than having to write literal base64-encoded bytes in raw_query_params.
 	EncodedQueryParams []*RawHTTPRequest_EncodedQueryParam `protobuf:"bytes,5,rep,name=encoded_query_params,json=encodedQueryParams,proto3" json:"encoded_query_params,omitempty"`
 	// Types that are assignable to Body:
 	//
@@ -1320,6 +1335,7 @@ type StreamContents struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The messages in the stream.
 	Items []*StreamContents_StreamItem `protobuf:"bytes,1,rep,name=items,proto3" json:"items,omitempty"`
 }
 
@@ -1371,14 +1387,16 @@ type RawHTTPResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// If status code is not specified, it will default to a 200 response code.
-	StatusCode uint32    `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
-	Headers    []*Header `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
+	StatusCode uint32 `protobuf:"varint,1,opt,name=status_code,json=statusCode,proto3" json:"status_code,omitempty"`
+	// Headers to be set on the response.
+	Headers []*Header `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty"`
 	// Types that are assignable to Body:
 	//
 	//	*RawHTTPResponse_Unary
 	//	*RawHTTPResponse_Stream
-	Body     isRawHTTPResponse_Body `protobuf_oneof:"body"`
-	Trailers []*Header              `protobuf:"bytes,5,rep,name=trailers,proto3" json:"trailers,omitempty"`
+	Body isRawHTTPResponse_Body `protobuf_oneof:"body"`
+	// Trailers to be set on the response.
+	Trailers []*Header `protobuf:"bytes,5,rep,name=trailers,proto3" json:"trailers,omitempty"`
 }
 
 func (x *RawHTTPResponse) Reset() {
@@ -1566,6 +1584,7 @@ type ConformancePayload_ConnectGetInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The query params observed in the request URL.
 	QueryParams []*Header `protobuf:"bytes,1,rep,name=query_params,json=queryParams,proto3" json:"query_params,omitempty"`
 }
 
@@ -1608,14 +1627,14 @@ func (x *ConformancePayload_ConnectGetInfo) GetQueryParams() []*Header {
 	return nil
 }
 
-// This provides an easier way to define a complex binary query param
-// than having to write literal base64-encoded bytes in raw_query_params.
 type RawHTTPRequest_EncodedQueryParam struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name  string           `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Query param name.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// Query param value.
 	Value *MessageContents `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	// If true, the message contents will be base64-encoded and the
 	// resulting string used as the query parameter value.

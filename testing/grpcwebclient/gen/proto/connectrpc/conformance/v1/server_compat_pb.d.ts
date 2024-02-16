@@ -81,21 +81,3 @@ export namespace ServerCompatResponse {
   }
 }
 
-export class ServerErrorResult extends jspb.Message {
-  getMessage(): string;
-  setMessage(value: string): ServerErrorResult;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ServerErrorResult.AsObject;
-  static toObject(includeInstance: boolean, msg: ServerErrorResult): ServerErrorResult.AsObject;
-  static serializeBinaryToWriter(message: ServerErrorResult, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ServerErrorResult;
-  static deserializeBinaryFromReader(message: ServerErrorResult, reader: jspb.BinaryReader): ServerErrorResult;
-}
-
-export namespace ServerErrorResult {
-  export type AsObject = {
-    message: string,
-  }
-}
-

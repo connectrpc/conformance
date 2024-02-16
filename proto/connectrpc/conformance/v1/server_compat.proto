@@ -66,10 +66,3 @@ message ServerCompatResponse {
   // client can verify it when connecting via TLS.
   bytes pem_cert = 3;
 }
-
-// The server doesn't support the requested protocol, or had a runtime error
-// while starting up.
-message ServerErrorResult {
-  // A message describing the error that occurred.
-  string message = 1;
-}

@@ -46,13 +46,27 @@ type ClientCompatRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	TestName    string      `protobuf:"bytes,1,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
+	// The name of the test that this request is performing.
+	// When writing test cases, this is a required field.
+	TestName string `protobuf:"bytes,1,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
+	// Test suite YAML definitions should NOT set values for these next
+	// eight fields (fields 2 - 9). They are automatically populated by the test
+	// runner. If a test is specific to one of these values, it should instead be
+	// indicated in the test suite itself (where it defines the required
+	// features and relevant values for these fields).
+	//
+	// The HTTP version to use for the test (i.e. HTTP/1.1, HTTP/2, HTTP/3).
 	HttpVersion HTTPVersion `protobuf:"varint,2,opt,name=http_version,json=httpVersion,proto3,enum=connectrpc.conformance.v1.HTTPVersion" json:"http_version,omitempty"`
-	Protocol    Protocol    `protobuf:"varint,3,opt,name=protocol,proto3,enum=connectrpc.conformance.v1.Protocol" json:"protocol,omitempty"`
-	Codec       Codec       `protobuf:"varint,4,opt,name=codec,proto3,enum=connectrpc.conformance.v1.Codec" json:"codec,omitempty"`
+	// The protocol to use for the test (i.e. Connect, gRPC, gRPC-web).
+	Protocol Protocol `protobuf:"varint,3,opt,name=protocol,proto3,enum=connectrpc.conformance.v1.Protocol" json:"protocol,omitempty"`
+	// The codec to use for the test (i.e. JSON, proto/binary).
+	Codec Codec `protobuf:"varint,4,opt,name=codec,proto3,enum=connectrpc.conformance.v1.Codec" json:"codec,omitempty"`
+	// The compression to use for the test (i.e. brotli, gzip, identity).
 	Compression Compression `protobuf:"varint,5,opt,name=compression,proto3,enum=connectrpc.conformance.v1.Compression" json:"compression,omitempty"`
-	Host        string      `protobuf:"bytes,6,opt,name=host,proto3" json:"host,omitempty"`
-	Port        uint32      `protobuf:"varint,7,opt,name=port,proto3" json:"port,omitempty"`
+	// The server host that this request will be sent to.
+	Host string `protobuf:"bytes,6,opt,name=host,proto3" json:"host,omitempty"`
+	// The server port that this request will be sent to.
+	Port uint32 `protobuf:"varint,7,opt,name=port,proto3" json:"port,omitempty"`
 	// If non-empty, the server is using TLS. The bytes are the
 	// server's PEM-encoded certificate, which the client should
 	// verify and trust.
@@ -63,20 +77,37 @@ type ClientCompatRequest struct {
 	ClientTlsCreds *ClientCompatRequest_TLSCreds `protobuf:"bytes,9,opt,name=client_tls_creds,json=clientTlsCreds,proto3" json:"client_tls_creds,omitempty"`
 	// If non-zero, indicates the maximum size in bytes for a message.
 	// If the server sends anything larger, the client should reject it.
-	MessageReceiveLimit uint32     `protobuf:"varint,10,opt,name=message_receive_limit,json=messageReceiveLimit,proto3" json:"message_receive_limit,omitempty"`
-	Service             string     `protobuf:"bytes,11,opt,name=service,proto3" json:"service,omitempty"`
-	Method              string     `protobuf:"bytes,12,opt,name=method,proto3" json:"method,omitempty"`
-	StreamType          StreamType `protobuf:"varint,13,opt,name=stream_type,json=streamType,proto3,enum=connectrpc.conformance.v1.StreamType" json:"stream_type,omitempty"`
+	MessageReceiveLimit uint32 `protobuf:"varint,10,opt,name=message_receive_limit,json=messageReceiveLimit,proto3" json:"message_receive_limit,omitempty"`
+	// The fully-qualified name of the service this test will interact with.
+	// For now, this is always "connectrpc.conformance.v1.ConformanceService".
+	// When writing test cases, this is a required field.
+	Service string `protobuf:"bytes,11,opt,name=service,proto3" json:"service,omitempty"`
+	// The method on `service` that will be called.
+	// When writing test cases, this is a required field.
+	Method string `protobuf:"bytes,12,opt,name=method,proto3" json:"method,omitempty"`
+	// The stream type of `method` (i.e. Unary, Client-Streaming, Server-Streaming, Full Duplex Bidi, or Half Duplex Bidi).
+	// When writing test cases, this is a required field.
+	StreamType StreamType `protobuf:"varint,13,opt,name=stream_type,json=streamType,proto3,enum=connectrpc.conformance.v1.StreamType" json:"stream_type,omitempty"`
 	// If protocol indicates Connect and stream type indicates
 	// Unary, this instructs the client to use a GET HTTP method
 	// when making the request.
-	UseGetHttpMethod bool      `protobuf:"varint,14,opt,name=use_get_http_method,json=useGetHttpMethod,proto3" json:"use_get_http_method,omitempty"`
-	RequestHeaders   []*Header `protobuf:"bytes,15,rep,name=request_headers,json=requestHeaders,proto3" json:"request_headers,omitempty"`
-	// There will be exactly one for unary and server-stream methods.
+	UseGetHttpMethod bool `protobuf:"varint,14,opt,name=use_get_http_method,json=useGetHttpMethod,proto3" json:"use_get_http_method,omitempty"`
+	// Any request headers that should be sent as part of the request.
+	// These include only custom header metadata. Headers that are
+	// part of the relevant protocol (such as "content-type", etc) should
+	// not be stated here.
+	RequestHeaders []*Header `protobuf:"bytes,15,rep,name=request_headers,json=requestHeaders,proto3" json:"request_headers,omitempty"`
+	// The actual request messages that will sent to the server.
+	// The type URL for all entries should be equal to the request type of the
+	// method.
+	// There must be exactly one for unary and server-stream methods but
+	// can be zero or more for client- and bidi-stream methods.
 	// For client- and bidi-stream methods, all entries will have the
-	// same type URL (which matches the request type of the method).
+	// same type URL.
 	RequestMessages []*anypb.Any `protobuf:"bytes,16,rep,name=request_messages,json=requestMessages,proto3" json:"request_messages,omitempty"`
-	TimeoutMs       *uint32      `protobuf:"varint,17,opt,name=timeout_ms,json=timeoutMs,proto3,oneof" json:"timeout_ms,omitempty"`
+	// The timeout, in milliseconds, for the request. This is equivalent to a
+	// deadline for the request. If unset, there will be no timeout.
+	TimeoutMs *uint32 `protobuf:"varint,17,opt,name=timeout_ms,json=timeoutMs,proto3,oneof" json:"timeout_ms,omitempty"`
 	// Wait this many milliseconds before sending a request message.
 	// For client- or bidi-streaming requests, this delay should be
 	// applied before each request sent.
@@ -274,7 +305,12 @@ type ClientCompatResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The test name that this response applies to.
 	TestName string `protobuf:"bytes,1,opt,name=test_name,json=testName,proto3" json:"test_name,omitempty"`
+	// These fields determine the outcome of the request. Note that an `error`
+	// should only be reported for unexpected internal errors. RPC errors, such
+	// as Connect error codes, should be reported as part of the `response`.
+	//
 	// Types that are assignable to Result:
 	//
 	//	*ClientCompatResponse_Response
@@ -359,27 +395,39 @@ func (*ClientCompatResponse_Response) isClientCompatResponse_Result() {}
 func (*ClientCompatResponse_Error) isClientCompatResponse_Result() {}
 
 // The result of a ClientCompatRequest, which may or may not be successful.
+// The client will build this message and return it back to the test runner.
 type ClientResponseResult struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	ResponseHeaders []*Header             `protobuf:"bytes,1,rep,name=response_headers,json=responseHeaders,proto3" json:"response_headers,omitempty"`
-	Payloads        []*ConformancePayload `protobuf:"bytes,2,rep,name=payloads,proto3" json:"payloads,omitempty"`
+	// All response headers read from the response.
+	ResponseHeaders []*Header `protobuf:"bytes,1,rep,name=response_headers,json=responseHeaders,proto3" json:"response_headers,omitempty"`
+	// Servers should echo back payloads that they received as part of the request.
+	// This field should contain all the payloads the server echoed back. Note that
+	// There will be zero-to-one for unary and client-stream methods and
+	// zero-to-many for server- and bidi-stream methods.
+	Payloads []*ConformancePayload `protobuf:"bytes,2,rep,name=payloads,proto3" json:"payloads,omitempty"`
 	// The error received from the actual RPC invocation. Note this is not representative
-	// of a runtime error and should always be the proto equivalent of a Connect error.
-	Error            *Error    `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	// of a runtime error and should always be the proto equivalent of a Connect
+	// or gRPC error.
+	Error *Error `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+	// All response headers read from the response.
 	ResponseTrailers []*Header `protobuf:"bytes,4,rep,name=response_trailers,json=responseTrailers,proto3" json:"response_trailers,omitempty"`
 	// The number of messages that were present in the request but that could not be
 	// sent because an error occurred before finishing the upload.
 	NumUnsentRequests int32 `protobuf:"varint,5,opt,name=num_unsent_requests,json=numUnsentRequests,proto3" json:"num_unsent_requests,omitempty"`
 	// The following field is only set by the reference client. It communicates
 	// the underlying HTTP status code of the server's response.
+	// If you are implementing a client-under-test, you should ignore this field
+	// and leave it unset.
 	HttpStatusCode *int32 `protobuf:"varint,6,opt,name=http_status_code,json=httpStatusCode,proto3,oneof" json:"http_status_code,omitempty"`
 	// This field is used only by the reference client, and it can be used
 	// to provide additional feedback about problems observed in the server
 	// response or in client processing of the response. If non-empty, the test
 	// case is considered failed even if the result above matches all expectations.
+	// If you are implementing a client-under-test, you should ignore this field
+	// and leave it unset.
 	Feedback []string `protobuf:"bytes,7,rep,name=feedback,proto3" json:"feedback,omitempty"`
 }
 
@@ -472,6 +520,7 @@ type ClientErrorResult struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// A message describing the error that occurred.
 	Message string `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 }
 
