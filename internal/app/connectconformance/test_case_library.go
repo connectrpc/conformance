@@ -160,7 +160,7 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCa
 							if _, ok := configCases[cfgCase]; ok {
 								namePrefix := generateTestCasePrefix(suite, cfgCase)
 								if err := lib.expandCases(cfgCase, namePrefix, suite.TestCases); err != nil {
-									return err
+									return fmt.Errorf("failed to expand test cases for suite %s: %w", suite.Name, err)
 								}
 							}
 						}
@@ -173,7 +173,19 @@ func (lib *testCaseLibrary) expandSuite(suite *conformancev1.TestSuite, configCa
 }
 
 func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string, testCases []*conformancev1.TestCase) error {
-	for _, testCase := range testCases {
+	for i, testCase := range testCases {
+		if testCase.Request.TestName == "" {
+			return fmt.Errorf("test case #%d: test case has no name", i+1)
+		}
+		if testCase.Request.Service == "" {
+			return fmt.Errorf("test case #%d: test %s has no service specified", i+1, testCase.Request.TestName)
+		}
+		if testCase.Request.Method == "" {
+			return fmt.Errorf("test case #%d: test %s has no method specified", i+1, testCase.Request.TestName)
+		}
+		if testCase.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
+			return fmt.Errorf("test case #%d: test %s has no stream type specified", i+1, testCase.Request.TestName)
+		}
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
 		}
@@ -441,6 +453,7 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 	// message in this situation, where the response data value is some fixed string (such as "no response definition")
 	// and whose request info will still be present, but we expect it to indicate zero request messages.
 	if len(testCase.Request.RequestMessages) == 0 {
+		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{}
 		return nil
 	}
 
