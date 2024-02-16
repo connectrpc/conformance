@@ -47,9 +47,7 @@ The below directives are used to constrain tests within a suite:
 The below `reliesOn` directives are used to signal to the test runner how the reference client or server should be
 configured when running tests:
 
-* `reliesOnTls` specifies that a suite relies on TLS. 
-If `true`, 
-the test cases will not be run against non-TLS server 
+* `reliesOnTls` specifies that a suite relies on TLS. If `true`, the test cases will not be run against non-TLS server 
   configurations. Defaults to `false`.
 
 * `reliesOnTlsClientCerts` specifies that the suite relies on the _client_ using TLS certificates to authenticate with 
