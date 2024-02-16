@@ -49,7 +49,7 @@ func ConvertErrorToProtoError(err error) *v1.Error {
 	connectErr := new(connect.Error)
 	if !errors.As(err, &connectErr) {
 		return &v1.Error{
-			Code:    int32(connect.CodeUnknown),
+			Code:    v1.Code(int32(connect.CodeUnknown)),
 			Message: proto.String(err.Error()),
 		}
 	}
@@ -64,7 +64,7 @@ func ConvertConnectToProtoError(err *connect.Error) *v1.Error {
 		return nil
 	}
 	protoErr := &v1.Error{
-		Code:    int32(err.Code()),
+		Code:    v1.Code(int32(err.Code())),
 		Message: proto.String(err.Message()),
 	}
 	details := make([]*anypb.Any, 0, len(err.Details()))
@@ -89,7 +89,7 @@ func ConvertProtoToConnectError(err *v1.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}
-	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.GetMessage()))
+	connectErr := connect.NewError(connect.Code(int32(err.Code)), errors.New(err.GetMessage()))
 	for _, detail := range err.Details {
 		connectDetail, err := connect.NewErrorDetail(detail)
 		if err != nil {

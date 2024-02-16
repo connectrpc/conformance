@@ -33,7 +33,7 @@ message Config {
 }
 
 // Features define the feature set that a client or server supports. They are
-// used to determine the server configurations and test cases that 
+// used to determine the server configurations and test cases that
 // will be run. They are defined in YAML files and are specified as part of the
 // --conf flag to the test runner.
 message Features {
@@ -156,4 +156,24 @@ enum StreamType {
   STREAM_TYPE_SERVER_STREAM = 3;
   STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM = 4;
   STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM = 5;
+}
+
+enum Code {
+  CODE_UNSPECIFIED = 0;
+  CODE_CANCELED = 1;
+  CODE_UNKNOWN = 2;
+  CODE_INVALID_ARGUMENT = 3;
+  CODE_DEADLINE_EXCEEDED = 4;
+  CODE_NOT_FOUND = 5;
+  CODE_ALREADY_EXISTS = 6;
+  CODE_PERMISSION_DENIED = 7;
+  CODE_RESOURCE_EXHAUSTED = 8;
+  CODE_FAILED_PRECONDITION = 9;
+  CODE_ABORTED = 10;
+  CODE_OUT_OF_RANGE = 11;
+  CODE_UNIMPLEMENTED = 12;
+  CODE_INTERNAL = 13;
+  CODE_UNAVAILABLE = 14;
+  CODE_DATA_LOSS = 15;
+  CODE_UNAUTHENTICATED = 16;
 }

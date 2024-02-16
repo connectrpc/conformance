@@ -4223,7 +4223,7 @@ proto.connectrpc.conformance.v1.Error.deserializeBinaryFromReader = function(msg
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {number} */ (reader.readInt32());
+      var value = /** @type {!proto.connectrpc.conformance.v1.Code} */ (reader.readEnum());
       msg.setCode(value);
       break;
     case 2:
@@ -4265,8 +4265,8 @@ proto.connectrpc.conformance.v1.Error.prototype.serializeBinary = function() {
 proto.connectrpc.conformance.v1.Error.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
   f = message.getCode();
-  if (f !== 0) {
-    writer.writeInt32(
+  if (f !== 0.0) {
+    writer.writeEnum(
       1,
       f
     );
@@ -4290,20 +4290,20 @@ proto.connectrpc.conformance.v1.Error.serializeBinaryToWriter = function(message
 
 
 /**
- * optional int32 code = 1;
- * @return {number}
+ * optional Code code = 1;
+ * @return {!proto.connectrpc.conformance.v1.Code}
  */
 proto.connectrpc.conformance.v1.Error.prototype.getCode = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
+  return /** @type {!proto.connectrpc.conformance.v1.Code} */ (jspb.Message.getFieldWithDefault(this, 1, 0));
 };
 
 
 /**
- * @param {number} value
+ * @param {!proto.connectrpc.conformance.v1.Code} value
  * @return {!proto.connectrpc.conformance.v1.Error} returns this
  */
 proto.connectrpc.conformance.v1.Error.prototype.setCode = function(value) {
-  return jspb.Message.setProto3IntField(this, 1, value);
+  return jspb.Message.setProto3EnumField(this, 1, value);
 };
 
 

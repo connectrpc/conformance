@@ -27,12 +27,12 @@ import "google/protobuf/struct.proto";
 // and writes the results (in the form of a ClientCompatResponse
 // message) to stdout.
 message ClientCompatRequest {
-  // The name of the test that this request is performing. 
+  // The name of the test that this request is performing.
   // When writing test cases, this is a required field.
   string test_name = 1;
 
   // Test suite YAML definitions should NOT set values for these next
-  // nine fields (fields 2 - 10). They are automatically populated by the test 
+  // nine fields (fields 2 - 10). They are automatically populated by the test
   // runner. If a test is specific to one of these values, it should instead be
   // indicated in the test suite itself (where it defines the required
   // features and relevant values for these fields).
@@ -47,7 +47,7 @@ message ClientCompatRequest {
   Compression compression = 5;
   // The server host that this request will be sent to.
   string host = 6;
-  // The server port that this request will be sent to. 
+  // The server port that this request will be sent to.
   uint32 port = 7;
   // If non-empty, the server is using TLS. The bytes are the
   // server's PEM-encoded certificate, which the client should
@@ -65,7 +65,7 @@ message ClientCompatRequest {
   // If the server sends anything larger, the client should reject it.
   uint32 message_receive_limit = 10;
 
-  // The fully-qualified name of the service this test will interact with. 
+  // The fully-qualified name of the service this test will interact with.
   // For now, this is always "connectrpc.conformance.v1.ConformanceService".
   // When writing test cases, this is a required field.
   string service = 11;
@@ -87,7 +87,7 @@ message ClientCompatRequest {
   // The actual request messages that will sent to the server.
   // The type URL for all entries should be equal to the request type of the
   // method.
-  // There must be exactly one for unary and server-stream methods but 
+  // There must be exactly one for unary and server-stream methods but
   // can be zero or more for client- and bidi-stream methods.
   // For client- and bidi-stream methods, all entries will have the
   // same type URL.
@@ -141,13 +141,13 @@ message ClientCompatRequest {
 message ClientCompatResponse {
   // The test name that this response applies to.
   string test_name = 1;
-  // These fields determine the outcome of the request. 
-  // 
-  // With regards to errors, any unexpected errors that prevent the client from 
-  // issuing the RPC and following the instructions implied by the request can 
-  // be reported as an error. These would be errors creating an RPC client from 
-  // the request parameters or unsupported/illegal values in the request 
-  // (e.g. a unary request that defines zero or multiple request messages). 
+  // These fields determine the outcome of the request.
+  //
+  // With regards to errors, any unexpected errors that prevent the client from
+  // issuing the RPC and following the instructions implied by the request can
+  // be reported as an error. These would be errors creating an RPC client from
+  // the request parameters or unsupported/illegal values in the request
+  // (e.g. a unary request that defines zero or multiple request messages).
   //
   // However, once the RPC is issued, any resulting error should instead be encoded in response.
   oneof result {
@@ -163,7 +163,7 @@ message ClientResponseResult {
   repeated Header response_headers = 1;
   // Servers should echo back payloads that they received as part of the request.
   // This field should contain all the payloads the server echoed back. Note that
-  // There will be zero-to-one for unary and client-stream methods and 
+  // There will be zero-to-one for unary and client-stream methods and
   // zero-to-many for server- and bidi-stream methods.
   repeated ConformancePayload payloads = 2;
   // The error received from the actual RPC invocation. Note this is not representative
@@ -193,8 +193,8 @@ message ClientResponseResult {
 // to a runtime error or an unexpected internal error such as the requested protocol
 // not being supported. This is completely independent of the actual RPC invocation.
 message ClientErrorResult {
-  // A message describing the error that occurred. This string will be shown to 
-  // users running conformance tests so it should include any relevant details 
+  // A message describing the error that occurred. This string will be shown to
+  // users running conformance tests so it should include any relevant details
   // that may help troubleshoot or remedy the error.
   string message = 1;
 }

@@ -35,6 +35,7 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
+goog.exportSymbol('proto.connectrpc.conformance.v1.Code', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Codec', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Compression', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Config', null, global);
@@ -1563,6 +1564,29 @@ proto.connectrpc.conformance.v1.StreamType = {
   STREAM_TYPE_SERVER_STREAM: 3,
   STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM: 4,
   STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM: 5
+};
+
+/**
+ * @enum {number}
+ */
+proto.connectrpc.conformance.v1.Code = {
+  CODE_UNSPECIFIED: 0,
+  CODE_CANCELED: 1,
+  CODE_UNKNOWN: 2,
+  CODE_INVALID_ARGUMENT: 3,
+  CODE_DEADLINE_EXCEEDED: 4,
+  CODE_NOT_FOUND: 5,
+  CODE_ALREADY_EXISTS: 6,
+  CODE_PERMISSION_DENIED: 7,
+  CODE_RESOURCE_EXHAUSTED: 8,
+  CODE_FAILED_PRECONDITION: 9,
+  CODE_ABORTED: 10,
+  CODE_OUT_OF_RANGE: 11,
+  CODE_UNIMPLEMENTED: 12,
+  CODE_INTERNAL: 13,
+  CODE_UNAVAILABLE: 14,
+  CODE_DATA_LOSS: 15,
+  CODE_UNAUTHENTICATED: 16
 };
 
 goog.object.extend(exports, proto.connectrpc.conformance.v1);
