@@ -85,8 +85,10 @@ message Features {
   optional bool supports_message_receive_limit = 13;
 }
 
-// ConfigCase represents a resolved configuration case for a single test based
-// on features specified.
+// ConfigCase represents a single resolved configuration case. When tests are
+// run, the Config and the supported features therein are used to compute all
+// of the cases relevant to the implementation under test. These configuration
+// cases are then used to select which test cases are applicable.
 message ConfigCase {
   // TODO: we could probably model some of the constraints on what is a valid
   //       vs. invalid config case using protovalidate rules
