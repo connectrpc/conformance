@@ -13,6 +13,8 @@ relevantCodecs:
 testCases:
 - request:
     testName: success
+    # Explicitly specifying IdempotentUnary otherwise the runner would autopopulate
+    # the method to 'Unary'.
     method: IdempotentUnary
     streamType: STREAM_TYPE_UNARY
     useGetHttpMethod: true

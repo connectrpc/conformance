@@ -151,7 +151,7 @@ testCases:
 # Misc Tests ------------------------------------------------------------------
 - request:
     testName: unimplemented
-    # Explicitly specifying unimplemented otherwise the runner would autopopulate
+    # Explicitly specifying Unimplemented otherwise the runner would autopopulate
     # the method to 'Unary'.
     method: Unimplemented
     streamType: STREAM_TYPE_UNARY
