@@ -29,7 +29,7 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -79,7 +79,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 	sema := semaphore.NewWeighted(int64(*parallel))
 
 	for {
-		var req v1.ClientCompatRequest
+		var req conformancev1.ClientCompatRequest
 		err := decoder.DecodeNext(&req)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -105,20 +105,20 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 			result, err := invoke(ctx, &req)
 
 			// Build the result for the out writer.
-			resp := &v1.ClientCompatResponse{
+			resp := &conformancev1.ClientCompatResponse{
 				TestName: req.TestName,
 			}
 			// If an error was returned, it was a runtime / unexpected internal error so
 			// the written response should contain an error result, not a response with
 			// any RPC information
 			if err != nil {
-				resp.Result = &v1.ClientCompatResponse_Error{
-					Error: &v1.ClientErrorResult{
+				resp.Result = &conformancev1.ClientCompatResponse_Error{
+					Error: &conformancev1.ClientErrorResult{
 						Message: err.Error(),
 					},
 				}
 			} else {
-				resp.Result = &v1.ClientCompatResponse_Response{
+				resp.Result = &conformancev1.ClientCompatResponse_Response{
 					Response: result,
 				}
 			}
@@ -139,7 +139,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // gRPC error returned from calling an RPC. Any error (i.e. a gRPC error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientResponseResult, error) {
+func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest) (*conformancev1.ClientResponseResult, error) {
 	transportCredentials := insecure.NewCredentials()
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transportCredentials),
@@ -148,7 +148,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientRespons
 		grpc.WithUnaryInterceptor(userAgentUnaryClientInterceptor),
 		grpc.WithStreamInterceptor(userAgentStreamClientInterceptor),
 	}
-	if req.Compression == v1.Compression_COMPRESSION_GZIP {
+	if req.Compression == conformancev1.Compression_COMPRESSION_GZIP {
 		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
 	}
 

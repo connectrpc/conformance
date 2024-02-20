@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -35,18 +35,18 @@ import (
 const serverName = "connectconformance-grpcserver"
 
 // NewConformanceServiceServer creates a new Conformance Service server.
-func NewConformanceServiceServer() v1.ConformanceServiceServer {
+func NewConformanceServiceServer() conformancev1.ConformanceServiceServer {
 	return &conformanceServiceServer{}
 }
 
 type conformanceServiceServer struct {
-	v1.UnimplementedConformanceServiceServer
+	conformancev1.UnimplementedConformanceServiceServer
 }
 
 func (c *conformanceServiceServer) Unary(
 	ctx context.Context,
-	req *v1.UnaryRequest,
-) (*v1.UnaryResponse, error) {
+	req *conformancev1.UnaryRequest,
+) (*conformancev1.UnaryResponse, error) {
 	msgAsAny, err := asAny(req)
 	if err != nil {
 		return nil, err
@@ -76,16 +76,16 @@ func (c *conformanceServiceServer) Unary(
 		return nil, grpcErr
 	}
 
-	return &v1.UnaryResponse{
+	return &conformancev1.UnaryResponse{
 		Payload: payload,
 	}, nil
 }
 
 func (c *conformanceServiceServer) ClientStream(
-	stream v1.ConformanceService_ClientStreamServer,
+	stream conformancev1.ConformanceService_ClientStreamServer,
 ) error {
 	ctx := stream.Context()
-	var responseDefinition *v1.UnaryResponseDefinition
+	var responseDefinition *conformancev1.UnaryResponseDefinition
 	firstRecv := true
 	var reqs []*anypb.Any
 
@@ -132,14 +132,14 @@ func (c *conformanceServiceServer) ClientStream(
 		return err
 	}
 
-	return stream.SendAndClose(&v1.ClientStreamResponse{
+	return stream.SendAndClose(&conformancev1.ClientStreamResponse{
 		Payload: payload,
 	})
 }
 
 func (c *conformanceServiceServer) ServerStream(
-	req *v1.ServerStreamRequest,
-	stream v1.ConformanceService_ServerStreamServer,
+	req *conformancev1.ServerStreamRequest,
+	stream conformancev1.ConformanceService_ServerStreamServer,
 ) error {
 	ctx := stream.Context()
 	// Convert the request to an Any so that it can be recorded in the payload
@@ -162,8 +162,8 @@ func (c *conformanceServiceServer) ServerStream(
 		stream.SetTrailer(trailerMD)
 
 		for _, data := range responseDefinition.ResponseData {
-			resp := &v1.ServerStreamResponse{
-				Payload: &v1.ConformancePayload{
+			resp := &conformancev1.ServerStreamResponse{
+				Payload: &conformancev1.ConformancePayload{
 					Data: data,
 				},
 			}
@@ -203,10 +203,10 @@ func (c *conformanceServiceServer) ServerStream(
 }
 
 func (c *conformanceServiceServer) BidiStream(
-	stream v1.ConformanceService_BidiStreamServer,
+	stream conformancev1.ConformanceService_BidiStreamServer,
 ) error {
 	ctx := stream.Context()
-	var responseDefinition *v1.StreamResponseDefinition
+	var responseDefinition *conformancev1.StreamResponseDefinition
 	fullDuplex := false
 	firstRecv := true
 	respNum := 0
@@ -257,12 +257,12 @@ func (c *conformanceServiceServer) BidiStream(
 				// and throw the error specified
 				break
 			}
-			resp := &v1.BidiStreamResponse{
-				Payload: &v1.ConformancePayload{
+			resp := &conformancev1.BidiStreamResponse{
+				Payload: &conformancev1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],
 				},
 			}
-			var requestInfo *v1.ConformancePayload_RequestInfo
+			var requestInfo *conformancev1.ConformancePayload_RequestInfo
 			if respNum == 0 {
 				// Only send the full request info (including headers and timeouts)
 				// in the first response
@@ -272,7 +272,7 @@ func (c *conformanceServiceServer) BidiStream(
 				// All responses after the first should only include the requests
 				// since that is the only thing that will change between responses
 				// for a full duplex stream
-				requestInfo = &v1.ConformancePayload_RequestInfo{
+				requestInfo = &conformancev1.ConformancePayload_RequestInfo{
 					Requests: reqs,
 				}
 			}
@@ -295,8 +295,8 @@ func (c *conformanceServiceServer) BidiStream(
 			if err := stream.Context().Err(); err != nil {
 				return err
 			}
-			resp := &v1.BidiStreamResponse{
-				Payload: &v1.ConformancePayload{
+			resp := &conformancev1.BidiStreamResponse{
+				Payload: &conformancev1.ConformancePayload{
 					Data: responseDefinition.ResponseData[respNum],
 				},
 			}
@@ -337,20 +337,20 @@ func (c *conformanceServiceServer) BidiStream(
 // a built payload or a gRPC error based on the definition.
 func parseUnaryResponseDefinition(
 	ctx context.Context,
-	def *v1.UnaryResponseDefinition,
+	def *conformancev1.UnaryResponseDefinition,
 	metadata metadata.MD,
 	reqs []*anypb.Any,
-) (*v1.ConformancePayload, error) {
+) (*conformancev1.ConformancePayload, error) {
 	reqInfo := createRequestInfo(ctx, metadata, reqs)
 	if def == nil {
 		// If the definition is not set at all, there's nothing to respond with.
 		// Just return a payload with the request info
-		return &v1.ConformancePayload{
+		return &conformancev1.ConformancePayload{
 			RequestInfo: reqInfo,
 		}, nil
 	}
 	switch respType := def.Response.(type) {
-	case *v1.UnaryResponseDefinition_Error:
+	case *conformancev1.UnaryResponseDefinition_Error:
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
 			return nil, status.Error(codes.Internal, err.Error())
@@ -358,13 +358,13 @@ func parseUnaryResponseDefinition(
 		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 		return nil, grpcutil.ConvertProtoToGrpcError(respType.Error)
 
-	case *v1.UnaryResponseDefinition_ResponseData, nil:
-		payload := &v1.ConformancePayload{
+	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
+		payload := &conformancev1.ConformancePayload{
 			RequestInfo: reqInfo,
 		}
 
 		// If response data was provided, set that in the payload response
-		if respType, ok := respType.(*v1.UnaryResponseDefinition_ResponseData); ok {
+		if respType, ok := respType.(*conformancev1.UnaryResponseDefinition_ResponseData); ok {
 			payload.Data = respType.ResponseData
 		}
 		return payload, nil
@@ -378,7 +378,7 @@ func parseUnaryResponseDefinition(
 }
 
 // Creates request info for a conformance payload.
-func createRequestInfo(ctx context.Context, metadata metadata.MD, reqs []*anypb.Any) *v1.ConformancePayload_RequestInfo {
+func createRequestInfo(ctx context.Context, metadata metadata.MD, reqs []*anypb.Any) *conformancev1.ConformancePayload_RequestInfo {
 	headerInfo := grpcutil.ConvertMetadataToProtoHeader(metadata)
 
 	var timeoutMs *int64
@@ -391,7 +391,7 @@ func createRequestInfo(ctx context.Context, metadata metadata.MD, reqs []*anypb.
 	}
 
 	// Set all observed request headers and requests in the response payload
-	return &v1.ConformancePayload_RequestInfo{
+	return &conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: headerInfo,
 		Requests:       reqs,
 		TimeoutMs:      timeoutMs,

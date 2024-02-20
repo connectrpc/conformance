@@ -24,7 +24,7 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/proto"
@@ -53,8 +53,8 @@ func newInvoker(transport http.RoundTripper, referenceMode bool, url *url.URL, o
 
 func (i *invoker) Invoke(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	// If a timeout was specified, create a derived context with that deadline
 	if req.TimeoutMs != nil {
 		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
@@ -115,10 +115,10 @@ func (i *invoker) Invoke(
 
 func (i *invoker) unary(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ur := &v1.UnaryRequest{}
+	ur := &conformancev1.UnaryRequest{}
 	if err := msg.UnmarshalTo(ur); err != nil {
 		return nil, err
 	}
@@ -128,10 +128,10 @@ func (i *invoker) unary(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	var protoErr *v1.Error
-	var headers []*v1.Header
-	var trailers []*v1.Header
-	payloads := make([]*v1.ConformancePayload, 0, 1)
+	var protoErr *conformancev1.Error
+	var headers []*conformancev1.Header
+	var trailers []*conformancev1.Header
+	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
 	ctx = i.withWireCapture(ctx)
 
@@ -157,7 +157,7 @@ func (i *invoker) unary(
 
 	statusCode, feedback := i.examineWireDetails(ctx)
 
-	return &v1.ClientResponseResult{
+	return &conformancev1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -172,10 +172,10 @@ func (i *invoker) unary(
 // for an example.
 func (i *invoker) idempotentUnary(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ur := &v1.IdempotentUnaryRequest{}
+	ur := &conformancev1.IdempotentUnaryRequest{}
 	if err := msg.UnmarshalTo(ur); err != nil {
 		return nil, err
 	}
@@ -185,10 +185,10 @@ func (i *invoker) idempotentUnary(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	var protoErr *v1.Error
-	var headers []*v1.Header
-	var trailers []*v1.Header
-	payloads := make([]*v1.ConformancePayload, 0, 1)
+	var protoErr *conformancev1.Error
+	var headers []*conformancev1.Header
+	var trailers []*conformancev1.Header
+	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
 	ctx = i.withWireCapture(ctx)
 
@@ -212,7 +212,7 @@ func (i *invoker) idempotentUnary(
 
 	statusCode, feedback := i.examineWireDetails(ctx)
 
-	return &v1.ClientResponseResult{
+	return &conformancev1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -224,13 +224,13 @@ func (i *invoker) idempotentUnary(
 
 func (i *invoker) serverStream(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, _ error) {
+	req *conformancev1.ClientCompatRequest,
+) (result *conformancev1.ClientResponseResult, _ error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	msg := req.RequestMessages[0]
-	ssr := &v1.ServerStreamRequest{}
+	ssr := &conformancev1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(ssr); err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
-	result = &v1.ClientResponseResult{}
+	result = &conformancev1.ClientResponseResult{}
 
 	ctx = i.withWireCapture(ctx)
 
@@ -252,7 +252,7 @@ func (i *invoker) serverStream(
 		connectErr := internal.ConvertErrorToConnectError(err)
 		headers := internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr := internal.ConvertConnectToProtoError(connectErr)
-		return &v1.ClientResponseResult{
+		return &conformancev1.ClientResponseResult{
 			ResponseHeaders: headers,
 			Error:           protoErr,
 		}, nil
@@ -275,7 +275,7 @@ func (i *invoker) serverStream(
 	}()
 
 	if ssr.ResponseDefinition != nil {
-		result.Payloads = make([]*v1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
+		result.Payloads = make([]*conformancev1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
 	timing, err := internal.GetCancelTiming(req.Cancel)
@@ -311,8 +311,8 @@ func (i *invoker) serverStream(
 
 func (i *invoker) clientStream(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -323,7 +323,7 @@ func (i *invoker) clientStream(
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
 	for _, msg := range req.RequestMessages {
-		csr := &v1.ClientStreamRequest{}
+		csr := &conformancev1.ClientStreamRequest{}
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
 		}
@@ -336,10 +336,10 @@ func (i *invoker) clientStream(
 		}
 	}
 
-	var protoErr *v1.Error
-	var headers []*v1.Header
-	var trailers []*v1.Header
-	payloads := make([]*v1.ConformancePayload, 0, 1)
+	var protoErr *conformancev1.Error
+	var headers []*conformancev1.Header
+	var trailers []*conformancev1.Header
+	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
 	// Cancellation timing
 	timing, err := internal.GetCancelTiming(req.Cancel)
@@ -372,7 +372,7 @@ func (i *invoker) clientStream(
 
 	statusCode, feedback := i.examineWireDetails(ctx)
 
-	return &v1.ClientResponseResult{
+	return &conformancev1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -384,12 +384,12 @@ func (i *invoker) clientStream(
 
 func (i *invoker) bidiStream(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, err error) {
+	req *conformancev1.ClientCompatRequest,
+) (result *conformancev1.ClientResponseResult, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{}
+	result = &conformancev1.ClientResponseResult{}
 
 	ctx = i.withWireCapture(ctx)
 
@@ -414,7 +414,7 @@ func (i *invoker) bidiStream(
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
-	fullDuplex := req.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+	fullDuplex := req.StreamType == conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
 	// Cancellation timing
 	timing, err := internal.GetCancelTiming(req.Cancel)
@@ -422,10 +422,10 @@ func (i *invoker) bidiStream(
 		return nil, err
 	}
 
-	var protoErr *v1.Error
+	var protoErr *conformancev1.Error
 	totalRcvd := 0
 	for _, msg := range req.RequestMessages {
-		bsr := &v1.BidiStreamRequest{}
+		bsr := &conformancev1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
 			// unmarshalling error unrelated to the RPC
@@ -515,10 +515,10 @@ func (i *invoker) bidiStream(
 
 func (i *invoker) unimplemented(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ur := &v1.UnimplementedRequest{}
+	ur := &conformancev1.UnimplementedRequest{}
 	if err := msg.UnmarshalTo(ur); err != nil {
 		return nil, err
 	}
@@ -533,7 +533,7 @@ func (i *invoker) unimplemented(
 
 	statusCode, feedback := i.examineWireDetails(ctx)
 
-	return &v1.ClientResponseResult{
+	return &conformancev1.ClientResponseResult{
 		Error:          internal.ConvertErrorToProtoError(err),
 		HttpStatusCode: statusCode,
 		Feedback:       feedback,

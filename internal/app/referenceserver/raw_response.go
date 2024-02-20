@@ -22,14 +22,14 @@ import (
 	"sync"
 
 	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	connectv1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/proto"
 )
 
 // rawResponseKey is used to store the raw response that the server
-// should send in the context. The value type will be **v1.RawHTTPResponse.
+// should send in the context. The value type will be **conformancev1.RawHTTPResponse.
 type rawResponseKey struct{}
 
 // rawResponder is HTTP middleware that can send back a raw HTTP response
@@ -62,7 +62,7 @@ func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handle
 		// We stash this placeholder into context so the rawResponseRecorder
 		// interceptor can populate it and then abort the handler and let us
 		// take over the response.
-		var rawResponse *v1.RawHTTPResponse
+		var rawResponse *conformancev1.RawHTTPResponse
 		ctx := context.WithValue(req.Context(), rawResponseKey{}, &rawResponse)
 		req = req.WithContext(ctx)
 		rawResponder := &rawResponseWriter{respWriter: respWriter, rawResp: &rawResponse}
@@ -74,7 +74,7 @@ func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handle
 type rawResponseWriter struct {
 	respWriter      http.ResponseWriter
 	mu              sync.Mutex
-	rawResp         **v1.RawHTTPResponse
+	rawResp         **conformancev1.RawHTTPResponse
 	startedResponse bool
 }
 
@@ -97,7 +97,7 @@ func (r *rawResponseWriter) canSendResponse() bool {
 // rawResponse returns non-nil if the call will be finished with a
 // raw response. If it returns nil, nothing need be done to finish
 // the call; the server handler was already allowed to send it.
-func (r *rawResponseWriter) rawResponse(feedback *feedbackPrinter) *v1.RawHTTPResponse {
+func (r *rawResponseWriter) rawResponse(feedback *feedbackPrinter) *conformancev1.RawHTTPResponse {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.startedResponse {
@@ -163,9 +163,9 @@ func (r *rawResponseWriter) finish(feedback *feedbackPrinter) {
 	}
 	r.respWriter.WriteHeader(statusCode)
 	switch contents := resp.Body.(type) {
-	case *v1.RawHTTPResponse_Unary:
+	case *conformancev1.RawHTTPResponse_Unary:
 		_ = internal.WriteRawMessageContents(contents.Unary, r.respWriter)
-	case *v1.RawHTTPResponse_Stream:
+	case *conformancev1.RawHTTPResponse_Stream:
 		_ = internal.WriteRawStreamContents(contents.Stream, r.respWriter)
 	}
 	internal.AddTrailers(resp.Trailers, r.respWriter.Header())
@@ -175,10 +175,10 @@ type rawResponseRecorder struct{}
 
 func (r rawResponseRecorder) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
 	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if msg, ok := req.Any().(*v1.UnaryRequest); ok {
+		if msg, ok := req.Any().(*conformancev1.UnaryRequest); ok {
 			rawResponse := msg.GetResponseDefinition().GetRawResponse()
 			if rawResponse != nil {
-				respPtr, ok := ctx.Value(rawResponseKey{}).(**v1.RawHTTPResponse)
+				respPtr, ok := ctx.Value(rawResponseKey{}).(**conformancev1.RawHTTPResponse)
 				if !ok {
 					return nil, errors.New("request contains raw response definition but no RawHTTPResponse holder in context")
 				}
@@ -197,23 +197,23 @@ func (r rawResponseRecorder) WrapStreamingClient(next connect.StreamingClientFun
 func (r rawResponseRecorder) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return func(ctx context.Context, stream connect.StreamingHandlerConn) error {
 		var req proto.Message
-		var rawResponseFunc func() *v1.RawHTTPResponse
+		var rawResponseFunc func() *conformancev1.RawHTTPResponse
 		switch stream.Spec().Procedure {
-		case connectv1.ConformanceServiceClientStreamProcedure:
-			streamReq := &v1.ClientStreamRequest{}
-			rawResponseFunc = func() *v1.RawHTTPResponse {
+		case conformancev1connect.ConformanceServiceClientStreamProcedure:
+			streamReq := &conformancev1.ClientStreamRequest{}
+			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
 				return streamReq.GetResponseDefinition().GetRawResponse()
 			}
 			req = streamReq
-		case connectv1.ConformanceServiceServerStreamProcedure:
-			streamReq := &v1.ServerStreamRequest{}
-			rawResponseFunc = func() *v1.RawHTTPResponse {
+		case conformancev1connect.ConformanceServiceServerStreamProcedure:
+			streamReq := &conformancev1.ServerStreamRequest{}
+			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
 				return streamReq.GetResponseDefinition().GetRawResponse()
 			}
 			req = streamReq
-		case connectv1.ConformanceServiceBidiStreamProcedure:
-			streamReq := &v1.BidiStreamRequest{}
-			rawResponseFunc = func() *v1.RawHTTPResponse {
+		case conformancev1connect.ConformanceServiceBidiStreamProcedure:
+			streamReq := &conformancev1.BidiStreamRequest{}
+			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
 				return streamReq.GetResponseDefinition().GetRawResponse()
 			}
 			req = streamReq
@@ -226,7 +226,7 @@ func (r rawResponseRecorder) WrapStreamingHandler(next connect.StreamingHandlerF
 		if reqErr == nil { //nolint:nestif
 			rawResponse := rawResponseFunc()
 			if rawResponse != nil {
-				respPtr, ok := ctx.Value(rawResponseKey{}).(**v1.RawHTTPResponse)
+				respPtr, ok := ctx.Value(rawResponseKey{}).(**conformancev1.RawHTTPResponse)
 				if !ok {
 					return errors.New("request contains raw response definition but no RawHTTPResponse holder in context")
 				}

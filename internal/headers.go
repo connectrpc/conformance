@@ -17,12 +17,12 @@ package internal
 import (
 	"net/http"
 
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 )
 
 // AddHeaders adds all header values in src to dest.
 func AddHeaders(
-	src []*v1.Header,
+	src []*conformancev1.Header,
 	dest http.Header,
 ) {
 	for _, header := range src {
@@ -35,7 +35,7 @@ func AddHeaders(
 // AddTrailers adds all header values in src to dest, but
 // it prefixes each header name with http.TrailerPrefix.
 func AddTrailers(
-	src []*v1.Header,
+	src []*conformancev1.Header,
 	dest http.Header,
 ) {
 	for _, header := range src {
@@ -47,10 +47,10 @@ func AddTrailers(
 
 // ConvertToProtoHeader converts a map to a slice of proto Headers.
 // Note that this can accept types of url.Values and http.Header.
-func ConvertToProtoHeader(src map[string][]string) []*v1.Header {
-	headerInfo := make([]*v1.Header, 0, len(src))
+func ConvertToProtoHeader(src map[string][]string) []*conformancev1.Header {
+	headerInfo := make([]*conformancev1.Header, 0, len(src))
 	for key, value := range src {
-		hdr := &v1.Header{
+		hdr := &conformancev1.Header{
 			Name:  key,
 			Value: value,
 		}

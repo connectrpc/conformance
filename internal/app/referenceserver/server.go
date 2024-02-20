@@ -33,7 +33,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
 	connect "connectrpc.com/connect"
@@ -82,7 +82,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	codec := internal.NewCodec(*json)
 
 	// Read the server config from the in reader
-	req := &v1.ServerCompatRequest{}
+	req := &conformancev1.ServerCompatRequest{}
 	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
@@ -119,7 +119,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	default:
 	}
 
-	resp := &v1.ServerCompatResponse{
+	resp := &conformancev1.ServerCompatResponse{
 		Host:    actualHost,
 		Port:    uint32(actualPort),
 		PemCert: certBytes,
@@ -165,7 +165,7 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
+func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	interceptors := []connect.Interceptor{serverNameHandlerInterceptor{}}
 	if referenceMode {
@@ -265,13 +265,13 @@ func createServer(req *v1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFi
 	var server httpServer
 	var err error
 	switch req.HttpVersion {
-	case v1.HTTPVersion_HTTP_VERSION_1:
+	case conformancev1.HTTPVersion_HTTP_VERSION_1:
 		server, err = newH1Server(handler, listenAddr, tlsConf)
-	case v1.HTTPVersion_HTTP_VERSION_2:
+	case conformancev1.HTTPVersion_HTTP_VERSION_2:
 		server, err = newH2Server(handler, listenAddr, tlsConf)
-	case v1.HTTPVersion_HTTP_VERSION_3:
+	case conformancev1.HTTPVersion_HTTP_VERSION_3:
 		server, err = newH3Server(handler, listenAddr, tlsConf)
-	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
+	case conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		err = errors.New("an HTTP version must be specified")
 	}
 	if err != nil {

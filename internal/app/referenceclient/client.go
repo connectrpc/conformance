@@ -34,7 +34,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
@@ -98,7 +98,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	sema := semaphore.NewWeighted(int64(*parallel))
 
 	for {
-		var req v1.ClientCompatRequest
+		var req conformancev1.ClientCompatRequest
 		err := decoder.DecodeNext(&req)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -124,15 +124,15 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 			result, err := invoke(ctx, &req, referenceMode, trace)
 
 			// Build the result for the out writer.
-			resp := &v1.ClientCompatResponse{
+			resp := &conformancev1.ClientCompatResponse{
 				TestName: req.TestName,
 			}
 			// If an error was returned, it was a runtime / unexpected internal error so
 			// the written response should contain an error result, not a response with
 			// any RPC information
 			if err != nil {
-				resp.Result = &v1.ClientCompatResponse_Error{
-					Error: &v1.ClientErrorResult{
+				resp.Result = &conformancev1.ClientCompatResponse_Error{
+					Error: &conformancev1.ClientErrorResult{
 						Message: err.Error(),
 					},
 				}
@@ -142,7 +142,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 					result.HttpStatusCode = nil
 					result.Feedback = nil
 				}
-				resp.Result = &v1.ClientCompatResponse_Response{
+				resp.Result = &conformancev1.ClientCompatResponse_Response{
 					Response: result,
 				}
 			}
@@ -163,7 +163,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*v1.ClientResponseResult, error) { //nolint:gocyclo
+func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) { //nolint:gocyclo
 	tlsConf, err := createTLSConfig(req)
 	if err != nil {
 		return nil, err
@@ -184,7 +184,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 	// test case
 	var transport http.RoundTripper
 	switch req.HttpVersion {
-	case v1.HTTPVersion_HTTP_VERSION_1:
+	case conformancev1.HTTPVersion_HTTP_VERSION_1:
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"http/1.1"}
 		}
@@ -203,7 +203,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 			}
 			return resp, err
 		})
-	case v1.HTTPVersion_HTTP_VERSION_2:
+	case conformancev1.HTTPVersion_HTTP_VERSION_2:
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"h2"}
 			transport = &http.Transport{
@@ -220,7 +220,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 				},
 			}
 		}
-	case v1.HTTPVersion_HTTP_VERSION_3:
+	case conformancev1.HTTPVersion_HTTP_VERSION_3:
 		if tlsConf == nil {
 			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
 		}
@@ -229,7 +229,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 			TLSClientConfig:    tlsConf,
 			QuicConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
 		}}
-	case v1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
+	case conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
 	}
 
@@ -247,28 +247,28 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 	// Create client options based on protocol of the implementation
 	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
 	switch req.Protocol {
-	case v1.Protocol_PROTOCOL_GRPC:
+	case conformancev1.Protocol_PROTOCOL_GRPC:
 		clientOptions = append(clientOptions, connect.WithGRPC())
-	case v1.Protocol_PROTOCOL_GRPC_WEB:
+	case conformancev1.Protocol_PROTOCOL_GRPC_WEB:
 		clientOptions = append(clientOptions, connect.WithGRPCWeb())
-	case v1.Protocol_PROTOCOL_CONNECT:
+	case conformancev1.Protocol_PROTOCOL_CONNECT:
 		// Do nothing
-	case v1.Protocol_PROTOCOL_UNSPECIFIED:
+	case conformancev1.Protocol_PROTOCOL_UNSPECIFIED:
 		return nil, errors.New("a protocol must be specified")
 	}
 
 	switch req.Codec {
-	case v1.Codec_CODEC_PROTO:
+	case conformancev1.Codec_CODEC_PROTO:
 		// this is the default, no option needed
-	case v1.Codec_CODEC_JSON:
+	case conformancev1.Codec_CODEC_JSON:
 		clientOptions = append(clientOptions, connect.WithProtoJSON())
-	case v1.Codec_CODEC_TEXT:
+	case conformancev1.Codec_CODEC_TEXT:
 		clientOptions = append(clientOptions, connect.WithCodec(&internal.TextConnectCodec{}))
 	default:
 		return nil, errors.New("a codec must be specified")
 	}
 
-	if req.Compression != v1.Compression_COMPRESSION_GZIP {
+	if req.Compression != conformancev1.Compression_COMPRESSION_GZIP {
 		// Gzip is supported by default. So if we're not using it, disable it.
 		clientOptions = append(clientOptions,
 			connect.WithAcceptCompression(compression.Gzip, nil, nil),
@@ -276,7 +276,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 	}
 
 	switch req.Compression {
-	case v1.Compression_COMPRESSION_BR:
+	case conformancev1.Compression_COMPRESSION_BR:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -286,7 +286,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 			),
 			connect.WithSendCompression(compression.Brotli),
 		)
-	case v1.Compression_COMPRESSION_DEFLATE:
+	case conformancev1.Compression_COMPRESSION_DEFLATE:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -296,12 +296,12 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 			),
 			connect.WithSendCompression(compression.Deflate),
 		)
-	case v1.Compression_COMPRESSION_GZIP:
+	case conformancev1.Compression_COMPRESSION_GZIP:
 		// Connect clients send uncompressed requests and ask for gzipped responses by default
 		// As a result, specifying a compression of gzip for a client indicates it should also
 		// send gzipped requests
 		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case v1.Compression_COMPRESSION_SNAPPY:
+	case conformancev1.Compression_COMPRESSION_SNAPPY:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -311,7 +311,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 			),
 			connect.WithSendCompression(compression.Snappy),
 		)
-	case v1.Compression_COMPRESSION_ZSTD:
+	case conformancev1.Compression_COMPRESSION_ZSTD:
 		clientOptions = append(
 			clientOptions,
 			connect.WithAcceptCompression(
@@ -321,7 +321,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 			),
 			connect.WithSendCompression(compression.Zstd),
 		)
-	case v1.Compression_COMPRESSION_IDENTITY, v1.Compression_COMPRESSION_UNSPECIFIED:
+	case conformancev1.Compression_COMPRESSION_IDENTITY, conformancev1.Compression_COMPRESSION_UNSPECIFIED:
 		// No compression; do nothing
 	}
 
@@ -337,7 +337,7 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 	}
 }
 
-func createTLSConfig(req *v1.ClientCompatRequest) (*tls.Config, error) {
+func createTLSConfig(req *conformancev1.ClientCompatRequest) (*tls.Config, error) {
 	if req.ServerTlsCert == nil {
 		if req.ClientTlsCreds != nil {
 			return nil, errors.New("request indicated TLS client credentials but not server TLS cert provided")

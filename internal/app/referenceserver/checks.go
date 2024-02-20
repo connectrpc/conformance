@@ -25,7 +25,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -67,16 +67,16 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 			feedback.Printf("client sent another request (#%d) for the same test case", count+1)
 		}
 
-		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, v1.HTTPVersion(0), feedback); ok {
+		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, conformancev1.HTTPVersion(0), feedback); ok {
 			checkHTTPVersion(httpVersion, req, feedback)
 		}
-		if protocol, ok := enumValue("x-expect-protocol", req.Header, v1.Protocol(0), feedback); ok {
+		if protocol, ok := enumValue("x-expect-protocol", req.Header, conformancev1.Protocol(0), feedback); ok {
 			checkProtocol(protocol, req, feedback)
 		}
-		if codec, ok := enumValue("x-expect-codec", req.Header, v1.Codec(0), feedback); ok {
+		if codec, ok := enumValue("x-expect-codec", req.Header, conformancev1.Codec(0), feedback); ok {
 			checkCodec(codec, req, feedback)
 		}
-		if compress, ok := enumValue("x-expect-compression", req.Header, v1.Compression(0), feedback); ok {
+		if compress, ok := enumValue("x-expect-compression", req.Header, conformancev1.Compression(0), feedback); ok {
 			checkCompression(compress, req, feedback)
 		}
 
@@ -116,14 +116,14 @@ func enumValue[E int32Enum](headerName string, headers http.Header, zero E, feed
 	return E(int32(intVal)), true
 }
 
-func checkHTTPVersion(expected v1.HTTPVersion, req *http.Request, feedback *feedbackPrinter) {
+func checkHTTPVersion(expected conformancev1.HTTPVersion, req *http.Request, feedback *feedbackPrinter) {
 	var expectVersion int
 	switch expected {
-	case v1.HTTPVersion_HTTP_VERSION_1:
+	case conformancev1.HTTPVersion_HTTP_VERSION_1:
 		expectVersion = 1
-	case v1.HTTPVersion_HTTP_VERSION_2:
+	case conformancev1.HTTPVersion_HTTP_VERSION_2:
 		expectVersion = 2
-	case v1.HTTPVersion_HTTP_VERSION_3:
+	case conformancev1.HTTPVersion_HTTP_VERSION_3:
 		expectVersion = 3
 	default:
 		feedback.Printf("invalid expected HTTP version %d", expected)
@@ -134,16 +134,16 @@ func checkHTTPVersion(expected v1.HTTPVersion, req *http.Request, feedback *feed
 	}
 }
 
-func checkProtocol(expected v1.Protocol, req *http.Request, feedback *feedbackPrinter) {
-	var actual v1.Protocol
+func checkProtocol(expected conformancev1.Protocol, req *http.Request, feedback *feedbackPrinter) {
+	var actual conformancev1.Protocol
 	contentType := req.Header.Get("content-type")
 	switch {
 	case contentType == grpcContentType || strings.HasPrefix(contentType, grpcContentTypePrefix):
-		actual = v1.Protocol_PROTOCOL_GRPC
+		actual = conformancev1.Protocol_PROTOCOL_GRPC
 	case contentType == grpcWebContentType || strings.HasPrefix(contentType, grpcWebContentTypePrefix):
-		actual = v1.Protocol_PROTOCOL_GRPC_WEB
+		actual = conformancev1.Protocol_PROTOCOL_GRPC_WEB
 	case strings.HasPrefix(contentType, connectContentTypePrefix) || req.Method == http.MethodGet:
-		actual = v1.Protocol_PROTOCOL_CONNECT
+		actual = conformancev1.Protocol_PROTOCOL_CONNECT
 	default:
 		feedback.Printf("could not determine protocol from content-type %q", contentType)
 		return
@@ -153,14 +153,14 @@ func checkProtocol(expected v1.Protocol, req *http.Request, feedback *feedbackPr
 	}
 }
 
-func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackPrinter) {
+func checkCodec(expected conformancev1.Codec, req *http.Request, feedback *feedbackPrinter) {
 	var expect string
 	switch expected {
-	case v1.Codec_CODEC_PROTO:
+	case conformancev1.Codec_CODEC_PROTO:
 		expect = codecProto
-	case v1.Codec_CODEC_JSON:
+	case conformancev1.Codec_CODEC_JSON:
 		expect = codecJSON
-	case v1.Codec_CODEC_TEXT:
+	case conformancev1.Codec_CODEC_TEXT:
 		expect = codecText
 	default:
 		feedback.Printf("invalid expected codec %d", expected)
@@ -205,20 +205,20 @@ func checkCodec(expected v1.Codec, req *http.Request, feedback *feedbackPrinter)
 	}
 }
 
-func checkCompression(expected v1.Compression, req *http.Request, feedback *feedbackPrinter) {
+func checkCompression(expected conformancev1.Compression, req *http.Request, feedback *feedbackPrinter) {
 	var expect string
 	switch expected {
-	case v1.Compression_COMPRESSION_IDENTITY:
+	case conformancev1.Compression_COMPRESSION_IDENTITY:
 		expect = compression.Identity
-	case v1.Compression_COMPRESSION_GZIP:
+	case conformancev1.Compression_COMPRESSION_GZIP:
 		expect = compression.Gzip
-	case v1.Compression_COMPRESSION_BR:
+	case conformancev1.Compression_COMPRESSION_BR:
 		expect = compression.Brotli
-	case v1.Compression_COMPRESSION_ZSTD:
+	case conformancev1.Compression_COMPRESSION_ZSTD:
 		expect = compression.Zstd
-	case v1.Compression_COMPRESSION_DEFLATE:
+	case conformancev1.Compression_COMPRESSION_DEFLATE:
 		expect = compression.Deflate
-	case v1.Compression_COMPRESSION_SNAPPY:
+	case conformancev1.Compression_COMPRESSION_SNAPPY:
 		expect = compression.Snappy
 	default:
 		feedback.Printf("invalid expected compression %d", expected)
