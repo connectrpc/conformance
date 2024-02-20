@@ -5,8 +5,6 @@ testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
     testName: unary/success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestHeaders:
     - name: X-Conformance-Test
@@ -23,24 +21,18 @@ testCases:
           value: ["bing"]
 - request:
     testName: unary/empty-definition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
 - request:
     testName: unary/no-definition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 # Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client-stream/success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestHeaders:
     - name: X-Conformance-Test
@@ -59,24 +51,18 @@ testCases:
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: client-stream/empty-definition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
 - request:
     testName: client-stream/no-definition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
     - name: X-Conformance-Test
@@ -95,8 +81,6 @@ testCases:
           value: ["bing"]
 - request:
     testName: server-stream/no-response
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -109,16 +93,12 @@ testCases:
           value: ["bing"]
 - request:
     testName: server-stream/no-definition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/full-duplex/success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestHeaders:
     - name: X-Conformance-Test
@@ -140,8 +120,6 @@ testCases:
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: bidi-stream/half-duplex/success
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestHeaders:
     - name: X-Conformance-Test
@@ -164,8 +142,6 @@ testCases:
     # Note there is no 'full duplex no definition set' test since that is
     # logically equivalent to this test and is therefore covered here.
     testName: bidi-stream/half-duplex/no-definition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test
@@ -175,7 +151,8 @@ testCases:
 # Misc Tests ------------------------------------------------------------------
 - request:
     testName: unimplemented
-    service: connectrpc.conformance.v1.ConformanceService
+    # Explicitly specifying unimplemented otherwise the runner would autopopulate
+    # the method to 'Unary'.
     method: Unimplemented
     streamType: STREAM_TYPE_UNARY
     requestMessages:

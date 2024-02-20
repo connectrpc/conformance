@@ -62,7 +62,7 @@ func (i *invoker) Invoke(
 		defer cancel()
 	}
 
-	switch req.Method {
+	switch *req.Method {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
 			return nil, errors.New("unary calls must specify exactly one request message")
@@ -109,7 +109,7 @@ func (i *invoker) Invoke(
 		}
 		return resp, nil
 	default:
-		return nil, errors.New("method name " + req.Method + " does not exist")
+		return nil, errors.New("method name " + *req.Method + " does not exist")
 	}
 }
 

@@ -13,7 +13,6 @@ relevantCodecs:
 testCases:
 - request:
     testName: success
-    service: connectrpc.conformance.v1.ConformanceService
     method: IdempotentUnary
     streamType: STREAM_TYPE_UNARY
     useGetHttpMethod: true

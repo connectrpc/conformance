@@ -163,10 +163,10 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest) (*v1.ClientRespons
 		return nil, err
 	}
 
-	switch req.Service {
+	switch *req.Service {
 	case internal.ConformanceServiceName:
 		return newInvoker(clientConn).Invoke(ctx, req)
 	default:
-		return nil, errors.New("service name " + req.Service + " is not a valid service")
+		return nil, errors.New("service name " + *req.Service + " is not a valid service")
 	}
 }

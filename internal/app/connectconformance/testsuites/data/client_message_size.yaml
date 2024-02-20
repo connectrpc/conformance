@@ -10,8 +10,6 @@ testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
     testName: unary/request-equal-to-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -21,8 +19,6 @@ testCases:
     - sizeRelativeToLimit: 0
 - request:
     testName: unary/request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -37,8 +33,6 @@ testCases:
 # Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client-stream/all-requests-equal-to-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
@@ -51,8 +45,6 @@ testCases:
     - sizeRelativeToLimit: 0
 - request:
     testName: client-stream/first-request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
@@ -69,8 +61,6 @@ testCases:
       code: 8
 - request:
     testName: client-stream/subsequent-request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
@@ -88,8 +78,6 @@ testCases:
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/request-equal-to-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -101,8 +89,6 @@ testCases:
     - sizeRelativeToLimit: 0
 - request:
     testName: server-stream/request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -119,8 +105,6 @@ testCases:
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/half-duplex/all-requests-equal-to-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
@@ -135,8 +119,6 @@ testCases:
     - sizeRelativeToLimit: 0
 - request:
     testName: bidi-stream/half-duplex/first-request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
@@ -157,8 +139,6 @@ testCases:
       code: 8
 - request:
     testName: bidi-stream/half-duplex/subsequent-request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
@@ -179,8 +159,6 @@ testCases:
       code: 8
 - request:
     testName: bidi-stream/full-duplex/all-requests-equal-to-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
@@ -196,8 +174,6 @@ testCases:
     - sizeRelativeToLimit: 0
 - request:
     testName: bidi-stream/full-duplex/first-request-exceeds-client-limit
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
@@ -220,8 +196,6 @@ testCases:
 # library padded it with size and we don't know what it looks like here.
 # - request:
 #     testName: bidi-stream/full-duplex/subsequent-request-exceeds-client-limit
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: BidiStream
 #     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 #     requestMessages:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest

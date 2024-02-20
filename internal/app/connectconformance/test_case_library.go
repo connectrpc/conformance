@@ -23,6 +23,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
 	"github.com/bufbuild/protoyaml-go"
 	"google.golang.org/protobuf/proto"
@@ -177,17 +178,32 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		if testCase.Request.TestName == "" {
 			return fmt.Errorf("test case #%d: test case has no name", i+1)
 		}
-		if testCase.Request.Service == "" {
-			return fmt.Errorf("test case #%d: test %s has no service specified", i+1, testCase.Request.TestName)
-		}
-		if testCase.Request.Method == "" {
-			return fmt.Errorf("test case #%d: test %s has no method specified", i+1, testCase.Request.TestName)
-		}
 		if testCase.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
 			return fmt.Errorf("test case #%d: test %s has no stream type specified", i+1, testCase.Request.TestName)
 		}
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
+		}
+		// If service isn't specified, default to the Conformance Service.
+		if testCase.Request.GetService() == "" {
+			serviceName := conformancev1connect.ConformanceServiceName
+			testCase.Request.Service = &serviceName
+		}
+		// If method isn't specified, auto-populate based on stream type
+		if testCase.Request.GetMethod() == "" {
+			methodName := ""
+			switch testCase.Request.StreamType {
+			case conformancev1.StreamType_STREAM_TYPE_UNARY:
+				methodName = "Unary"
+			case conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM:
+				methodName = "ClientStream"
+			case conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM:
+				methodName = "ServerStream"
+			case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+				conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+				methodName = "BidiStream"
+			}
+			testCase.Request.Method = &methodName
 		}
 		name := path.Join(append(namePrefix, testCase.Request.TestName)...)
 		if _, exists := lib.testCases[name]; exists {

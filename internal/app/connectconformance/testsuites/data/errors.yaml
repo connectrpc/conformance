@@ -7,8 +7,6 @@ testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
     testName: unary/canceled
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -18,8 +16,6 @@ testCases:
           message: "canceled"
 - request:
     testName: unary/unknown
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -29,8 +25,6 @@ testCases:
           message: "unknown"
 - request:
     testName: unary/invalid-argument
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -40,8 +34,6 @@ testCases:
           message: "invalid argument"
 - request:
     testName: unary/deadline-exceeded
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -51,8 +43,6 @@ testCases:
           message: "deadline exceeded"
 - request:
     testName: unary/not-found
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -62,8 +52,6 @@ testCases:
           message: "not found"
 - request:
     testName: unary/already-exists
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -73,8 +61,6 @@ testCases:
           message: "already exists"
 - request:
     testName: unary/permission-denied
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -84,8 +70,6 @@ testCases:
           message: "permission denied"
 - request:
     testName: unary/resource-exhausted
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -95,8 +79,6 @@ testCases:
           message: "resource exhausted"
 - request:
     testName: unary/failed-precondition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -106,8 +88,6 @@ testCases:
           message: "failed precondition"
 - request:
     testName: unary/aborted
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -117,8 +97,6 @@ testCases:
           message: "aborted"
 - request:
     testName: unary/out-of-range
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -128,8 +106,6 @@ testCases:
           message: "out of range"
 - request:
     testName: unary/unimplemented
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -139,8 +115,6 @@ testCases:
           message: "unimplemented"
 - request:
     testName: unary/internal
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -150,8 +124,6 @@ testCases:
           message: "internal"
 - request:
     testName: unary/unavailable
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -161,8 +133,6 @@ testCases:
           message: "unavailable"
 - request:
     testName: unary/data-loss
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -172,8 +142,6 @@ testCases:
           message: "data loss"
 - request:
     testName: unary/unauthenticated
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -183,8 +151,6 @@ testCases:
           message: "unauthenticated"
 - request:
     testName: unary/unicode-error-message
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -195,8 +161,6 @@ testCases:
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/canceled
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -206,8 +170,6 @@ testCases:
           message: "canceled"
 - request:
     testName: server-stream/unknown
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -217,8 +179,6 @@ testCases:
           message: "unknown"
 - request:
     testName: server-stream/invalid-argument
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -228,8 +188,6 @@ testCases:
           message: "invalid argument"
 - request:
     testName: server-stream/deadline-exceeded
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -239,8 +197,6 @@ testCases:
           message: "deadline exceeded"
 - request:
     testName: server-stream/not-found
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -250,8 +206,6 @@ testCases:
           message: "not found"
 - request:
     testName: server-stream/already-exists
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -261,8 +215,6 @@ testCases:
           message: "already exists"
 - request:
     testName: server-stream/permission-denied
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -272,8 +224,6 @@ testCases:
           message: "permission denied"
 - request:
     testName: server-stream/resource-exhausted
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -283,8 +233,6 @@ testCases:
           message: "resource exhausted"
 - request:
     testName: server-stream/failed-precondition
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -294,8 +242,6 @@ testCases:
           message: "failed precondition"
 - request:
     testName: server-stream/aborted
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -305,8 +251,6 @@ testCases:
           message: "aborted"
 - request:
     testName: server-stream/out-of-range
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -316,8 +260,6 @@ testCases:
           message: "out of range"
 - request:
     testName: server-stream/unimplemented
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -327,8 +269,6 @@ testCases:
           message: "unimplemented"
 - request:
     testName: server-stream/internal
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -338,8 +278,6 @@ testCases:
           message: "internal"
 - request:
     testName: server-stream/unavailable
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -349,8 +287,6 @@ testCases:
           message: "unavailable"
 - request:
     testName: server-stream/data-loss
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -360,8 +296,6 @@ testCases:
           message: "data loss"
 - request:
     testName: server-stream/unauthenticated
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -371,8 +305,6 @@ testCases:
           message: "unauthenticated"
 - request:
     testName: server-stream/error-with-responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
     - name: X-Conformance-Test
@@ -394,8 +326,6 @@ testCases:
           value: ["bing"]
 - request:
     testName: server-stream/error-with-no-responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
     - name: X-Conformance-Test
@@ -415,8 +345,6 @@ testCases:
 # Client Stream Tests -----------------------------------------------------------
 - request:
     testName: client-stream/error-one-request
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
@@ -426,8 +354,6 @@ testCases:
           message: "client stream failed"
 - request:
     testName: client-stream/error-multiple-requests
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
@@ -440,8 +366,6 @@ testCases:
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/full-duplex/error-with-responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test
@@ -466,8 +390,6 @@ testCases:
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: bidi-stream/full-duplex/error-no-responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test
@@ -487,8 +409,6 @@ testCases:
       fullDuplex: true
 - request:
     testName: bidi-stream/half-duplex/error-with-responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test
@@ -512,8 +432,6 @@ testCases:
       requestData: "dGVzdCByZXNwb25zZQ=="
 - request:
     testName: bidi-stream/half-duplex/error-with-no-responses
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestHeaders:
       - name: X-Conformance-Test

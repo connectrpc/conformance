@@ -6,8 +6,6 @@ reliesOnTlsClientCerts: true
 testCases:
   - request:
       testName: client-stream
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ClientStream
       streamType: STREAM_TYPE_CLIENT_STREAM
       requestHeaders:
         - name: X-Conformance-Test
