@@ -7,7 +7,6 @@ testCases:
   - request:
       testName: client-stream
       streamType: STREAM_TYPE_CLIENT_STREAM
-      method: ClientStream
       requestHeaders:
         - name: X-Conformance-Test
           value: ["Value1","Value2"]
