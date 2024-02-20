@@ -78,13 +78,13 @@ or must be specified together. If they are omitted, the runner will auto-populat
 * `service` - `connectrpc.conformance.v1.ConformanceService`.
 * `method` - Based on `streamType` according to the following table. 
 
-| Stream Type                            | Method         |
-| -------------------------------------- | -------------- |
-| `STREAM_TYPE_UNARY`                    | `Unary`        |
-| `STREAM_TYPE_CLIENT_STREAM`            | `ClientStream` |
-| `STREAM_TYPE_SERVER_STREAM`            | `ServerStream` |
-| `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
-| `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
+  | Stream Type                            | Method         |
+  | -------------------------------------- | -------------- |
+  | `STREAM_TYPE_UNARY`                    | `Unary`        |
+  | `STREAM_TYPE_CLIENT_STREAM`            | `ClientStream` |
+  | `STREAM_TYPE_SERVER_STREAM`            | `ServerStream` |
+  | `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
+  | `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
 
  > [!IMPORTANT]  
  > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases because they are 
