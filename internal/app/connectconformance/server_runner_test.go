@@ -26,7 +26,6 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -84,7 +83,10 @@ func TestRunTestCasesForServer(t *testing.T) {
 				TestName: "TestSuite2/testcase1",
 			},
 			ExpectedResponse: &conformancev1.ClientResponseResult{
-				Error: &conformancev1.Error{Code: int32(connect.CodeAborted), Message: proto.String("ruh roh")},
+				Error: &conformancev1.Error{
+					Code:    conformancev1.Code_CODE_ABORTED,
+					Message: proto.String("ruh roh"),
+				},
 			},
 		},
 		{

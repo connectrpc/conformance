@@ -85,8 +85,7 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
                         supportsTlsClientCerts: true
                         supportsHalfDuplexBidiOverHttp1: true
                         supportsMessageReceiveLimit: false
-                        supportsConnectGet: false
-                        requiresConnectVersionHeader: true`,
+                        supportsConnectGet: false`,
 			expectedCases: excludeDisallowed(
 				computePermutations(
 					[]conformancev1.HTTPVersion{
@@ -611,20 +610,17 @@ func computePermutations(
 							for _, useTLSClientCerts := range useTLSClientCertOptions {
 								for _, useConnectGET := range useConnectGETOptions {
 									for _, useMaxRecvLimit := range useMaxRecvLimitOptions {
-										for _, connectVersionMode := range connectVersionModes {
-											results = append(results, configCase{
-												Version:                version,
-												Protocol:               protocol,
-												Codec:                  codec,
-												Compression:            compression,
-												StreamType:             streamType,
-												UseTLS:                 useTLS,
-												UseTLSClientCerts:      useTLSClientCerts,
-												UseConnectGET:          useConnectGET,
-												UseMessageReceiveLimit: useMaxRecvLimit,
-												ConnectVersionMode:     connectVersionMode,
-											})
-										}
+										results = append(results, configCase{
+											Version:                version,
+											Protocol:               protocol,
+											Codec:                  codec,
+											Compression:            compression,
+											StreamType:             streamType,
+											UseTLS:                 useTLS,
+											UseTLSClientCerts:      useTLSClientCerts,
+											UseConnectGET:          useConnectGET,
+											UseMessageReceiveLimit: useMaxRecvLimit,
+										})
 									}
 								}
 							}

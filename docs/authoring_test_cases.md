@@ -66,13 +66,40 @@ which defines the request which will be sent to a client during the test run. Ea
 fields:
 
 * `testName` - For naming conventions, see [below](#naming-conventions).
-* `service` - The fully-qualified name of the service this test will interact with. For now, this is always `connectrpc.conformance.v1.ConformanceService`.
-* `method` - This is a string specifying the method on `service` that will be called.
 * `streamType` - One of `STREAM_TYPE_UNARY`, `STREAM_TYPE_CLIENT_STREAM`, `STREAM_TYPE_SERVER_STREAM`, 
   `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`, or `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`.
 
 Once the above are specified, you can then define your request. For a full list of fields to specify in the request,
 see the [`ClientCompatRequest`][client-compat-request] message in the Conformance Protobuf definitions.
+
+The fields `service` and `method` are optional as a pair when writing test cases, meaning that they can both be omitted
+or must be specified together. If they are omitted, the runner will auto-populate them as follows:
+
+* `service` - `connectrpc.conformance.v1.ConformanceService`.
+* `method` - Based on `streamType` according to the following table. 
+
+  | Stream Type                            | Method         |
+  | -------------------------------------- | -------------- |
+  | `STREAM_TYPE_UNARY`                    | `Unary`        |
+  | `STREAM_TYPE_CLIENT_STREAM`            | `ClientStream` |
+  | `STREAM_TYPE_SERVER_STREAM`            | `ServerStream` |
+  | `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
+  | `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
+
+ > [!IMPORTANT]  
+ > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases because they are 
+ > automatically populated by the test runner. These fields are:
+ > * `http_version`
+ > * `protocol`
+ > * `codec`
+ > * `compression`
+ > * `host`
+ > * `port`
+ > * `server_tls_cert`
+ > * `client_tls_creds`
+ > * `message_receive_limit`
+ >
+ > If a test is specific to one of the first four fields, it should instead be indicated in the directives for the test suite itself.
 
 ### Raw payloads
 
@@ -94,12 +121,6 @@ or streaming RPC type and its purpose is to model a raw HTTP response. This can 
 odd properties (including returning aberrant HTTP codes or certain kinds of malformed responses) to test edge cases in 
 clients. This value is only handled by the reference server and should only appear in files where `mode` is set to 
 `TEST_MODE_CLIENT`.
-
- > [!IMPORTANT]  
- > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases.
- > * Fields 1 through 8 in the message definition are automatically populated by the test runner.
- >   If a test is specific to one of these values, it should instead be indicated in the directives for the test suite
- >   itself.
 
 ## Naming conventions
 

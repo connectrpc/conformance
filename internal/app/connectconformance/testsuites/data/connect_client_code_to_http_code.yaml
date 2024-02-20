@@ -7,8 +7,6 @@ relevantProtocols:
 testCases:
 - request:
     testName: unary/canceled
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -28,8 +26,6 @@ testCases:
                   code: 1
 - request:
     testName: unary/unknown
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -49,8 +45,6 @@ testCases:
                   code: 2
 - request:
     testName: unary/invalid-argument
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -70,8 +64,6 @@ testCases:
                   code: 3
 - request:
     testName: unary/deadline-exceeded
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -91,8 +83,6 @@ testCases:
                   code: 4
 - request:
     testName: unary/not-found
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -112,8 +102,6 @@ testCases:
                   code: 5
 - request:
     testName: unary/already-exists
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -133,8 +121,6 @@ testCases:
                   code: 6
 - request:
     testName: unary/permission-denied
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -154,8 +140,6 @@ testCases:
                   code: 7
 - request:
     testName: unary/resource-exhausted
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -175,8 +159,6 @@ testCases:
                   code: 8
 - request:
     testName: unary/failed-precondition-mapping
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -196,8 +178,6 @@ testCases:
                   code: 9
 - request:
     testName: unary/aborted
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -217,8 +197,6 @@ testCases:
                   code: 10
 - request:
     testName: unary/out-of-range-mapping
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -238,8 +216,6 @@ testCases:
                   code: 11
 - request:
     testName: unary/unimplemented
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -259,8 +235,6 @@ testCases:
                   code: 12
 - request:
     testName: unary/internal
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -280,8 +254,6 @@ testCases:
                   code: 13
 - request:
     testName: unary/unavailable
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -301,8 +273,6 @@ testCases:
                   code: 14
 - request:
     testName: unary/data-loss
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -322,8 +292,6 @@ testCases:
                   code: 15
 - request:
     testName: unary/unauthenticated
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -344,8 +312,6 @@ testCases:
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/error-returns-success-http-code
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -366,8 +332,6 @@ testCases:
 # Client Stream Tests -----------------------------------------------------------
 - request:
     testName: client-stream/error-returns-success-http-code
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
@@ -388,8 +352,6 @@ testCases:
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/full-duplex/stream-error-returns-success-http-code
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
@@ -411,8 +373,6 @@ testCases:
               fullDuplex: true
 - request:
     testName: bidi-stream/half-duplex/stream-error-returns-success-http-code
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest

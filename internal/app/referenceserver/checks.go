@@ -43,6 +43,9 @@ const (
 	codecText  = "text"
 )
 
+// TODO - We should add a check for the Connect version header and/or query param to the reference server checks
+// to verify that conformant client implementations always include it (to maximize inter-op, just in case a server is
+// configured to require it).
 func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
 	var callsMu sync.Mutex
 	calls := map[string]int{}

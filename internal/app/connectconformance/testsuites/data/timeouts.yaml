@@ -8,8 +8,6 @@ testCases:
 # Unary Tests -----------------------------------------------------------------
 - request:
     testName: unary
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     timeoutMs: 200
     requestMessages:
@@ -24,8 +22,6 @@ testCases:
 # Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client-stream
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ClientStream
     streamType: STREAM_TYPE_CLIENT_STREAM
     timeoutMs: 200
     requestMessages:
@@ -42,8 +38,6 @@ testCases:
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream
-    service: connectrpc.conformance.v1.ConformanceService
-    method: ServerStream
     streamType: STREAM_TYPE_SERVER_STREAM
     timeoutMs: 200
     requestMessages:
@@ -60,8 +54,6 @@ testCases:
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/full-duplex
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     timeoutMs: 200
     requestMessages:
@@ -80,8 +72,6 @@ testCases:
       code: 4
 - request:
     testName: bidi-stream/half-duplex
-    service: connectrpc.conformance.v1.ConformanceService
-    method: BidiStream
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
     timeoutMs: 200
     requestMessages:

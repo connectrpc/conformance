@@ -483,15 +483,15 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.serializeBinaryToWriter = fu
       f
     );
   }
-  f = message.getService();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 11));
+  if (f != null) {
     writer.writeString(
       11,
       f
     );
   }
-  f = message.getMethod();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 12));
+  if (f != null) {
     writer.writeString(
       12,
       f
@@ -1279,7 +1279,25 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.getService = funct
  * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest} returns this
  */
 proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.setService = function(value) {
-  return jspb.Message.setProto3StringField(this, 11, value);
+  return jspb.Message.setField(this, 11, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest} returns this
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.clearService = function() {
+  return jspb.Message.setField(this, 11, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.hasService = function() {
+  return jspb.Message.getField(this, 11) != null;
 };
 
 
@@ -1297,7 +1315,25 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.getMethod = functi
  * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest} returns this
  */
 proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.setMethod = function(value) {
-  return jspb.Message.setProto3StringField(this, 12, value);
+  return jspb.Message.setField(this, 12, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest} returns this
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.clearMethod = function() {
+  return jspb.Message.setField(this, 12, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.hasMethod = function() {
+  return jspb.Message.getField(this, 12) != null;
 };
 
 

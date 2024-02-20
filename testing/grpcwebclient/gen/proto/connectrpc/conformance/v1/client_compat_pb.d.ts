@@ -58,9 +58,13 @@ export class ClientCompatRequest extends jspb.Message {
 
   getService(): string;
   setService(value: string): ClientCompatRequest;
+  hasService(): boolean;
+  clearService(): ClientCompatRequest;
 
   getMethod(): string;
   setMethod(value: string): ClientCompatRequest;
+  hasMethod(): boolean;
+  clearMethod(): ClientCompatRequest;
 
   getStreamType(): connectrpc_conformance_v1_config_pb.StreamType;
   setStreamType(value: connectrpc_conformance_v1_config_pb.StreamType): ClientCompatRequest;
@@ -116,8 +120,8 @@ export namespace ClientCompatRequest {
     serverTlsCert: Uint8Array | string,
     clientTlsCreds?: ClientCompatRequest.TLSCreds.AsObject,
     messageReceiveLimit: number,
-    service: string,
-    method: string,
+    service?: string,
+    method?: string,
     streamType: connectrpc_conformance_v1_config_pb.StreamType,
     useGetHttpMethod: boolean,
     requestHeadersList: Array<connectrpc_conformance_v1_service_pb.Header.AsObject>,
@@ -192,6 +196,16 @@ export namespace ClientCompatRequest {
     }
   }
 
+
+  export enum ServiceCase { 
+    _SERVICE_NOT_SET = 0,
+    SERVICE = 11,
+  }
+
+  export enum MethodCase { 
+    _METHOD_NOT_SET = 0,
+    METHOD = 12,
+  }
 
   export enum TimeoutMsCase { 
     _TIMEOUT_MS_NOT_SET = 0,

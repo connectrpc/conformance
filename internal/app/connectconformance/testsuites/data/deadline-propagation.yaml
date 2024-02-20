@@ -6,8 +6,6 @@ name: Deadline Propagation
 testCases:
   - request:
       testName: unary/success
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       timeoutMs: 2000
       requestMessages:
@@ -16,8 +14,6 @@ testCases:
             responseData: "dGVzdCByZXNwb25zZQ=="
   - request:
       testName: client-stream/success
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ClientStream
       streamType: STREAM_TYPE_CLIENT_STREAM
       timeoutMs: 2000
       requestMessages:
@@ -28,8 +24,6 @@ testCases:
           requestData: "dGVzdCByZXNwb25zZQ=="
   - request:
       testName: server-stream/success
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
       timeoutMs: 2000
       requestMessages:
@@ -40,8 +34,6 @@ testCases:
               - "dGVzdCByZXNwb25zZQ=="
   - request:
       testName: bidi-stream/full-duplex/success
-      service: connectrpc.conformance.v1.ConformanceService
-      method: BidiStream
       streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
       timeoutMs: 2000
       requestMessages:
