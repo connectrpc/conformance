@@ -421,8 +421,7 @@ proto.connectrpc.conformance.v1.Features.toObject = function(includeInstance, ms
     supportsTrailers: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
     supportsHalfDuplexBidiOverHttp1: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
     supportsConnectGet: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
-    requiresConnectVersionHeader: jspb.Message.getBooleanFieldWithDefault(msg, 12, false),
-    supportsMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 13, false)
+    supportsMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 12, false)
   };
 
   if (includeInstance) {
@@ -514,10 +513,6 @@ proto.connectrpc.conformance.v1.Features.deserializeBinaryFromReader = function(
       msg.setSupportsConnectGet(value);
       break;
     case 12:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setRequiresConnectVersionHeader(value);
-      break;
-    case 13:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setSupportsMessageReceiveLimit(value);
       break;
@@ -631,13 +626,6 @@ proto.connectrpc.conformance.v1.Features.serializeBinaryToWriter = function(mess
   if (f != null) {
     writer.writeBool(
       12,
-      f
-    );
-  }
-  f = /** @type {boolean} */ (jspb.Message.getField(message, 13));
-  if (f != null) {
-    writer.writeBool(
-      13,
       f
     );
   }
@@ -1046,10 +1034,10 @@ proto.connectrpc.conformance.v1.Features.prototype.hasSupportsConnectGet = funct
 
 
 /**
- * optional bool requires_connect_version_header = 12;
+ * optional bool supports_message_receive_limit = 12;
  * @return {boolean}
  */
-proto.connectrpc.conformance.v1.Features.prototype.getRequiresConnectVersionHeader = function() {
+proto.connectrpc.conformance.v1.Features.prototype.getSupportsMessageReceiveLimit = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 12, false));
 };
 
@@ -1058,7 +1046,7 @@ proto.connectrpc.conformance.v1.Features.prototype.getRequiresConnectVersionHead
  * @param {boolean} value
  * @return {!proto.connectrpc.conformance.v1.Features} returns this
  */
-proto.connectrpc.conformance.v1.Features.prototype.setRequiresConnectVersionHeader = function(value) {
+proto.connectrpc.conformance.v1.Features.prototype.setSupportsMessageReceiveLimit = function(value) {
   return jspb.Message.setField(this, 12, value);
 };
 
@@ -1067,7 +1055,7 @@ proto.connectrpc.conformance.v1.Features.prototype.setRequiresConnectVersionHead
  * Clears the field making it undefined.
  * @return {!proto.connectrpc.conformance.v1.Features} returns this
  */
-proto.connectrpc.conformance.v1.Features.prototype.clearRequiresConnectVersionHeader = function() {
+proto.connectrpc.conformance.v1.Features.prototype.clearSupportsMessageReceiveLimit = function() {
   return jspb.Message.setField(this, 12, undefined);
 };
 
@@ -1076,44 +1064,8 @@ proto.connectrpc.conformance.v1.Features.prototype.clearRequiresConnectVersionHe
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.connectrpc.conformance.v1.Features.prototype.hasRequiresConnectVersionHeader = function() {
-  return jspb.Message.getField(this, 12) != null;
-};
-
-
-/**
- * optional bool supports_message_receive_limit = 13;
- * @return {boolean}
- */
-proto.connectrpc.conformance.v1.Features.prototype.getSupportsMessageReceiveLimit = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
-};
-
-
-/**
- * @param {boolean} value
- * @return {!proto.connectrpc.conformance.v1.Features} returns this
- */
-proto.connectrpc.conformance.v1.Features.prototype.setSupportsMessageReceiveLimit = function(value) {
-  return jspb.Message.setField(this, 13, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.connectrpc.conformance.v1.Features} returns this
- */
-proto.connectrpc.conformance.v1.Features.prototype.clearSupportsMessageReceiveLimit = function() {
-  return jspb.Message.setField(this, 13, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
 proto.connectrpc.conformance.v1.Features.prototype.hasSupportsMessageReceiveLimit = function() {
-  return jspb.Message.getField(this, 13) != null;
+  return jspb.Message.getField(this, 12) != null;
 };
 
 
