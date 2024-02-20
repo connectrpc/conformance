@@ -77,12 +77,9 @@ message Features {
   // Whether Connect via GET is supported.
   // If absent, true is assumed.
   optional bool supports_connect_get = 11;
-  // Whether the Connect version header (Connect-Protocol-Version) is required.
-  // If absent, false is assumed.
-  optional bool requires_connect_version_header = 12;
   // Whether a message receive limit is supported.
   // If absent, true is assumed.
-  optional bool supports_message_receive_limit = 13;
+  optional bool supports_message_receive_limit = 12;
 }
 
 // ConfigCase represents a single resolved configuration case. When tests are
