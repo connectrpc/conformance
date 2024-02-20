@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -31,13 +31,13 @@ import (
 const clientName = "connectconformance-grpcclient"
 
 type invoker struct {
-	client v1.ConformanceServiceClient
+	client conformancev1.ConformanceServiceClient
 }
 
 func (i *invoker) Invoke(
 	ctx context.Context,
-	req *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	// If a timeout was specified, create a derived context with that deadline
 	if req.TimeoutMs != nil {
 		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
@@ -88,10 +88,10 @@ func (i *invoker) Invoke(
 
 func (i *invoker) unary(
 	ctx context.Context,
-	ccr *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	ccr *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	msg := ccr.RequestMessages[0]
-	req := &v1.UnaryRequest{}
+	req := &conformancev1.UnaryRequest{}
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
@@ -99,8 +99,8 @@ func (i *invoker) unary(
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
-	var protoErr *v1.Error
-	payloads := make([]*v1.ConformancePayload, 0, 1)
+	var protoErr *conformancev1.Error
+	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
 	var headerMD, trailerMD metadata.MD
 
@@ -122,7 +122,7 @@ func (i *invoker) unary(
 		payloads = append(payloads, resp.Payload)
 	}
 
-	return &v1.ClientResponseResult{
+	return &conformancev1.ClientResponseResult{
 		ResponseHeaders:  headers,
 		ResponseTrailers: trailers,
 		Payloads:         payloads,
@@ -132,15 +132,15 @@ func (i *invoker) unary(
 
 func (i *invoker) serverStream(
 	ctx context.Context,
-	ccr *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, retErr error) {
+	ccr *conformancev1.ClientCompatRequest,
+) (result *conformancev1.ClientResponseResult, retErr error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{}
+	result = &conformancev1.ClientResponseResult{}
 
 	msg := ccr.RequestMessages[0]
-	req := &v1.ServerStreamRequest{}
+	req := &conformancev1.ServerStreamRequest{}
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
@@ -200,12 +200,12 @@ func (i *invoker) serverStream(
 
 func (i *invoker) clientStream(
 	ctx context.Context,
-	ccr *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	ccr *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result := &v1.ClientResponseResult{}
+	result := &conformancev1.ClientResponseResult{}
 
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
@@ -216,7 +216,7 @@ func (i *invoker) clientStream(
 	}
 
 	for _, msg := range ccr.RequestMessages {
-		csr := &v1.ClientStreamRequest{}
+		csr := &conformancev1.ClientStreamRequest{}
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
 		}
@@ -264,12 +264,12 @@ func (i *invoker) clientStream(
 
 func (i *invoker) bidiStream(
 	ctx context.Context,
-	ccr *v1.ClientCompatRequest,
-) (result *v1.ClientResponseResult, retErr error) {
+	ccr *conformancev1.ClientCompatRequest,
+) (result *conformancev1.ClientResponseResult, retErr error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	result = &v1.ClientResponseResult{}
+	result = &conformancev1.ClientResponseResult{}
 
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
@@ -279,7 +279,7 @@ func (i *invoker) bidiStream(
 		return nil, err
 	}
 
-	fullDuplex := ccr.StreamType == v1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+	fullDuplex := ccr.StreamType == conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
 	// Cancellation timing
 	timing, err := internal.GetCancelTiming(ccr.Cancel)
@@ -287,10 +287,10 @@ func (i *invoker) bidiStream(
 		return nil, err
 	}
 
-	var protoErr *v1.Error
+	var protoErr *conformancev1.Error
 	totalRcvd := 0
 	for _, msg := range ccr.RequestMessages {
-		bsr := &v1.BidiStreamRequest{}
+		bsr := &conformancev1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
 			// unmarshalling error unrelated to the RPC
@@ -398,10 +398,10 @@ func (i *invoker) bidiStream(
 
 func (i *invoker) unimplemented(
 	ctx context.Context,
-	ccr *v1.ClientCompatRequest,
-) (*v1.ClientResponseResult, error) {
+	ccr *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	msg := ccr.RequestMessages[0]
-	req := &v1.UnimplementedRequest{}
+	req := &conformancev1.UnimplementedRequest{}
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
@@ -411,14 +411,14 @@ func (i *invoker) unimplemented(
 
 	// Invoke the Unary call
 	_, err := i.client.Unimplemented(ctx, req)
-	return &v1.ClientResponseResult{
+	return &conformancev1.ClientResponseResult{
 		Error: grpcutil.ConvertGrpcToProtoError(err),
 	}, nil
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(clientConn grpc.ClientConnInterface) *invoker {
-	client := v1.NewConformanceServiceClient(clientConn)
+	client := conformancev1.NewConformanceServiceClient(clientConn)
 	return &invoker{
 		client: client,
 	}

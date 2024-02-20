@@ -27,7 +27,7 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -57,17 +57,17 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	codec := internal.NewCodec(*json)
 
 	// Read the server config from  the in reader
-	req := &v1.ServerCompatRequest{}
+	req := &conformancev1.ServerCompatRequest{}
 	if err := codec.NewDecoder(inReader).DecodeNext(req); err != nil {
 		return err
 	}
 	if req.UseTls {
 		return fmt.Errorf("%s: TLS is not supported", args[0])
 	}
-	if req.Protocol != v1.Protocol_PROTOCOL_GRPC && req.Protocol != v1.Protocol_PROTOCOL_GRPC_WEB {
+	if req.Protocol != conformancev1.Protocol_PROTOCOL_GRPC && req.Protocol != conformancev1.Protocol_PROTOCOL_GRPC_WEB {
 		return fmt.Errorf("%s: protocol %s is not supported", args[0], req.Protocol)
 	}
-	if req.Protocol == v1.Protocol_PROTOCOL_GRPC && req.HttpVersion != v1.HTTPVersion_HTTP_VERSION_2 {
+	if req.Protocol == conformancev1.Protocol_PROTOCOL_GRPC && req.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
 		return fmt.Errorf("%s: HTTP version %s is not supported with protocol %s", args[0], req.HttpVersion, req.Protocol)
 	}
 
@@ -88,7 +88,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 		return errors.New("unable to determine tcp address from listener")
 	}
 
-	resp := &v1.ServerCompatResponse{
+	resp := &conformancev1.ServerCompatResponse{
 		Host: fmt.Sprint(tcpAddr.IP),
 		Port: uint32(tcpAddr.Port),
 	}
@@ -97,7 +97,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 	}
 
 	// Finally, start the server
-	if req.Protocol == v1.Protocol_PROTOCOL_GRPC_WEB {
+	if req.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
 		return runGRPCWebServer(ctx, server, listener)
 	}
 	return runGRPCServer(ctx, server, listener)
@@ -109,7 +109,7 @@ func createServer(recvLimit uint32) (*grpc.Server, error) { //nolint:unparam
 		grpc.StreamInterceptor(serverNameStreamInterceptor),
 		grpc.MaxRecvMsgSize(int(recvLimit)),
 	)
-	v1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
+	conformancev1.RegisterConformanceServiceServer(server, NewConformanceServiceServer())
 	return server, nil
 }
 

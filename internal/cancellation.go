@@ -17,7 +17,7 @@ package internal
 import (
 	"fmt"
 
-	v1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -29,17 +29,17 @@ type CancelTiming struct {
 
 // GetCancelTiming evaluates a Cancel setting and returns a struct with the
 // appropriate value set.
-func GetCancelTiming(cancel *v1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
+func GetCancelTiming(cancel *conformancev1.ClientCompatRequest_Cancel) (*CancelTiming, error) {
 	var beforeCloseSend *emptypb.Empty
 	afterCloseSendMs := -1
 	afterNumResponses := -1
 	if cancel != nil {
 		switch cancelTiming := cancel.CancelTiming.(type) {
-		case *v1.ClientCompatRequest_Cancel_BeforeCloseSend:
+		case *conformancev1.ClientCompatRequest_Cancel_BeforeCloseSend:
 			beforeCloseSend = cancelTiming.BeforeCloseSend
-		case *v1.ClientCompatRequest_Cancel_AfterCloseSendMs:
+		case *conformancev1.ClientCompatRequest_Cancel_AfterCloseSendMs:
 			afterCloseSendMs = int(cancelTiming.AfterCloseSendMs)
-		case *v1.ClientCompatRequest_Cancel_AfterNumResponses:
+		case *conformancev1.ClientCompatRequest_Cancel_AfterNumResponses:
 			afterNumResponses = int(cancelTiming.AfterNumResponses)
 		case nil:
 			// If cancel is non-nil, but none of timing values are set, it should
