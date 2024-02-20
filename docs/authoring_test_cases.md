@@ -72,13 +72,19 @@ fields:
 Once the above are specified, you can then define your request. For a full list of fields to specify in the request,
 see the [`ClientCompatRequest`][client-compat-request] message in the Conformance Protobuf definitions.
 
-The fields `service` and `method` are optional when writing test cases and if not specified, the runner will 
-auto-populate these values based on the following:
+The fields `service` and `method` are optional as a pair when writing test cases, meaning that they can both be omitted
+or must be specified together. If they are omitted, the runner will auto-populate them as follows:
 
-* `service` - If not set, defaults to `connectrpc.conformance.v1.ConformanceService`.
-* `method` - If not set, will be set based on `streamType`. Note that there are multiple `STREAM_TYPE_UNARY` methods on
-  the ConformanceService and the runner will default to `Unary` for this stream type. If another method is desired, it
-  should be explicitly specified.
+* `service` - `connectrpc.conformance.v1.ConformanceService`.
+* `method` - Based on `streamType` according to the following table. 
+
+| Stream Type                            | Method         |
+| -------------------------------------- | -------------- |
+| `STREAM_TYPE_UNARY`                    | `Unary`        |
+| `STREAM_TYPE_CLIENT_STREAM`            | `ClientStream` |
+| `STREAM_TYPE_SERVER_STREAM`            | `ServerStream` |
+| `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
+| `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`  | `BidiStream`   |
 
  > [!IMPORTANT]  
  > The `ClientCompatRequest` message contains some fields that should _not_ be specified in test cases because they are 
@@ -93,7 +99,7 @@ auto-populate these values based on the following:
  > * `client_tls_creds`
  > * `message_receive_limit`
  >
- > If a test is specific to one of these values, it should instead be indicated in the directives for the test suite itself.
+ > If a test is specific to one of the first four fields, it should instead be indicated in the directives for the test suite itself.
 
 ### Raw payloads
 

@@ -79,9 +79,11 @@ type ClientCompatRequest struct {
 	// If the server sends anything larger, the client should reject it.
 	MessageReceiveLimit uint32 `protobuf:"varint,10,opt,name=message_receive_limit,json=messageReceiveLimit,proto3" json:"message_receive_limit,omitempty"`
 	// The fully-qualified name of the service this test will interact with.
+	// If specified, method must also be specified.
 	// If not specified, defaults to "connectrpc.conformance.v1.ConformanceService".
 	Service *string `protobuf:"bytes,11,opt,name=service,proto3,oneof" json:"service,omitempty"`
 	// The method on `service` that will be called.
+	// If specified, service must also be specified.
 	// If not specified, the test runner will auto-populate this field based on the stream_type.
 	Method *string `protobuf:"bytes,12,opt,name=method,proto3,oneof" json:"method,omitempty"`
 	// The stream type of `method` (i.e. Unary, Client-Streaming, Server-Streaming, Full Duplex Bidi, or Half Duplex Bidi).

@@ -151,8 +151,8 @@ testCases:
 # Misc Tests ------------------------------------------------------------------
 - request:
     testName: unimplemented
-    # Explicitly specifying Unimplemented otherwise the runner would autopopulate
-    # the method to 'Unary'.
+    # Explicitly specifying service and method
+    service: connectrpc.conformance.v1.ConformanceService
     method: Unimplemented
     streamType: STREAM_TYPE_UNARY
     requestMessages:

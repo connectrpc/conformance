@@ -65,9 +65,11 @@ message ClientCompatRequest {
   // If the server sends anything larger, the client should reject it.
   uint32 message_receive_limit = 10;
   // The fully-qualified name of the service this test will interact with.
+  // If specified, method must also be specified.
   // If not specified, defaults to "connectrpc.conformance.v1.ConformanceService".
   optional string service = 11;
   // The method on `service` that will be called.
+  // If specified, service must also be specified.
   // If not specified, the test runner will auto-populate this field based on the stream_type.
   optional string method = 12;
   // The stream type of `method` (i.e. Unary, Client-Streaming, Server-Streaming, Full Duplex Bidi, or Half Duplex Bidi).

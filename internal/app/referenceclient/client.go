@@ -329,11 +329,11 @@ func invoke(ctx context.Context, req *v1.ClientCompatRequest, referenceMode bool
 		clientOptions = append(clientOptions, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
 	}
 
-	switch *req.Service {
+	switch req.GetService() {
 	case conformancev1connect.ConformanceServiceName:
 		return newInvoker(transport, referenceMode, serverURL, clientOptions).Invoke(ctx, req)
 	default:
-		return nil, errors.New("service name " + *req.Service + " is not a valid service")
+		return nil, fmt.Errorf("service name %s is not a valid service", req.GetService())
 	}
 }
 

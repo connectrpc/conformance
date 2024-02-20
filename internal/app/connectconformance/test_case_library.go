@@ -184,26 +184,32 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
 		}
-		// If service isn't specified, default to the Conformance Service.
 		if testCase.Request.GetService() == "" {
-			serviceName := conformancev1connect.ConformanceServiceName
-			testCase.Request.Service = &serviceName
-		}
-		// If method isn't specified, auto-populate based on stream type
-		if testCase.Request.GetMethod() == "" {
-			methodName := ""
-			switch testCase.Request.StreamType {
-			case conformancev1.StreamType_STREAM_TYPE_UNARY:
-				methodName = "Unary"
-			case conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM:
-				methodName = "ClientStream"
-			case conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM:
-				methodName = "ServerStream"
-			case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
-				conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-				methodName = "BidiStream"
+			if testCase.Request.GetMethod() == "" {
+				serviceName := conformancev1connect.ConformanceServiceName
+				testCase.Request.Service = &serviceName
+
+				methodName := ""
+				switch testCase.Request.StreamType {
+				case conformancev1.StreamType_STREAM_TYPE_UNARY:
+					methodName = "Unary"
+				case conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM:
+					methodName = "ClientStream"
+				case conformancev1.StreamType_STREAM_TYPE_SERVER_STREAM:
+					methodName = "ServerStream"
+				case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+					conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+					methodName = "BidiStream"
+				}
+				testCase.Request.Method = &methodName
+			} else {
+				return fmt.Errorf("test case #%d: test name %s has a method specified but no service", i+1, testCase.Request.TestName)
 			}
-			testCase.Request.Method = &methodName
+		} else {
+			// If service was specified, but method was not, return an error.
+			if testCase.Request.GetMethod() == "" {
+				return fmt.Errorf("test case #%d: test name %s has a service specified but no method", i+1, testCase.Request.TestName)
+			}
 		}
 		name := path.Join(append(namePrefix, testCase.Request.TestName)...)
 		if _, exists := lib.testCases[name]; exists {

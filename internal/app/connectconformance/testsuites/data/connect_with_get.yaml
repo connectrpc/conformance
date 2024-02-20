@@ -13,8 +13,8 @@ relevantCodecs:
 testCases:
 - request:
     testName: success
-    # Explicitly specifying IdempotentUnary otherwise the runner would autopopulate
-    # the method to 'Unary'.
+    # Explicitly specifying service and method
+    service: connectrpc.conformance.v1.ConformanceService
     method: IdempotentUnary
     streamType: STREAM_TYPE_UNARY
     useGetHttpMethod: true
