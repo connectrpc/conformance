@@ -49,7 +49,7 @@ func ConvertErrorToProtoError(err error) *v1.Error {
 	connectErr := new(connect.Error)
 	if !errors.As(err, &connectErr) {
 		return &v1.Error{
-			Code:    v1.Code(int32(connect.CodeUnknown)),
+			Code:    v1.Code_CODE_UNKNOWN,
 			Message: proto.String(err.Error()),
 		}
 	}
