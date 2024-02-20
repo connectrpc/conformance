@@ -5,7 +5,7 @@ relevantProtocols:
 relevantCompressions:
   - COMPRESSION_IDENTITY
 relevantCodecs:
-  - CODEC_JSON
+  - CODEC_PROTO
 testCases:
   - request:
       testName: unexpected-error-body
@@ -33,9 +33,33 @@ testCases:
             rawResponse:
               headers:
                 - name: content-type
-                  value: [ "application/proto" ]
+                  value: [ "application/json" ]
               unary:
-                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"}
+                text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+    expectedResponse:
+      error:
+        # internal
+        code: 13
+  - request:
+      testName: unexpected-stream-codec
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/connect+json" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+                  - flags: 2
+                    payload:
+                      text: "{}"
     expectedResponse:
       error:
         # internal
@@ -49,11 +73,14 @@ testCases:
             rawResponse:
               headers:
                 - name: content-type
-                  value: [ "application/json" ]
+                  value: [ "application/proto" ]
                 - name: content-encoding
                   value: ["foo"]
               unary:
-                text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+                  payload:
+                    data: "dGVzdCByZXNwb25zZQ"
                 compression: COMPRESSION_ZSTD
     expectedResponse:
       error:
@@ -68,14 +95,17 @@ testCases:
             rawResponse:
               headers:
                 - name: content-type
-                  value: [ "application/connect+json" ]
+                  value: [ "application/connect+proto" ]
                 - name: connect-content-encoding
                   value: ["identity"]
               stream:
                 items:
                   - flags: 1
                     payload:
-                      text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+                        payload:
+                          data: "dGVzdCByZXNwb25zZQ"
                   - flags: 2
                     payload:
                       text: "{}"

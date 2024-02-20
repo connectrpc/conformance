@@ -1,3 +1,9 @@
+# TODO: This test does not quite test what it is meant to. It uses the expandRequests
+#       field in the test case, but that only expands *requests*, up to the receive
+#       limit of the server. What is instead needed is something similar, like
+#       expandResponses, in the response definition, so the reference server can
+#       inflate response messages up to the client's receive limit. As is, this
+#       test does tickle receive limits in the client, but imprecisely.
 name: Client Message Size
 # Test how a client handles various message sizes 
 mode: TEST_MODE_CLIENT

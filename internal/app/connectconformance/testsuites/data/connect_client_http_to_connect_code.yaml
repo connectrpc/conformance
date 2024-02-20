@@ -1,9 +1,13 @@
 name: HTTP to Connect Code Mapping
-# If a Connect server returns a non-200 HTTP code for unary requests without an
-# explicit Connect error code, the client must synthesize the HTTP code to a 
-# Connect code. These tests cases verify that mapping by forcing the server to
-# return a specified HTTP code and then test whether the client correct returns
-# the required Connect code.
+# If a server returns a non-200 HTTP code for unary requests without an
+# explicit Connect error code, the client must synthesize tan RPC code
+# from the HTTP code. These tests cases verify that mapping by forcing
+# the server to return a specified HTTP code and then test whether the
+# client correct returns the required RPC code.
+#
+# TODO: Remove relevant protocols once the Connect code mapping table
+#       is updated to align with gRPC.
+## https://github.com/connectrpc/connectrpc.com/pull/130
 mode: TEST_MODE_CLIENT
 relevantProtocols:
   - PROTOCOL_CONNECT
