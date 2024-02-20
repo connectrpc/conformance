@@ -476,8 +476,8 @@ export namespace ConformancePayload {
 }
 
 export class Error extends jspb.Message {
-  getCode(): number;
-  setCode(value: number): Error;
+  getCode(): connectrpc_conformance_v1_config_pb.Code;
+  setCode(value: connectrpc_conformance_v1_config_pb.Code): Error;
 
   getMessage(): string;
   setMessage(value: string): Error;
@@ -499,7 +499,7 @@ export class Error extends jspb.Message {
 
 export namespace Error {
   export type AsObject = {
-    code: number,
+    code: connectrpc_conformance_v1_config_pb.Code,
     message?: string,
     detailsList: Array<google_protobuf_any_pb.Any.AsObject>,
   }

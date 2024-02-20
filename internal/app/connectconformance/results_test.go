@@ -21,7 +21,6 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -124,7 +123,10 @@ func TestResults_Assert(t *testing.T) {
 	}
 	testCase1 := &conformancev1.TestCase{ExpectedResponse: payload1}
 	payload2 := &conformancev1.ClientResponseResult{
-		Error: &conformancev1.Error{Code: int32(connect.CodeAborted), Message: proto.String("oops")},
+		Error: &conformancev1.Error{
+			Code:    conformancev1.Code_CODE_ABORTED,
+			Message: proto.String("oops"),
+		},
 	}
 	testCase2 := &conformancev1.TestCase{ExpectedResponse: payload2}
 	results.assert("foo/bar/1", testCase1, payload2)

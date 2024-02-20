@@ -35,6 +35,7 @@ var global =
     (function () { return this; }).call(null) ||
     Function('return this')();
 
+goog.exportSymbol('proto.connectrpc.conformance.v1.Code', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Codec', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Compression', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Config', null, global);
@@ -420,8 +421,7 @@ proto.connectrpc.conformance.v1.Features.toObject = function(includeInstance, ms
     supportsTrailers: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
     supportsHalfDuplexBidiOverHttp1: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
     supportsConnectGet: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
-    requiresConnectVersionHeader: jspb.Message.getBooleanFieldWithDefault(msg, 12, false),
-    supportsMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 13, false)
+    supportsMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 12, false)
   };
 
   if (includeInstance) {
@@ -513,10 +513,6 @@ proto.connectrpc.conformance.v1.Features.deserializeBinaryFromReader = function(
       msg.setSupportsConnectGet(value);
       break;
     case 12:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setRequiresConnectVersionHeader(value);
-      break;
-    case 13:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setSupportsMessageReceiveLimit(value);
       break;
@@ -630,13 +626,6 @@ proto.connectrpc.conformance.v1.Features.serializeBinaryToWriter = function(mess
   if (f != null) {
     writer.writeBool(
       12,
-      f
-    );
-  }
-  f = /** @type {boolean} */ (jspb.Message.getField(message, 13));
-  if (f != null) {
-    writer.writeBool(
-      13,
       f
     );
   }
@@ -1045,10 +1034,10 @@ proto.connectrpc.conformance.v1.Features.prototype.hasSupportsConnectGet = funct
 
 
 /**
- * optional bool requires_connect_version_header = 12;
+ * optional bool supports_message_receive_limit = 12;
  * @return {boolean}
  */
-proto.connectrpc.conformance.v1.Features.prototype.getRequiresConnectVersionHeader = function() {
+proto.connectrpc.conformance.v1.Features.prototype.getSupportsMessageReceiveLimit = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 12, false));
 };
 
@@ -1057,7 +1046,7 @@ proto.connectrpc.conformance.v1.Features.prototype.getRequiresConnectVersionHead
  * @param {boolean} value
  * @return {!proto.connectrpc.conformance.v1.Features} returns this
  */
-proto.connectrpc.conformance.v1.Features.prototype.setRequiresConnectVersionHeader = function(value) {
+proto.connectrpc.conformance.v1.Features.prototype.setSupportsMessageReceiveLimit = function(value) {
   return jspb.Message.setField(this, 12, value);
 };
 
@@ -1066,7 +1055,7 @@ proto.connectrpc.conformance.v1.Features.prototype.setRequiresConnectVersionHead
  * Clears the field making it undefined.
  * @return {!proto.connectrpc.conformance.v1.Features} returns this
  */
-proto.connectrpc.conformance.v1.Features.prototype.clearRequiresConnectVersionHeader = function() {
+proto.connectrpc.conformance.v1.Features.prototype.clearSupportsMessageReceiveLimit = function() {
   return jspb.Message.setField(this, 12, undefined);
 };
 
@@ -1075,44 +1064,8 @@ proto.connectrpc.conformance.v1.Features.prototype.clearRequiresConnectVersionHe
  * Returns whether this field is set.
  * @return {boolean}
  */
-proto.connectrpc.conformance.v1.Features.prototype.hasRequiresConnectVersionHeader = function() {
-  return jspb.Message.getField(this, 12) != null;
-};
-
-
-/**
- * optional bool supports_message_receive_limit = 13;
- * @return {boolean}
- */
-proto.connectrpc.conformance.v1.Features.prototype.getSupportsMessageReceiveLimit = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
-};
-
-
-/**
- * @param {boolean} value
- * @return {!proto.connectrpc.conformance.v1.Features} returns this
- */
-proto.connectrpc.conformance.v1.Features.prototype.setSupportsMessageReceiveLimit = function(value) {
-  return jspb.Message.setField(this, 13, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.connectrpc.conformance.v1.Features} returns this
- */
-proto.connectrpc.conformance.v1.Features.prototype.clearSupportsMessageReceiveLimit = function() {
-  return jspb.Message.setField(this, 13, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
 proto.connectrpc.conformance.v1.Features.prototype.hasSupportsMessageReceiveLimit = function() {
-  return jspb.Message.getField(this, 13) != null;
+  return jspb.Message.getField(this, 12) != null;
 };
 
 
@@ -1563,6 +1516,29 @@ proto.connectrpc.conformance.v1.StreamType = {
   STREAM_TYPE_SERVER_STREAM: 3,
   STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM: 4,
   STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM: 5
+};
+
+/**
+ * @enum {number}
+ */
+proto.connectrpc.conformance.v1.Code = {
+  CODE_UNSPECIFIED: 0,
+  CODE_CANCELED: 1,
+  CODE_UNKNOWN: 2,
+  CODE_INVALID_ARGUMENT: 3,
+  CODE_DEADLINE_EXCEEDED: 4,
+  CODE_NOT_FOUND: 5,
+  CODE_ALREADY_EXISTS: 6,
+  CODE_PERMISSION_DENIED: 7,
+  CODE_RESOURCE_EXHAUSTED: 8,
+  CODE_FAILED_PRECONDITION: 9,
+  CODE_ABORTED: 10,
+  CODE_OUT_OF_RANGE: 11,
+  CODE_UNIMPLEMENTED: 12,
+  CODE_INTERNAL: 13,
+  CODE_UNAVAILABLE: 14,
+  CODE_DATA_LOSS: 15,
+  CODE_UNAUTHENTICATED: 16
 };
 
 goog.object.extend(exports, proto.connectrpc.conformance.v1);

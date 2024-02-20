@@ -13,8 +13,6 @@ testCases:
 # Trailers and status are in body (no other response messages)
   - request:
       testName: unary/trailers-in-body
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -47,8 +45,6 @@ testCases:
           value: [ "bing" ]
   - request:
       testName: unary/trailers-in-body-mixed-case
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -81,8 +77,6 @@ testCases:
           value: [ "bing" ]
   - request:
       testName: unary/trailers-in-body-duplicates
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -116,8 +110,6 @@ testCases:
 
   - request:
       testName: server-stream/trailers-in-body
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -150,8 +142,6 @@ testCases:
           value: [ "bing" ]
   - request:
       testName: server-stream/trailers-in-body-mixed-case
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -184,8 +174,6 @@ testCases:
           value: [ "bing" ]
   - request:
       testName: server-stream/trailers-in-body-duplicates
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -220,8 +208,6 @@ testCases:
 # Trailers-only responses, where status and trailers are in HTTP headers
   - request:
       testName: unary/trailers-in-headers
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -255,8 +241,6 @@ testCases:
           value: [ "bing" ]
   - request:
       testName: unary/trailers-in-headers-duplicates
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -291,8 +275,6 @@ testCases:
 
   - request:
       testName: server-stream/trailers-in-headers
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
@@ -326,8 +308,6 @@ testCases:
           value: [ "bing" ]
   - request:
       testName: server-stream/trailers-in-headers-duplicates
-      service: connectrpc.conformance.v1.ConformanceService
-      method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest

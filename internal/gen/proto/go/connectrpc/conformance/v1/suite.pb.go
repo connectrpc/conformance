@@ -157,9 +157,16 @@ type TestSuite struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Name      string             `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Mode      TestSuite_TestMode `protobuf:"varint,2,opt,name=mode,proto3,enum=connectrpc.conformance.v1.TestSuite_TestMode" json:"mode,omitempty"`
-	TestCases []*TestCase        `protobuf:"bytes,3,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"`
+	// Test suite name. When writing test suites, this is a required field.
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// The mode (client or server) that this test suite applies to. This is used
+	// in conjunction with the `--mode` flag passed to the conformance runner
+	// binary. If the mode on the suite is set to client, the tests will only be
+	// run if `--mode client` is set on the command to the test runner.
+	// Likewise if mode is server. If this is unset, the test case will be run in both modes.
+	Mode TestSuite_TestMode `protobuf:"varint,2,opt,name=mode,proto3,enum=connectrpc.conformance.v1.TestSuite_TestMode" json:"mode,omitempty"`
+	// The actual test cases in the suite.
+	TestCases []*TestCase `protobuf:"bytes,3,rep,name=test_cases,json=testCases,proto3" json:"test_cases,omitempty"`
 	// If non-empty, the protocols to which this suite applies. If empty,
 	// this suite applies to all protocols.
 	RelevantProtocols []Protocol `protobuf:"varint,4,rep,packed,name=relevant_protocols,json=relevantProtocols,proto3,enum=connectrpc.conformance.v1.Protocol" json:"relevant_protocols,omitempty"`
@@ -175,7 +182,8 @@ type TestSuite struct {
 	// Indicates the Connect version validation behavior that this suite
 	// relies on.
 	ConnectVersionMode TestSuite_ConnectVersionMode `protobuf:"varint,8,opt,name=connect_version_mode,json=connectVersionMode,proto3,enum=connectrpc.conformance.v1.TestSuite_ConnectVersionMode" json:"connect_version_mode,omitempty"`
-	// If true, the cases in this suite rely on TLS.
+	// If true, the cases in this suite rely on TLS and will only be run against
+	// TLS server configurations.
 	ReliesOnTls bool `protobuf:"varint,9,opt,name=relies_on_tls,json=reliesOnTls,proto3" json:"relies_on_tls,omitempty"`
 	// If true, the cases in this suite rely on the client using TLS
 	// certificates to authenticate with the server. (Should only be
@@ -332,7 +340,25 @@ type TestCase struct {
 	// the serialized message that will be sent, and the data field will be
 	// padded as needed to reach that size.
 	ExpandRequests []*TestCase_ExpandedSize `protobuf:"bytes,2,rep,name=expand_requests,json=expandRequests,proto3" json:"expand_requests,omitempty"`
-	// Defines the expected response to the above RPC. Many
+	// Defines the expected response to the above RPC. The expected response for
+	// a test is auto-generated based on the request details. The conformance runner
+	// will determine what the response should be according to the values specified
+	// in the test suite and individual test cases.
+	//
+	// This value can also be specified explicitly in the test case YAML. However,
+	// this is typically only needed for exception test cases. If the expected
+	// response is mostly re-stating the response definition that appears in the
+	// requests, test cases should rely on the auto-generation if possible.
+	// Otherwise, specifying an expected response can make the test YAML overly
+	// verbose and harder to read, write, and maintain.
+	//
+	// If the test induces behavior that prevents the server from sending or client
+	// from receiving the full response definition, it will be necessary to define
+	// the expected response explicitly. Timeouts, cancellations, and exceeding
+	// message size limits are good examples of this.
+	//
+	// Specifying an expected response explicitly in test definitions will override
+	// the auto-generation of the test runner.
 	ExpectedResponse *ClientResponseResult `protobuf:"bytes,3,opt,name=expected_response,json=expectedResponse,proto3" json:"expected_response,omitempty"`
 }
 
@@ -394,6 +420,10 @@ type TestCase_ExpandedSize struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
+	// The size, in bytes, relative to the limit. For example, to expand to a
+	// size that is exactly equal to the limit, this should be set to zero.
+	// Any value greater than zero indicates that the request size will be that
+	// many bytes over the limit.
 	SizeRelativeToLimit *int32 `protobuf:"varint,1,opt,name=size_relative_to_limit,json=sizeRelativeToLimit,proto3,oneof" json:"size_relative_to_limit,omitempty"`
 }
 

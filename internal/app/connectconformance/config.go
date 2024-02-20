@@ -55,7 +55,6 @@ type supportedFeatures struct {
 	SupportsHalfDuplexBidiOverHTTP1 bool
 	SupportsConnectGet              bool
 	SupportsMessageReceiveLimit     bool
-	RequiresConnectVersionHeader    bool
 }
 
 // parseConfig loads all config cases from the given file name. If the given
@@ -123,7 +122,6 @@ func resolveFeatures(features *conformancev1.Features) (supportedFeatures, error
 		SupportsHalfDuplexBidiOverHTTP1: features.GetSupportsHalfDuplexBidiOverHttp1(),
 		SupportsConnectGet:              features.GetSupportsConnectGet(),
 		SupportsMessageReceiveLimit:     features.GetSupportsMessageReceiveLimit(),
-		RequiresConnectVersionHeader:    features.GetRequiresConnectVersionHeader(),
 	}
 
 	// These flags should default to true if not provided
@@ -306,14 +304,6 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 					if protocol == conformancev1.Protocol_PROTOCOL_CONNECT && features.SupportsConnectGet {
 						connectGetCases = []bool{false, true}
 					}
-					validateConnectVersionCases := []conformancev1.TestSuite_ConnectVersionMode{conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED}
-					if protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
-						if features.RequiresConnectVersionHeader {
-							validateConnectVersionCases = append(validateConnectVersionCases, conformancev1.TestSuite_CONNECT_VERSION_MODE_REQUIRE)
-						} else {
-							validateConnectVersionCases = append(validateConnectVersionCases, conformancev1.TestSuite_CONNECT_VERSION_MODE_IGNORE)
-						}
-					}
 
 					for _, streamType := range features.StreamTypes {
 						switch streamType { //nolint:exhaustive
@@ -330,21 +320,18 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 						for _, codec := range features.Codecs {
 							for _, compression := range features.Compressions {
 								for _, connectGetCase := range connectGetCases {
-									for _, validateConnectVersionCase := range validateConnectVersionCases {
-										for _, msgRecvLimitCase := range msgRecvLimitCases {
-											cases[configCase{
-												Version:                version,
-												Protocol:               protocol,
-												Codec:                  codec,
-												Compression:            compression,
-												StreamType:             streamType,
-												UseTLS:                 tlsCase,
-												UseTLSClientCerts:      tlsClientCertCase,
-												UseConnectGET:          connectGetCase,
-												UseMessageReceiveLimit: msgRecvLimitCase,
-												ConnectVersionMode:     validateConnectVersionCase,
-											}] = struct{}{}
-										}
+									for _, msgRecvLimitCase := range msgRecvLimitCases {
+										cases[configCase{
+											Version:                version,
+											Protocol:               protocol,
+											Codec:                  codec,
+											Compression:            compression,
+											StreamType:             streamType,
+											UseTLS:                 tlsCase,
+											UseTLSClientCerts:      tlsClientCertCase,
+											UseConnectGET:          connectGetCase,
+											UseMessageReceiveLimit: msgRecvLimitCase,
+										}] = struct{}{}
 									}
 								}
 							}

@@ -27,7 +27,7 @@ func ConvertProtoToGrpcError(err *v1.Error) error {
 		return nil
 	}
 	return status.ErrorProto(&statuspb.Status{
-		Code:    err.Code,
+		Code:    int32(err.Code),
 		Message: err.GetMessage(),
 		Details: err.Details,
 	})
@@ -43,7 +43,7 @@ func ConvertGrpcToProtoError(err error) *v1.Error {
 	stat, _ := status.FromError(err)
 	statProto := stat.Proto()
 	return &v1.Error{
-		Code:    int32(stat.Code()),
+		Code:    v1.Code(int32(stat.Code())),
 		Message: proto.String(stat.Message()),
 		Details: statProto.Details,
 	}

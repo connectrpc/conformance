@@ -17,6 +17,7 @@ import {
   ClientCompatRequest,
   ClientResponseResult,
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
+import { Code } from "./gen/proto/connectrpc/conformance/v1/config_pb.js";
 import {
   Error as ProtoError,
   Header,
@@ -27,7 +28,12 @@ import {
   UnaryResponse,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
 import { Status } from "@buf/googleapis_googleapis.protocolbuffers_js/google/rpc/status_pb.js";
-import { Metadata, RpcError, Status as GrpcWebStatus } from "grpc-web";
+import {
+  Metadata,
+  RpcError,
+  StatusCode,
+  Status as GrpcWebStatus,
+} from "grpc-web";
 
 // The main entry point into the browser code running in Puppeteer/headless Chrome.
 // This function is invoked by the page.evalulate call in grpcwebclient.
@@ -69,9 +75,46 @@ function createClient(req: ClientCompatRequest) {
   return new ConformanceServiceClient(baseUrl);
 }
 
+function convertStatusCodeToCode(code: StatusCode): Code {
+  switch (code) {
+    case StatusCode.ABORTED:
+      return Code.CODE_ABORTED;
+    case StatusCode.ALREADY_EXISTS:
+      return Code.CODE_ALREADY_EXISTS;
+    case StatusCode.CANCELLED:
+      return Code.CODE_CANCELED;
+    case StatusCode.DATA_LOSS:
+      return Code.CODE_DATA_LOSS;
+    case StatusCode.DEADLINE_EXCEEDED:
+      return Code.CODE_DEADLINE_EXCEEDED;
+    case StatusCode.FAILED_PRECONDITION:
+      return Code.CODE_FAILED_PRECONDITION;
+    case StatusCode.INTERNAL:
+      return Code.CODE_INTERNAL;
+    case StatusCode.INVALID_ARGUMENT:
+      return Code.CODE_INVALID_ARGUMENT;
+    case StatusCode.NOT_FOUND:
+      return Code.CODE_NOT_FOUND;
+    case StatusCode.OUT_OF_RANGE:
+      return Code.CODE_OUT_OF_RANGE;
+    case StatusCode.PERMISSION_DENIED:
+      return Code.CODE_PERMISSION_DENIED;
+    case StatusCode.RESOURCE_EXHAUSTED:
+      return Code.CODE_RESOURCE_EXHAUSTED;
+    case StatusCode.UNAUTHENTICATED:
+      return Code.CODE_UNAUTHENTICATED;
+    case StatusCode.UNAVAILABLE:
+      return Code.CODE_UNAVAILABLE;
+    case StatusCode.UNIMPLEMENTED:
+      return Code.CODE_UNIMPLEMENTED;
+    default:
+      return Code.CODE_UNKNOWN;
+  }
+}
+
 function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   const err = new ProtoError();
-  err.setCode(rpcErr.code);
+  err.setCode(convertStatusCodeToCode(rpcErr.code));
   err.setMessage(rpcErr.message);
 
   const value = rpcErr.metadata["grpc-status-details-bin"];

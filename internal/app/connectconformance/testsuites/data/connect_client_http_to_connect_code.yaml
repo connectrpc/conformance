@@ -10,8 +10,6 @@ relevantProtocols:
 testCases:
 - request:
     testName: bad-request
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -25,8 +23,6 @@ testCases:
       code: 3
 - request:
     testName: unauthorized
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -39,8 +35,6 @@ testCases:
       code: 16
 - request:
     testName: forbidden
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -53,8 +47,6 @@ testCases:
       code: 7
 - request:
     testName: not-found
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -67,8 +59,6 @@ testCases:
       code: 12
 - request:
     testName: request-timeout
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -83,8 +73,6 @@ testCases:
 # that includes this fix
 # - request:
 #     testName: conflict
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
 #     streamType: STREAM_TYPE_UNARY
 #     requestMessages:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -97,8 +85,6 @@ testCases:
 #      code: 10
 - request:
     testName: precondition-failed
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -111,8 +97,6 @@ testCases:
       code: 9
 - request:
     testName: payload-too-large
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -127,8 +111,6 @@ testCases:
 # that includes this fix
 # - request:
 #     testName: unsupported media type
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
 #     streamType: STREAM_TYPE_UNARY
 #     requestMessages:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -141,8 +123,6 @@ testCases:
 #      code: 13
 - request:
     testName: too-many-requests
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -155,8 +135,6 @@ testCases:
       code: 14
 - request:
     testName: request-header-fields-too-large
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -169,8 +147,6 @@ testCases:
       code: 8
 - request:
     testName: bad-gateway
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -183,8 +159,6 @@ testCases:
       code: 14
 - request:
     testName: service-unavailable
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -197,8 +171,6 @@ testCases:
       code: 14
 - request:
     testName: gateway-timeout
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest

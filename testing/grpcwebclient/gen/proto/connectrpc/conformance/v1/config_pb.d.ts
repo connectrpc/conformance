@@ -104,11 +104,6 @@ export class Features extends jspb.Message {
   hasSupportsConnectGet(): boolean;
   clearSupportsConnectGet(): Features;
 
-  getRequiresConnectVersionHeader(): boolean;
-  setRequiresConnectVersionHeader(value: boolean): Features;
-  hasRequiresConnectVersionHeader(): boolean;
-  clearRequiresConnectVersionHeader(): Features;
-
   getSupportsMessageReceiveLimit(): boolean;
   setSupportsMessageReceiveLimit(value: boolean): Features;
   hasSupportsMessageReceiveLimit(): boolean;
@@ -135,7 +130,6 @@ export namespace Features {
     supportsTrailers?: boolean,
     supportsHalfDuplexBidiOverHttp1?: boolean,
     supportsConnectGet?: boolean,
-    requiresConnectVersionHeader?: boolean,
     supportsMessageReceiveLimit?: boolean,
   }
 
@@ -169,14 +163,9 @@ export namespace Features {
     SUPPORTS_CONNECT_GET = 11,
   }
 
-  export enum RequiresConnectVersionHeaderCase { 
-    _REQUIRES_CONNECT_VERSION_HEADER_NOT_SET = 0,
-    REQUIRES_CONNECT_VERSION_HEADER = 12,
-  }
-
   export enum SupportsMessageReceiveLimitCase { 
     _SUPPORTS_MESSAGE_RECEIVE_LIMIT_NOT_SET = 0,
-    SUPPORTS_MESSAGE_RECEIVE_LIMIT = 13,
+    SUPPORTS_MESSAGE_RECEIVE_LIMIT = 12,
   }
 }
 
@@ -281,4 +270,23 @@ export enum StreamType {
   STREAM_TYPE_SERVER_STREAM = 3,
   STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM = 4,
   STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM = 5,
+}
+export enum Code { 
+  CODE_UNSPECIFIED = 0,
+  CODE_CANCELED = 1,
+  CODE_UNKNOWN = 2,
+  CODE_INVALID_ARGUMENT = 3,
+  CODE_DEADLINE_EXCEEDED = 4,
+  CODE_NOT_FOUND = 5,
+  CODE_ALREADY_EXISTS = 6,
+  CODE_PERMISSION_DENIED = 7,
+  CODE_RESOURCE_EXHAUSTED = 8,
+  CODE_FAILED_PRECONDITION = 9,
+  CODE_ABORTED = 10,
+  CODE_OUT_OF_RANGE = 11,
+  CODE_UNIMPLEMENTED = 12,
+  CODE_INTERNAL = 13,
+  CODE_UNAVAILABLE = 14,
+  CODE_DATA_LOSS = 15,
+  CODE_UNAUTHENTICATED = 16,
 }

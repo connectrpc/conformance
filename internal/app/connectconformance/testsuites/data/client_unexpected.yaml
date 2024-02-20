@@ -7,8 +7,6 @@ relevantCodecs:
 testCases:
 - request:
     testName: unmapped HTTP status code
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -21,8 +19,6 @@ testCases:
       code: 2
 - request:
     testName: nonexistent HTTP status code
-    service: connectrpc.conformance.v1.ConformanceService
-    method: Unary
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -37,8 +33,6 @@ testCases:
 # Uncomment when released
 # - request:
 #     testName: unexpected content type 
-#     service: connectrpc.conformance.v1.ConformanceService
-#     method: Unary
 #     streamType: STREAM_TYPE_UNARY
 #     requestMessages:
 #     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
