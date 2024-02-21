@@ -1,0 +1,30 @@
+# TODO: remove the ".disabled" extension from this file once Connect's HTTP -> Code
+#       mapping has been reconciled with gRPC. Until then, this test case fails.
+# https://github.com/connectrpc/connectrpc.com/pull/130
+name: Server Unexpected Requests
+mode: TEST_MODE_SERVER
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_PROTO
+testCases:
+  - request:
+      testName: unexpected content type
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "image/jpeg" ]
+        unary:
+          binary: "12345678"
+    expectedResponse:
+      httpStatusCode: 415
+      error:
+        # unknown
+        code: 2

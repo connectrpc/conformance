@@ -49,6 +49,30 @@ func TestRun(t *testing.T) {
 			Protocol:               conformancev1.Protocol_PROTOCOL_GRPC,
 			Codec:                  conformancev1.Codec_CODEC_PROTO,
 			Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+			StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
+			UseTLS:                 false,
+			UseTLSClientCerts:      false,
+			UseConnectGET:          false,
+			UseMessageReceiveLimit: false,
+			ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+		},
+		{
+			Version:                conformancev1.HTTPVersion_HTTP_VERSION_1,
+			Protocol:               conformancev1.Protocol_PROTOCOL_GRPC_WEB,
+			Codec:                  conformancev1.Codec_CODEC_PROTO,
+			Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+			StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
+			UseTLS:                 false,
+			UseTLSClientCerts:      false,
+			UseConnectGET:          false,
+			UseMessageReceiveLimit: false,
+			ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+		},
+		{
+			Version:                conformancev1.HTTPVersion_HTTP_VERSION_2,
+			Protocol:               conformancev1.Protocol_PROTOCOL_GRPC,
+			Codec:                  conformancev1.Codec_CODEC_PROTO,
+			Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
 			StreamType:             conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 			UseTLS:                 false,
 			UseTLSClientCerts:      false,
@@ -64,8 +88,8 @@ func TestRun(t *testing.T) {
 	allPermutations := testCaseLib.allPermutations(true, true)
 	expectedNumCases := len(allPermutations)
 
-	// 53 test cases as of this writing, but we will likely add more
-	require.GreaterOrEqual(t, expectedNumCases, 53)
+	// 208 test cases as of this writing, but we will likely add more
+	require.GreaterOrEqual(t, expectedNumCases, 208)
 
 	logger := &testPrinter{t}
 	results, err := run(
@@ -77,7 +101,7 @@ func TestRun(t *testing.T) {
 		allSuites,
 		logger,
 		logger,
-		&Flags{Verbose: true, MaxServers: 2, Parallelism: 4},
+		&Flags{Verbose: true, MaxServers: 2, Parallelism: 4, ServerBind: "127.0.0.1"},
 	)
 
 	require.NoError(t, err)
@@ -90,10 +114,12 @@ type testPrinter struct {
 }
 
 func (t testPrinter) Printf(msg string, args ...any) {
+	t.t.Helper()
 	t.t.Logf(msg, args...)
 }
 
 func (t testPrinter) PrefixPrintf(prefix, msg string, args ...any) {
+	t.t.Helper()
 	msg = fmt.Sprintf(msg, args...)
 	t.t.Logf("%s: %s", prefix, msg)
 }
