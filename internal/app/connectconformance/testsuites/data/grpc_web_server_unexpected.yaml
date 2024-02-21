@@ -9,8 +9,6 @@ relevantCodecs:
 testCases:
   - request:
       testName: unexpected-verb
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -32,8 +30,6 @@ testCases:
         code: 2
   - request:
       testName: unexpected-uri
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -59,8 +55,6 @@ testCases:
   ## https://github.com/connectrpc/connect-go/issues/689
   #  - request:
   #      testName: unexpected-codec
-  #      service: connectrpc.conformance.v1.ConformanceService
-  #      method: Unary
   #      streamType: STREAM_TYPE_UNARY
   #      requestMessages:
   #        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -81,8 +75,6 @@ testCases:
   #        code: 13
   - request:
       testName: unexpected-compression
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -106,8 +98,6 @@ testCases:
         code: 12
   - request:
       testName: unexpected-compressed-message
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest

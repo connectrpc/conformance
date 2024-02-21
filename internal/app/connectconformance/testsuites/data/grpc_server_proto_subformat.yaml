@@ -9,8 +9,6 @@ relevantCodecs:
 testCases:
   - request:
       testName: with-proto-sub-format
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -32,8 +30,6 @@ testCases:
                     responseData: "dGVzdCByZXNwb25zZQ=="
   - request:
       testName: without-proto-sub-format
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest

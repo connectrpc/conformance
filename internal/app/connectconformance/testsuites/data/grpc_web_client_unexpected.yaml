@@ -9,8 +9,6 @@ relevantCompressions:
 testCases:
   - request:
       testName: trailers-in-body/missing-status
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -34,8 +32,6 @@ testCases:
         code: 2 # unknown
   - request:
       testName: trailers-in-body/unary-ok-but-no-response
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -59,8 +55,6 @@ testCases:
         code: 2 # unknown
   - request:
       testName: trailers-in-body/unary-multiple-responses
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -90,8 +84,6 @@ testCases:
   # TODO: Figure out why these next two cause JS gRPC web client to crash.
   - request:
       testName: trailers-only/missing-status
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -112,8 +104,6 @@ testCases:
         code: 2 # unknown
   - request:
       testName: trailers-only/unary-ok-but-no-response
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -135,8 +125,6 @@ testCases:
 
   - request:
       testName: trailers-only/ignore-header-if-body-present
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -164,8 +152,6 @@ testCases:
 # Other anomalous responses.
   - request:
       testName: unexpected-codec
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -188,8 +174,6 @@ testCases:
         code: 13
   - request:
       testName: unexpected-compression
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -215,8 +199,6 @@ testCases:
         code: 13
   - request:
       testName: unexpected-compressed-message
-      service: connectrpc.conformance.v1.ConformanceService
-      method: Unary
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
