@@ -160,4 +160,4 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 12
+      code: CODE_UNIMPLEMENTED

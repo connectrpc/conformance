@@ -14,7 +14,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              status_code: 200
+              statusCode: 200
               headers:
                 - name: "access-control-allow-origin"
                   value: [ "*" ]
@@ -29,7 +29,7 @@ testCases:
                       text: "grpc-message: error\r\n"
     expectedResponse:
       error:
-        code: 2 # unknown
+        code: CODE_UNKNOWN
   - request:
       testName: trailers-in-body/unary-ok-but-no-response
       streamType: STREAM_TYPE_UNARY
@@ -37,7 +37,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              status_code: 200
+              statusCode: 200
               headers:
                 - name: "access-control-allow-origin"
                   value: [ "*" ]
@@ -52,7 +52,7 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        code: 2 # unknown
+        code: CODE_UNKNOWN
   - request:
       testName: trailers-in-body/unary-multiple-responses
       streamType: STREAM_TYPE_UNARY
@@ -60,7 +60,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              status_code: 200
+              statusCode: 200
               headers:
                 - name: content-type
                   value: [ "application/grpc-web" ]
@@ -79,7 +79,7 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        code: 2 # unknown
+        code: CODE_UNKNOWN
 
   # TODO: Figure out why these next two cause JS gRPC web client to crash.
   - request:
@@ -89,7 +89,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              status_code: 200
+              statusCode: 200
               headers:
                 - name: "access-control-allow-origin"
                   value: [ "*" ]
@@ -101,7 +101,7 @@ testCases:
                   value: [ "error" ]
     expectedResponse:
       error:
-        code: 2 # unknown
+        code: CODE_UNKNOWN
   - request:
       testName: trailers-only/unary-ok-but-no-response
       streamType: STREAM_TYPE_UNARY
@@ -109,7 +109,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              status_code: 200
+              statusCode: 200
               headers:
                 - name: "access-control-allow-origin"
                   value: [ "*" ]
@@ -121,7 +121,7 @@ testCases:
                   value: [ "0" ]
     expectedResponse:
       error:
-        code: 2 # unknown
+        code: CODE_UNKNOWN
 
   - request:
       testName: trailers-only/ignore-header-if-body-present
@@ -130,7 +130,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              status_code: 200
+              statusCode: 200
               headers:
                 - name: "access-control-allow-origin"
                   value: [ "*" ]
@@ -170,8 +170,7 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        # internal
-        code: 13
+        code: CODE_INTERNAL
   - request:
       testName: unexpected-compression
       streamType: STREAM_TYPE_UNARY
@@ -195,8 +194,7 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        # internal
-        code: 13
+        code: CODE_INTERNAL
   - request:
       testName: unexpected-compressed-message
       streamType: STREAM_TYPE_UNARY
@@ -219,5 +217,4 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        # internal
-        code: 13
+        code: CODE_INTERNAL

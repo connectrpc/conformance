@@ -26,7 +26,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 # Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client-stream/all-requests-equal-to-server-limit
@@ -55,7 +55,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 - request:
     testName: client-stream/subsequent-request-exceeds-server-limit
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -71,7 +71,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/request-equal-to-server-limit
@@ -98,7 +98,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/half-duplex/all-requests-equal-to-server-limit
@@ -133,7 +133,7 @@ testCases:
   # responds with any payloads
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 - request:
     testName: bidi-stream/half-duplex/subsequent-request-exceeds-server-limit
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -153,7 +153,7 @@ testCases:
   # responds with any payloads
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 - request:
     testName: bidi-stream/full-duplex/all-requests-equal-to-server-limit
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -188,7 +188,7 @@ testCases:
   # was too large and the entire RPC immediately fails.
   expectedResponse:
     error:
-      code: 8
+      code: CODE_RESOURCE_EXHAUSTED
 # TODO - Need a way to populate the expected response payload because the test
 # library padded it with size and we don't know what it looks like here.
 # - request:
@@ -221,4 +221,4 @@ testCases:
 #             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
 #               requestData: "dGVzdCByZXNwb25zZQ=="
 #     error:
-#       code: 8
+#       code: CODE_RESOURCE_EXHAUSTED

@@ -24,5 +24,4 @@ testCases:
     expectedResponse:
       httpStatusCode: 415
       error:
-        # unknown
-        code: 2
+        code: CODE_UNKNOWN

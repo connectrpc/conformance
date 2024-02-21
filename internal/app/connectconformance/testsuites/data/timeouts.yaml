@@ -18,7 +18,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 4
+      code: CODE_DEADLINE_EXCEEDED
 # Client Stream Tests ---------------------------------------------------------
 - request:
     testName: client-stream
@@ -34,7 +34,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 4
+      code: CODE_DEADLINE_EXCEEDED
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream
@@ -50,7 +50,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 4
+      code: CODE_DEADLINE_EXCEEDED
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi-stream/full-duplex
@@ -69,7 +69,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 4
+      code: CODE_DEADLINE_EXCEEDED
 - request:
     testName: bidi-stream/half-duplex
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -86,4 +86,4 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 4
+      code: CODE_DEADLINE_EXCEEDED

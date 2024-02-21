@@ -22,8 +22,7 @@ testCases:
                 text: "null"
     expectedResponse:
       error:
-        # unknown
-        code: 2
+        code: CODE_UNKNOWN
   - request:
       testName: error/null-code
       service: connectrpc.conformance.v1.ConformanceService
@@ -42,8 +41,7 @@ testCases:
                   { "code": null, "message": "oops" }
     expectedResponse:
       error:
-        # unknown
-        code: 2
+        code: CODE_UNKNOWN
         message: oops
   - request:
       testName: error/missing-code
@@ -63,8 +61,7 @@ testCases:
                   { "message": "oops" }
     expectedResponse:
       error:
-        # unknown
-        code: 2
+        code: CODE_UNKNOWN
         message: oops
 
 #  # TODO: uncomment this once connect-go can de-serialize the
@@ -87,8 +84,7 @@ testCases:
 #                  { "code": "foobar", "message": "oops" }
 #    expectedResponse:
 #      error:
-#        # unknown
-#        code: 2
+#        code: CODE_UNKNOWN
 #        message: oops
   - request:
       testName: error/allow-unrecognized-fields
@@ -112,8 +108,7 @@ testCases:
                   }
     expectedResponse:
       error:
-        # out of range
-        code: 11
+        code: CODE_OUT_OF_RANGE
         message: oops
 #  # TODO: We can't actually represent an unrecognized detail in the YAML format, because
 #  #       we use google.protobuf.Any, which requires the schema to represent in JSON or YAML 😭
@@ -145,8 +140,7 @@ testCases:
 #                  }
 #    expectedResponse:
 #      error:
-#        # out of range
-#        code: 11
+#        code: CODE_OUT_OF_RANGE
 #        message: oops
 #        details:
 #          - "@type": type.googleapis.com/foo.bar.Baz
@@ -180,8 +174,7 @@ testCases:
                   }
     expectedResponse:
       error:
-        # out of range
-        code: 11
+        code: CODE_OUT_OF_RANGE
         message: oops
         details:
           - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
@@ -231,8 +224,7 @@ testCases:
                         }
     expectedResponse:
       error:
-        # unknown
-        code: 2
+        code: CODE_UNKNOWN
         message: oops
   - request:
       testName: end-stream/missing-code
@@ -257,8 +249,7 @@ testCases:
                         }
     expectedResponse:
       error:
-        # unknown
-        code: 2
+        code: CODE_UNKNOWN
         message: oops
 #  # TODO: uncomment this once connect-go can de-serialize the
 #  #        rest of the JSON in the face of an invalid code
@@ -285,8 +276,7 @@ testCases:
 #                        }
 #    expectedResponse:
 #      error:
-#        # unknown
-#        code: 2
+#        code: CODE_UNKNOWN
 #        message: oops
   - request:
       testName: end-stream/allow-unrecognized-fields
@@ -323,8 +313,7 @@ testCases:
                         }
     expectedResponse:
       error:
-        # out of range
-        code: 11
+        code: CODE_OUT_OF_RANGE
         message: oops
         details:
           - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto

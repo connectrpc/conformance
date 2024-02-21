@@ -15,8 +15,7 @@ testCases:
           statusCode: 418 # I'm a teapot
   expectedResponse:
     error:
-      # unknown
-      code: 2
+      code: CODE_UNKNOWN
 - request:
     testName: nonexistent-http-status-code
     streamType: STREAM_TYPE_UNARY
@@ -27,8 +26,7 @@ testCases:
           statusCode: 800
   expectedResponse:
     error:
-      # unknown
-      code: 2
+      code: CODE_UNKNOWN
 - request:
      testName: unexpected-content-type
      service: connectrpc.conformance.v1.ConformanceService
@@ -43,5 +41,4 @@ testCases:
                value: ["image/jpeg"]
   expectedResponse:
      error:
-       # unknown
-       code: 2
+       code: CODE_UNKNOWN
