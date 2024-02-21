@@ -22,6 +22,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"connectrpc.com/conformance/internal/compression"
@@ -108,6 +109,7 @@ type dataTracer struct {
 	decompressor     connect.Decompressor
 	builder          *builder
 
+	mu        sync.Mutex
 	prefix    []byte
 	env       *Envelope
 	expecting uint32
@@ -116,6 +118,9 @@ type dataTracer struct {
 }
 
 func (d *dataTracer) trace(data []byte) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	if !d.isStreamProtocol {
 		d.actual += uint64(len(data))
 		return
@@ -127,7 +132,7 @@ func (d *dataTracer) trace(data []byte) {
 
 		if d.expecting == 0 {
 			// still reading envelope prefix
-			n, done := d.tracePrefix(data)
+			n, done := d.tracePrefixLocked(data)
 			if !done {
 				// need to read more data to finish prefix
 				return
@@ -136,7 +141,7 @@ func (d *dataTracer) trace(data []byte) {
 			continue
 		}
 
-		n, done := d.traceMessage(data)
+		n, done := d.traceMessageLocked(data)
 		if !done {
 			// need to read more data to finish message
 			return
@@ -145,7 +150,7 @@ func (d *dataTracer) trace(data []byte) {
 	}
 }
 
-func (d *dataTracer) tracePrefix(data []byte) (int, bool) {
+func (d *dataTracer) tracePrefixLocked(data []byte) (int, bool) {
 	need := prefixLen - len(d.prefix)
 	if len(data) < need {
 		// envelope still not complete...
@@ -182,7 +187,7 @@ func (d *dataTracer) tracePrefix(data []byte) (int, bool) {
 	return need, true
 }
 
-func (d *dataTracer) traceMessage(data []byte) (int, bool) {
+func (d *dataTracer) traceMessageLocked(data []byte) (int, bool) {
 	need := int(d.expecting - uint32(d.actual))
 	if len(data) < need {
 		// message still not complete...
@@ -232,6 +237,9 @@ func (d *dataTracer) traceMessage(data []byte) (int, bool) {
 }
 
 func (d *dataTracer) emitUnfinished() {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
 	var unfinished uint64
 	if d.expecting == 0 && len(d.prefix) > 0 {
 		unfinished = uint64(len(d.prefix))

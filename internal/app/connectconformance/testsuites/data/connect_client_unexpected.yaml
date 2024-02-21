@@ -5,23 +5,107 @@ relevantProtocols:
 relevantCompressions:
   - COMPRESSION_IDENTITY
 relevantCodecs:
-  - CODEC_JSON
+  - CODEC_PROTO
 testCases:
   - request:
-      testName: unexpected content encoding
+      testName: unexpected-error-body
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
+              statusCode: 412
+              headers:
+                - name: content-type
+                  value: [ "application/proto" ]
               unary:
-                text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"}
+    expectedResponse:
+      error:
+        # mapped from 412 status code (invalid body ignored)
+        code: CODE_FAILED_PRECONDITION
+  - request:
+      testName: unexpected-codec
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
               headers:
                 - name: content-type
                   value: [ "application/json" ]
-                - name: content-encoding
-                  value: ["foo"]
+              unary:
+                text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
     expectedResponse:
       error:
-        # internal
-        code: 13
+        code: CODE_INTERNAL
+  - request:
+      testName: unexpected-stream-codec
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/connect+json" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+                  - flags: 2
+                    payload:
+                      text: "{}"
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: unexpected-compression
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/proto" ]
+                - name: content-encoding
+                  value: ["foo"]
+              unary:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+                  payload:
+                    data: "dGVzdCByZXNwb25zZQ"
+                compression: COMPRESSION_ZSTD
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: unexpected-compressed-message
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+                - name: connect-content-encoding
+                  value: ["identity"]
+              stream:
+                items:
+                  - flags: 1
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+                        payload:
+                          data: "dGVzdCByZXNwb25zZQ"
+                  - flags: 2
+                    payload:
+                      text: "{}"
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL

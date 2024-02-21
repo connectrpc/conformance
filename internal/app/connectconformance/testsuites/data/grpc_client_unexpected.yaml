@@ -1,0 +1,192 @@
+name: gRPC Unexpected Responses
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_GRPC
+relevantCodecs:
+  - CODEC_PROTO
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+# These tests verify that a gRPC-Web client can handle trailers in the body with
+# no response, trailers-only responses (trailers in headers), and trailers with
+# different cases (in addition to the "standard" all lower-case).
+testCases:
+  - request:
+      testName: missing-status
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+              trailers:
+                - name: "grpc-message"
+                  value: ["error"]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-message: error\r\n"
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: unary-ok-but-no-response
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+              trailers:
+                - name: "grpc-status"
+                  value: ["0"]
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+
+  - request:
+      testName: unary-multiple-responses
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+              trailers:
+                - name: "grpc-status"
+                  value: ["0"]
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+
+  - request:
+      testName: trailers-only/ignore-header-if-body-present
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+                - name: "grpc-status"
+                  value: ["9"]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL # internal since trailers are entirely missing
+  - request:
+      testName: trailers-only/ignore-header-if-trailer-present
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+                - name: "grpc-status"
+                  value: ["8"]
+              trailers:
+                - name: "foo"
+                  value: ["bar"]
+                - name: "grpc-status"
+                  value: ["9"]
+    expectedResponse:
+      error:
+        code: 9
+
+  - request:
+      testName: unexpected-codec
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/grpc+json" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      text: "{\"payload\": {\"data\": \"dGVzdCByZXNwb25zZQ\"}}"
+              trailers:
+                - name: grpc-status
+                  value: [ "0" ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: unexpected-compression
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/grpc+proto" ]
+                - name: grpc-encoding
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - flags: 1
+                    payload:
+                      binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse" }
+                      compression: COMPRESSION_ZSTD
+              trailers:
+                - name: grpc-status
+                  value: [ "0" ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: unexpected-compressed-message
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/grpc+proto" ]
+                - name: grpc-encoding
+                  value: [ "identity" ]
+              stream:
+                items:
+                  - flags: 1
+                    payload:
+                      binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse" }
+              trailers:
+                - name: grpc-status
+                  value: [ "0" ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL

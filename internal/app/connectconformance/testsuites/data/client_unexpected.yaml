@@ -6,7 +6,7 @@ relevantCodecs:
   - CODEC_PROTO
 testCases:
 - request:
-    testName: unmapped HTTP status code
+    testName: unmapped-http-status-code
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -15,10 +15,9 @@ testCases:
           statusCode: 418 # I'm a teapot
   expectedResponse:
     error:
-      # unknown
-      code: 2
+      code: CODE_UNKNOWN
 - request:
-    testName: nonexistent HTTP status code
+    testName: nonexistent-http-status-code
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -27,21 +26,19 @@ testCases:
           statusCode: 800
   expectedResponse:
     error:
-      # unknown
-      code: 2
-# TODO - Fixed in https://github.com/connectrpc/connect-go/pull/679 
-# Uncomment when released
-# - request:
-#     testName: unexpected content type 
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#       responseDefinition:
-#         rawResponse:
-#           headers:
-#             - name: Content-Type
-#               value: ["junk"]
-#   expectedResponse:
-#     error:
-#       # internal
-#       code: 13
+      code: CODE_UNKNOWN
+- request:
+     testName: unexpected-content-type
+     service: connectrpc.conformance.v1.ConformanceService
+     method: Unary
+     streamType: STREAM_TYPE_UNARY
+     requestMessages:
+     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+       responseDefinition:
+         rawResponse:
+           headers:
+             - name: Content-Type
+               value: ["image/jpeg"]
+  expectedResponse:
+     error:
+       code: CODE_UNKNOWN

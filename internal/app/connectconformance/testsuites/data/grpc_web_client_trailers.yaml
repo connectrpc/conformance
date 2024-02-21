@@ -1,0 +1,177 @@
+name: gRPC-Web Trailers
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_GRPC_WEB
+relevantCodecs:
+  - CODEC_PROTO
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+# These tests verify that a gRPC-Web client can handle trailers in the body with
+# no response, trailers-only responses (trailers in headers), and trailers with
+# different cases (in addition to the "standard" all lower-case).
+testCases:
+  # Trailers and status are in body (no other response messages)
+  - request:
+      testName: trailers-in-body/expected
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 9\r\ngrpc-message: error\r\nx-custom-trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: trailers-in-body/mixed-case
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "Grpc-Status: 9\r\ngRPC-Message: error\r\nx-Custom-Trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: trailers-in-body/duplicate-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo", "bar", "baz" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 9\r\ngrpc-message: error\r\nx-custom-trailer: bing\r\nx-custom-trailer: quuz\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo", "bar", "baz" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing", "quuz" ]
+
+  # Trailers-only responses, where status and trailers are in HTTP headers
+  - request:
+      testName: trailers-only/expected
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+                - name: x-custom-trailer
+                  value: [ "bing" ]
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: trailers-only/duplicate-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo", "bar", "baz" ]
+                - name: x-custom-trailer
+                  value: [ "bing", "quuz" ]
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo", "bar", "baz" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing", "quuz" ]

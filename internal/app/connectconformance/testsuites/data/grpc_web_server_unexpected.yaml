@@ -1,0 +1,115 @@
+name: gRPC-Web Unexpected Requests
+mode: TEST_MODE_SERVER
+relevantProtocols:
+  - PROTOCOL_GRPC_WEB
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_PROTO
+testCases:
+  - request:
+      testName: unexpected-verb
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: DELETE
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/grpc-web" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+    expectedResponse:
+      httpStatusCode: 405
+      error:
+        code: CODE_UNKNOWN
+  - request:
+      testName: unexpected-uri
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.UnknownService/UnknownMethod
+        headers:
+          - name: content-type
+            value: [ "application/grpc-web" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  ## TODO: uncomment this test case once connect-go distinguishes between unknown
+  ##       (content-type that is clearly not an RPC client, can send back 415 status)
+  ##       and internal (looks like an RPC client, but unsupported codec, so send
+  ##       back RPC error response).
+  ## https://github.com/connectrpc/connect-go/issues/689
+  #  - request:
+  #      testName: unexpected-codec
+  #      streamType: STREAM_TYPE_UNARY
+  #      requestMessages:
+  #        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+  #      rawRequest:
+  #        verb: POST
+  #        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+  #        headers:
+  #          - name: content-type
+  #            value: [ "application/grpc-web+foo" ]
+  #        stream:
+  #          items:
+  #            - flags: 0
+  #              payload:
+  #                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+  #    expectedResponse:
+  #      error:
+  #        code: CODE_INTERNAL
+  - request:
+      testName: unexpected-compression
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/grpc-web" ]
+          - name: grpc-encoding
+            value: ["foo"]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+                compression: COMPRESSION_ZSTD
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: unexpected-compressed-message
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/grpc-web+proto" ]
+          - name: grpc-encoding
+            value: ["identity"]
+        stream:
+          items:
+            - flags: 1
+              payload:
+                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL

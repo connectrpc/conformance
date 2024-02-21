@@ -24,7 +24,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: client-stream/cancel-after-close-send
     streamType: STREAM_TYPE_CLIENT_STREAM
@@ -46,7 +46,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED
 # Server Stream Tests ---------------------------------------------------------
 - request:
     testName: server-stream/cancel-after-zero-responses
@@ -69,7 +69,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: server-stream/cancel-after-responses
     streamType: STREAM_TYPE_SERVER_STREAM
@@ -95,7 +95,7 @@ testCases:
                   - "dGVzdCByZXNwb25zZQ=="
                   - "dGVzdCByZXNwb25zZQ=="
     error:
-      code: 1
+      code: CODE_CANCELED
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
     testName: bidi full duplex cancel after zero responses
@@ -115,7 +115,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/full-duplex/cancel-after-responses
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -145,7 +145,7 @@ testCases:
                   - "dGVzdCByZXNwb25zZQ=="
               fullDuplex: true
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/full-duplex/cancel-before-close-send
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -178,7 +178,7 @@ testCases:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               requestData: "dGVzdCByZXNwb25zZQ=="
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/full-duplex/cancel-after-close-send
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
@@ -215,7 +215,7 @@ testCases:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               requestData: "dGVzdCByZXNwb25zZQ=="
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/half-duplex/cancel-after-zero-responses
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -233,7 +233,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/half-duplex/cancel-after-responses
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -263,7 +263,7 @@ testCases:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               requestData: "dGVzdCByZXNwb25zZQ=="
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/half-duplex/cancel-before-close-send
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -280,7 +280,7 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED
 - request:
     testName: bidi-stream/half-duplex/cancel-after-close-send
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
@@ -298,4 +298,4 @@ testCases:
   # Override
   expectedResponse:
     error:
-      code: 1
+      code: CODE_CANCELED

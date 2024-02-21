@@ -1,0 +1,320 @@
+name: Connect Error and End-Stream
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_CONNECT
+relevantCodecs:
+  - CODEC_PROTO
+testCases:
+  - request:
+      testName: error/null
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 401
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: "null"
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+  - request:
+      testName: error/null-code
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 401
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  { "code": null, "message": "oops" }
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+        message: oops
+  - request:
+      testName: error/missing-code
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 401
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  { "message": "oops" }
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+        message: oops
+
+#  # TODO: uncomment this once connect-go can de-serialize the
+#  #        rest of the JSON in the face of an invalid code
+#  - request:
+#      testName: error/unrecognized-code
+#      service: connectrpc.conformance.v1.ConformanceService
+#      method: Unary
+#      streamType: STREAM_TYPE_UNARY
+#      requestMessages:
+#        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#          responseDefinition:
+#            rawResponse:
+#              statusCode: 422
+#              headers:
+#                - name: content-type
+#                  value: [ "application/json" ]
+#              unary:
+#                text: |
+#                  { "code": "foobar", "message": "oops" }
+#    expectedResponse:
+#      error:
+#        code: CODE_UNKNOWN
+#        message: oops
+  - request:
+      testName: error/allow-unrecognized-fields
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 422
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  {
+                    "code": "out_of_range",
+                    "message": "oops",
+                    "foobar": "baz"
+                  }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+#  # TODO: We can't actually represent an unrecognized detail in the YAML format, because
+#  #       we use google.protobuf.Any, which requires the schema to represent in JSON or YAML 😭
+#  - request:
+#      testName: error/allow-unrecognized-details
+#      service: connectrpc.conformance.v1.ConformanceService
+#      method: Unary
+#      streamType: STREAM_TYPE_UNARY
+#      requestMessages:
+#        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+#          responseDefinition:
+#            rawResponse:
+#              statusCode: 422
+#              headers:
+#                - name: content-type
+#                  value: [ "application/json" ]
+#              unary:
+#                text: |
+#                  {
+#                    "code": "out_of_range",
+#                    "message": "oops",
+#                    "details": [
+#                      {
+#                        "type": "foo.bar.Baz",
+#                        "value": "12345678",
+#                        "debug": { "foo": "bar" }
+#                      }
+#                    ]
+#                  }
+#    expectedResponse:
+#      error:
+#        code: CODE_OUT_OF_RANGE
+#        message: oops
+#        details:
+#          - "@type": type.googleapis.com/foo.bar.Baz
+#            "@value": 12345678 # TODO: if only...
+  - request:
+      testName: error/allow-unrecognized-fields-in-details
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 422
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  {
+                    "code": "out_of_range",
+                    "message": "oops",
+                    "details": [
+                      {
+                        "type": "google.protobuf.FileDescriptorProto",
+                        "value": "Cgp0ZXN0LnByb3Rv",
+                        "frob": "nitz",
+                        "debug": { "name": "test.proto", "foobar": true }
+                      }
+                    ]
+                  }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
+
+  - request:
+      testName: end-stream/null-error
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        { "error": null }
+    expectedResponse:
+      # null error taken as no error, so successful call w/ empty response
+  - request:
+      testName: end-stream/null-code
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": { "code": null, "message": "oops" }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+        message: oops
+  - request:
+      testName: end-stream/missing-code
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": { "message": "oops" }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+        message: oops
+#  # TODO: uncomment this once connect-go can de-serialize the
+#  #        rest of the JSON in the face of an invalid code
+#  - request:
+#      testName: end-stream/unrecognized-code
+#      service: connectrpc.conformance.v1.ConformanceService
+#      method: ServerStream
+#      streamType: STREAM_TYPE_SERVER_STREAM
+#      requestMessages:
+#        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+#          responseDefinition:
+#            rawResponse:
+#              statusCode: 200
+#              headers:
+#                - name: content-type
+#                  value: [ "application/connect+proto" ]
+#              stream:
+#                items:
+#                  - flags: 2
+#                    payload:
+#                      text: |
+#                        {
+#                          "error": { "code": "foobar", "message": "oops" }
+#                        }
+#    expectedResponse:
+#      error:
+#        code: CODE_UNKNOWN
+#        message: oops
+  - request:
+      testName: end-stream/allow-unrecognized-fields
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": {
+                            "code": "out_of_range",
+                            "message": "oops",
+                            "foobar": "baz",
+                            "details": [
+                              {
+                                "type": "google.protobuf.FileDescriptorProto",
+                                "value": "Cgp0ZXN0LnByb3Rv",
+                                "frob": "nitz",
+                                "debug": { "name": "test.proto", "foobar": true }
+                              }
+                            ]
+                          }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"

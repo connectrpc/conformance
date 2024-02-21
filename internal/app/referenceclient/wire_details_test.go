@@ -609,9 +609,11 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			} else {
 				// When there's feedback, the connect-go client may complain about the end-stream message
 				// and report a different code.
-				assert.True(t, connect.CodeOf(err) == connect.CodeAlreadyExists ||
-					connect.CodeOf(err) == connect.CodeInternal,
-					"unexpected error: %v", err)
+				assert.Contains(t,
+					[]connect.Code{connect.CodeAlreadyExists, connect.CodeInternal, connect.CodeUnknown},
+					connect.CodeOf(err),
+					"unexpected error: %v", err,
+				)
 				for i := range printer.Messages {
 					printer.Messages[i] = strings.TrimSuffix(printer.Messages[i], "\n")
 				}

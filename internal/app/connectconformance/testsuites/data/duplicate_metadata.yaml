@@ -32,7 +32,7 @@ testCases:
         - name: x-custom-header
           value: ["foo","bar","baz"]
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "unary failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -68,7 +68,7 @@ testCases:
         - name: x-custom-header
           value: ["foo","bar","baz"]
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "client stream failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -121,7 +121,7 @@ testCases:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "server stream failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -139,7 +139,7 @@ testCases:
         - name: x-custom-header
           value: ["foo","bar","baz"]
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "server stream failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -181,7 +181,7 @@ testCases:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "bidi full duplex stream failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -202,7 +202,7 @@ testCases:
           - name: x-custom-header
             value: ["foo", "bar", "baz"]
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "bidi full duplex stream failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -244,7 +244,7 @@ testCases:
           - "dGVzdCByZXNwb25zZQ=="
           - "dGVzdCByZXNwb25zZQ=="
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "bidi half duplex stream failed"
         responseTrailers:
         - name: x-custom-trailer
@@ -264,7 +264,7 @@ testCases:
           - name: x-custom-header
             value: ["foo", "bar", "baz"]
         error:
-          code: 13
+          code: CODE_INTERNAL
           message: "bidi half duplex stream failed"
         responseTrailers:
         - name: x-custom-trailer
