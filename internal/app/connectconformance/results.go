@@ -170,26 +170,25 @@ func (r *testResults) assert(
 	errs = append(errs, checkError(expected.Error, actual.Error)...)
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
-	// TODO - This check is for trailers-only and should really only apply to gRPC and gRPC-Web protocols.
-	// Previously, it checked for error != nil, which is compliant with gRPC. But gRPC-Web does trailers-only
-	// responses with no errors also.
-	if len(expected.Payloads) == 0 {
-		// When there are no messages in the body, the server may send a
-		// trailers-only response. In that case, it is acceptable for the expected
-		// headers and trailers to be merged into one set, and it is acceptable for the
-		// client to interpret them as either headers or trailers.
+	if len(expected.Payloads) == 0 &&
+		expected.Error != nil &&
+		(definition.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_UNARY ||
+			definition.Request.StreamType == conformancev1.StreamType_STREAM_TYPE_CLIENT_STREAM) {
+		// For unary and client-stream operations, a server API may not provide a way to
+		// set headers and trailers separately on error but instead a way to return an
+		// error with embedded metadata. In that case, we may not be able to distinguish
+		// headers from trailers in the response -- they get unified into a single bag of
+		// "error metadata". The conformance client should record those as trailers when
+		// sending back a ClientResponseResult message.
 
 		// So first we see if normal attribute succeeds
 		metadataErrs := checkHeaders("response headers", expected.ResponseHeaders, actual.ResponseHeaders)
 		metadataErrs = append(metadataErrs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 		if len(metadataErrs) > 0 {
-			// That did not work. So we test to see if client attributed them all as headers
-			// or all as trailers.
+			// That did not work. So we test to see if client attributed them all as trailers.
 			merged := mergeHeaders(expected.ResponseHeaders, expected.ResponseTrailers)
-			allHeadersErrs := checkHeaders("response metadata", merged, actual.ResponseHeaders)
-			allTrailersErrs := checkHeaders("response metadata", merged, actual.ResponseTrailers)
-			if len(allHeadersErrs) != 0 && len(allTrailersErrs) != 0 {
-				// These checks failed also. So the received headers/trailers are incorrect.
+			if allTrailersErrs := checkHeaders("response metadata", merged, actual.ResponseTrailers); len(allTrailersErrs) != 0 {
+				// That check failed also. So the received headers/trailers are incorrect.
 				// Report the original errors computed above.
 				errs = append(errs, metadataErrs...)
 			}

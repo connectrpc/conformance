@@ -95,28 +95,28 @@ runconformance: runservertests runclienttests
 
 .PHONY: runservertests
 runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserver
-	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode server -- \
-		$(BIN)/referenceserver
-	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode server -- \
-		$(BIN)/grpcserver
-	$(BIN)/connectconformance -v --conf ./testing/grpc-web-server-impl-config.yaml --mode server \
-		--known-failing @./testing/grpcserver-web-known-failing.txt -- \
-		$(BIN)/grpcserver
+	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode server --trace \
+		-- $(BIN)/referenceserver
+	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode server --trace \
+		-- $(BIN)/grpcserver
+	$(BIN)/connectconformance -v --conf ./testing/grpc-web-server-impl-config.yaml --mode server --trace \
+		--known-failing @./testing/grpcserver-web-known-failing.txt \
+		-- $(BIN)/grpcserver
 
 .PHONY: runclienttests
 runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient buildgrpcweb
-	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode client \
+	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode client --trace \
 		-- $(BIN)/referenceclient
-	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode client \
-		--known-failing @./testing/grpcclient-known-failing.txt -- \
-		$(BIN)/grpcclient
+	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode client --trace \
+		--known-failing @./testing/grpcclient-known-failing.txt \
+		-- $(BIN)/grpcclient
 	@# Note that use of --skip is discouraged, but if we don't skip them the client crashes.
 	@# TODO: troubleshoot the skipped test cases and figure out why they crash.
-	$(BIN)/connectconformance -v --conf ./testing/grpc-web-client-impl-config.yaml --mode client \
+	$(BIN)/connectconformance -v --conf ./testing/grpc-web-client-impl-config.yaml --mode client --trace \
 		--skip "**/trailers-only/missing-status" \
 		--skip "**/trailers-only/unary-ok-but-no-response" \
-		--known-failing @./testing/grpcwebclient-known-failing.txt -- \
-		./testing/grpcwebclient/bin/grpcwebclient
+		--known-failing @./testing/grpcwebclient-known-failing.txt \
+		-- ./testing/grpcwebclient/bin/grpcwebclient
 
 .PHONY: buildgrpcweb
 buildgrpcweb: generate
