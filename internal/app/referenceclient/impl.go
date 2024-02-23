@@ -358,7 +358,7 @@ func (i *invoker) clientStream(
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
+		// so that we can get the trailers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
 		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
