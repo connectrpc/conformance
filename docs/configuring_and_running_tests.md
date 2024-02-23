@@ -88,7 +88,7 @@ feature of the implementation under test.
   schemes indicated in the protocols specs for [Connect][connect-protocol] and
   [gRPC][grpc-protocol].)
 * `stream_types`: This configures which stream types the implementation supports. If not
-  configured, support is assumed for all four types. The valid options are
+  configured, support is assumed for all types. The valid options are
   `STREAM_TYPE_UNARY`, `STREAM_TYPE_CLIENT_STREAM`, `STREAM_TYPE_SERVER_STREAM`,
   `STREAM_TYPE_HALF_DUPLEX_BIDI`, and `STREAM_TYPE_FULL_DUPLEX_BIDI`. The latter two both
   use bidirectional streams. The former (half-duplex) is technically compatible with
@@ -103,7 +103,7 @@ feature of the implementation under test.
   supported, HTTP/3 cannot be supported and HTTP/2 can only be supported if the
   implementation supports H2C.
 * `supports_tls_client_certs`: This flag indicates whether the implementation supports
-  TLS client certificates. For servers, this means that the server can requires that
+  TLS client certificates. For servers, this means that the server will require that
   clients present trusted certificates during the TLS handshake. For clients, this means
   that they can present certificates to the server during the handshake. If not
   configured, it is assumed that implementations do _not_ support client certificates.
@@ -219,7 +219,7 @@ Common reasons to pass arguments to the client or server under test are:
    visibility into what it's doing (and what might be going wrong).
 2. For clients, to control parallelism. Clients under test can issue RPCs to the
    server concurrently in order to speed up the test run. When a large number of
-   test case permutations apply to a particular implementation, it can take to
+   test case permutations apply to a particular implementation, it can take time to
    issue all of the RPCs if done serially from a single thread. So a client may choose
    to send RPCs in parallel to speed things up. Since RPCs involve network I/O, they
    are typically amenable to high parallelism. Timeout test cases can involve the
@@ -242,7 +242,7 @@ It will exit with a non-zero code when there are errors. By default, the program
 print any output except at the very end, printing a list of failing test cases and a
 summary.
 
-### Test Output and Test Case Permutations
+### Test Output
 
 When test cases fail, the test runner prints a `FAILED` banner with the _full name_ of the
 test case permutation and the errors that were observed with the RPC. If the `--trace` option
@@ -301,23 +301,11 @@ response<               eos:
 response<   402.359ms body end
 --------------------
 ```
-The top-line shows the full name of the test case, which can be broken down like so:
-* `Client Cancellation`: The first component is the name of the test suite that defines this test case.
-* `HTTPVersion:1`: Path elements with a colon represent one axis of a permutation. For this one, the
-  test case is relevant to all HTTP versions, so it will run against all versions supported by the
-  implementation under test. This component of the name tells us that the failure occurred when run
-  using version 1 (which is really HTTP 1.1).
-* `Protocol:PROTOCOL_GRPC_WEB`: Similar to above, this test case is relevant to all protocols. This
-  failure occurred when using the gRPC-Web protocol.
-* `Codec:CODEC_PROTO`: The failure occurred using the "proto" codec (the Protobuf binary format).
-* `Compression:COMPRESSION_IDENTITY`: The failure occurred using "identity" encoding, which actually
-  means no compression.
-* `TLS:false`: The failure occurred over a plain-text HTTP connection, not a secure one.
-* `server-stream/cancel-after-responses`: After the permutation properties, the final element(s) are
-  the actual test case name (as it is appears in the test suite YAML). As in this example, this can
-  contain a slash and therefore represent more than just the final name component. This naming
-  convention is amenable to wildcards in test case patterns (useful for selecting which tests to
-  run or marking test cases as known to fail).
+
+The top-line in the example output above shows the full name of the test case. The first and final
+components of the name tell us that it is in the "Client Cancellation" test suite and is a test case
+that is named "server-stream/cancel-after-responses". The rest of the name identifies which
+_permutation_ of the test failed.
 
 The trace shows the full HTTP headers (and trailers, if any) and summarizes the request and response
 body data in the form of messages exchanged. Each message is typically sent with a five-byte prefix
@@ -361,17 +349,54 @@ Running 46 tests with reference server (grpc) for server config {HTTP_VERSION_1,
 Running 46 tests with reference server (grpc) for server config {HTTP_VERSION_2, PROTOCOL_GRPC, TLS:false}...
 Running 46 tests with reference server (grpc) for server config {HTTP_VERSION_2, PROTOCOL_GRPC_WEB, TLS:false}...
 ```
-This shows a summary of the config as it is loaded and processed, telling us the total number of config cases
-that apply to the current configuration (44) and the number of patterns that identify "known failing" cases.
-It shows us the total number of test suites (8) and the total number of test cases across those suites (97).
-The next line shows us that it has used the 44 relevant config cases and 97 test case templates to compute
-a total of 602 test case permutations. This means that the client under test will be invoking 602 RPCs.
+This shows a summary of the config as it is loaded and processed, telling us the total number of
+[config cases](#config-cases) that apply to the current configuration (44) and the number of patterns that
+identify "known failing" cases. It shows us the total number of test suites (8) and the total number of test
+cases across those suites (97). The next line shows us that it has used the 44 relevant config cases and 97
+test case templates to compute a total of 602 [test case permutations](#test-case-permutations). This means
+that the client under test will be invoking 602 RPCs.
 
 The remaining lines in the example output above are printed as each test server is started. Each server config
 represents a different RPC server, started with the given configuration (since we are running the tests using
-`--mode client`, it is starting a reference server).
+`--mode client`, it is starting a reference server). In the above example, 47 test case permutations apply
+to the Connect protocol; 46 apply to the gRPC and gRPC-Web protocols. If you add up all of those numbers
+(47+47+46+46+...), the result is 602: the total number of test case permutations being run.
 
-#### gRPC Implementations
+### Test Case Permutations
+
+As mentioned above, a single test case can turn into multiple permutations, where the same RPC is used
+with multiple configuration cases.
+
+The full name of the example failing test above follows:
+```
+Client Cancellation/HTTPVersion:1/Protocol:PROTOCOL_GRPC_WEB/Codec:CODEC_PROTO/Compression:COMPRESSION_IDENTITY/TLS:false/server-stream/cancel-after-responses
+```
+We can decipher this name by looking at the various _components_ of the name (components are separated
+by slashes `/`).
+
+* `Client Cancellation`: The first component is the name of the test suite that defines this test case.
+* `HTTPVersion:1`: Path elements with a colon represent one axis of a permutation. For this one, the
+  test case is relevant to all HTTP versions, so it will run against all versions supported by the
+  implementation under test. This component of the name tells us that the failure occurred when run
+  using version 1 (which is really HTTP 1.1).
+* `Protocol:PROTOCOL_GRPC_WEB`: Similar to above, this test case is relevant to all protocols. This
+  failure occurred when using the gRPC-Web protocol.
+* `Codec:CODEC_PROTO`: The failure occurred using the "proto" codec (the Protobuf binary format).
+* `Compression:COMPRESSION_IDENTITY`: The failure occurred using "identity" encoding, which actually
+  means no compression.
+* `TLS:false`: The failure occurred over a plain-text HTTP connection, not a secure one.
+* `server-stream/cancel-after-responses`: After the permutation properties, the final element(s) are
+  the actual test case name, as it is appears in the test suite YAML. As in this example, this name
+  can contain a slash and therefore represent more than just the final name component. This naming
+  convention is amenable to wildcards in test case patterns (useful for selecting which tests to
+  run or marking test cases as known to fail).
+
+Test cases that are run against a [gRPC implementation](#grpc-implementations) will have an additional
+component in their full name: `(grpc server impl)` or `(grpc client impl)`. The former is used in "client"
+mode, when the client under test sends an RPC to the gRPC server implementation; the latter is used in
+"server" mode, when it's the gRPC client implementation that is sending the RPC to the server under test.
+
+### gRPC Implementations
 
 The lines in the example verbose output above that say "reference server (grpc)" are for test cases using
 a different server implementation -- one that was written with an official [gRPC][grpc] implementation
@@ -379,11 +404,6 @@ instead of using a [ConnectRPC][connectrpc] implementation. When your client or 
 protocol, it gets run against both reference implementations, as a way of further verifying
 interoperability with the ecosystem. (Note that the standard reference implementations _also_ support
 the gRPC protocol; so the gRPC test cases are repeated with a different server.)
-
-Test cases that are run against the gRPC implementation will have an additional component in their full
-name: `(grpc server impl)` or `(grpc client impl)`. The former is used in "client" mode, when the client
-under test sends an RPC to the gRPC server implementation; the latter is used in "server" mode, when it's
-the gRPC client implementation that is sending the RPC to the server under test.
 
 Note that an HTTP trace, for failing tests when the `--test` flag is used, will only available with the
 primary reference implementations. Test cases that fail against the gRPC implementations will not have
@@ -417,7 +437,7 @@ All four of these options accept two kinds of values:
    asterisk (`*`) matches one name component. A double-asterisk (`**`) matches zero or more
    components. A name component is the portion of the name between `/` separators. Wildcards
    can**not** be used to match partial name components. For example `foo/bar*` is not valid
-   since the wildcard is expected to only match a suffix. If such a patter is used, the
+   since the wildcard is expected to only match a suffix. If such a pattern is used, the
    asterisk is matched exactly instead of being treated as a wildcard.
 2. If prefixed with an at-sign (`@`), the rest of the value is the path of a file that
    contains test case patterns, one per line. When the file is processed, leading and trailing
@@ -426,6 +446,11 @@ All four of these options accept two kinds of values:
 
 All four of these options can be provided multiple times on the command-line, to provide
 multiple test case patterns, refer to multiple files, or both.
+
+It is strongly recommended to only use `--known-failing` in CI configurations. For legitimately
+flaky test cases, use `--known-flaky` (instead of `--skip`). Use of `--run` or `--skip` in CI
+configurations is discouraged. It should instead be possibly to correctly filter the set of tests
+to run just based on config YAML files.
 
 ## Configuring CI
 

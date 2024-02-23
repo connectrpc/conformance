@@ -196,7 +196,7 @@ file. This can be done using the `--test-file` option to the test runner:
 ```shell
 # Build the test runner and the reference client and server.
 make .tmp/bin/connectconformance .tmp/bin/referenceclient .tmp/bin/referenceserver
-# Run just the tests in the new file file
+# Run just the tests in the new file
 .tmp/bin/connectconformance \
     --conf ./testing/reference-impls-config.yaml \
     --mode client \
