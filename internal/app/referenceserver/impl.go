@@ -187,9 +187,12 @@ func (s *conformanceServer) ServerStream(
 	if responseDefinition != nil { //nolint:nestif
 		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
-		// Immediately send the headers/trailers on the stream so that they can be read by the client
-		if err := stream.Send(nil); err != nil {
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+
+		if len(responseDefinition.ResponseData) > 0 {
+			// Immediately send the headers/trailers on the stream so that they can be read by the client
+			if err := stream.Send(nil); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+			}
 		}
 
 		// Calculate the response delay if specified
@@ -278,7 +281,7 @@ func (s *conformanceServer) BidiStream(
 				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
 				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
 
-				if fullDuplex {
+				if fullDuplex && len(responseDefinition.ResponseData) > 0 {
 					// Immediately send the headers on the stream so that they can be read by the client.
 					// We can only do this for full-duplex. For half-duplex operation, we must let client
 					// complete its upload before trying to send anything.
@@ -294,7 +297,7 @@ func (s *conformanceServer) BidiStream(
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
 		if fullDuplex {
-			if responseDefinition == nil || respNum >= len(responseDefinition.ResponseData) {
+			if respNum >= len(responseDefinition.GetResponseData()) {
 				// If there are no responses to send, then break the receive loop
 				// and throw the error specified
 				break
@@ -331,7 +334,7 @@ func (s *conformanceServer) BidiStream(
 		}
 	}
 
-	if !fullDuplex {
+	if !fullDuplex && len(responseDefinition.GetResponseData()) > 0 {
 		// Now that upload is complete, we can immediately send headers for half-duplex calls.
 		if err := stream.Send(nil); err != nil {
 			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))

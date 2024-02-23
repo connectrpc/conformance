@@ -121,14 +121,20 @@ func TestResults_Assert(t *testing.T) {
 			{Data: []byte{0, 1, 2, 3, 4}},
 		},
 	}
-	testCase1 := &conformancev1.TestCase{ExpectedResponse: payload1}
+	testCase1 := &conformancev1.TestCase{
+		Request:          &conformancev1.ClientCompatRequest{TestName: "abc1"},
+		ExpectedResponse: payload1,
+	}
 	payload2 := &conformancev1.ClientResponseResult{
 		Error: &conformancev1.Error{
 			Code:    conformancev1.Code_CODE_ABORTED,
 			Message: proto.String("oops"),
 		},
 	}
-	testCase2 := &conformancev1.TestCase{ExpectedResponse: payload2}
+	testCase2 := &conformancev1.TestCase{
+		Request:          &conformancev1.ClientCompatRequest{TestName: "abc2"},
+		ExpectedResponse: payload2,
+	}
 	results.assert("foo/bar/1", testCase1, payload2)
 	results.assert("foo/bar/2", testCase2, payload1)
 	results.assert("foo/bar/3", testCase1, payload1)
@@ -288,28 +294,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 			},
 		},
 		{
-			name: "response meta misattributed allowed for trailers-only response (all in headers)",
-			expected: `{
-				"error": {"code": 5},
-				"response_headers": [
-					{"name": "abc", "value": ["xyz", "123"]},
-					{"name": "xyz", "value": ["value1"]}
-				],
-				"response_trailers": [
-					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
-				]
-			}`,
-			actual: `{
-				"error": {"code": 5},
-				"response_headers": [
-					{"name": "abc", "value": ["xyz", "123"]},
-					{"name": "xyz", "value": ["value1"]},
-					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
-				]
-			}`,
-		},
-		{
-			name: "response meta misattributed allowed for trailers-only response (all in trailers)",
+			name: "response meta all in trailers allowed for error with trailers-only response",
 			expected: `{
 				"error": {"code": 5},
 				"response_headers": [
@@ -694,7 +679,10 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 			t.Parallel()
 			results := newResults(&testTrie{}, &testTrie{}, nil)
 
-			expected := &conformancev1.TestCase{ExpectedResponse: &conformancev1.ClientResponseResult{}}
+			expected := &conformancev1.TestCase{
+				Request:          &conformancev1.ClientCompatRequest{StreamType: conformancev1.StreamType_STREAM_TYPE_UNARY},
+				ExpectedResponse: &conformancev1.ClientResponseResult{},
+			}
 			err := protojson.Unmarshal(([]byte)(testCase.expected), expected.ExpectedResponse)
 			require.NoError(t, err)
 

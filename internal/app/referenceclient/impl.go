@@ -140,10 +140,10 @@ func (i *invoker) unary(
 
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
+		// so that we can get the trailers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		headers = internal.ConvertToProtoHeader(connectErr.Meta())
+		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the headers and trailers
@@ -318,11 +318,11 @@ func (i *invoker) clientStream(
 
 	ctx = i.withWireCapture(ctx)
 	stream := i.client.ClientStream(ctx)
-
+	var numUnsent int
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
-	for _, msg := range req.RequestMessages {
+	for i, msg := range req.RequestMessages {
 		csr := &conformancev1.ClientStreamRequest{}
 		if err := msg.UnmarshalTo(csr); err != nil {
 			return nil, err
@@ -332,6 +332,7 @@ func (i *invoker) clientStream(
 		time.Sleep(time.Duration(req.RequestDelayMs) * time.Millisecond)
 
 		if err := stream.Send(csr); err != nil && errors.Is(err, io.EOF) {
+			numUnsent = len(req.RequestMessages) - i
 			break
 		}
 	}
@@ -357,10 +358,10 @@ func (i *invoker) clientStream(
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
+		// so that we can get the trailers from the Meta property. Then,
 		// convert _that_ to a proto Error so we can set it in the response.
 		connectErr := internal.ConvertErrorToConnectError(err)
-		headers = internal.ConvertToProtoHeader(connectErr.Meta())
+		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
 		// If the call was successful, get the returned payloads
@@ -373,12 +374,13 @@ func (i *invoker) clientStream(
 	statusCode, feedback := i.examineWireDetails(ctx)
 
 	return &conformancev1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		HttpStatusCode:   statusCode,
-		Feedback:         feedback,
+		ResponseHeaders:   headers,
+		ResponseTrailers:  trailers,
+		Payloads:          payloads,
+		NumUnsentRequests: int32(numUnsent),
+		Error:             protoErr,
+		HttpStatusCode:    statusCode,
+		Feedback:          feedback,
 	}, nil
 }
 
@@ -424,13 +426,17 @@ func (i *invoker) bidiStream(
 
 	var protoErr *conformancev1.Error
 	totalRcvd := 0
-	for _, msg := range req.RequestMessages {
+	for i, msg := range req.RequestMessages {
 		bsr := &conformancev1.BidiStreamRequest{}
 		if err := msg.UnmarshalTo(bsr); err != nil {
 			// Return the error and nil result because this is an
 			// unmarshalling error unrelated to the RPC
 			return nil, err
 		}
+
+		// Sleep for any specified delay
+		time.Sleep(time.Duration(req.RequestDelayMs) * time.Millisecond)
+
 		if err := stream.Send(bsr); err != nil && errors.Is(err, io.EOF) {
 			// Call receive to get the error and convert it to a proto error
 			if _, recvErr := stream.Receive(); recvErr != nil {
@@ -442,6 +448,7 @@ func (i *invoker) bidiStream(
 				protoErr = internal.ConvertErrorToProtoError(err)
 			}
 			// Break the send loop
+			result.NumUnsentRequests = int32(len(req.RequestMessages) - i)
 			break
 		}
 		if fullDuplex {
