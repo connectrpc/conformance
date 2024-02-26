@@ -1,4 +1,4 @@
-# Authoring test cases
+# Authoring Test Cases
 
 Test cases for the conformance runner are configured in YAML files and are located [here][test-suite-dir]. Each file 
 represents a single suite of tests. 
@@ -6,9 +6,9 @@ represents a single suite of tests.
 Authoring new test cases involves either a new file, if a new suite is warranted, or an additional test case in an 
 existing file/suite. 
 
-For the Protobuf definitions for the conformance runner, see the [connectrpc repository][connectrpc-repo] in the BSR.
+For the Protobuf definitions for the conformance runner, see the [connectrpc/conformance module][connectrpc-repo] in the BSR.
 
-## Test suites
+## Test Suites
 
 A suite represents a series of tests that all test the same general functionality (cancellation, timeouts, etc.). Each 
 test suite YAML file represents a [`TestSuite`][test-suite] message and the schema of this message defines the schema 
@@ -59,7 +59,7 @@ configured when running tests:
   When `true`, the `mode` property must be set to indicate whether the client or server should support the limit. Defaults
   to `false`.
 
-## Test cases
+## Test Cases
 
 Test cases are specified in the `testCases` property of the suite. Each test case starts with the `request` property 
 which defines the request which will be sent to a client during the test run. Each `request` must specify the following
@@ -101,20 +101,20 @@ or must be specified together. If they are omitted, the runner will auto-populat
  >
  > If a test is specific to one of the first four fields, it should instead be indicated in the directives for the test suite itself.
 
-### Raw payloads
+### Raw Payloads
 
 There are two message types in the test case schema worth noting here - [`RawHTTPRequest`][raw-http-request] and 
 [`RawHTTPResponse`][raw-http-response]. Both allow for the ability to define a round-trip outside the scope of the 
 Connect framework. They are used for sending or receiving anomalous payloads during a test.
 
-#### `RawHTTPRequest`
+#### Raw Requests (For Server Tests)
 
 The [`RawHTTPRequest`][raw-http-request] message can be set on the `request` property in a test case. Its purpose is to model a raw HTTP 
 request. This can be used to craft custom requests with odd properties (including certain kinds of malformed requests) 
 to test edge cases in servers. This value is only handled by the reference client and should only appear in files where 
 `mode` is set to `TEST_MODE_SERVER`.
 
-#### `RawHTTPResponse`
+#### Raw Responses (For Client Tests)
 
 The [`RawHTTPResponse`][raw-http-response] message is the analog to [`RawHTTPRequest`][raw-http-request]. It can be set in the response definition for a unary 
 or streaming RPC type and its purpose is to model a raw HTTP response. This can be used to craft custom responses with 
@@ -122,11 +122,11 @@ odd properties (including returning aberrant HTTP codes or certain kinds of malf
 clients. This value is only handled by the reference server and should only appear in files where `mode` is set to 
 `TEST_MODE_CLIENT`.
 
-## Naming conventions
+## Naming Conventions
 
 Test suites and their tests within follow a loose naming convention. 
 
-### Test files (Suites)
+### Test Files and Suites
 
 Test files should be named according to the suite inside and the general functionality being tested. Additionally:
 
@@ -135,10 +135,17 @@ Test files should be named according to the suite inside and the general functio
 * If a suite only contains client or server tests, the file name prefix should include `client` or `server`. If the suite is
   for both client and server, this can be omitted.
 
+The file names should use `lower_snake_case` convention.
+
 For example:
 * `connect_with_get.yaml` contains tests that test GET requests for the Connect protocol only.
 * `grpc_web_client.yaml` contains client tests for the gRPC-web protocol. 
-* `client_message_size.yaml` file contains a suite of client tests only across all protocols. 
+* `client_message_size.yaml` file contains a suite of client tests only across all protocols.
+
+The suite inside the file should either match the file name or be close to it. Reasons it might vary from the
+file name is to provide a little more detail as to the test suite's purpose.
+
+The test suite names should use `Title Case` convention
 
 ### Tests
 
@@ -160,6 +167,8 @@ If a suite contains tests for just a single stream type, the stream type can be 
 These conventions allow for more granular control over running tests via the conformance runner, such as only running tests
 for a specific protocol or only running the unary tests within a suite.
 
+Aside from the `/` for separating elements on the name, test case names should use `kebab-case` convention.
+
 ## Expected responses
 
 The expected response for a test is auto-generated based on the request details. The conformance runner will determine 
@@ -178,6 +187,38 @@ If you do need to specify an explicit response, simply define an `expectedRespon
 override the auto-generated expected response in the test runner. 
 
 To see tests denoting an explicit response, search the [test suites][test-suite-dir] directory for the word `expectedResponse`.
+
+## Running and Debugging New Tests
+
+To test new test cases, you can use `make runconformance`, to run the reference implementations against the new test
+cases. But, while iterating on the test case definition, it is often valuable to just run the test cases in the new
+file. This can be done using the `--test-file` option to the test runner:
+```shell
+# Build the test runner and the reference client and server.
+make .tmp/bin/connectconformance .tmp/bin/referenceclient .tmp/bin/referenceserver
+# Run just the tests in the new file
+.tmp/bin/connectconformance \
+    --conf ./testing/reference-impls-config.yaml \
+    --mode client \
+    --test-file ./testsuites/new-test-suite.yaml \
+    -v --trace \
+    -- \
+    .tmp/bin/referenceclient
+.tmp/bin/connectconformance \
+    --conf ./testing/reference-impls-config.yaml \
+    --mode server \
+    --test-file ./testsuites/new-test-suite.yaml \
+    -v --trace \
+    -- \
+    .tmp/bin/referenceserver
+```
+If the new test suite is specific to client or server mode then you'd only need to run one of the above instead
+of both.
+
+You can debug the reference client and server by running the opposite mode above. For example, to debug the
+reference server, run the first command above, which runs tests in client mode. In this mode, the reference
+server is run in-process, so you can start the above `connectconformance` command with a debugger attached
+and then step through the server code.
 
 ## Example 
 
@@ -218,10 +259,10 @@ testCases:
               value: ["bing"]
 ```
 
-[test-suite-dir]: https://github.com/connectrpc/conformance/tree/main/internal/app/connectconformance/testsuites/data
 [client-compat-request]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ClientCompatRequest
+[connectrpc-repo]: https://buf.build/connectrpc/conformance
+[json-docs]: https://protobuf.dev/programming-guides/proto3/#json
 [raw-http-request]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.RawHTTPRequest
 [raw-http-response]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.RawHTTPResponse
 [test-suite]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.TestSuite
-[connectrpc-repo]: https://buf.build/connectrpc/conformance
-[json-docs]: https://protobuf.dev/programming-guides/proto3/#json
+[test-suite-dir]: https://github.com/connectrpc/conformance/tree/main/internal/app/connectconformance/testsuites/data
