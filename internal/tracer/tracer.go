@@ -24,6 +24,9 @@ import (
 	"time"
 
 	"connectrpc.com/conformance/internal"
+	"connectrpc.com/conformance/internal/compression"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect"
 )
 
 const (
@@ -348,6 +351,32 @@ type RequestCanceled struct {
 
 func (r *RequestCanceled) print(printer internal.Printer) {
 	printer.Printf("%s %9.3fms canceled", requestPrefix, r.offsetMillis())
+}
+
+// GetDecompressor returns a decompressor that can handle the given encoding.
+func GetDecompressor(encoding string) connect.Decompressor {
+	var comp conformancev1.Compression
+	switch strings.ToLower(encoding) {
+	case "", "identity":
+		comp = conformancev1.Compression_COMPRESSION_IDENTITY
+	case "gzip":
+		comp = conformancev1.Compression_COMPRESSION_GZIP
+	case "br":
+		comp = conformancev1.Compression_COMPRESSION_BR
+	case "zstd":
+		comp = conformancev1.Compression_COMPRESSION_ZSTD
+	case "deflate":
+		comp = conformancev1.Compression_COMPRESSION_DEFLATE
+	case "snappy":
+		comp = conformancev1.Compression_COMPRESSION_SNAPPY
+	default:
+		return brokenDecompressor{}
+	}
+	decomp, err := compression.GetDecompressor(comp)
+	if err != nil {
+		return brokenDecompressor{}
+	}
+	return decomp
 }
 
 type traceResult struct {
