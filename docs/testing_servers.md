@@ -14,13 +14,15 @@ The basic process for working with servers in the conformance suite will work as
   for your implementation to start its server-under-test. Note that the request does not specify a port to listen on.
   Implementations should instead pick an available ephemeral port according to their OS and return that value in the response.
 
+  Fields in the request are:
+
   * `protocol` specifies what protocol will be used to run the tests. 
   * `http_version` specifies which HTTP version will be used.
-  * `use_tls` specifies whether your server should generated a self-signed certificate. Clients will be configured to trust
+  * `use_tls` specifies whether your server should generate a self-signed certificate. Clients will be configured to trust
      this certificate when connecting. If `true`, the generated certificate should be returned in the `pem_cert` field of the
-     `ServerCompatResponse`. If this is set to false, the server should not use TLS and instead use a plaintext/unencrypted socket.
+     `ServerCompatResponse`. If this is set to `false`, the server should not use TLS and instead use a plaintext/unencrypted socket.
   * `client_tls_cert` represents a PEM-encoded certificate that, if provided, clients will use to authenticate themselves. 
-     If specified, servers should require that clients provide certificates and they should validate the presented certificate is valid.
+     If specified, servers should require that clients provide certificates and they should ensure the presented certificate is valid.
      Note that this will always be empty if `use_tls` is `false`.
   * `message_receive_limit` specifies the maximum size in bytes for a message. If this value is non-zero, servers should reject
      any message from a client that is larger than the size indicated.
@@ -35,41 +37,63 @@ The basic process for working with servers in the conformance suite will work as
 
 ## Implementing the ConformanceService
 
-The ConformanceService defines a series of endpoints that are meant to exercise all types of RPCs. The basic
-approach for all six is that the server accepts the request(s), reads the details, and then reacts accordingly. The details
-in the requests will specify various actions that server should take such as response headers and trailers to return, any errors
-to return, and any response data to return. Servers mustl also echo back the received request data in their responses.
-The method for doing so will vary depending on the type of RPC.
+The ConformanceService defines a series of endpoints that are meant to exercise all types of RPCs. The details
+in the requests will specify various attributes that the server should handle, such as determining response headers and 
+trailers to return, any errors to throw, and any data to respond with. All request types contain a response definition 
+which is used to instruct the server how to respond to the request. This response definition can also be unset entirely
+and servers should respond in a fashion specific to their RPC type. The various approaches are outlined below.
+
+Servers must also echo back the received request data in their responses and the method for doing so will vary depending 
+on the type of RPC. The `ConformancePayload` message is a field on all RPC response types. Servers will use this field 
+to echo back these details. This will include:
+
+* Any response data
+* Information observed from the request such as:
+  * Request headers
+  * Any timeout specified
+  * All request bodies received
+  * Any query parameters observed (only applicable for GET operations such as `IdempotentUnary`)
 
 In all, there are six total endpoints you will need to implement. Below is a brief description of each with helpful pseudocode
 for your implementation.
 
 ### Unary
 
-The `Unary` endpoint is a unary operation that accepts a single request of type `UnaryRequest` and returns a single response of type `UnaryResponse`.
-The `UnaryRequest` contains a `response_definition` that tells the server how to respond. This definition contains a `oneof` which specifies
-whether the server should return valid response data or return an error.
+The `Unary` endpoint is a unary operation that accepts a single request of type `UnaryRequest` and returns a single 
+response of type `UnaryResponse`. 
+
+The `UnaryRequest` contains a `response_definition` that tells the server how to respond. This definition contains a 
+`oneof` which specifies whether the server should return valid response data or return an error. Servers should also 
+allow this response definition to be unset. In which case, they should set no response headers or trailers and return 
+no response data. The returned conformance payload should only contain the observed request information.
+
+**Pseudocode**
 
 ```text
 read the request
 
-capture all request info sent including:
-* any request headers
-* the actual request body
-  
-if response definition specifies valid response data then
-  build a ConformancePayload object
+capture any request headers and the actual request body as request info
 
-  set the request info as well as the specified response data
+if a response definition was specified then
+  if response definition specifies valid response data then
+
+    build a conformance payload
+
+    set the request info and response data into the conformance payload
+
+  else
+    build an error with the specified error and set the request info into the error details
+
+  set any response headers or trailers indicated in the response definition
 
 else
-  build an Error object with the specified error and set the request info into the error details
+  build a conformance payload
 
-set any response headers or trailers indicated in the response definition
+  set the request info into the conformance payload
 
 sleep for any specified response delay
 
-return the response or the error depending on which was specified
+return the response with conformance payload or the error depending on which was specified
 ```
 
 For the full documentation on implementing the `Unary` endpoint, click [here][unary].
@@ -78,10 +102,11 @@ For the full documentation on implementing the `Unary` endpoint, click [here][un
 ### IdempotentUnary
 
 The `IdempotentUnary` endpoint is also a unary operation. It accepts a request of type  `IdempotentUnaryRequest` and returns
-a single response of type `IdempotentUnaryResponse`. It should be handled in mostly the same way as `Unary`. However, the
-only major difference is that this endpoint should be invoked via an HTTP `GET`. As a result, there is no request body
+a single response of type `IdempotentUnaryResponse`. It should be handled in mostly the same way as `Unary`.
+
+The only major difference is that this endpoint should be invoked via an HTTP `GET`. As a result, there is no request body
 so the endpoint should read any query params and set them accordingly in the `connect_get_info` field of the 
-returned `ConformancePayload`.
+returned `ConformancePayload`. This RPC is the only one that sets the `connect_get_info` field.
 
 For the full documentation on implementing the `IdempotentUnary` endpoint, click [here][idempotentunary].
 
@@ -93,15 +118,18 @@ conformance payload in the error details.
 
 For the full documentation on handling the `Unimplemented` endpoint, click [here][unimplemented].
 
-
 ### ClientStream
 
 The `ClientStream` endpoint is a client-streaming operation. It accepts one-to-many requests of type `ClientStreamRequest`
 and returns a single response of type `ClientStreamResponse`. Since a client-streaming operation returns a single response, 
 its process is similar to `Unary`.
 
-With client-streaming, the response definition specifying the desired response will only be specified in the first request
-on the stream. 
+With client-streaming, the response definition will only be specified in the first request on the stream and should be
+ignored in all subsequent requests. As with `Unary`, servers should also allow this response definition to be unset. In 
+which case, they should set no response headers or trailers and return no response data. The returned conformance 
+payload should only contain the observed request information.
+
+**Pseudocode**
 
 ```text
 while requests are being sent do the following
@@ -111,23 +139,24 @@ while requests are being sent do the following
 
    if this is the first message being received then
       save the response definition
-  
+
 when requests are complete then
-   if the response definition specified valid response data then
-     build a ConformancePayload object
-     set the following into the conformance payload:
-      * all requests received
-      * any specified response data
-      * any request headers from the stream
+  if a response definition was specified then
+    if response definition specifies valid response data then
 
-   else
-     build an Error object with the specified error
-     set the following into the error details
-      * all requests received
-      * any specified response data
-      * any request headers from the stream
+      build a conformance payload
 
-set any response headers or trailers indicated in the response definition
+      set the request info and response data into the conformance payload
+
+    else
+      build an error with the specified error and set the request info into the error details
+
+    set any response headers or trailers indicated in the response definition
+
+  else
+    build a conformance payload
+
+    set the request info into the conformance payload
 
 sleep for any specified response delay
 
@@ -142,13 +171,23 @@ The `ServerStream` endpoint is a server-streaming operation. It accepts a single
 returns one-to-many response of type `ServerStreamResponse`. When echoing request information back, the `ServerStream`
 implementation should only set this information in the first response sent.
 
+Servers should immediately send response headers on the stream before sleeping
+for any specified response delay and/or sending the first message so that
+clients can be unblocked reading response headers.
+  
+If a response definition is not specified OR is specified, but response data
+is empty, the server should skip sending anything on the stream. When there
+are no responses to send, servers should throw an error if one is provided
+and return without error if one is not. Stream headers and trailers should
+still be set on the stream if provided regardless of whether a response is
+sent or an error is thrown.
+
+**Pseudocode**
+
 ```text
 read the request
 
-capture all request info sent including:
-* any request headers
-* the actual request body
-* the response definition
+capture any request headers, the response definition and the actual request body as request info
 
 if a response definition was specified then
   set any response headers or trailers on the response stream
@@ -156,7 +195,7 @@ if a response definition was specified then
   immediately send the headers/trailers on the stream so that they can be read by the client
 
   loop over any response data specified
-    build a ConformancePayload object
+    build a conformance payload
 
     set the response data into the conformance payload
 
@@ -169,7 +208,7 @@ if a response definition was specified then
 
   if an error was specified in the response definition then
     if no responses have been sent yet
-      build an Error object with the specified error
+      build an error with the specified error
 
       set the following into the error details
         * the received request
@@ -180,9 +219,54 @@ For the full documentation on handling the `ServerStream` endpoint, click [here]
 
 ### BidiStream
 
-The `BidiStream` endpoint is a bidirectional-streaming operation. It accepts one-to-many requests of type `BidiStreamRequest` and
-returns one-to-many responses of type `BidiStreamResponse`. The `BidiStream` operation implementation should be capable
-of handling full-duplex streaming as well as half-duplex streaming. 
+The `BidiStream` endpoint is a bidirectional-streaming operation. It accepts 
+one-to-many requests of type `BidiStreamRequest` and returns one-to-many 
+responses of type `BidiStreamResponse`. 
+
+Similar to `ServerStream`, servers should immediately send response headers on 
+the stream before sleeping for any specified response delay and/or sending the 
+first message so that clients can be unblocked reading response headers.
+  
+If a response definition is not specified OR is specified, but response data
+is empty, the server should skip sending anything on the stream. When there
+are no responses to send, servers should throw an error if one is provided
+and return without error if one is not. Stream headers and trailers should
+still be set on the stream if provided regardless of whether a response is
+sent or an error is thrown.
+
+The `BidiStreamRequest` type specifies whether the operation should be full duplex
+or half duplex via the `full_duplex` field.
+
+If the `full_duplex` field is true:
+
+* the handler should read one request and then send back one response, and
+  then alternate, reading another request and then sending back another response, etc.
+  
+* if the server receives a request and has no responses to send, it
+  should throw the error specified in the request.
+  
+* the service should echo back all request properties in the first response
+  including the last received request. Subsequent responses should only
+  echo back the last received request.
+  
+* if the `response_delay_ms` duration is specified, the server should wait the given
+  duration after reading the request before sending the corresponding
+  response.
+  
+If the `full_duplex` field is false:
+
+* the handler should read all requests until the client is done sending.
+  Once all requests are read, the server should then send back any responses
+  specified in the response definition.
+  
+* the server should echo back all request properties, including all request
+  messages in the order they were received, in the first response. Subsequent
+  responses should only include the message data in the data field.
+  
+* if the `response_delay_ms` duration is specified, the server should wait that
+  long in between sending each response message.
+
+**Pseudocode**
 
 ```text
 while requests are being sent do the following
@@ -202,7 +286,7 @@ while requests are being sent do the following
    
    if full duplex then
      if response data was specified then
-       build a ConformancePayload object
+       build a conformance payload
 
        set the response data into the conformance payload
 
@@ -211,30 +295,30 @@ while requests are being sent do the following
     
          sleep for any specified response delay
 
-         send the response
+         send a response
 
-    if half duplex and if response data was specified then
-      immediately send the headers/trailers on the stream so that they can be read by the client
+  if half duplex and if response data was specified then
+    immediately send the headers/trailers on the stream so that they can be read by the client
 
-      loop over any response data specified
-        build a ConformancePayload object
+    loop over any response data specified
+      build a conformance payload
 
-        set the response data into the conformance payload
+      set the response data into the conformance payload
 
-        if this is the first response being sent then
-          set the request info into the conformance payload
+      if this is the first response being sent then
+        set the request info into the conformance payload
  
-          sleep for any specified response delay
+        sleep for any specified response delay
 
-          send the response
+        send the response
 
-      if an error was specified in the response definition then
-        if no responses have been sent yet
-          build an Error object with the specified error
+    if an error was specified in the response definition then
+      if no responses have been sent yet
+        build an Error object with the specified error
 
-          set the following into the error details
-          * the received request
-          * any request headers
+        set the following into the error details
+        * the received request
+        * any request headers
 ```
 
 For the full documentation on handling the `BidiStream` endpoint, click [here][bidistream].
