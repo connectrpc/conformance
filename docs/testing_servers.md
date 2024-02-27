@@ -51,13 +51,16 @@ The `UnaryRequest` contains a `response_definition` that tells the server how to
 whether the server should return valid response data or return an error.
 
 ```text
+read the request
+
 capture all request info sent including:
 * any request headers
 * the actual request body
-* any timeout sent
   
 if response definition specifies valid response data then
-  build a ConformancePayload object and set the request info as well as the specified response data
+  build a ConformancePayload object
+
+  set the request info as well as the specified response data
 
 else
   build an Error object with the specified error and set the request info into the error details
@@ -66,7 +69,7 @@ set any response headers or trailers indicated in the response definition
 
 sleep for any specified response delay
 
-send the response
+return the response or the error depending on which was specified
 ```
 
 For the full documentation on implementing the `Unary` endpoint, click [here][unary].
@@ -74,13 +77,167 @@ For the full documentation on implementing the `Unary` endpoint, click [here][un
 
 ### IdempotentUnary
 
+The `IdempotentUnary` endpoint is also a unary operation. It accepts a request of type  `IdempotentUnaryRequest` and returns
+a single response of type `IdempotentUnaryResponse`. It should be handled in mostly the same way as `Unary`. However, the
+only major difference is that this endpoint should be invoked via an HTTP `GET`. As a result, there is no request body
+so the endpoint should read any query params and set them accordingly in the `connect_get_info` field of the 
+returned `ConformancePayload`.
+
+For the full documentation on implementing the `IdempotentUnary` endpoint, click [here][idempotentunary].
+
 ### Unimplemented
+
+The `Unimplemented` endpoint is also a unary operation, but contrary to the above unary endpoints, the implementation
+of `Unimplemented` should simply return an `unimplemented` error. It is not necessary to echo back any request information or
+conformance payload in the error details.
+
+For the full documentation on handling the `Unimplemented` endpoint, click [here][unimplemented].
+
 
 ### ClientStream
 
+The `ClientStream` endpoint is a client-streaming operation. It accepts one-to-many requests of type `ClientStreamRequest`
+and returns a single response of type `ClientStreamResponse`. Since a client-streaming operation returns a single response, 
+its process is similar to `Unary`.
+
+With client-streaming, the response definition specifying the desired response will only be specified in the first request
+on the stream. 
+
+```text
+while requests are being sent do the following
+   read a request from the stream
+
+   capture the request body
+
+   if this is the first message being received then
+      save the response definition
+  
+when requests are complete then
+   if the response definition specified valid response data then
+     build a ConformancePayload object
+     set the following into the conformance payload:
+      * all requests received
+      * any specified response data
+      * any request headers from the stream
+
+   else
+     build an Error object with the specified error
+     set the following into the error details
+      * all requests received
+      * any specified response data
+      * any request headers from the stream
+
+set any response headers or trailers indicated in the response definition
+
+sleep for any specified response delay
+
+return the response or the error depending on which was specified
+```
+
+For the full documentation on handling the `ClientStream` endpoint, click [here][clientstream].
+
 ### ServerStream
 
+The `ServerStream` endpoint is a server-streaming operation. It accepts a single request of type `ServerStreamRequest` and
+returns one-to-many response of type `ServerStreamResponse`. When echoing request information back, the `ServerStream`
+implementation should only set this information in the first response sent.
+
+```text
+read the request
+
+capture all request info sent including:
+* any request headers
+* the actual request body
+* the response definition
+
+if a response definition was specified then
+  set any response headers or trailers on the response stream
+
+  immediately send the headers/trailers on the stream so that they can be read by the client
+
+  loop over any response data specified
+    build a ConformancePayload object
+
+    set the response data into the conformance payload
+
+    if this is the first response being sent then
+      set the request info into the conformance payload
+ 
+    sleep for any specified response delay
+
+    send the response
+
+  if an error was specified in the response definition then
+    if no responses have been sent yet
+      build an Error object with the specified error
+
+      set the following into the error details
+        * the received request
+        * any request headers
+```
+
+For the full documentation on handling the `ServerStream` endpoint, click [here][serverstream].
+
 ### BidiStream
+
+The `BidiStream` endpoint is a bidirectional-streaming operation. It accepts one-to-many requests of type `BidiStreamRequest` and
+returns one-to-many responses of type `BidiStreamResponse`. The `BidiStream` operation implementation should be capable
+of handling full-duplex streaming as well as half-duplex streaming. 
+
+```text
+while requests are being sent do the following
+   read a request from the stream
+
+   capture the request body
+
+   if this is the first message being received then
+      save the response definition
+      save whether this is full duplex or half duplex
+
+      if a response definition was specified then
+         set any response headers or trailers on the response stream
+         
+         if full duplex then
+            immediately send the headers/trailers on the stream so that they can be read by the client
+   
+   if full duplex then
+     if response data was specified then
+       build a ConformancePayload object
+
+       set the response data into the conformance payload
+
+       if this is the first response being sent then
+         set the request info into the conformance payload
+    
+         sleep for any specified response delay
+
+         send the response
+
+    if half duplex and if response data was specified then
+      immediately send the headers/trailers on the stream so that they can be read by the client
+
+      loop over any response data specified
+        build a ConformancePayload object
+
+        set the response data into the conformance payload
+
+        if this is the first response being sent then
+          set the request info into the conformance payload
+ 
+          sleep for any specified response delay
+
+          send the response
+
+      if an error was specified in the response definition then
+        if no responses have been sent yet
+          build an Error object with the specified error
+
+          set the following into the error details
+          * the received request
+          * any request headers
+```
+
+For the full documentation on handling the `BidiStream` endpoint, click [here][bidistream].
 
 ## Examples
 
@@ -92,3 +249,8 @@ For examples, check out the following:
 [connect-es-conformance]: https://github.com/connectrpc/connect-es/tree/main/packages/connect-conformance 
 [server-reference-impl]: https://github.com/connectrpc/conformance/blob/main/internal/app/referenceserver/impl.go
 [unary]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService.Unary
+[idempotentunary]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService.IdempotentUnary
+[unimplemented]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService.Unimplemented
+[clientstream]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService.ClientStream
+[serverstream]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService.ServerStream
+[bidistream]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService.BidiStream
