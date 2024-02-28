@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -465,19 +466,7 @@ func TestExamineConnectEndStream(t *testing.T) {
 				} else {
 					_, _ = respWriter.Write([]byte{2}) // just the end-stream flag
 				}
-
-				data := []byte(testCase.endStream)
-				if testCase.compressed {
-					var buf bytes.Buffer
-					w := gzip.NewWriter(&buf)
-					_, _ = w.Write([]byte(testCase.endStream))
-					_ = w.Close()
-					data = buf.Bytes()
-				}
-				var size [4]byte
-				binary.BigEndian.PutUint32(size[:], uint32(len(data)))
-				_, _ = respWriter.Write(size[:])
-				_, _ = respWriter.Write(data)
+				writeStreamFrame([]byte(testCase.endStream), testCase.compressed, respWriter)
 			}))
 			t.Cleanup(svr.Close)
 			client := conformancev1connect.NewConformanceServiceClient(
@@ -645,18 +634,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 				} else {
 					_, _ = respWriter.Write([]byte{128}) // just the end-stream flag
 				}
-				data := []byte(testCase.endStream)
-				if testCase.compressed {
-					var buf bytes.Buffer
-					w := gzip.NewWriter(&buf)
-					_, _ = w.Write([]byte(testCase.endStream))
-					_ = w.Close()
-					data = buf.Bytes()
-				}
-				var size [4]byte
-				binary.BigEndian.PutUint32(size[:], uint32(len(data)))
-				_, _ = respWriter.Write(size[:])
-				_, _ = respWriter.Write(data)
+				writeStreamFrame([]byte(testCase.endStream), testCase.compressed, respWriter)
 			}))
 			t.Cleanup(svr.Close)
 			client := conformancev1connect.NewConformanceServiceClient(
@@ -751,4 +729,18 @@ func TestCheckNoDuplicateKeys(t *testing.T) {
 			}
 		})
 	}
+}
+
+func writeStreamFrame(data []byte, compressed bool, writer io.Writer) {
+	if compressed {
+		var buf bytes.Buffer
+		w := gzip.NewWriter(&buf)
+		_, _ = w.Write(data)
+		_ = w.Close()
+		data = buf.Bytes()
+	}
+	var size [4]byte
+	binary.BigEndian.PutUint32(size[:], uint32(len(data)))
+	_, _ = writer.Write(size[:])
+	_, _ = writer.Write(data)
 }
