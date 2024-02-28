@@ -173,7 +173,12 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 	case isUnaryJSONError(contentType, trace.Response.StatusCode):
 		// If this is a unary request that returned an error, then use the entire
 		// response body as the wire error details.
-		examineConnectError(wrapper.buf.Bytes(), printer)
+		decomp := tracer.GetDecompressor(trace.Response.Header.Get("content-encoding"))
+		if err := decomp.Reset(wrapper.buf); err == nil {
+			if body, err := io.ReadAll(decomp); err == nil {
+				examineConnectError(body, printer)
+			}
+		}
 	case strings.HasPrefix(contentType, "application/connect+"):
 		// If this is a streaming Connect request, then look through the trace events
 		// for the ResponseBodyEndStream event and parse its content into an
@@ -314,6 +319,7 @@ func examineConnectErrorDetail(i int, detailJSON json.RawMessage, printer intern
 			decoded, err := base64.RawStdEncoding.DecodeString(str)
 			if err != nil {
 				printer.Printf(`%s: value for key "value", %q, is not valid unpadded base64-encoding: %v`, prefix, val, err)
+				detail.Value = nil // this will skip the comparison of "value" and "debug" info below
 				break
 			}
 			decodedVal = decoded

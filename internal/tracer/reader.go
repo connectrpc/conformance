@@ -25,8 +25,6 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"connectrpc.com/conformance/internal/compression"
-	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect"
 )
 
@@ -292,37 +290,12 @@ func propertiesFromHeaders(headers http.Header) (isStream bool, decomp connect.D
 	}
 	switch {
 	case strings.HasPrefix(contentType, "application/connect"):
-		return true, getDecompressor(headers.Get("Connect-Content-Encoding"))
+		return true, GetDecompressor(headers.Get("Connect-Content-Encoding"))
 	case strings.HasPrefix(contentType, "application/grpc"):
-		return true, getDecompressor(headers.Get("Grpc-Encoding"))
+		return true, GetDecompressor(headers.Get("Grpc-Encoding"))
 	default:
 		// We should only need a decompressor for streams (to decompress the end-stream message)
 		// So for non-stream protocols, this no-op decompressor should suffice.
 		return false, brokenDecompressor{}
 	}
-}
-
-func getDecompressor(encoding string) connect.Decompressor {
-	var comp conformancev1.Compression
-	switch strings.ToLower(encoding) {
-	case "", "identity":
-		comp = conformancev1.Compression_COMPRESSION_IDENTITY
-	case "gzip":
-		comp = conformancev1.Compression_COMPRESSION_GZIP
-	case "br":
-		comp = conformancev1.Compression_COMPRESSION_BR
-	case "zstd":
-		comp = conformancev1.Compression_COMPRESSION_ZSTD
-	case "deflate":
-		comp = conformancev1.Compression_COMPRESSION_DEFLATE
-	case "snappy":
-		comp = conformancev1.Compression_COMPRESSION_SNAPPY
-	default:
-		return brokenDecompressor{}
-	}
-	decomp, err := compression.GetDecompressor(comp)
-	if err != nil {
-		return brokenDecompressor{}
-	}
-	return decomp
 }

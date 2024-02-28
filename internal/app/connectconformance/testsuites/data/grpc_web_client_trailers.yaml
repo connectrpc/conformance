@@ -4,8 +4,6 @@ relevantProtocols:
   - PROTOCOL_GRPC_WEB
 relevantCodecs:
   - CODEC_PROTO
-relevantCompressions:
-  - COMPRESSION_IDENTITY
 # These tests verify that a gRPC-Web client can handle trailers in the body with
 # no response, trailers-only responses (trailers in headers), and trailers with
 # different cases (in addition to the "standard" all lower-case).

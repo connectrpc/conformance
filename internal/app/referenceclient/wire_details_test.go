@@ -15,9 +15,12 @@
 package referenceclient
 
 import (
+	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/binary"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -36,6 +39,7 @@ func TestExamineConnectError(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name             string
+		compressed       bool
 		endStream        string
 		expectedFeedback []string
 	}{
@@ -65,6 +69,15 @@ func TestExamineConnectError(t *testing.T) {
 							"value": "abcdefgh"
 						}
 					]
+				}`,
+		},
+		{
+			name:       "compressed",
+			compressed: true,
+			endStream: `
+				{
+					"code": "internal",
+					"message": "blah blah blah"
 				}`,
 		},
 		{
@@ -287,8 +300,17 @@ func TestExamineConnectError(t *testing.T) {
 			t.Parallel()
 			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 				respWriter.Header().Set("Content-Type", "application/json")
+				if testCase.compressed {
+					respWriter.Header().Set("Content-Encoding", "gzip")
+				}
 				respWriter.WriteHeader(http.StatusBadRequest)
-				_, _ = respWriter.Write([]byte(testCase.endStream))
+				if testCase.compressed {
+					w := gzip.NewWriter(respWriter)
+					_, _ = w.Write([]byte(testCase.endStream))
+					_ = w.Close()
+				} else {
+					_, _ = respWriter.Write([]byte(testCase.endStream))
+				}
 			}))
 			t.Cleanup(svr.Close)
 			client := conformancev1connect.NewConformanceServiceClient(
@@ -326,6 +348,7 @@ func TestExamineConnectEndStream(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name             string
+		compressed       bool
 		endStream        string
 		expectedFeedback []string
 	}{
@@ -343,6 +366,17 @@ func TestExamineConnectEndStream(t *testing.T) {
 			name: "minimal with error",
 			endStream: `
 				{"error":{"code":"canceled"}}`,
+		},
+		{
+			name:       "compressed",
+			compressed: true,
+			endStream: `
+				{
+					"error": {"code": "invalid_argument", "message": "foobar"},
+					"metadata":{
+						"foo": ["bar", "baz"]
+					}
+				}`,
 		},
 		{
 			name: "nulls",
@@ -426,11 +460,13 @@ func TestExamineConnectEndStream(t *testing.T) {
 			t.Parallel()
 			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 				respWriter.Header().Set("Content-Type", "application/connect+proto")
-				_, _ = respWriter.Write([]byte{2}) // just the end-stream flag
-				var size [4]byte
-				binary.BigEndian.PutUint32(size[:], uint32(len(testCase.endStream)))
-				_, _ = respWriter.Write(size[:])
-				_, _ = respWriter.Write([]byte(testCase.endStream))
+				if testCase.compressed {
+					respWriter.Header().Set("Connect-Content-Encoding", "gzip")
+					_, _ = respWriter.Write([]byte{3}) // end-stream + compressed flags
+				} else {
+					_, _ = respWriter.Write([]byte{2}) // just the end-stream flag
+				}
+				writeStreamFrame([]byte(testCase.endStream), testCase.compressed, respWriter)
 			}))
 			t.Cleanup(svr.Close)
 			client := conformancev1connect.NewConformanceServiceClient(
@@ -468,11 +504,19 @@ func TestExamineGRPCEndStream(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name             string
+		compressed       bool
 		endStream        string
 		expectedFeedback []string
 	}{
 		{
 			name: "correct",
+			endStream: "grpc-status: 6\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foobar\r\n",
+		},
+		{
+			name:       "compressed",
+			compressed: true,
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: foobar\r\n",
@@ -584,11 +628,13 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			t.Parallel()
 			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 				respWriter.Header().Set("Content-Type", "application/grpc-web")
-				_, _ = respWriter.Write([]byte{128}) // just the end-stream flag
-				var size [4]byte
-				binary.BigEndian.PutUint32(size[:], uint32(len(testCase.endStream)))
-				_, _ = respWriter.Write(size[:])
-				_, _ = respWriter.Write([]byte(testCase.endStream))
+				if testCase.compressed {
+					respWriter.Header().Set("Grpc-Encoding", "gzip")
+					_, _ = respWriter.Write([]byte{129}) // end-stream + compressed flags
+				} else {
+					_, _ = respWriter.Write([]byte{128}) // just the end-stream flag
+				}
+				writeStreamFrame([]byte(testCase.endStream), testCase.compressed, respWriter)
 			}))
 			t.Cleanup(svr.Close)
 			client := conformancev1connect.NewConformanceServiceClient(
@@ -683,4 +729,18 @@ func TestCheckNoDuplicateKeys(t *testing.T) {
 			}
 		})
 	}
+}
+
+func writeStreamFrame(data []byte, compressed bool, writer io.Writer) {
+	if compressed {
+		var buf bytes.Buffer
+		w := gzip.NewWriter(&buf)
+		_, _ = w.Write(data)
+		_ = w.Close()
+		data = buf.Bytes()
+	}
+	var size [4]byte
+	binary.BigEndian.PutUint32(size[:], uint32(len(data)))
+	_, _ = writer.Write(size[:])
+	_, _ = writer.Write(data)
 }
