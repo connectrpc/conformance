@@ -7,7 +7,7 @@ involves the following steps:
 2. Writing an executable file that can read [`ServerCompatRequest`][servercompatrequest] messages from `stdin` (and write to `stdout` -- see Step 4).
 3. Starting your server according to the values in the request message.
 4. Writing a [`ServerCompatResponse`][servercompatresponse] about the running server to `stdout`.
-5. Implementing the [ConformanceService][conformanceservice] endpoints to handle requests from the reference client.
+5. Implementing the [`ConformanceService`][conformanceservice] endpoints to handle requests from the reference client.
 
 ## Starting your server
 
@@ -65,7 +65,7 @@ implementation written in Connect-Go and will use this client to issue requests 
 will read the server's responses and return them to the conformance runner. So, all you need to do from a server 
 implementation standpoint is handle the requests accordingly.
 
-The [ConformanceService][conformanceservice] defines a series of endpoints that are meant to exercise all types of RPCs. The details
+The [`ConformanceService`][conformanceservice] defines a series of endpoints that are meant to exercise all types of RPCs. The details
 in the requests will specify various attributes that the server should handle, such as determining response headers and 
 trailers to return, any errors to throw, and any data to respond with. All request types contain a response definition 
 which is used to instruct the server how to respond to the request. This response definition can also be unset entirely
