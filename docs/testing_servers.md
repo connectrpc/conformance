@@ -4,7 +4,7 @@ Testing servers with the conformance runner involves the following steps:
 
 * Implementing the ConformanceService endpoints.
 * Making an executable file that will read messages from `stdin` and write messages to `stdout`.
-* Defining any configuration for what your server supports. For more information on how to do this, see the [Configuration Files](./configuring_and_running_tests.md#configuration-files) section in the [Configuring and Running Tests documentation](./configuring_and_running_tests.md).
+* Defining any configuration for what your server supports. For more information on how to do this, see the docs for [configuring and running tests](./configuring_and_running_tests.md#configuration-files).
 
 ## Process
 
