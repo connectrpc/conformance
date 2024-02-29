@@ -1,0 +1,93 @@
+name: Connect Compressed Error and End-Stream
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_CONNECT
+relevantCompressions:
+  # Ideally, we'd run this sort of test for any/all compression encodings
+  # supported by the client. But, since it uses a raw HTTP response, we
+  # have to hard-code the compression (raw response config doesn't allow
+  # parameterizing the encoding). So we test with the most likely encoding
+  # to be implemented.
+  - COMPRESSION_GZIP
+relevantCodecs:
+  - CODEC_PROTO
+testCases:
+  - request:
+      testName: error/compressed
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 422
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+                - name: content-encoding
+                  value: [ "gzip" ]
+              unary:
+                text: |
+                  {
+                    "code": "out_of_range",
+                    "message": "oops",
+                    "details": [
+                      {
+                        "type": "google.protobuf.FileDescriptorProto",
+                        "value": "Cgp0ZXN0LnByb3Rv",
+                        "debug": { "name": "test.proto" }
+                      }
+                    ]
+                  }
+                compression: COMPRESSION_GZIP
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
+
+  - request:
+      testName: end-stream/compressed
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+                - name: connect-content-encoding
+                  value: [ "gzip" ]
+              stream:
+                items:
+                  - flags: 3
+                    payload:
+                      text: |
+                        {
+                          "error": {
+                            "code": "out_of_range",
+                            "message": "oops",
+                            "foobar": "baz",
+                            "details": [
+                              {
+                                "type": "google.protobuf.FileDescriptorProto",
+                                "value": "Cgp0ZXN0LnByb3Rv",
+                                "debug": { "name": "test.proto" }
+                              }
+                            ]
+                          }
+                        }
+                      compression: COMPRESSION_GZIP
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
