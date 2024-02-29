@@ -33,13 +33,21 @@ import "connectrpc/conformance/v1/config.proto";
 // When testing multiple configurations, multiple test processes
 // will be started, each with different properties.
 message ServerCompatRequest {
-  // The protocol that will be used.
+  // Signals to the server that it must support at least this protocol. Note 
+  // that it is fine to support others.
+  // For example if `PROTOCOL_CONNECT` is specified, the server _must_ support 
+  // at least Connect, but _may_ also support gRPC or gRPC-web.
   Protocol protocol = 1;
-  // The HTTP version that will be used.
+  // Signals to the server the minimum HTTP version to support. As with 
+  // `protocol`, it is fine to support other versions. For example, if 
+  // `HTTP_VERSION_2` is specified, the server _must_ support HTTP/2, but _may_ also
+  // support HTTP/1.1 or HTTP/3.
   HTTPVersion http_version = 2;
-  // If true, generate a self-signed cert and include it in the
-  // ServerCompatResponse along with the actual port. Clients
-  // will be configured to trust this cert when connecting.
+  // If true, generate a certificate that clients will be configured to trust 
+  // when connecting and return it in the `pem_cert` field of the `ServerCompatResponse`. 
+  // The certificate can be any TLS certificate where the subject matches the 
+  // value sent back in the `host` field of the `ServerCompatResponse`.
+  // Self-signed certificates (and `localhost` as the subject) are allowed.
   // If false, the server should not use TLS and instead use
   // a plain-text/unencrypted socket.
   bool use_tls = 4;
@@ -58,11 +66,14 @@ message ServerCompatRequest {
 
 // The outcome of one ServerCompatRequest.
 message ServerCompatResponse {
-  // The host where the server is running.
+  // The host where the server is running. This should usually be `127.0.0.1`, 
+  // unless your program actually starts a remote server to which the client 
+  // should connect.
   string host = 1;
   // The port where the server is listening.
   uint32 port = 2;
-  // The server's PEM-encoded certificate, so the
-  // client can verify it when connecting via TLS.
+  // The TLS certificate, in PEM format, if `use_tls` was set 
+  // to `true`. Clients will verify this certificate when connecting via TLS. 
+  // If `use_tls` was set to `false`, this should always be empty.
   bytes pem_cert = 3;
 }
