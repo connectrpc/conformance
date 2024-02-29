@@ -93,7 +93,7 @@ else
 
 sleep for any specified response delay
 
-return the response with conformance payload or the error depending on which was specified
+return the response with conformance payload or raise the error, depending on which was specified
 ```
 
 For the full documentation on implementing the `Unary` endpoint, click [here][unary].
