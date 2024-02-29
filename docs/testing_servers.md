@@ -4,21 +4,21 @@ The conformance suite provides the ability to run conformance tests against a se
 involves the following steps:
 
 1. Defining any configuration for what your server supports. For more information on how to do this, see the docs for [configuring and running tests](./configuring_and_running_tests.md#configuration-files).
-2. Writing an executable file that can read `ServerCompatRequest` messages from `stdin` (and write to `stdout` -- see Step 4).
+2. Writing an executable file that can read [`ServerCompatRequest`][servercompatrequest] messages from `stdin` (and write to `stdout` -- see Step 4).
 3. Starting your server according to the values in the request message.
-4. Writing a `ServerCompatResponse` about the running server to `stdout`.
+4. Writing a [`ServerCompatResponse`][servercompatresponse] about the running server to `stdout`.
 5. Implementing the [ConformanceService][conformanceservice] endpoints to handle requests from the reference client.
 
 ## Starting your server
 
 When the conformance runner is executed for a server-under-test, the runner will analyze the configuration you've specified
-and will use that information to build a `ServerCompatRequest`. This request is serialized to bytes and written to `stdin`.
+and will use that information to build a [`ServerCompatRequest`][servercompatrequest]. This request is serialized to bytes and written to `stdin`.
 It is then up to the executable file you created as part of Step 2 to read this message and start your server.
 
 The messages written to `stdin` are size-delimited. This means that first you will need to read a fixed four-byte
 preface, which returns a network-byte-order (i.e. big-endian) 32-bit integer. This integer represents the size of the
 actual message. After this value is read, you should then read the number of bytes it specifies and then unmarshal those
-bytes into a `ServerCompatRequest`.
+bytes into a [`ServerCompatRequest`][servercompatrequest].
 
 This message will contain all the details necessary for your implementation to start its server-under-test. Note that 
 the request does not specify a port to listen on. Implementations should instead pick an available ephemeral port 
@@ -33,9 +33,9 @@ Fields in the request are:
    other versions. 
 * `use_tls` which specifies whether your server should generate a certificate that clients will be configured to trust when 
    connecting. The certificate can be any TLS certificate where the subject matches the value sent back in
-   the `host` field of the `ServerCompatResponse`. Self-signed certificates (and `localhost` as the subject) are allowed.
+   the `host` field of the [`ServerCompatResponse`][servercompatresponse]. Self-signed certificates (and `localhost` as the subject) are allowed.
    If `true`, the generated certificate should be returned in the `pem_cert` field of the
-   `ServerCompatResponse`. If this is set to `false`, the server should not use TLS and instead use a plaintext/unencrypted socket.
+   [`ServerCompatResponse`][servercompatresponse]. If this is set to `false`, the server should not use TLS and instead use a plaintext/unencrypted socket.
 * `client_tls_cert` which represents a PEM-encoded certificate that, if provided, clients will use to authenticate themselves. 
    If specified, servers should require that clients provide certificates and they should ensure the presented certificate is valid.
    Note that this will always be empty if `use_tls` is `false`.
@@ -43,10 +43,10 @@ Fields in the request are:
    any message from a client that is larger than the size indicated.
 
 Using the values in the request, you can then start your server implementation. Once started, your implementation should 
-build a `ServerCompatResponse` message. This will provide the conformance runner with details about your running server.
+build a [`ServerCompatResponse`][servercompatresponse] message. This will provide the conformance runner with details about your running server.
 
 Once built, you should then write the response message to `stdout` using the same size-delimited algorithm described above. First, 
-write a network-encoded 32-bit integer indicating the size of the `ServerCompatResponse` message. Then, serialize the
+write a network-encoded 32-bit integer indicating the size of the [`ServerCompatResponse`][servercompatresponse] message. Then, serialize the
 response to bytes and write that to `stdout`.
 
 Fields in the response are:
@@ -428,6 +428,8 @@ For examples, check out the following:
 [server-reference-impl]: https://github.com/connectrpc/conformance/blob/main/internal/app/referenceserver/impl.go
 [conformanceservice]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformanceService
 [conformancepayload]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformancePayload
+[servercompatrequest]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ServerCompatRequest
+[servercompatresponse]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ServerCompatResponse
 [requestinfo]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConformancePayload.RequestInfo
 [error]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.Error
 [any]: https://buf.build/protocolbuffers/wellknowntypes/docs/main:google.protobuf#google.protobuf.Any
