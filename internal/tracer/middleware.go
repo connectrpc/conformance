@@ -60,7 +60,7 @@ func TracingHandler(handler http.Handler, collector Collector) http.Handler {
 			<-ctx.Done()
 			builder.add(&RequestCanceled{})
 		}()
-
+		//nolint:contextcheck
 		req = req.Clone(ctx)
 		req.Body = newRequestReader(req.Header, req.Body, true, builder)
 		traceWriter := &tracingResponseWriter{
