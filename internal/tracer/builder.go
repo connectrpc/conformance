@@ -15,7 +15,13 @@
 package tracer
 
 import (
+	"context"
+	"fmt"
 	"net/http"
+	"net/http/httptrace"
+	"net/textproto"
+	"reflect"
+	"strings"
 	"sync"
 	"time"
 )
@@ -24,6 +30,7 @@ import (
 type builder struct {
 	collector Collector
 	start     time.Time
+	client    bool
 
 	mu                  sync.Mutex
 	trace               Trace
@@ -34,17 +41,56 @@ type builder struct {
 // returned builder will already have a RequestStart event, based on
 // the given request, so callers should NOT explicitly call builder.add
 // to add such an event.
-func newBuilder(req *http.Request, collector Collector) *builder {
+func newBuilder(req *http.Request, client bool, collector Collector) (*builder, context.Context) {
+	ctx := req.Context()
+	var getHeaders func() http.Header
+	if client {
+		// The net/http transport may *add* other headers to the request
+		// on the wire. In order to see them, we need to use httptrace
+		// instead of looking at the headers on req.
+		var headersMu sync.Mutex
+		headers := http.Header{}
+		trace := httptrace.ClientTrace{
+			WroteHeaderField: func(key string, value []string) {
+				if strings.HasPrefix(key, ":") {
+					// ignore http/2 pseudo-headers
+					return
+				}
+				headersMu.Lock()
+				defer headersMu.Unlock()
+				vals := make([]string, len(value)) // defensive copy
+				copy(vals, value)
+				headers[textproto.CanonicalMIMEHeaderKey(key)] = vals
+			},
+		}
+		ctx = httptrace.WithClientTrace(ctx, &trace)
+		getHeaders = func() http.Header {
+			headersMu.Lock()
+			defer headersMu.Unlock()
+			return headers.Clone()
+		}
+	} else {
+		// If req.ContentLength is set by net/http server, it must have come
+		// from a header. So synthesize the header if it's not present.
+		headers := req.Header.Clone()
+		if len(headers.Get("Content-Length")) == 0 && req.ContentLength != -1 {
+			headers.Set("Content-Length", fmt.Sprintf("%d", req.ContentLength))
+		}
+		getHeaders = func() http.Header {
+			return headers
+		}
+	}
 	testName := req.Header.Get("x-test-case-name")
 	return &builder{
 		collector: collector,
 		start:     time.Now(),
+		client:    client,
 		trace: Trace{
 			TestName: testName,
 			Request:  req,
-			Events:   []Event{&RequestStart{Request: req}},
+			Events:   []Event{&RequestStart{Request: req, getHeaders: getHeaders}},
 		},
-	}
+	}, ctx
 }
 
 // add adds the given event to the trace being built.
@@ -72,8 +118,24 @@ func (b *builder) add(event Event) {
 		}
 	case *ResponseStart:
 		b.trace.Response = event.Response
+		if b.client {
+			// for client-side traces, the HTTP version of the request
+			// isn't known until we get back the response
+			b.trace.Request.Proto = event.Response.Proto
+		}
 	case *ResponseError:
 		b.trace.Err = event.Err
+		if b.client {
+			// Can't use type assertion to http2.StreamError because the standard library
+			// includes vendored copy of the http2 package. So the type assertion would fail
+			// since the type in the vendored package != the type in x/net/http2.
+			if strings.HasSuffix(reflect.TypeOf(event.Err).String(), "http2.StreamError") {
+				b.trace.Request.Proto = "HTTP/2.0"
+			} else {
+				// We don't conclusively know what version of HTTP was used.
+				b.trace.Request.Proto = ""
+			}
+		}
 		finish = true
 	case *ResponseBodyData:
 		event.MessageIndex = b.respCount

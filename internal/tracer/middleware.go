@@ -28,8 +28,8 @@ import (
 // round tripper will record traces of all operations to the given tracer.
 func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.RoundTripper {
 	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-		builder := newBuilder(req, collector)
-		ctx, cancel := context.WithCancel(req.Context())
+		builder, ctx := newBuilder(req, true, collector)
+		ctx, cancel := context.WithCancel(ctx)
 		go func() {
 			<-ctx.Done()
 			builder.add(&RequestCanceled{})
@@ -52,10 +52,10 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 // handler will record traces of all operations to the given tracer.
 func TracingHandler(handler http.Handler, collector Collector) http.Handler {
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-		ctx, cancel := context.WithCancel(req.Context())
-		defer cancel()
-		builder := newBuilder(req, collector)
+		builder, ctx := newBuilder(req, false, collector)
 		defer builder.build() // make sure the trace is complete before returning
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
 		go func() {
 			<-ctx.Done()
 			builder.add(&RequestCanceled{})
