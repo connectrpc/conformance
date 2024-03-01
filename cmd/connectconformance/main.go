@@ -39,7 +39,7 @@ const (
 	skipFlagName          = "skip"
 	verboseFlagName       = "verbose"
 	verboseFlagShortName  = "v"
-	veryVerboseFlagName   = "vvv"
+	veryVerboseFlagName   = "vv"
 	versionFlagName       = "version"
 	maxServersFlagName    = "max-servers"
 	parallelFlagName      = "parallel"
