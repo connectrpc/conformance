@@ -51,10 +51,12 @@ func runTestCasesForServer(
 	testCases []*conformancev1.TestCase,
 	clientCreds *conformancev1.ClientCompatRequest_TLSCreds,
 	startServer processStarter,
+	logPrinter internal.Printer,
 	errPrinter internal.Printer,
 	results *testResults,
 	client clientRunner,
 	tracer *tracer.Tracer,
+	logEach bool,
 ) {
 	testCaseNameSet := make(map[string]struct{}, len(testCases))
 	for _, testCase := range testCases {
@@ -191,8 +193,14 @@ func runTestCasesForServer(
 
 		tracer.Init(req.TestName)
 		wg.Add(1)
+		if logEach {
+			logPrinter.Printf("Sending request for %q...", req.TestName)
+		}
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()
+			if logEach {
+				logPrinter.Printf("Received response for %q...", req.TestName)
+			}
 			switch {
 			case err != nil:
 				results.setOutcome(name, true, err)

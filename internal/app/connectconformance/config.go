@@ -58,7 +58,7 @@ type supportedFeatures struct {
 }
 
 // parseConfig loads all config cases from the given file name. If the given
-// file name is blank, it returns all config cases based on default features.
+// file data is empty, it returns all config cases based on default features.
 func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 	var config conformancev1.Config
 	if len(data) > 0 {
