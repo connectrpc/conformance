@@ -39,6 +39,7 @@ const (
 	skipFlagName          = "skip"
 	verboseFlagName       = "verbose"
 	verboseFlagShortName  = "v"
+	veryVerboseFlagName   = "vvv"
 	versionFlagName       = "version"
 	maxServersFlagName    = "max-servers"
 	parallelFlagName      = "parallel"
@@ -59,6 +60,7 @@ type flags struct {
 	knownFailingPatterns []string
 	knownFlakyPatterns   []string
 	verbose              bool
+	veryVerbose          bool
 	version              bool
 	maxServers           uint
 	parallel             uint
@@ -145,6 +147,8 @@ func bind(cmd *cobra.Command, flags *flags) {
 		"a pattern indicating the name of test cases that are flaky; these test cases are allowed (but not required) to fail; can be specified more than once")
 	cmd.Flags().BoolVarP(&flags.verbose, verboseFlagName, verboseFlagShortName, false,
 		"enables verbose output")
+	cmd.Flags().BoolVar(&flags.veryVerbose, veryVerboseFlagName, false,
+		"enables even more verbose output")
 	cmd.Flags().BoolVar(&flags.version, versionFlagName, false,
 		"print version and exit")
 	cmd.Flags().UintVar(&flags.maxServers, maxServersFlagName, 4,
@@ -293,7 +297,8 @@ func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:g
 			KnownFailingPatterns: knownFailingPatterns,
 			KnownFlakyPatterns:   knownFlakyPatterns,
 			TestFiles:            flags.testFiles,
-			Verbose:              flags.verbose,
+			Verbose:              flags.verbose || flags.veryVerbose,
+			VeryVerbose:          flags.veryVerbose,
 			ClientCommand:        clientCommand,
 			ServerCommand:        serverCommand,
 			MaxServers:           flags.maxServers,

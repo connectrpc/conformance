@@ -16,6 +16,7 @@ package connectconformance
 
 import (
 	"sort"
+	"strings"
 	"testing"
 
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
@@ -411,8 +412,83 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 	require.NoError(t, err)
 	allSuites, err := parseTestSuites(testSuiteData)
 	require.NoError(t, err)
-	_ = allSuites
-	// TODO: basic assertions about the embedded test suites?
+	configCases, err := parseConfig("config.yaml", nil)
+	require.NoError(t, err)
+	lib, err := newTestCaseLibrary(allSuites, configCases, conformancev1.TestSuite_TEST_MODE_CLIENT)
+	require.NoError(t, err)
+	// Count assertions are sanity checks based on the number of test cases we have
+	// (as of Mar 1st, 2024).
+	require.GreaterOrEqual(t, len(lib.testCases), 4000)
+
+	// Some basic validation of the internal structures.
+	require.Len(t, lib.testCaseNames, len(lib.testCases))
+	for fullName, testCase := range lib.testCases {
+		// check some things in the name
+		require.Equal(t, fullName, testCase.Request.TestName)
+		baseName := lib.testCaseNames[fullName]
+		require.NotEmpty(t, baseName)
+		require.True(t, strings.HasSuffix(fullName, baseName))
+		prefix := strings.TrimSuffix(fullName, baseName)
+		require.True(t, strings.HasSuffix(prefix, "/"))
+	}
+	var totalCases int
+	for _, testCases := range lib.casesByServer {
+		totalCases += len(testCases)
+	}
+	require.Len(t, lib.testCases, totalCases)
+
+	// Compute permutations and do some more basic checks.
+	allTestCases := lib.allPermutations(false, true)
+	require.GreaterOrEqual(t, len(allTestCases), 4500)
+	var grpcMarkers int
+	for _, testCase := range allTestCases {
+		fullName := testCase.Request.TestName
+		require.NotContains(t, fullName, grpcClientImplMarker)
+		require.NotContains(t, fullName, grpcImplMarker)
+		if strings.Contains(fullName, grpcServerImplMarker) {
+			grpcMarkers++
+			// more name checks
+			origName := strings.Replace(strings.Replace(fullName, grpcServerImplMarker, "", 1), "//", "/", 1)
+			baseName := lib.testCaseNames[origName]
+			require.NotEmpty(t, baseName)
+			require.True(t, strings.HasSuffix(fullName, baseName))
+			prefix := strings.TrimSuffix(fullName, baseName)
+			require.True(t, strings.HasSuffix(prefix, "/"))
+		}
+	}
+	require.GreaterOrEqual(t, grpcMarkers, 500)
+}
+
+func TestAddGRPCMarkerToName(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		full, base                 string
+		clientIsGRPC, serverIsGRPC bool
+		expected                   string
+	}{
+		{
+			full:         "success",
+			base:         "success",
+			clientIsGRPC: true,
+			expected:     "(grpc client impl)/success",
+		},
+		{
+			full:         "ABC/success",
+			base:         "success",
+			clientIsGRPC: true,
+			expected:     "ABC/(grpc client impl)/success",
+		},
+		{
+			full:         "ABC/X=123/B:C/Foo:bar/unary/success",
+			base:         "unary/success",
+			clientIsGRPC: true,
+			expected:     "ABC/X=123/B:C/Foo:bar/(grpc client impl)/unary/success",
+		},
+	}
+	for _, testCase := range testCases {
+		markedName := addGRPCMarkerToName(testCase.full, testCase.base, testCase.clientIsGRPC, testCase.serverIsGRPC)
+		assert.Equal(t, testCase.expected, markedName, "%q (client=%v, server=%v)", testCase.full, testCase.clientIsGRPC, testCase.serverIsGRPC)
+	}
 }
 
 func TestFilter(t *testing.T) {

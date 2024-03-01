@@ -101,7 +101,7 @@ func TestRun(t *testing.T) {
 		allSuites,
 		logger,
 		logger,
-		&Flags{Verbose: true, MaxServers: 2, Parallelism: 4, ServerBind: "127.0.0.1"},
+		&Flags{Verbose: true, VeryVerbose: true, MaxServers: 2, Parallelism: 4, ServerBind: "127.0.0.1"},
 	)
 
 	require.NoError(t, err)

@@ -45,6 +45,7 @@ type Flags struct {
 	KnownFailingPatterns []string
 	KnownFlakyPatterns   []string
 	Verbose              bool
+	VeryVerbose          bool
 	ClientCommand        []string
 	ServerCommand        []string
 	TestFiles            []string
@@ -85,14 +86,6 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 		// treat as empty
 		knownFlaky = &testTrie{}
 	}
-	if flags.Verbose {
-		if knownFailing.length() > 0 {
-			logPrinter.Printf("Loaded %d known failing test cases/patterns.", knownFailing.length())
-		}
-		if knownFlaky.length() > 0 {
-			logPrinter.Printf("Loaded %d known flaky test cases/patterns.", knownFlaky.length())
-		}
-	}
 
 	runPatterns := parsePatterns(flags.RunPatterns)
 	skipPatterns := parsePatterns(flags.SkipPatterns)
@@ -118,7 +111,7 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 		for _, suite := range allSuites {
 			numCases += len(suite.TestCases)
 		}
-		logPrinter.Printf("Loaded %d test suites, %d test case templates.", len(allSuites), numCases)
+		logPrinter.Printf("Loaded %d test suite(s), %d test case template(s).", len(allSuites), numCases)
 	}
 
 	results, err := run(configCases, knownFailing, knownFlaky, runPatterns, skipPatterns, allSuites, logPrinter, errPrinter, flags)
@@ -165,19 +158,33 @@ func run( //nolint:gocyclo
 	// Validate keys in knownFailing, runPatterns, and noRunPatterns, to
 	// make sure they match actual test names (to prevent accidental typos
 	// and inadvertently ignored entries)
-	if err := tryMatchPatterns("known failing", knownFailing, allPermutations); err != nil {
-		return nil, err
+	if knownFailing.length() > 0 {
+		matched, err := tryMatchPatterns("known failing", knownFailing, allPermutations)
+		if err != nil {
+			return nil, err
+		}
+		if flags.Verbose {
+			logPrinter.Printf("Loaded %d known failing test case pattern(s) that match %d test case permutation(s).",
+				knownFailing.length(), matched)
+		}
 	}
-	if err := tryMatchPatterns("known flaky", knownFlaky, allPermutations); err != nil {
-		return nil, err
+	if knownFlaky.length() > 0 {
+		matched, err := tryMatchPatterns("known flaky", knownFlaky, allPermutations)
+		if err != nil {
+			return nil, err
+		}
+		if flags.Verbose {
+			logPrinter.Printf("Loaded %d known flaky test case pattern(s) that match %d test case permutation(s).",
+				knownFlaky.length(), matched)
+		}
 	}
 	if run != nil {
-		if err := tryMatchPatterns("run patterns", run, allPermutations); err != nil {
+		if _, err := tryMatchPatterns("run patterns", run, allPermutations); err != nil {
 			return nil, err
 		}
 	}
 	if skip != nil {
-		if err := tryMatchPatterns("no-run patterns", skip, allPermutations); err != nil {
+		if _, err := tryMatchPatterns("no-run patterns", skip, allPermutations); err != nil {
 			return nil, err
 		}
 	}
@@ -198,13 +205,27 @@ func run( //nolint:gocyclo
 
 	filter := newFilter(run, skip)
 	if flags.Verbose {
-		var count int
-		for _, tc := range allPermutations {
-			if filter.accept(tc) {
-				count++
+		logPrinter.Printf("Computed %d test case permutation(s) across %d server configuration(s).",
+			len(allPermutations), len(testCaseLib.casesByServer))
+		if filter != nil {
+			var count int
+			filteredServerInstances := map[serverInstance]struct{}{}
+			for _, tc := range allPermutations {
+				if filter.accept(tc) {
+					count++
+					filteredServerInstances[serverInstance{
+						protocol:          tc.Request.Protocol,
+						httpVersion:       tc.Request.HttpVersion,
+						useTLS:            len(tc.Request.ServerTlsCert) > 0,
+						useTLSClientCerts: tc.Request.ClientTlsCreds != nil,
+					}] = struct{}{}
+				}
+			}
+			if count != len(allPermutations) {
+				logPrinter.Printf("Filtered tests to %d test case permutation(s) across %d server configuration(s).",
+					count, len(filteredServerInstances))
 			}
 		}
-		logPrinter.Printf("Running %d test case permutations (of %d computed) across %d server configurations.", count, len(allPermutations), len(testCaseLib.casesByServer))
 	}
 
 	var clientCreds *conformancev1.ClientCompatRequest_TLSCreds
@@ -310,8 +331,9 @@ func run( //nolint:gocyclo
 
 			for _, serverInfo := range servers {
 				for _, svrInstance := range svrInstances {
-					testCases := filter.apply(testCaseLib.casesByServer[svrInstance])
-					testCases = filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl, serverInfo.isGrpcImpl)
+					testCases := testCaseLib.casesByServer[svrInstance]
+					testCases = testCaseLib.filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl, serverInfo.isGrpcImpl)
+					testCases = filter.apply(testCases)
 					if len(testCases) == 0 {
 						continue
 					}
@@ -356,10 +378,12 @@ func run( //nolint:gocyclo
 							testCases,
 							clientCreds,
 							serverInfo.start,
+							logPrinter,
 							errPrinter,
 							results,
 							clientProcess,
 							trace,
+							flags.VeryVerbose,
 						)
 					}(ctx, clientInfo, serverInfo, svrInstance)
 				}
@@ -417,18 +441,21 @@ func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logP
 		numCases, with, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
 }
 
-func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev1.TestCase) error {
+func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev1.TestCase) (int, error) {
+	var matchCount int
 	for _, tc := range testCases {
-		patterns.matchPattern(tc.Request.TestName)
+		if patterns.matchPattern(tc.Request.TestName) {
+			matchCount++
+		}
 	}
 	unmatched := patterns.allUnmatched()
 	if len(unmatched) == 0 {
-		return nil
+		return matchCount, nil
 	}
 	unmatchedSlice := make([]string, 0, len(unmatched))
 	for name := range unmatched {
 		unmatchedSlice = append(unmatchedSlice, name)
 	}
 	sort.Strings(unmatchedSlice)
-	return fmt.Errorf("%s: unmatched and possibly invalid patterns:\n%v", what, strings.Join(unmatchedSlice, "\n"))
+	return matchCount, fmt.Errorf("%s: unmatched and possibly invalid patterns:\n%v", what, strings.Join(unmatchedSlice, "\n"))
 }

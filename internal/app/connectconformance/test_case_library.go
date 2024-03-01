@@ -20,6 +20,7 @@ import (
 	"math"
 	"path"
 	"sort"
+	"strings"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -58,8 +59,19 @@ var (
 // testCaseLibrary is the set of all applicable test cases for a run
 // of the conformance tests.
 type testCaseLibrary struct {
-	testCases     map[string]*conformancev1.TestCase
+	// Map of test case name to the test case definition. This has distinct entries
+	// for each test permutation (so a single test case from a YAML file could be
+	// turn into multiple entries in this map). This does NOT include permutations
+	// that run against the gRPC implementations.
+	testCases map[string]*conformancev1.TestCase
+	// Groupings of test cases, keyed by relevant server configuration. Like above,
+	// this does not include test case permutations that run against the gRPC
+	// implementations.
 	casesByServer map[serverInstance][]*conformancev1.TestCase
+	// Map of full test case names to original name defined in the YAML file. The
+	// keys include the name of the enclosing suite as well as permutation properties.
+	// The values are just the simple names, exactly as defined in YAML.
+	testCaseNames map[string]string
 }
 
 // newTestCaseLibrary creates a new resolved set of test cases by applying
@@ -75,7 +87,8 @@ func newTestCaseLibrary(
 		configCaseSet[c] = struct{}{}
 	}
 	lib := &testCaseLibrary{
-		testCases: map[string]*conformancev1.TestCase{},
+		testCases:     map[string]*conformancev1.TestCase{},
+		testCaseNames: map[string]string{},
 	}
 	suitesIndex := make(map[string]string, len(allSuites))
 	for file, suite := range allSuites {
@@ -211,12 +224,13 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 				return fmt.Errorf("test case #%d: test name %s has a service specified but no method", i+1, testCase.Request.TestName)
 			}
 		}
-		name := path.Join(append(namePrefix, testCase.Request.TestName)...)
-		if _, exists := lib.testCases[name]; exists {
-			return fmt.Errorf("test case library includes duplicate definition for %v", name)
+		simpleName := testCase.Request.TestName
+		fullName := path.Join(append(namePrefix, simpleName)...)
+		if _, exists := lib.testCases[fullName]; exists {
+			return fmt.Errorf("test case library includes duplicate definition for %v", fullName)
 		}
 		testCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
-		testCase.Request.TestName = name
+		testCase.Request.TestName = fullName
 		if cfgCase.UseTLS {
 			// to be replaced with actual cert provided by server
 			testCase.Request.ServerTlsCert = []byte("PLACEHOLDER")
@@ -239,7 +253,8 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		// We always set this. If client-under-test does not support it, we just
 		// won't run the test cases that verify that it's enforced.
 		testCase.Request.MessageReceiveLimit = clientReceiveLimit
-		lib.testCases[name] = testCase
+		lib.testCases[fullName] = testCase
+		lib.testCaseNames[fullName] = simpleName
 	}
 	return nil
 }
@@ -270,18 +285,73 @@ func (lib *testCaseLibrary) allPermutations(clientIsGRPCImpl, serverIsGRPCImpl b
 	results := testCaseSlice
 	if clientIsGRPCImpl {
 		// Count the cases where we run grpc-go client against server under test.
-		results = append(results, filterGRPCImplTestCases(testCaseSlice, true, false)...)
+		results = append(results, lib.filterGRPCImplTestCases(testCaseSlice, true, false)...)
 	}
 	if serverIsGRPCImpl {
 		// Count the cases where we run client under test against grpc-go server.
-		results = append(results, filterGRPCImplTestCases(testCaseSlice, false, true)...)
+		results = append(results, lib.filterGRPCImplTestCases(testCaseSlice, false, true)...)
 	}
 	if clientIsGRPCImpl && serverIsGRPCImpl {
 		// Count the cases where we run grpc-go client against grpc-go server.
 		// (This is only done from a unit test. The CLI doesn't actually allow this.)
-		results = append(results, filterGRPCImplTestCases(testCaseSlice, true, true)...)
+		results = append(results, lib.filterGRPCImplTestCases(testCaseSlice, true, true)...)
 	}
 	return results
+}
+
+func (lib *testCaseLibrary) filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
+	if !clientIsGRPCImpl && !serverIsGRPCImpl {
+		return testCases
+	}
+
+	// The gRPC reference impls do not support everything that the main reference impls do.
+	// So we must filter away any test cases that aren't applicable to the gRPC impls.
+
+	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
+	for _, testCase := range testCases {
+		// Client only supports gRPC protocol. Server also supports gRPC-Web.
+		if clientIsGRPCImpl && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
+			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
+			continue
+		}
+
+		if testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
+			// grpc-web supports HTTP/1 and HTTP/2
+			switch testCase.Request.HttpVersion {
+			case conformancev1.HTTPVersion_HTTP_VERSION_1, conformancev1.HTTPVersion_HTTP_VERSION_2:
+			default:
+				continue
+			}
+		} else if testCase.Request.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
+			// but grpc only supports HTTP/2
+			continue
+		}
+
+		if testCase.Request.Codec != conformancev1.Codec_CODEC_PROTO {
+			continue
+		}
+		if testCase.Request.Compression != conformancev1.Compression_COMPRESSION_IDENTITY &&
+			testCase.Request.Compression != conformancev1.Compression_COMPRESSION_GZIP {
+			continue
+		}
+
+		if len(testCase.Request.ServerTlsCert) > 0 {
+			continue
+		}
+
+		if testCase.Request.RawRequest != nil && clientIsGRPCImpl {
+			continue
+		}
+		if hasRawResponse(testCase.Request.RequestMessages) && serverIsGRPCImpl {
+			continue
+		}
+
+		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
+		baseName := lib.testCaseNames[filteredCase.Request.TestName]
+		filteredCase.Request.TestName = addGRPCMarkerToName(filteredCase.Request.TestName, baseName, clientIsGRPCImpl, serverIsGRPCImpl)
+		filtered = append(filtered, filteredCase)
+	}
+	return filtered
 }
 
 type testCaseFilter struct {
@@ -289,10 +359,16 @@ type testCaseFilter struct {
 }
 
 func newFilter(run, noRun *testTrie) *testCaseFilter {
+	if run == nil && noRun == nil {
+		return nil
+	}
 	return &testCaseFilter{run: run, noRun: noRun}
 }
 
 func (f *testCaseFilter) accept(testCase *conformancev1.TestCase) bool {
+	if f == nil {
+		return true
+	}
 	if f.run != nil && !f.run.matchPattern(testCase.Request.TestName) {
 		return false
 	}
@@ -303,7 +379,7 @@ func (f *testCaseFilter) accept(testCase *conformancev1.TestCase) bool {
 }
 
 func (f *testCaseFilter) apply(testCases []*conformancev1.TestCase) []*conformancev1.TestCase {
-	if f.run == nil && f.noRun == nil {
+	if f == nil || (f.run == nil && f.noRun == nil) {
 		return testCases // no filtering
 	}
 	results := make([]*conformancev1.TestCase, 0, len(testCases))
@@ -340,6 +416,20 @@ type unaryResponseDefiner interface {
 
 type streamResponseDefiner interface {
 	GetResponseDefinition() *conformancev1.StreamResponseDefinition
+}
+
+func addGRPCMarkerToName(fullName, simpleName string, clientIsGRPCImpl, serverIsGRPCImpl bool) string {
+	prefix := strings.TrimSuffix(fullName, simpleName)
+	var elem string
+	switch {
+	case clientIsGRPCImpl && serverIsGRPCImpl:
+		elem = grpcImplMarker
+	case clientIsGRPCImpl:
+		elem = grpcClientImplMarker
+	case serverIsGRPCImpl:
+		elem = grpcServerImplMarker
+	}
+	return prefix + elem + "/" + simpleName
 }
 
 // parseTestSuites processes the given file contents. The given map is keyed
@@ -748,71 +838,6 @@ func generateTestCasePrefix(suite *conformancev1.TestSuite, cfgCase configCase) 
 		components = append(components, fmt.Sprintf("TLS:%v", cfgCase.UseTLS))
 	}
 	return components
-}
-
-func filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {
-	if !clientIsGRPCImpl && !serverIsGRPCImpl {
-		return testCases
-	}
-
-	// The gRPC reference impls do not support everything that the main reference impls do.
-	// So we must filter away any test cases that aren't applicable to the gRPC impls.
-
-	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
-	for _, testCase := range testCases {
-		// Client only supports gRPC protocol. Server also supports gRPC-Web.
-		if clientIsGRPCImpl && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
-			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
-			continue
-		}
-
-		if testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
-			// grpc-web supports HTTP/1 and HTTP/2
-			switch testCase.Request.HttpVersion {
-			case conformancev1.HTTPVersion_HTTP_VERSION_1, conformancev1.HTTPVersion_HTTP_VERSION_2:
-			default:
-				continue
-			}
-		} else if testCase.Request.HttpVersion != conformancev1.HTTPVersion_HTTP_VERSION_2 {
-			// but grpc only supports HTTP/2
-			continue
-		}
-
-		if testCase.Request.Codec != conformancev1.Codec_CODEC_PROTO {
-			continue
-		}
-		if testCase.Request.Compression != conformancev1.Compression_COMPRESSION_IDENTITY &&
-			testCase.Request.Compression != conformancev1.Compression_COMPRESSION_GZIP {
-			continue
-		}
-
-		if len(testCase.Request.ServerTlsCert) > 0 {
-			continue
-		}
-
-		if testCase.Request.RawRequest != nil && clientIsGRPCImpl {
-			continue
-		}
-		if hasRawResponse(testCase.Request.RequestMessages) && serverIsGRPCImpl {
-			continue
-		}
-
-		filteredCase := proto.Clone(testCase).(*conformancev1.TestCase) //nolint:errcheck,forcetypeassert
-		// Insert a path in the test name to indicate that this is against the gRPC impl.
-		dir, base := path.Dir(filteredCase.Request.TestName), path.Base(filteredCase.Request.TestName)
-		var elem string
-		switch {
-		case clientIsGRPCImpl && serverIsGRPCImpl:
-			elem = grpcImplMarker
-		case clientIsGRPCImpl:
-			elem = grpcClientImplMarker
-		case serverIsGRPCImpl:
-			elem = grpcServerImplMarker
-		}
-		filteredCase.Request.TestName = path.Join(dir, elem, base)
-		filtered = append(filtered, filteredCase)
-	}
-	return filtered
 }
 
 func allValues[T ~int32](m map[int32]string) []T {
