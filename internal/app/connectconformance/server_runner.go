@@ -151,7 +151,7 @@ func runTestCasesForServer(
 		req := proto.Clone(testCase.Request).(*conformancev1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 		req.Host = resp.Host
 		if req.Host == "" {
-			req.Host = "127.0.0.1"
+			req.Host = internal.DefaultHost
 		}
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
