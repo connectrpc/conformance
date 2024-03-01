@@ -47,6 +47,11 @@ type wireCaptureTransport struct {
 // given one. The returned transport instruments the given one for tracing and
 // the ability to capture wire-level details from that trace. Also see
 // withWireCapture and examineWireDetails.
+//
+// The contextcheck lint issue is a false positive here. And ignoring it with
+// nolint then causes a false positive for the nolintlint :(
+//
+//nolint:contextcheck,nolintlint
 func newWireCaptureTransport(transport http.RoundTripper, trace *tracer.Tracer) http.RoundTripper {
 	return &wireCaptureTransport{
 		Transport: tracer.TracingRoundTripper(transport, &wireTracer{

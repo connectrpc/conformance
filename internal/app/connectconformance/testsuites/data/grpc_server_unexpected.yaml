@@ -18,6 +18,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc" ]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0
@@ -38,6 +40,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc" ]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0
@@ -62,6 +66,8 @@ testCases:
 #        headers:
 #          - name: content-type
 #            value: [ "application/grpc+foo" ]
+#          - name: te
+#            value: [ "trailers" ]
 #        stream:
 #          items:
 #            - flags: 0
@@ -83,6 +89,8 @@ testCases:
             value: [ "application/grpc" ]
           - name: grpc-encoding
             value: ["foo"]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0
@@ -105,6 +113,8 @@ testCases:
             value: [ "application/grpc+proto" ]
           - name: grpc-encoding
             value: ["identity"]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 1

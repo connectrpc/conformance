@@ -102,6 +102,9 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	if err != nil {
 		return err
 	}
+	if actualHost == "" || actualHost == "0.0.0.0" {
+		actualHost = internal.DefaultHost
+	}
 
 	// Start the server
 	var serveError error

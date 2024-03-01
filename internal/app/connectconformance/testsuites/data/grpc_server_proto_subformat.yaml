@@ -20,6 +20,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc+proto" ]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0
@@ -41,6 +43,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc" ]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0

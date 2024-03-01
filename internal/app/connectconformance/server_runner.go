@@ -41,6 +41,8 @@ import (
 //
 // If isReferenceServer is true, then the server's stderr will be examined as well, to
 // record out-of-band feedback about the client requests.
+//
+//nolint:gocyclo
 func runTestCasesForServer(
 	ctx context.Context,
 	isReferenceClient bool,
@@ -148,6 +150,9 @@ func runTestCasesForServer(
 		}
 		req := proto.Clone(testCase.Request).(*conformancev1.ClientCompatRequest) //nolint:errcheck,forcetypeassert
 		req.Host = resp.Host
+		if req.Host == "" {
+			req.Host = internal.DefaultHost
+		}
 		req.Port = resp.Port
 		req.ServerTlsCert = resp.PemCert
 		req.ClientTlsCreds = clientCreds
