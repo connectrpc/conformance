@@ -150,6 +150,8 @@ func checkProtocol(expected conformancev1.Protocol, req *http.Request, feedback 
 	}
 	if expected != actual {
 		feedback.Printf("expected protocol %v; instead got %v", expected, actual)
+	} else if expected == conformancev1.Protocol_PROTOCOL_GRPC && req.Header.Get("TE") != "trailers" {
+		feedback.Printf("gRPC protocol client should use 'te: trailers' header to indicate to proxies that it expects trailer")
 	}
 }
 
