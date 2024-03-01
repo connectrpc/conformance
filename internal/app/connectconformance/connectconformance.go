@@ -204,20 +204,20 @@ func run( //nolint:gocyclo
 	}
 
 	filter := newFilter(run, skip)
-	if flags.Verbose {
+	if flags.Verbose { //nolint:nestif
 		logPrinter.Printf("Computed %d test case permutation(s) across %d server configuration(s).",
 			len(allPermutations), len(testCaseLib.casesByServer))
 		if filter != nil {
 			var count int
 			filteredServerInstances := map[serverInstance]struct{}{}
-			for _, tc := range allPermutations {
-				if filter.accept(tc) {
+			for _, testCase := range allPermutations {
+				if filter.accept(testCase) {
 					count++
 					filteredServerInstances[serverInstance{
-						protocol:          tc.Request.Protocol,
-						httpVersion:       tc.Request.HttpVersion,
-						useTLS:            len(tc.Request.ServerTlsCert) > 0,
-						useTLSClientCerts: tc.Request.ClientTlsCreds != nil,
+						protocol:          testCase.Request.Protocol,
+						httpVersion:       testCase.Request.HttpVersion,
+						useTLS:            len(testCase.Request.ServerTlsCert) > 0,
+						useTLSClientCerts: testCase.Request.ClientTlsCreds != nil,
 					}] = struct{}{}
 				}
 			}
