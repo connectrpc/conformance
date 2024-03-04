@@ -271,9 +271,11 @@ func TestRunTestCasesForServer(t *testing.T) {
 				nil, // TODO: client cert
 				hookedProcess,
 				discardPrinter{},
+				discardPrinter{},
 				results,
 				&client,
 				nil,
+				false,
 			)
 
 			if testCase.svrFailsToStart {

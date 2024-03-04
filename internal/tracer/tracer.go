@@ -169,7 +169,8 @@ type Envelope struct {
 // is recorded when the client sends the request or when the server
 // receives it. This is always the first event for an HTTP operation.
 type RequestStart struct {
-	Request *http.Request
+	Request    *http.Request
+	getHeaders func() http.Header
 
 	eventOffset
 }
@@ -185,10 +186,7 @@ func (r *RequestStart) print(printer internal.Printer) {
 		urlClone.Scheme = "http"
 	}
 	printer.Printf("%s %9.3fms %s %s %s", requestPrefix, r.offsetMillis(), r.Request.Method, urlClone.String(), r.Request.Proto)
-	printHeaders(requestPrefix, r.Request.Header, printer)
-	if r.Request.ContentLength != -1 && len(r.Request.Header.Values("Content-Length")) == 0 {
-		printer.Printf("%s %11s Content-Length: %d", requestPrefix, "", r.Request.ContentLength)
-	}
+	printHeaders(requestPrefix, r.getHeaders(), printer)
 	printer.Printf(requestPrefix)
 }
 
