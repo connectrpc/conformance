@@ -53,13 +53,21 @@ type ServerCompatRequest struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The protocol that will be used.
+	// Signals to the server that it must support at least this protocol. Note
+	// that it is fine to support others.
+	// For example if `PROTOCOL_CONNECT` is specified, the server _must_ support
+	// at least Connect, but _may_ also support gRPC or gRPC-web.
 	Protocol Protocol `protobuf:"varint,1,opt,name=protocol,proto3,enum=connectrpc.conformance.v1.Protocol" json:"protocol,omitempty"`
-	// The HTTP version that will be used.
+	// Signals to the server the minimum HTTP version to support. As with
+	// `protocol`, it is fine to support other versions. For example, if
+	// `HTTP_VERSION_2` is specified, the server _must_ support HTTP/2, but _may_ also
+	// support HTTP/1.1 or HTTP/3.
 	HttpVersion HTTPVersion `protobuf:"varint,2,opt,name=http_version,json=httpVersion,proto3,enum=connectrpc.conformance.v1.HTTPVersion" json:"http_version,omitempty"`
-	// If true, generate a self-signed cert and include it in the
-	// ServerCompatResponse along with the actual port. Clients
-	// will be configured to trust this cert when connecting.
+	// If true, generate a certificate that clients will be configured to trust
+	// when connecting and return it in the `pem_cert` field of the `ServerCompatResponse`.
+	// The certificate can be any TLS certificate where the subject matches the
+	// value sent back in the `host` field of the `ServerCompatResponse`.
+	// Self-signed certificates (and `localhost` as the subject) are allowed.
 	// If false, the server should not use TLS and instead use
 	// a plain-text/unencrypted socket.
 	UseTls bool `protobuf:"varint,4,opt,name=use_tls,json=useTls,proto3" json:"use_tls,omitempty"`
@@ -149,12 +157,15 @@ type ServerCompatResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The host where the server is running.
+	// The host where the server is running. This should usually be `127.0.0.1`,
+	// unless your program actually starts a remote server to which the client
+	// should connect.
 	Host string `protobuf:"bytes,1,opt,name=host,proto3" json:"host,omitempty"`
 	// The port where the server is listening.
 	Port uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// The server's PEM-encoded certificate, so the
-	// client can verify it when connecting via TLS.
+	// The TLS certificate, in PEM format, if `use_tls` was set
+	// to `true`. Clients will verify this certificate when connecting via TLS.
+	// If `use_tls` was set to `false`, this should always be empty.
 	PemCert []byte `protobuf:"bytes,3,opt,name=pem_cert,json=pemCert,proto3" json:"pem_cert,omitempty"`
 }
 
