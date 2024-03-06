@@ -54,11 +54,12 @@ There are two other kinds of fields in the request:
      implementation use protocol negotiation during the TLS handshake. The reference server
      will only support the given version. You will only receive requests with HTTP versions
      that your implementation supports, as described by your config YAML file.
-   * `protocol`: Which protocol to use to invoke the RPC. This will Connect, gRPC, or
-     gRPC-Web.
-   * `codec`: Which codec to use for message serialization. This is also sometimes called
-     "sub-format" or "message encoding".
-   * `compression`: Which compression format to use. "Identity" means no compression.
+   * `protocol`: This indicates which protocol to use to invoke the RPC. This will indicate
+     Connect, gRPC, or gRPC-Web.
+   * `codec`: This indicates which codec to use for message serialization. This is also
+     sometimes called "sub-format" or "message encoding".
+   * `compression`: Which compression format to use. The "Identity" option means to not use
+     compression.
    * `host` and `port`: The host name or IP address and the IP port on which the server
      is listening for requests. This is used to establish a network connection for issuing
      requests.
@@ -139,7 +140,7 @@ There are two other fields in the response message:
 When verifying a client-under-test, the conformance runner will use a reference server
 implementation written in Connect-Go. The actual service used, [`ConformanceService`][conformanceservice],
 defines a total of six endpoints that are meant to exercise all types of RPCs. The
-client should only need to handle these six endpoints.If a client program sees an
+client should only need to handle these six endpoints. If a client program sees an
 unrecognized service or method it should send back an error result.
 
 ### Request messages and `Any`
