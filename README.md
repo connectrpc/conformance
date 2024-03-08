@@ -26,6 +26,17 @@ Also, please note that this project is currently pre-v1.0.0. As a result, it doe
 guarantees. The goal is to publish a stable release but please be aware we may make changes
 as we gather feedback from early adopters.
 
+## Documentation
+
+Detailed guides can be found in the "docs" sub-directory of this repo. If you first want to read a
+shorter overview, see the next section [below](#testing-your-implementation). But when you really get
+started with any of these tasks, you'll want to read one or more of these guides.
+
+* [Configuring and Running Tests](./docs/configuring_and_running_tests.md)
+* [Testing Server Implementations](./docs/testing_servers.md)
+* [Testing Client Implementations](./docs/testing_clients.md)
+* [Authoring New Test Cases](./docs/authoring_test_cases.md)
+
 ## Testing your implementation
 
 ### Setup
