@@ -115,6 +115,7 @@ func (b *builder) add(event Event) {
 	case *RequestBodyEnd:
 		if b.trace.Err != nil {
 			b.trace.Err = event.Err
+			finish = true
 		}
 	case *ResponseStart:
 		b.trace.Response = event.Response

@@ -28,6 +28,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -36,7 +37,13 @@ import (
 )
 
 // Run runs the server according to server config read from the 'in' reader.
-func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser) error {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, errWriter io.WriteCloser) error {
+	return RunWithTrace(ctx, args, inReader, outWriter, errWriter, nil)
+}
+
+// RunWithTrace is just like Run except that it can collect trace info and
+// report it via the given tracer.
+func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, outWriter io.WriteCloser, _ io.WriteCloser, trace *tracer.Tracer) error {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	host := flags.String("bind", internal.DefaultHost, "the bind address for the conformance server")
@@ -98,9 +105,9 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter i
 
 	// Finally, start the server
 	if req.Protocol == conformancev1.Protocol_PROTOCOL_GRPC_WEB {
-		return runGRPCWebServer(ctx, server, listener)
+		return runGRPCWebServer(ctx, server, listener, trace)
 	}
-	return runGRPCServer(ctx, server, listener)
+	return runGRPCServer(ctx, server, listener, trace)
 }
 
 func createServer(recvLimit uint32) (*grpc.Server, error) { //nolint:unparam
@@ -113,9 +120,12 @@ func createServer(recvLimit uint32) (*grpc.Server, error) { //nolint:unparam
 	return server, nil
 }
 
-func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listener) error {
+func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listener, trace *tracer.Tracer) error {
 	var serveError error
 	serveDone := make(chan struct{})
+	if trace != nil {
+		listener = &tracingListener{Listener: listener, trace: trace}
+	}
 	go func() {
 		defer close(serveDone)
 		serveError = server.Serve(listener)
@@ -129,14 +139,17 @@ func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listen
 	}
 }
 
-func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Listener) error {
-	grpcWebServer := grpcweb.WrapServer(server,
+func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Listener, trace *tracer.Tracer) error {
+	grpcWebServer := http.Handler(grpcweb.WrapServer(server,
 		// The server needs a lenient cors setup so that it can handle testing
 		// browser clients.
 		grpcweb.WithOriginFunc(func(string) bool {
 			return true
 		}),
-	)
+	))
+	if trace != nil {
+		grpcWebServer = tracer.TracingHandler(grpcWebServer, trace)
+	}
 
 	httpServer := http.Server{
 		Handler:           h2c.NewHandler(grpcWebServer, &http2.Server{}),
@@ -162,4 +175,17 @@ func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Lis
 		}
 		return nil
 	}
+}
+
+type tracingListener struct {
+	net.Listener
+	trace *tracer.Tracer
+}
+
+func (t *tracingListener) Accept() (net.Conn, error) {
+	conn, err := t.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return tracer.TracingHTTP2Conn(conn, true, t.trace), nil
 }

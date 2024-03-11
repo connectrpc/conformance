@@ -269,7 +269,9 @@ func run( //nolint:gocyclo
 				start: runInProcess([]string{
 					"grpc-reference-client",
 					"-p", strconv.Itoa(int(flags.Parallelism)),
-				}, grpcclient.Run),
+				}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+					return grpcclient.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
+				}),
 				isGrpcImpl: true,
 			},
 		}
@@ -312,7 +314,9 @@ func run( //nolint:gocyclo
 						"grpc-reference-server",
 						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
 						"-bind", flags.ServerBind,
-					}, grpcserver.Run),
+					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+						return grpcserver.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
+					}),
 					isGrpcImpl: true,
 				},
 			}
