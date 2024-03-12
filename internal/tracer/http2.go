@@ -17,6 +17,7 @@ package tracer
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"net"
@@ -39,7 +40,7 @@ const (
 	// see if client auto-retries. This should be lenient enough that a client that
 	// retries refused streams will can perform the retry before this period lapses.
 	// But it also must be less than TraceTimeout, so if the client is *not* retrying
-	// then we can still provide a trace within the timeout window.
+	// then we can still provide a trace (for the refused attempt) in the time window.
 	retryWait = 3 * time.Second
 )
 
@@ -72,6 +73,18 @@ func TracingHTTP2Conn(conn net.Conn, isServer bool, collector Collector) net.Con
 	return tracer
 }
 
+// TracingHTTP2Listener applies tracing to the given net.Listener, which
+// accepts sockets that use the HTTP/2 protocol. If TLS is used, it should
+// already be applied, so the given listener should return connections that
+// can be used for reading/writing clear-text (i.e. pre-encryption,
+// post-decryption).
+//
+// This function calls TracingHTTP2Conn for each connection accepted. All
+// connections accepted are considered server connections.
+func TracingHTTP2Listener(listener net.Listener, collector Collector) net.Listener {
+	return &tracingListener{Listener: listener, collector: collector}
+}
+
 type tracingHTTP2Conn struct {
 	net.Conn
 	isServer  bool
@@ -84,37 +97,65 @@ type tracingHTTP2Conn struct {
 	writeTracer http2FrameTracer
 }
 
-func (c *tracingHTTP2Conn) Read(b []byte) (n int, err error) {
-	n, err = c.Conn.Read(b)
-	c.readTracer.trace(b[:n])
+func (c *tracingHTTP2Conn) Read(data []byte) (n int, err error) {
+	n, err = c.Conn.Read(data)
+	c.readTracer.trace(data[:n])
+
+	if err != nil {
+		// We ignore timeout errors because the HTTP/2 server
+		// does some tricks with read timeouts on new connections
+		// related to reading the preface and settings frames.
+		// So a single read operation may fail, but the connection
+		// continues to be used.
+		var netErr net.Error
+		isTimeout := errors.As(err, &netErr) && netErr.Timeout()
+		if !isTimeout {
+			c.cancelAll(err)
+		}
+	}
+	return n, err
+}
+
+func (c *tracingHTTP2Conn) Write(data []byte) (n int, err error) {
+	// Note: we trace the given data as if it were all successfully
+	// written, before actually writing (and seeing how much is written)
+	// to avoid a race condition where the peer could be processing the
+	// data we wrote and then reply and have its reply processed by some
+	// other goroutine, all while we are concurrently capturing the trace.
+	// That leads to strange non-deterministic issues with event ordering.
+	c.writeTracer.trace(data)
+	n, err = c.Conn.Write(data)
 	if err != nil {
 		c.cancelAll(err)
 	}
 	return n, err
 }
 
-func (c *tracingHTTP2Conn) Write(b []byte) (n int, err error) {
-	n, err = c.Conn.Write(b)
-	c.writeTracer.trace(b[:n])
-	if err != nil {
-		c.cancelAll(err)
+func (c *tracingHTTP2Conn) Close() error {
+	err := c.Conn.Close()
+	if err == nil {
+		c.cancelAll(errors.New("socket closed"))
+	} else {
+		c.cancelAll(fmt.Errorf("socket closed; %w", err))
 	}
-	return n, err
+	return err
 }
 
 func (c *tracingHTTP2Conn) handleFrame(frame http2.Frame, isRequest bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	switch frame := frame.(type) {
 	case *http2.MetaHeadersFrame:
-		stream, isNew := c.getStream(frame, isRequest)
+		stream, isNew := c.getStreamLocked(frame, isRequest)
 		if stream == nil {
 			return
 		}
 		switch {
 		case isNew:
-		// request headers, which resulted in a new stream; nothing else to do
+			// request headers, which resulted in a new stream; nothing else to do
 		case !isRequest && !stream.gotResponse:
 			// response headers
-			c.receiveResponse(stream, frame)
+			c.receiveResponseLocked(stream, frame)
 		case isRequest:
 			// request trailers
 			stream.builder.trace.Request.Trailer = makeHeaders(frame)
@@ -123,10 +164,10 @@ func (c *tracingHTTP2Conn) handleFrame(frame http2.Frame, isRequest bool) {
 			stream.builder.trace.Response.Trailer = makeHeaders(frame)
 		}
 		if frame.StreamEnded() {
-			c.closeStream(frame.StreamID, stream, isRequest, nil)
+			c.closeStreamLocked(frame.StreamID, stream, isRequest, nil)
 		}
 	case *http2.DataFrame:
-		stream := c.getExistingStream(frame.StreamID)
+		stream := c.getExistingStreamLocked(frame.StreamID)
 		if stream == nil {
 			return
 		}
@@ -136,26 +177,24 @@ func (c *tracingHTTP2Conn) handleFrame(frame http2.Frame, isRequest bool) {
 			stream.responseTracer.trace(frame.Data())
 		}
 		if frame.StreamEnded() {
-			c.closeStream(frame.StreamID, stream, isRequest, nil)
+			c.closeStreamLocked(frame.StreamID, stream, isRequest, nil)
 		}
 	case *http2.RSTStreamFrame:
-		stream := c.getExistingStream(frame.StreamID)
+		stream := c.getExistingStreamLocked(frame.StreamID)
 		if stream == nil {
 			return
 		}
-		c.closeStream(frame.StreamID, stream, isRequest, http2.StreamError{
+		c.closeStreamLocked(frame.StreamID, stream, isRequest, http2.StreamError{
 			StreamID: frame.StreamID,
 			Code:     frame.ErrCode,
 		})
 
 	case *http2.GoAwayFrame:
-		c.setMaxStreamID(frame.LastStreamID, http2.ConnectionError(frame.ErrCode))
+		c.setMaxStreamIDLocked(frame.LastStreamID, http2.ConnectionError(frame.ErrCode))
 	}
 }
 
-func (c *tracingHTTP2Conn) receiveResponse(stream *http2Stream, frame *http2.MetaHeadersFrame) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *tracingHTTP2Conn) receiveResponseLocked(stream *http2Stream, frame *http2.MetaHeadersFrame) {
 	stream.gotResponse = true
 	resp := makeResponse(frame) //nolint:bodyclose // there is no body to close on this response
 	stream.builder.add(&ResponseStart{Response: resp})
@@ -163,9 +202,7 @@ func (c *tracingHTTP2Conn) receiveResponse(stream *http2Stream, frame *http2.Met
 	stream.responseTracer.builder = stream.builder
 }
 
-func (c *tracingHTTP2Conn) getStream(frame *http2.MetaHeadersFrame, createIfNotFound bool) (*http2Stream, bool) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *tracingHTTP2Conn) getStreamLocked(frame *http2.MetaHeadersFrame, createIfNotFound bool) (*http2Stream, bool) {
 	stream := c.streams[frame.StreamID]
 	if stream != nil {
 		return stream, false
@@ -196,15 +233,11 @@ func (c *tracingHTTP2Conn) newStreamLocked(frame *http2.MetaHeadersFrame) *http2
 	return stream
 }
 
-func (c *tracingHTTP2Conn) getExistingStream(streamID uint32) *http2Stream {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *tracingHTTP2Conn) getExistingStreamLocked(streamID uint32) *http2Stream {
 	return c.streams[streamID]
 }
 
-func (c *tracingHTTP2Conn) closeStream(streamID uint32, stream *http2Stream, isRequest bool, err error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *tracingHTTP2Conn) closeStreamLocked(streamID uint32, stream *http2Stream, isRequest bool, err error) {
 	if !isRequest || err != nil {
 		// This is either end of response or an error, which means the
 		// whole operation done.
@@ -214,18 +247,19 @@ func (c *tracingHTTP2Conn) closeStream(streamID uint32, stream *http2Stream, isR
 		stream.requestTracer.emitUnfinished()
 		stream.builder.add(&RequestBodyEnd{Err: err})
 	} else if stream.responseTracer.builder != nil {
+		stream.requestTracer.emitUnfinished()
 		stream.responseTracer.emitUnfinished()
 		stream.builder.add(&ResponseBodyEnd{Err: err})
 	}
 }
 
-func (c *tracingHTTP2Conn) setMaxStreamID(maxStreamID uint32, err error) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
+func (c *tracingHTTP2Conn) setMaxStreamIDLocked(maxStreamID uint32, err error) {
 	c.maxStreamID = maxStreamID
 	for streamID, stream := range c.streams {
 		if streamID > maxStreamID {
 			delete(c.streams, streamID)
+			stream.requestTracer.emitUnfinished()
+			stream.responseTracer.emitUnfinished()
 			stream.builder.add(&ResponseBodyEnd{Err: err})
 		}
 	}
@@ -238,9 +272,15 @@ func (c *tracingHTTP2Conn) cancelAll(err error) {
 		for streamID, stream := range c.streams {
 			delete(c.streams, streamID)
 			if c.isServer {
+				stream.requestTracer.emitUnfinished()
+				stream.responseTracer.emitUnfinished()
 				stream.builder.add(&ResponseBodyEnd{Err: err})
 			} else {
+				// TODO: We shouldn't add RequestBodyEnd event if the trace
+				//       already has an event of that type.
+				stream.requestTracer.emitUnfinished()
 				stream.builder.add(&RequestBodyEnd{Err: err})
+				stream.builder.add(&RequestCanceled{})
 			}
 		}
 	}()
@@ -367,15 +407,28 @@ func (h *http2FrameTracer) emitFrame() bool {
 	return true
 }
 
-type http2RetryCollector struct {
+type tracingListener struct {
+	net.Listener
 	collector Collector
-	mu        sync.Mutex
-	waiting   map[string]*http2RetryWaitState
+}
+
+func (t *tracingListener) Accept() (net.Conn, error) {
+	conn, err := t.Listener.Accept()
+	if err != nil {
+		return nil, err
+	}
+	return TracingHTTP2Conn(conn, true, t.collector), nil
 }
 
 type http2RetryWaitState struct {
 	trace Trace
 	stop  func()
+}
+
+type http2RetryCollector struct {
+	collector Collector
+	mu        sync.Mutex
+	waiting   map[string]*http2RetryWaitState
 }
 
 func (h *http2RetryCollector) Complete(trace Trace) {
@@ -452,14 +505,25 @@ func (h *http2RetryCollector) cancel() {
 }
 
 func makeRequest(frame *http2.MetaHeadersFrame) *http.Request {
+	path := getPseudoHeader(frame, ":path")
+	var query string
+	var forceQuery bool
+	if strings.Contains(path, "?") {
+		// There's a query string.
+		parts := strings.SplitN(path, "?", 2)
+		path, query = parts[0], parts[1]
+		forceQuery = query == ""
+	}
 	req := &http.Request{
 		Proto:      "HTTP/2.0",
 		ProtoMajor: 2,
 		ProtoMinor: 0,
 		URL: &url.URL{
-			Scheme: getPseudoHeader(frame, ":scheme"),
-			Host:   getPseudoHeader(frame, ":authority"),
-			Path:   getPseudoHeader(frame, ":path"),
+			Scheme:     getPseudoHeader(frame, ":scheme"),
+			Host:       getPseudoHeader(frame, ":authority"),
+			Path:       path,
+			RawQuery:   query,
+			ForceQuery: forceQuery,
 		},
 		Method: getPseudoHeader(frame, ":method"),
 		Header: makeHeaders(frame),

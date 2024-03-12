@@ -26,6 +26,8 @@ import (
 	"time"
 )
 
+const testCaseNameHeader = "x-test-case-name"
+
 // builder accumulates events to build a trace.
 type builder struct {
 	collector Collector
@@ -80,7 +82,7 @@ func newBuilder(req *http.Request, client bool, collector Collector) (*builder, 
 			return headers
 		}
 	}
-	testName := req.Header.Get("x-test-case-name")
+	testName := req.Header.Get(testCaseNameHeader)
 	return &builder{
 		collector: collector,
 		start:     time.Now(),
@@ -96,11 +98,12 @@ func newBuilder(req *http.Request, client bool, collector Collector) (*builder, 
 // add adds the given event to the trace being built.
 func (b *builder) add(event Event) {
 	var finish bool
+	var finishedTrace Trace
 	defer func() {
-		// must not call b.build() below, while lock held,
-		// so we do so from deferred function, after lock released
+		// We must not call b.collector.Complete  while lock held,
+		// So we do so from deferred function, after lock released.
 		if finish {
-			b.build()
+			b.finish(finishedTrace)
 		}
 	}()
 	b.mu.Lock()
@@ -115,6 +118,10 @@ func (b *builder) add(event Event) {
 	case *RequestBodyEnd:
 		if b.trace.Err != nil {
 			b.trace.Err = event.Err
+		}
+		if event.Err != nil {
+			// An error writing the request body means
+			// operation has failed.
 			finish = true
 		}
 	case *ResponseStart:
@@ -151,17 +158,28 @@ func (b *builder) add(event Event) {
 	}
 	event.setEventOffset(time.Since(b.start))
 	b.trace.Events = append(b.trace.Events, event)
+	if finish {
+		finishedTrace = b.getAndClearLocked()
+	}
+}
+
+func (b *builder) getAndClearLocked() Trace {
+	trace := b.trace
+	b.trace = Trace{} // reset; subsequent calls to add or build ignored
+	return trace
+}
+
+func (b *builder) finish(trace Trace) {
+	if trace.TestName != "" {
+		b.collector.Complete(trace)
+	}
 }
 
 // build builds the trace and provides the data to the given Tracer.
 func (b *builder) build() {
 	b.mu.Lock()
-	trace := b.trace
-	b.trace = Trace{} // reset; subsequent calls to add or build ignored
+	trace := b.getAndClearLocked()
 	b.mu.Unlock()
 
-	if trace.TestName == "" {
-		return
-	}
-	b.collector.Complete(trace)
+	b.finish(trace)
 }

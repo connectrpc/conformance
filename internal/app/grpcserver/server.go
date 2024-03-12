@@ -124,7 +124,7 @@ func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listen
 	var serveError error
 	serveDone := make(chan struct{})
 	if trace != nil {
-		listener = &tracingListener{Listener: listener, trace: trace}
+		listener = tracer.TracingHTTP2Listener(listener, trace)
 	}
 	go func() {
 		defer close(serveDone)
@@ -175,17 +175,4 @@ func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Lis
 		}
 		return nil
 	}
-}
-
-type tracingListener struct {
-	net.Listener
-	trace *tracer.Tracer
-}
-
-func (t *tracingListener) Accept() (net.Conn, error) {
-	conn, err := t.Listener.Accept()
-	if err != nil {
-		return nil, err
-	}
-	return tracer.TracingHTTP2Conn(conn, true, t.trace), nil
 }
