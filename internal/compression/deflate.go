@@ -16,7 +16,6 @@ package compression
 
 import (
 	"compress/zlib"
-	"errors"
 	"io"
 
 	"connectrpc.com/connect"
@@ -34,15 +33,9 @@ func (c *deflateDecompressor) Read(bytes []byte) (int, error) {
 	return c.reader.Read(bytes)
 }
 func (c *deflateDecompressor) Reset(rdr io.Reader) error {
-	resetter, ok := c.reader.(zlib.Resetter)
-	if !ok {
-		// This should never happen as the returned type from flate should always
-		// implement Resetter, but the check is here as a safeguard just in case.
-		// This error would be a very exceptional / unexpected occurrence.
-		return errors.New("deflate reader is not able to be used as a resetter")
-	}
-	// Mimics NewReader internal logic, which initializes the internal dict to nil
-	return resetter.Reset(rdr, nil)
+	var err error
+	c.reader, err = zlib.NewReader(rdr)
+	return err
 }
 func (c *deflateDecompressor) Close() error {
 	return c.reader.Close()
@@ -50,13 +43,7 @@ func (c *deflateDecompressor) Close() error {
 
 // NewDeflateDecompressor returns a new deflate Decompressor.
 func NewDeflateDecompressor() connect.Decompressor {
-	reader, err := zlib.NewReader(nil)
-	if err != nil {
-		return &errorDecompressor{err: err}
-	}
-	return &deflateDecompressor{
-		reader: reader,
-	}
+	return &deflateDecompressor{}
 }
 
 // NewDeflateCompressor returns a new deflate Compressor.
