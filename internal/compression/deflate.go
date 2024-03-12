@@ -15,14 +15,17 @@
 package compression
 
 import (
-	"compress/flate"
+	"compress/zlib"
 	"errors"
 	"io"
 
 	"connectrpc.com/connect"
 )
 
-// deflateDecompressor is a thin wrapper around a flate Reader.
+// deflateDecompressor is a thin wrapper around a zlib Reader. Note that due to
+// an unfortunate misnomer with the RFC 2616 specification, HTTP deflate is
+// actually RFC 1950 with zlib headers, rather than RFC 1951. gRPC uses the same
+// nomenclature.
 type deflateDecompressor struct {
 	reader io.ReadCloser
 }
@@ -31,7 +34,7 @@ func (c *deflateDecompressor) Read(bytes []byte) (int, error) {
 	return c.reader.Read(bytes)
 }
 func (c *deflateDecompressor) Reset(rdr io.Reader) error {
-	resetter, ok := c.reader.(flate.Resetter)
+	resetter, ok := c.reader.(zlib.Resetter)
 	if !ok {
 		// This should never happen as the returned type from flate should always
 		// implement Resetter, but the check is here as a safeguard just in case.
@@ -47,17 +50,17 @@ func (c *deflateDecompressor) Close() error {
 
 // NewDeflateDecompressor returns a new deflate Decompressor.
 func NewDeflateDecompressor() connect.Decompressor {
+	reader, err := zlib.NewReader(nil)
+	if err != nil {
+		return &errorDecompressor{err: err}
+	}
 	return &deflateDecompressor{
-		reader: flate.NewReader(nil),
+		reader: reader,
 	}
 }
 
 // NewDeflateCompressor returns a new deflate Compressor.
 func NewDeflateCompressor() connect.Compressor {
-	// Construct a new flate Writer with default compression level
-	w, err := flate.NewWriter(nil, 1)
-	if err != nil {
-		return &errorCompressor{err: err}
-	}
-	return w
+	// Construct a new zlib Writer with default compression level
+	return zlib.NewWriter(nil)
 }
