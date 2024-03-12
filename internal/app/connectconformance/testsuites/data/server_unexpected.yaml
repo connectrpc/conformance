@@ -1,6 +1,3 @@
-# TODO: remove the ".disabled" extension from this file once Connect's HTTP -> Code
-#       mapping has been reconciled with gRPC. Until then, this test case fails.
-# https://github.com/connectrpc/connectrpc.com/pull/130
 name: Server Unexpected Requests
 mode: TEST_MODE_SERVER
 relevantCompressions:

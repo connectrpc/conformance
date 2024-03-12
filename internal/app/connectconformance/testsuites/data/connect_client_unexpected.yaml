@@ -14,7 +14,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
           responseDefinition:
             rawResponse:
-              statusCode: 412
+              statusCode: 403
               headers:
                 - name: content-type
                   value: [ "application/proto" ]
@@ -22,8 +22,8 @@ testCases:
                 binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"}
     expectedResponse:
       error:
-        # mapped from 412 status code (invalid body ignored)
-        code: CODE_FAILED_PRECONDITION
+        # mapped from 403 status code (invalid body ignored)
+        code: CODE_PERMISSION_DENIED
 
   - request:
       testName: client-stream/ok-but-no-response
