@@ -117,16 +117,8 @@ func ParseServerCert(cert, key []byte) (tls.Certificate, error) {
 // the PEM-encoded certificate (which must be shared with clients for
 // them to trust the server) and key (which should not be shared).
 // All three will be zero values if the returned error is not nil.
-func NewServerCert() (cert tls.Certificate, certBytes, keyBytes []byte, err error) {
-	certBytes, keyBytes, err = newCert(false)
-	if err != nil {
-		return tls.Certificate{}, nil, nil, err
-	}
-	cert, err = ParseServerCert(certBytes, keyBytes)
-	if err != nil {
-		return tls.Certificate{}, nil, nil, fmt.Errorf("failed to parse new certificate: %w", err)
-	}
-	return cert, certBytes, keyBytes, nil
+func NewServerCert() (certBytes, keyBytes []byte, err error) {
+	return newCert(false)
 }
 
 // NewClientCert is like NewServerCert, but it produces a certificate that

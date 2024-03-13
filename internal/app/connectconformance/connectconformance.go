@@ -231,7 +231,7 @@ func run( //nolint:gocyclo
 	var serverCreds, clientCreds *conformancev1.TLSCreds
 	for svrInstance := range testCaseLib.casesByServer {
 		if svrInstance.useTLS && serverCreds == nil {
-			_, serverCertBytes, serverKeyBytes, err := internal.NewServerCert()
+			serverCertBytes, serverKeyBytes, err := internal.NewServerCert()
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate server certificate: %w", err)
 			}
