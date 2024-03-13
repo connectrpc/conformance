@@ -548,7 +548,7 @@ func makeResponse(frame *http2.MetaHeadersFrame) *http.Response {
 		ProtoMajor: 2,
 		ProtoMinor: 0,
 		StatusCode: statusInt,
-		Status:     http.StatusText(statusInt),
+		Status:     fmt.Sprintf("%d %s", statusInt, http.StatusText(statusInt)),
 		Header:     makeHeaders(frame),
 	}
 }
