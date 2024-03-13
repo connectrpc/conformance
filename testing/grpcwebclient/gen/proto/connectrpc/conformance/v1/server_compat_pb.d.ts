@@ -35,6 +35,11 @@ export class ServerCompatRequest extends jspb.Message {
   getMessageReceiveLimit(): number;
   setMessageReceiveLimit(value: number): ServerCompatRequest;
 
+  getServerCreds(): connectrpc_conformance_v1_config_pb.TLSCreds | undefined;
+  setServerCreds(value?: connectrpc_conformance_v1_config_pb.TLSCreds): ServerCompatRequest;
+  hasServerCreds(): boolean;
+  clearServerCreds(): ServerCompatRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServerCompatRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ServerCompatRequest): ServerCompatRequest.AsObject;
@@ -50,6 +55,7 @@ export namespace ServerCompatRequest {
     useTls: boolean,
     clientTlsCert: Uint8Array | string,
     messageReceiveLimit: number,
+    serverCreds?: connectrpc_conformance_v1_config_pb.TLSCreds.AsObject,
   }
 }
 
