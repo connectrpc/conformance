@@ -26,6 +26,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -53,8 +54,13 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		testCaseName := req.Header.Get("x-test-case-name")
 		if testCaseName == "" {
 			// This is the only hard failure. Without it, we cannot provide feedback.
-			// All other checks below write to stderr to provide feedback.
-			http.Error(respWriter, "missing x-test-case-name header", http.StatusBadRequest)
+			// All other checks below write to stderr to provide feedback and require the test case name.
+			errWriter := connect.NewErrorWriter()
+			_ = errWriter.Write(
+				respWriter,
+				req,
+				connect.NewError(connect.CodeInvalidArgument, errors.New("missing x-test-case-name header")),
+			)
 			return
 		}
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
