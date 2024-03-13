@@ -36,7 +36,7 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
-	connect "connectrpc.com/connect"
+	"connectrpc.com/connect"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
@@ -242,13 +242,15 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not load TLS key: %w", err)
 			}
-			cert, err = tls.X509KeyPair(certBytes, keyBytes)
+			cert, err = makeCertificate(certBytes, keyBytes)
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
 			}
-			cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+		} else if req.ServerCreds != nil {
+			certBytes = req.ServerCreds.Cert
+			cert, err = makeCertificate(certBytes, req.ServerCreds.Key)
 			if err != nil {
-				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
+				return nil, nil, fmt.Errorf("could not use TLS certificate and key provided by test: %w", err)
 			}
 		} else {
 			cert, certBytes, err = internal.NewServerCert()
@@ -361,4 +363,16 @@ func (s *http3Server) Addr() string {
 func nopLogger() *log.Logger {
 	// TODO: enable logging via -v option or env variable?
 	return log.New(io.Discard, "", 0)
+}
+
+func makeCertificate(certBytes, keyBytes []byte) (tls.Certificate, error) {
+	cert, err := tls.X509KeyPair(certBytes, keyBytes)
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		return tls.Certificate{}, err
+	}
+	return cert, nil
 }
