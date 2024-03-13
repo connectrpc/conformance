@@ -30,14 +30,24 @@ type deflateDecompressor struct {
 }
 
 func (c *deflateDecompressor) Read(bytes []byte) (int, error) {
+	if c.reader == nil {
+		return 0, io.EOF
+	}
 	return c.reader.Read(bytes)
 }
 func (c *deflateDecompressor) Reset(rdr io.Reader) error {
-	var err error
-	c.reader, err = zlib.NewReader(rdr)
-	return err
+	reader, err := zlib.NewReader(rdr)
+	if err != nil {
+		c.reader = &errorDecompressor{err: err}
+		return err
+	}
+	c.reader = reader
+	return nil
 }
 func (c *deflateDecompressor) Close() error {
+	if c.reader == nil {
+		return nil
+	}
 	return c.reader.Close()
 }
 
