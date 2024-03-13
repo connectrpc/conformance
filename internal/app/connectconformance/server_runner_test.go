@@ -268,7 +268,8 @@ func TestRunTestCasesForServer(t *testing.T) {
 				testCase.isReferenceServer,
 				svrInstance,
 				testCaseData,
-				nil, // TODO: client cert
+				nil,
+				nil,
 				hookedProcess,
 				discardPrinter{},
 				discardPrinter{},

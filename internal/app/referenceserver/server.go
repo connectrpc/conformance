@@ -233,7 +233,8 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	if req.UseTls { //nolint:nestif
 		var cert tls.Certificate
 		var err error
-		if tlsCertFile != "" {
+		switch {
+		case tlsCertFile != "":
 			certBytes, err = os.ReadFile(tlsCertFile)
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not load TLS cert: %w", err)
@@ -246,14 +247,15 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
 			}
-		} else if req.ServerCreds != nil {
+		case req.ServerCreds != nil:
 			certBytes = req.ServerCreds.Cert
 			cert, err = makeCertificate(certBytes, req.ServerCreds.Key)
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not use TLS certificate and key provided by test: %w", err)
 			}
-		} else {
-			cert, certBytes, err = internal.NewServerCert()
+		default:
+			// This generally shouldn't happen. If we're using TLS, test framework should provide one we can use.
+			cert, certBytes, _, err = internal.NewServerCert()
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not generate TLS cert: %w", err)
 			}
