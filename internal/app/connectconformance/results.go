@@ -24,7 +24,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -93,18 +92,10 @@ func (r *testResults) fetchTrace(testCase string) {
 	if r.tracer == nil {
 		return
 	}
-	if strings.Contains(testCase, grpcImplMarker) ||
-		strings.Contains(testCase, grpcClientImplMarker) ||
-		strings.Contains(testCase, grpcServerImplMarker) {
-		// No trace coming from the grpc-go impls.
-		r.tracer.Clear(testCase)
-		return
-	}
-
 	r.traceWaitGroup.Add(1)
 	go func() {
 		defer r.traceWaitGroup.Done()
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), tracer.TraceTimeout)
 		defer cancel()
 		trace, err := r.tracer.Await(ctx, testCase)
 		r.tracer.Clear(testCase)

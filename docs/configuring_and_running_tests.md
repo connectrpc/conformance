@@ -405,10 +405,6 @@ protocol, it gets run against both reference implementations, as a way of furthe
 interoperability with the ecosystem. (Note that the standard reference implementations _also_ support
 the gRPC protocol; so the gRPC test cases are repeated with a different server.)
 
-Note that an HTTP trace, for failing tests when the `--test` flag is used, will only available with the
-primary reference implementations. Test cases that fail against the gRPC implementations will not have
-a trace (only the primary reference implementations are instrumented to capture such traces).
-
 ### Selecting Test Cases
 
 The `connectconformance` test runner supports four different options for selecting which test cases to

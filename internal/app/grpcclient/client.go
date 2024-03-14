@@ -30,6 +30,7 @@ import (
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/tracer"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -40,7 +41,13 @@ import (
 // is written to the 'out' writer, including any errors encountered during the actual run. Any error
 // returned from this function is indicative of an issue with the reader or writer and should not be related
 // to the actual run.
-func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser) (retErr error) {
+func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) (retErr error) {
+	return RunWithTrace(ctx, args, inReader, outWriter, errWriter, nil)
+}
+
+// RunWithTrace is just like Run above, but it will collect request traces and send them to the given
+// tracer if it is not nil.
+func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, _ io.WriteCloser, trace *tracer.Tracer) (retErr error) {
 	flags := flag.NewFlagSet(args[0], flag.ContinueOnError)
 	json := flags.Bool("json", false, "whether to use the JSON format for marshaling / unmarshaling messages")
 	parallel := flags.Uint("p", uint(runtime.GOMAXPROCS(0))*4, "the number of parallel RPCs to issue")
@@ -102,7 +109,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 			defer wg.Done()
 			defer sema.Release(1)
 
-			result, err := invoke(ctx, &req)
+			result, err := invoke(ctx, &req, trace)
 
 			// Build the result for the out writer.
 			resp := &conformancev1.ClientCompatResponse{
@@ -139,7 +146,7 @@ func Run(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, 
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // gRPC error returned from calling an RPC. Any error (i.e. a gRPC error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest) (*conformancev1.ClientResponseResult, error) {
+func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) {
 	transportCredentials := insecure.NewCredentials()
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transportCredentials),
@@ -147,6 +154,17 @@ func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest) (*confo
 		grpc.WithReturnConnectionError(),
 		grpc.WithUnaryInterceptor(userAgentUnaryClientInterceptor),
 		grpc.WithStreamInterceptor(userAgentStreamClientInterceptor),
+		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
+			dialer := net.Dialer{Timeout: 5 * time.Second}
+			conn, err := dialer.DialContext(ctx, "tcp", addr)
+			if err != nil {
+				return nil, err
+			}
+			if trace != nil {
+				conn = tracer.TracingHTTP2Conn(conn, false, trace)
+			}
+			return conn, nil
+		}),
 	}
 	if req.Compression == conformancev1.Compression_COMPRESSION_GZIP {
 		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
