@@ -18,28 +18,47 @@ import * as esbuild from "esbuild";
 import {
   ClientCompatRequest,
   ClientCompatResponse,
-  ClientResponseResult,
   ClientErrorResult,
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 
 export async function run() {
-  // Launch a browser. For a non-headless browser, pass false
-  const browser = await puppeteer.launch({ headless: "new" });
+  // Launch a browser. Pass "--no-headless" command-line arg to make it visible.
+  let headless: boolean | 'new' = "new";
+  if (process.argv.length > 3 || (process.argv.length == 3 && process.argv[2] != "--no-headless")) {
+    process.stderr.write("usage:\n  "+process.argv[1]+" [--no-headless]\n")
+    process.exit(1)
+  } else if (process.argv.length == 3 && process.argv[2] == "--no-headless") {
+    headless = false;
+  } else {
+  }
+
+  const browser = await puppeteer.launch({ headless: headless });
+  let testsCompleted = false;
   let disconnected = false;
-  browser.on('disconnected', () => {
-    disconnected = true;
+  let disconnectEvent = new Promise<void>((resolve, _) => {
+    browser.on('disconnected', () => {
+      if (!testsCompleted) {
+        process.stderr.write("browser has prematurely disconnected!\n");
+      }
+      disconnected = true;
+      resolve();
+    })
   })
   const page = await browser.newPage();
-
   await page.addScriptTag({
     type: "application/javascript",
     content: await buildBrowserScript(),
   });
 
+  await page.evaluate(() => {
+    // @ts-ignore
+    window.initPage();
+  })
+
+
   for await (const next of readReqBuffers(process.stdin)) {
     const req = ClientCompatRequest.deserializeBinary(next);
-    const res = new ClientCompatResponse();
-    res.setTestName(req.getTestName());
+    let res: ClientCompatResponse;
 
     try {
       // This will call the runTestCase function on the global scope
@@ -50,13 +69,15 @@ export async function run() {
         return window.runTestCase(data);
       }, Array.from(next));
 
-      const resp = ClientResponseResult.deserializeBinary(
+      res = ClientCompatResponse.deserializeBinary(
         new Uint8Array(result),
       );
-      res.setResponse(resp);
+      res.setTestName(req.getTestName()) // just in case: make sure test name is set correctly
     } catch (e) {
       const err = new ClientErrorResult();
       err.setMessage((e as Error).message);
+      res = new ClientCompatResponse()
+      res.setTestName(req.getTestName())
       res.setError(err);
     }
 
@@ -65,12 +86,26 @@ export async function run() {
     resSize.writeUInt32BE(resData.length);
     process.stdout.write(resSize);
     process.stdout.write(Buffer.from(resData));
+
+    if (disconnected) {
+      return
+    }
   }
 
-  if (!disconnected) {
+  testsCompleted = true;
+  await page.evaluate(() => {
+    // @ts-ignore
+    window.testsComplete();
+  })
+
+  if (headless) {
     // If the browser disconnected, skip this cleanup.
     await page.close();
     await browser.close();
+  } else {
+    // If not headless, wait for the user to close the browser or for the
+    // test runner to terminate it after waiting for it to close on its own.
+    await disconnectEvent;
   }
 }
 

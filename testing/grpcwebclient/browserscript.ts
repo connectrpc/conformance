@@ -15,6 +15,8 @@
 import { ConformanceServiceClient } from "./gen/proto/connectrpc/conformance/v1/ServiceServiceClientPb.js";
 import {
   ClientCompatRequest,
+  ClientCompatResponse,
+  ClientErrorResult,
   ClientResponseResult,
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 import { Code } from "./gen/proto/connectrpc/conformance/v1/config_pb.js";
@@ -38,20 +40,58 @@ import {
 // The main entry point into the browser code running in Puppeteer/headless Chrome.
 // This function is invoked by the page.evalulate call in grpcwebclient.
 async function runTestCase(data: number[]): Promise<number[]> {
-  const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
+  const req = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
 
-  const result = await invoke(request);
+  logTestNameToPage(req.getTestName())
+  let res = new ClientCompatResponse();
+  res.setTestName(req.getTestName())
+  try {
+    const result = await invoke(req);
+    res.setResponse(result);
+  } catch (e) {
+    const err = new ClientErrorResult();
+    err.setMessage((e as Error).message);
+    res.setError(err);
+  }
 
-  return Array.from(result.serializeBinary());
+  return Array.from(res.serializeBinary());
+}
+
+function initPage() {
+  let body = document.getElementsByTagName("body");
+  const header = document.createElement("h1");
+  header.id = "title";
+  header.innerText = "Running tests...";
+  body[0].appendChild(header);
+}
+
+function testsComplete() {
+  const header = document.getElementById("title");
+  if (header) {
+    header.innerText = "Tests complete!";
+  }
+}
+
+function logTestNameToPage(name: string) {
+  const body = document.getElementsByTagName("body");
+  const text = document.createElement("b")
+  text.innerText = name + ":";
+  body[0].appendChild(text);
+  body[0].appendChild(document.createElement("br"));
+}
+
+function logToPage(message: string) {
+  const body = document.getElementsByTagName("body");
+  const text = document.createElement("span")
+  text.innerText = message;
+  body[0].appendChild(text);
+  body[0].appendChild(document.createElement("br"));
 }
 
 function invoke(req: ClientCompatRequest) {
   const client = createClient(req);
   switch (req.getMethod()) {
     case "Unary":
-      if (req.getRequestMessagesList().length !== 1) {
-        throw new Error("Unary method requires exactly one request message");
-      }
       return unary(client, req);
     case "ServerStream":
       return serverStream(client, req);
@@ -117,8 +157,11 @@ function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   err.setCode(convertStatusCodeToCode(rpcErr.code));
   err.setMessage(rpcErr.message);
 
-
-  const value = rpcErr.metadata ? rpcErr.metadata["grpc-status-details-bin"] : undefined;
+  let value : string | undefined;
+  const md = rpcErr.metadata;
+  if (md !== undefined) {
+    value = md["grpc-status-details-bin"];
+  }
   if (value) {
     const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
     err.setDetailsList(status.getDetailsList());
@@ -168,6 +211,9 @@ async function unary(
   client: ConformanceServiceClient,
   req: ClientCompatRequest,
 ): Promise<ClientResponseResult> {
+  if (req.getRequestMessagesList().length !== 1) {
+    throw new Error("Unary method requires exactly one request message");
+  }
   const msg = req.getRequestMessagesList()[0];
   const uReq = msg.unpack(
     UnaryRequest.deserializeBinary,
@@ -181,6 +227,8 @@ async function unary(
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
+  let isResolved = false;
+  prom.then(() => { isResolved = true; });
 
   const resp = new ClientResponseResult();
   resp.setResponseHeadersList([]);
@@ -189,13 +237,23 @@ async function unary(
   resp.setError(undefined);
 
   const metadata: Metadata = buildMetadata(req);
+  logToPage("Sending request");
   const result = client.unary(
     uReq,
     metadata,
     (err: RpcError, response: UnaryResponse) => {
       if (err !== null) {
-        resp.setError(convertGrpcToProtoError(err));
+        if (!isResolved) {
+          logToPage("RPC error received");
+          resp.setError(convertGrpcToProtoError(err));
+          const md = err.metadata;
+          if (md !== undefined) {
+            resp.setResponseTrailersList(convertMetadataToHeader(md));
+          }
+          res(resp)
+        }
       } else {
+        logToPage("Message received");
         const payload = response.getPayload();
         if (payload !== undefined) {
           resp.addPayloads(payload);
@@ -206,6 +264,7 @@ async function unary(
 
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
   result.on("metadata", (md: Metadata) => {
+    logToPage("Headers received");
     if (md !== undefined) {
       resp.setResponseHeadersList(convertMetadataToHeader(md));
     }
@@ -213,14 +272,14 @@ async function unary(
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   result.on("status", (status: GrpcWebStatus) => {
-    const md = status.metadata;
-    if (md !== undefined) {
-      resp.setResponseTrailersList(convertMetadataToHeader(md));
+    if (!isResolved) {
+      logToPage("Status/trailers received");
+      const md = status.metadata;
+      if (md !== undefined) {
+        resp.setResponseTrailersList(convertMetadataToHeader(md));
+      }
+      res(resp)
     }
-  });
-
-  result.on("end", () => {
-    res(resp);
   });
 
   return prom;
@@ -249,14 +308,18 @@ async function serverStream(
 
   const metadata: Metadata = buildMetadata(req);
 
+  logToPage("Sending request");
   const stream = client.serverStream(uReq, metadata);
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
+  let isResolved = false;
+  prom.then(() => { isResolved = true; });
 
   stream.on("data", (response: ServerStreamResponse) => {
+    logToPage("Message received");
     const payload = response.getPayload();
     if (payload !== undefined) {
       resp.addPayloads(payload);
@@ -264,48 +327,46 @@ async function serverStream(
   });
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
   stream.on("metadata", (md: Metadata) => {
+    logToPage("Headers received");
     if (md !== undefined) {
       resp.setResponseHeadersList(convertMetadataToHeader(md));
     }
   });
   stream.on("error", (err: RpcError) => {
-    resp.setError(convertGrpcToProtoError(err));
-    res(resp);
+    if (!isResolved) {
+      logToPage("RPC error received");
+      resp.setError(convertGrpcToProtoError(err));
+    }
   });
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   stream.on("status", (status: GrpcWebStatus) => {
-    const md = status.metadata;
-    if (md !== undefined) {
-      resp.setResponseTrailersList(convertMetadataToHeader(md));
+    if (!isResolved) {
+      logToPage("Status/trailers received");
+      const md = status.metadata;
+      if (md !== undefined) {
+        resp.setResponseTrailersList(convertMetadataToHeader(md));
+      }
+      res(resp);
     }
   });
 
   stream.on("end", function () {
-    res(resp);
+    if (!isResolved) {
+      logToPage("RPC ended");
+      res(resp);
+    }
   });
 
   return prom;
 }
 
 async function clientStream(): Promise<ClientResponseResult> {
-  const result = new ClientResponseResult();
-  const err = new ProtoError();
-  err.setCode(12);
-  err.setMessage("Client Streaming is not supported in gRPC-web");
-  result.setError(err);
-
-  return result;
+  throw new Error("Client Streaming is not supported in gRPC-web");
 }
 
 async function bidiStream(): Promise<ClientResponseResult> {
-  const result = new ClientResponseResult();
-  const err = new ProtoError();
-  err.setCode(12);
-  err.setMessage("Bidi Streaming is not supported in gRPC-web");
-  result.setError(err);
-
-  return result;
+  throw new Error("Client Streaming is not supported in gRPC-web");
 }
 
 async function unimplemented(
@@ -329,10 +390,11 @@ async function unimplemented(
   });
 
   const metadata: Metadata = buildMetadata(req);
+  logToPage("Sending request")
   client.unimplemented(uReq, metadata, (err) => {
+    logToPage("RPC error received") // what if we get back a message and not an error? ¯\_(ツ)_/¯
     const result = new ClientResponseResult();
     result.setError(convertGrpcToProtoError(err));
-
     res(result);
   });
 
@@ -341,3 +403,7 @@ async function unimplemented(
 
 // @ts-ignore
 window.runTestCase = runTestCase;
+// @ts-ignore
+window.initPage = initPage;
+// @ts-ignore
+window.testsComplete = testsComplete;
