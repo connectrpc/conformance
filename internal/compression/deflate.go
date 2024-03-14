@@ -15,49 +15,49 @@
 package compression
 
 import (
-	"compress/flate"
-	"errors"
+	"compress/zlib"
 	"io"
 
 	"connectrpc.com/connect"
 )
 
-// deflateDecompressor is a thin wrapper around a flate Reader.
+// deflateDecompressor is a thin wrapper around a zlib Reader. Note that due to
+// an unfortunate misnomer with the RFC 2616 specification, HTTP deflate is
+// actually RFC 1950 with zlib headers, rather than RFC 1951. gRPC uses the same
+// nomenclature.
 type deflateDecompressor struct {
 	reader io.ReadCloser
 }
 
 func (c *deflateDecompressor) Read(bytes []byte) (int, error) {
+	if c.reader == nil {
+		return 0, io.EOF
+	}
 	return c.reader.Read(bytes)
 }
 func (c *deflateDecompressor) Reset(rdr io.Reader) error {
-	resetter, ok := c.reader.(flate.Resetter)
-	if !ok {
-		// This should never happen as the returned type from flate should always
-		// implement Resetter, but the check is here as a safeguard just in case.
-		// This error would be a very exceptional / unexpected occurrence.
-		return errors.New("deflate reader is not able to be used as a resetter")
+	reader, err := zlib.NewReader(rdr)
+	if err != nil {
+		c.reader = &errorDecompressor{err: err}
+		return err
 	}
-	// Mimics NewReader internal logic, which initializes the internal dict to nil
-	return resetter.Reset(rdr, nil)
+	c.reader = reader
+	return nil
 }
 func (c *deflateDecompressor) Close() error {
+	if c.reader == nil {
+		return nil
+	}
 	return c.reader.Close()
 }
 
 // NewDeflateDecompressor returns a new deflate Decompressor.
 func NewDeflateDecompressor() connect.Decompressor {
-	return &deflateDecompressor{
-		reader: flate.NewReader(nil),
-	}
+	return &deflateDecompressor{}
 }
 
 // NewDeflateCompressor returns a new deflate Compressor.
 func NewDeflateCompressor() connect.Compressor {
-	// Construct a new flate Writer with default compression level
-	w, err := flate.NewWriter(nil, 1)
-	if err != nil {
-		return &errorCompressor{err: err}
-	}
-	return w
+	// Construct a new zlib Writer with default compression level
+	return zlib.NewWriter(nil)
 }
