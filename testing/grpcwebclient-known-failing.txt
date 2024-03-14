@@ -16,11 +16,6 @@ Duplicate Metadata/**/server-stream/**
 gRPC-Web Trailers/**/trailers-in-body/duplicate-metadata
 gRPC-Web Trailers/**/trailers-in-body/mixed-case
 
-# The gRPC-Web client also fails to verify the grpc-status. If it is missing, it assumes the
-# result is okay, even for a unary RPC where there were zero response messages.
-gRPC-Web Unexpected Responses/**/missing-status
-gRPC-Web Unexpected Responses/**/unary-ok-but-no-response
-
 # The gRPC-Web client also does not use the expected error codes for some error situations.
 # It appears to use "unknown" for nearly (which likely means it's just not classifying them
 # at all, which is certainly a bug).

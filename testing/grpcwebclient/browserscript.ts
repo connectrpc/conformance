@@ -117,10 +117,13 @@ function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   err.setCode(convertStatusCodeToCode(rpcErr.code));
   err.setMessage(rpcErr.message);
 
-  const value = rpcErr.metadata["grpc-status-details-bin"];
-  if (value) {
-    const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
-    err.setDetailsList(status.getDetailsList());
+  const md = rpcErr.metadata;
+  if (md !== undefined) {
+    const value = md["grpc-status-details-bin"];
+    if (value) {
+      const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
+      err.setDetailsList(status.getDetailsList());
+    }
   }
 
   return err;
@@ -194,6 +197,11 @@ async function unary(
     (err: RpcError, response: UnaryResponse) => {
       if (err !== null) {
         resp.setError(convertGrpcToProtoError(err));
+        let md = err.metadata
+        if (md !== undefined) {
+          resp.setResponseTrailersList(convertMetadataToHeader(md))
+        }
+        res(resp)
       } else {
         const payload = response.getPayload();
         if (payload !== undefined) {
@@ -215,8 +223,8 @@ async function unary(
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
-      res(resp);
     }
+    res(resp);
   });
 
   return prom;
@@ -266,6 +274,10 @@ async function serverStream(
   });
   stream.on("error", (err: RpcError) => {
     resp.setError(convertGrpcToProtoError(err));
+    let md = err.metadata
+    if (md !== undefined) {
+      resp.setResponseTrailersList(convertMetadataToHeader(md))
+    }
     res(resp);
   });
 

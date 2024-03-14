@@ -212,8 +212,10 @@ func runTestCasesForServer(
 				results.setOutcome(name, true, err)
 			case resp.GetError() != nil:
 				results.failed(name, resp.GetError())
-			default:
+			case resp.GetResponse() != nil:
 				results.assert(name, testCase, resp.GetResponse())
+			default:
+				results.setOutcome(name, false, errors.New("client returned a response with neither an error nor result"))
 			}
 			if isReferenceClient && resp.GetResponse() != nil {
 				for _, msg := range resp.GetResponse().Feedback {

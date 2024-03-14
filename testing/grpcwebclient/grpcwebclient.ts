@@ -23,10 +23,25 @@ import {
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 
 export async function run() {
-  // Launch a browser. For a non-headless browser, pass false
+  // Launch a browser. For a non-headless browser, pass {headless: false}.
+  // Note that test runner kills the process at the end if it takes too long
+  // to shutdown, and puppeteer won't leave browser open after this script
+  // terminates, so value of non-headless browser is quite limited.
   const browser = await puppeteer.launch({ headless: "new" });
-  const page = await browser.newPage();
 
+  let testsCompleted = false;
+  let disconnected = false;
+  browser.on('disconnected', () => {
+    if (!testsCompleted) {
+      process.stderr.write("browser has prematurely disconnected!\n");
+    }
+    disconnected = true;
+  })
+
+  const page = await browser.newPage();
+  await page.exposeFunction("log", (message: string) => {
+    process.stderr.write(message + "\n");
+  })
   await page.addScriptTag({
     type: "application/javascript",
     content: await buildBrowserScript(),
@@ -47,7 +62,7 @@ export async function run() {
       }, Array.from(next));
 
       const resp = ClientResponseResult.deserializeBinary(
-        new Uint8Array(result),
+          new Uint8Array(result),
       );
       res.setResponse(resp);
     } catch (e) {
@@ -61,7 +76,12 @@ export async function run() {
     resSize.writeUInt32BE(resData.length);
     process.stdout.write(resSize);
     process.stdout.write(Buffer.from(resData));
+
+    if (disconnected) {
+      return
+    }
   }
+  testsCompleted = true;
 
   await page.close();
   await browser.close();
