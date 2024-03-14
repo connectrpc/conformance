@@ -17,9 +17,10 @@ package connectconformance
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"math/rand"
-	"sort"
+	"reflect"
 	"testing"
 
 	"connectrpc.com/conformance/internal"
@@ -143,7 +144,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 	var count int
 	for {
 		req := &conformancev1.ClientCompatRequest{}
-		if err := internal.ReadDelimitedMessage(in, req); err != nil {
+		if err := internal.ReadDelimitedMessage(in, req, "client", clientResponseTimeout, maxClientResponseSize); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -173,7 +174,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 	var allCases []string
 	for {
 		req := &conformancev1.ClientCompatRequest{}
-		if err := internal.ReadDelimitedMessage(in, req); err != nil {
+		if err := internal.ReadDelimitedMessage(in, req, "client", clientResponseTimeout, maxClientResponseSize); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -182,18 +183,14 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 		allCases = append(allCases, req.TestName)
 	}
 
-	for {
-		rand.Shuffle(len(allCases), func(i, j int) {
-
-		})
-		// just make sure we didn't shuffle to a non-random permutation
-		isSorted := !sort.SliceIsSorted(allCases, func(i, j int) bool {
-			return allCases[i] < allCases[j]
-		})
-		if isSorted {
-			continue // try again
-		}
-		break
+	originalCases := make([]string, len(allCases))
+	copy(originalCases, allCases)
+	rand.Shuffle(len(allCases), func(i, j int) {
+		allCases[i], allCases[j] = allCases[j], allCases[i]
+	})
+	// sanity check that shuffling put them out of order
+	if reflect.DeepEqual(originalCases, allCases) {
+		return fmt.Errorf("shuffle failed to rearrange test cases")
 	}
 
 	for _, name := range allCases {

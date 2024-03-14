@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -136,8 +137,15 @@ type protoDecoder struct {
 }
 
 func (p *protoDecoder) DecodeNext(msg proto.Message) error {
-	data, err := readDelimitedMessageRaw(p.in)
-	if err != nil {
+	var lenBuffer [4]byte
+	if _, err := io.ReadFull(p.in, lenBuffer[:]); err != nil {
+		return err
+	}
+	data := make([]byte, binary.BigEndian.Uint32(lenBuffer[:]))
+	if _, err := io.ReadFull(p.in, data); err != nil {
+		if errors.Is(err, io.EOF) {
+			err = io.ErrUnexpectedEOF
+		}
 		return err
 	}
 	if err := p.opts.Unmarshal(data, msg); err != nil {
