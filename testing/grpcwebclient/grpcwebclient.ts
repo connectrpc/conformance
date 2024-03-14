@@ -25,6 +25,10 @@ import {
 export async function run() {
   // Launch a browser. For a non-headless browser, pass false
   const browser = await puppeteer.launch({ headless: "new" });
+  let disconnected = false;
+  browser.on('disconnected', () => {
+    disconnected = true;
+  })
   const page = await browser.newPage();
 
   await page.addScriptTag({
@@ -63,8 +67,11 @@ export async function run() {
     process.stdout.write(Buffer.from(resData));
   }
 
-  await page.close();
-  await browser.close();
+  if (!disconnected) {
+    // If the browser disconnected, skip this cleanup.
+    await page.close();
+    await browser.close();
+  }
 }
 
 async function buildBrowserScript() {

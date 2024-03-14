@@ -117,7 +117,8 @@ function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   err.setCode(convertStatusCodeToCode(rpcErr.code));
   err.setMessage(rpcErr.message);
 
-  const value = rpcErr.metadata["grpc-status-details-bin"];
+
+  const value = rpcErr.metadata ? rpcErr.metadata["grpc-status-details-bin"] : undefined;
   if (value) {
     const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
     err.setDetailsList(status.getDetailsList());
@@ -215,8 +216,11 @@ async function unary(
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
-      res(resp);
     }
+  });
+
+  result.on("end", () => {
+    res(resp);
   });
 
   return prom;
