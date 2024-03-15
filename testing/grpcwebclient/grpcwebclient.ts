@@ -81,7 +81,12 @@ export async function run() {
       return
     }
   }
+
   testsCompleted = true;
+  await page.evaluate(function () {
+    // @ts-ignore
+    return window.testsComplete();
+  });
 
   await page.close();
   await browser.close();

@@ -35,14 +35,42 @@ import {
   Status as GrpcWebStatus,
 } from "grpc-web";
 
+let unaryCount = 0;
+let unaryErrCount = 0;
+let unaryCountWithoutEnd = 0;
+let unaryCountWithoutStatus = 0;
+let unaryCountErrWithoutEnd = 0;
+let unaryCountErrWithoutStatus = 0;
+let streamCount = 0;
+let streamErrCount = 0;
+let streamCountWithoutEnd = 0;
+let streamCountWithoutStatus = 0;
+let streamCountErrWithoutEnd = 0;
+let streamCountErrWithoutStatus = 0;
+
 // The main entry point into the browser code running in Puppeteer/headless Chrome.
-// This function is invoked by the page.evalulate call in grpcwebclient.
+// This function is invoked by the page.evaluate call in grpcwebclient.
 async function runTestCase(data: number[]): Promise<number[]> {
   const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
 
   const result = await invoke(request);
 
   return Array.from(result.serializeBinary());
+}
+
+function testsComplete() {
+  // @ts-ignore
+  window.log("out of " + unaryCount + " unary RPCs (of which " + unaryErrCount + " failed):\n" +
+      "   " + unaryCountWithoutStatus + " successful RPCs did not report a 'status' event,\n" +
+      "   " + unaryCountWithoutEnd + " successful RPCs did not report an 'end' event,\n" +
+      "   " + unaryCountErrWithoutStatus + " failed RPCs did not report a 'status' event,\n" +
+      "   and " + unaryCountErrWithoutEnd + " failed RPCs did not report an 'end' event.\n");
+  // @ts-ignore
+  window.log("out of " + streamCount + " server-stream RPCs (of which " + streamErrCount + " failed):\n" +
+      "   " + streamCountWithoutStatus + " successful RPCs did not report a 'status' event,\n" +
+      "   " + streamCountWithoutEnd + " successful RPCs did not report an 'end' event,\n" +
+      "   " + streamCountErrWithoutStatus + " failed RPCs did not report a 'status' event,\n" +
+      "   and " + streamCountErrWithoutEnd + " failed RPCs did not report an 'end' event.\n");
 }
 
 function invoke(req: ClientCompatRequest) {
@@ -179,10 +207,14 @@ async function unary(
     throw new Error("Could not unpack request message to unary request");
   }
 
+  unaryCount++;
+
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
+  let isResolved = false;
+  prom.then(() => { isResolved = true });
 
   const resp = new ClientResponseResult();
   resp.setResponseHeadersList([]);
@@ -190,18 +222,29 @@ async function unary(
   resp.setPayloadsList([]);
   resp.setError(undefined);
 
+  let isError = false;
+  let seenStatus = false;
   const metadata: Metadata = buildMetadata(req);
   const result = client.unary(
     uReq,
     metadata,
     (err: RpcError, response: UnaryResponse) => {
       if (err !== null) {
+        isError = true;
+        unaryErrCount++;
         resp.setError(convertGrpcToProtoError(err));
         let md = err.metadata
         if (md !== undefined) {
           resp.setResponseTrailersList(convertMetadataToHeader(md))
         }
-        res(resp)
+        setTimeout(() => {
+          if (isResolved) {
+            return
+          }
+          unaryCountErrWithoutStatus++;
+          unaryCountErrWithoutEnd++;
+          res(resp)
+        }, 1000);
       } else {
         const payload = response.getPayload();
         if (payload !== undefined) {
@@ -220,9 +263,31 @@ async function unary(
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   result.on("status", (status: GrpcWebStatus) => {
+    seenStatus = true;
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
+    }
+    setTimeout(() => {
+      if (isResolved) {
+        return
+      }
+      if (isError) {
+        unaryCountErrWithoutEnd++;
+      } else {
+        unaryCountWithoutEnd++;
+      }
+      res(resp);
+    }, 1000)
+  });
+
+  result.on("end", () => {
+    if (!seenStatus) {
+      if (isError) {
+        unaryCountErrWithoutStatus++;
+      } else {
+        unaryCountWithoutStatus++;
+      }
     }
     res(resp);
   });
@@ -245,20 +310,25 @@ async function serverStream(
     );
   }
 
+  streamCount++;
+
+  let res: (result: ClientResponseResult) => void;
+  const prom = new Promise<ClientResponseResult>((resolve) => {
+    res = resolve;
+  });
+  let isResolved = false;
+  prom.then(() => { isResolved = true });
+
   const resp = new ClientResponseResult();
   resp.setResponseHeadersList([]);
   resp.setResponseTrailersList([]);
   resp.setPayloadsList([]);
   resp.setError(undefined);
 
+  let isError = false;
+  let seenStatus = false;
   const metadata: Metadata = buildMetadata(req);
-
   const stream = client.serverStream(uReq, metadata);
-
-  let res: (result: ClientResponseResult) => void;
-  const prom = new Promise<ClientResponseResult>((resolve) => {
-    res = resolve;
-  });
 
   stream.on("data", (response: ServerStreamResponse) => {
     const payload = response.getPayload();
@@ -273,23 +343,51 @@ async function serverStream(
     }
   });
   stream.on("error", (err: RpcError) => {
+    isError = true;
+    streamErrCount++;
     resp.setError(convertGrpcToProtoError(err));
     let md = err.metadata
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md))
     }
-    res(resp);
+    setTimeout(() => {
+      if (isResolved) {
+        return
+      }
+      streamCountErrWithoutStatus++;
+      streamCountErrWithoutEnd++;
+      res(resp)
+    }, 1000);
   });
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   stream.on("status", (status: GrpcWebStatus) => {
+    seenStatus = true;
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
     }
+    setTimeout(() => {
+      if (isResolved) {
+        return
+      }
+      if (isError) {
+        streamCountErrWithoutEnd++;
+      } else {
+        streamCountWithoutEnd++;
+      }
+      res(resp);
+    }, 1000)
   });
 
   stream.on("end", function () {
+    if (!seenStatus) {
+      if (isError) {
+        streamCountErrWithoutStatus++;
+      } else {
+        streamCountWithoutStatus++;
+      }
+    }
     res(resp);
   });
 
@@ -349,3 +447,5 @@ async function unimplemented(
 
 // @ts-ignore
 window.runTestCase = runTestCase;
+// @ts-ignore
+window.testsComplete = testsComplete;
