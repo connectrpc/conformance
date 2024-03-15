@@ -228,14 +228,24 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	var clientCreds *conformancev1.ClientCompatRequest_TLSCreds
+	var serverCreds, clientCreds *conformancev1.TLSCreds
 	for svrInstance := range testCaseLib.casesByServer {
+		if svrInstance.useTLS && serverCreds == nil {
+			serverCertBytes, serverKeyBytes, err := internal.NewServerCert()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate server certificate: %w", err)
+			}
+			serverCreds = &conformancev1.TLSCreds{
+				Cert: serverCertBytes,
+				Key:  serverKeyBytes,
+			}
+		}
 		if svrInstance.useTLSClientCerts {
 			clientCertBytes, clientKeyBytes, err := internal.NewClientCert()
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate client certificate: %w", err)
 			}
-			clientCreds = &conformancev1.ClientCompatRequest_TLSCreds{
+			clientCreds = &conformancev1.TLSCreds{
 				Cert: clientCertBytes,
 				Key:  clientKeyBytes,
 			}
@@ -380,6 +390,7 @@ func run( //nolint:gocyclo
 							serverInfo.isReferenceImpl,
 							svrInstance,
 							testCases,
+							serverCreds,
 							clientCreds,
 							serverInfo.start,
 							logPrinter,

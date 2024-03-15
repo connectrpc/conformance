@@ -57,10 +57,6 @@ message ClientCompatRequest {
   // authenticate with the server. This will only be present
   // when server_tls_cert is non-empty.
   TLSCreds client_tls_creds = 9;
-  message TLSCreds {
-    bytes cert = 1;
-    bytes key = 2;
-  }
   // If non-zero, indicates the maximum size in bytes for a message.
   // If the server sends anything larger, the client should reject it.
   uint32 message_receive_limit = 10;

@@ -49,7 +49,8 @@ func runTestCasesForServer(
 	isReferenceServer bool,
 	meta serverInstance,
 	testCases []*conformancev1.TestCase,
-	clientCreds *conformancev1.ClientCompatRequest_TLSCreds,
+	serverCreds *conformancev1.TLSCreds,
+	clientCreds *conformancev1.TLSCreds,
 	startServer processStarter,
 	logPrinter internal.Printer,
 	errPrinter internal.Printer,
@@ -106,8 +107,11 @@ func runTestCasesForServer(
 		}()
 	}
 
+	// don't send cert info if these tests don't use them
+	if !meta.useTLS {
+		serverCreds = nil
+	}
 	if !meta.useTLSClientCerts {
-		// don't send client cert info if these tests don't use them
 		clientCreds = nil
 	}
 
@@ -116,6 +120,7 @@ func runTestCasesForServer(
 		Protocol:      meta.protocol,
 		HttpVersion:   meta.httpVersion,
 		UseTls:        meta.useTLS,
+		ServerCreds:   serverCreds,
 		ClientTlsCert: clientCreds.GetCert(),
 		// We always set this. If server-under-test does not support it, we just
 		// won't run the test cases that verify that it's enforced.

@@ -174,3 +174,11 @@ enum Code {
   CODE_DATA_LOSS = 15;
   CODE_UNAUTHENTICATED = 16;
 }
+
+// TLSCreds represents credentials for TLS. It includes both a
+// certificate and corresponding private key. Both are encoded
+// in PEM format.
+message TLSCreds {
+  bytes cert = 1;
+  bytes key = 2;
+}

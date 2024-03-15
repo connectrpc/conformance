@@ -113,26 +113,17 @@ func ParseServerCert(cert, key []byte) (tls.Certificate, error) {
 }
 
 // NewServerCert generates a new self-signed certificate. The first
-// return value is usable with a *tls.Config. The second value is the
-// PEM-encoded certificate which must be shared with clients for them
-// to trust the server. Both will be zero values if the returned error
-// is not nil.
-func NewServerCert() (tls.Certificate, []byte, error) {
-	certBytes, keyBytes, err := newCert(false)
-	if err != nil {
-		return tls.Certificate{}, nil, err
-	}
-	cert, err := ParseServerCert(certBytes, keyBytes)
-	if err != nil {
-		return tls.Certificate{}, nil, fmt.Errorf("failed to parse new certificate: %w", err)
-	}
-	return cert, certBytes, nil
+// return value is usable with a *tls.Config. The next two values are
+// the PEM-encoded certificate (which must be shared with clients for
+// them to trust the server) and key (which should not be shared).
+// All three will be zero values if the returned error is not nil.
+func NewServerCert() (certBytes, keyBytes []byte, err error) {
+	return newCert(false)
 }
 
 // NewClientCert is like NewServerCert, but it produces a certificate that
-// is intended for client authentication. It also returns the encoded bytes
-// of the private key.
-func NewClientCert() (certBytes []byte, keyBytes []byte, err error) {
+// is intended for client authentication.
+func NewClientCert() (certBytes, keyBytes []byte, err error) {
 	return newCert(true)
 }
 
