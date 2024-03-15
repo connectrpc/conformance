@@ -23,13 +23,29 @@ import {
 } from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 
 export async function run() {
-  // Launch a browser. For a non-headless browser, pass false
+  // Launch a browser. For a non-headless browser, pass {headless: false}.
+  // Note that the test runner kills the process at the end if it takes too
+  // long to shut down, and puppeteer can't/won't leave browser open after
+  // this script terminates, so the value of non-headless browser is quite
+  // limited. It may be more effective for troubleshooting to instead add
+  // calls to window.log in browserscript.ts (these messages will show up
+  // in the test runner output).
   const browser = await puppeteer.launch({ headless: "new" });
   const page = await browser.newPage();
 
+  await page.exposeFunction("log", (message: string) => {
+    process.stderr.write(message + "\n");
+  })
   await page.addScriptTag({
     type: "application/javascript",
     content: await buildBrowserScript(),
+  });
+
+  await page.evaluate(() => {
+    // This allows us log uncaught errors in the browser to this script's
+    // stderr, so they can be seen in the console output when running tests.
+    // @ts-ignore
+    return window.addErrorListeners();
   });
 
   for await (const next of readReqBuffers(process.stdin)) {
