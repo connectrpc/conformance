@@ -96,8 +96,10 @@ runconformance: runservertests runclienttests
 .PHONY: runservertests
 runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserver
 	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode server --trace \
+		--known-failing @./testing/referenceserver-known-failing.txt \
 		-- $(BIN)/referenceserver
 	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode server --trace \
+		--known-failing @./testing/grpcserver-known-failing.txt \
 		-- $(BIN)/grpcserver
 	$(BIN)/connectconformance -v --conf ./testing/grpc-web-server-impl-config.yaml --mode server --trace \
 		--known-failing @./testing/grpcserver-web-known-failing.txt \
