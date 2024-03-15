@@ -37,12 +37,14 @@ import {
 
 let unaryCount = 0;
 let unaryErrCount = 0;
+let unaryCountStatusBeforeError = 0;
 let unaryCountWithoutEnd = 0;
 let unaryCountWithoutStatus = 0;
 let unaryCountErrWithoutEnd = 0;
 let unaryCountErrWithoutStatus = 0;
 let streamCount = 0;
 let streamErrCount = 0;
+let streamCountStatusBeforeError = 0;
 let streamCountWithoutEnd = 0;
 let streamCountWithoutStatus = 0;
 let streamCountErrWithoutEnd = 0;
@@ -64,13 +66,15 @@ function testsComplete() {
       "   " + unaryCountWithoutStatus + " successful RPCs did not report a 'status' event,\n" +
       "   " + unaryCountWithoutEnd + " successful RPCs did not report an 'end' event,\n" +
       "   " + unaryCountErrWithoutStatus + " failed RPCs did not report a 'status' event,\n" +
-      "   and " + unaryCountErrWithoutEnd + " failed RPCs did not report an 'end' event.\n");
+      "   " + unaryCountErrWithoutEnd + " failed RPCs did not report an 'end' event,\n" +
+      "   and " + unaryCountStatusBeforeError + " failed RPCs observed `status` before `error`.\n");
   // @ts-ignore
   window.log("out of " + streamCount + " server-stream RPCs (of which " + streamErrCount + " failed):\n" +
       "   " + streamCountWithoutStatus + " successful RPCs did not report a 'status' event,\n" +
       "   " + streamCountWithoutEnd + " successful RPCs did not report an 'end' event,\n" +
       "   " + streamCountErrWithoutStatus + " failed RPCs did not report a 'status' event,\n" +
-      "   and " + streamCountErrWithoutEnd + " failed RPCs did not report an 'end' event.\n");
+      "   " + streamCountErrWithoutEnd + " failed RPCs did not report an 'end' event,\n" +
+      "   and " + streamCountStatusBeforeError + " failed RPCs observed `status` before `error`.\n");
 }
 
 function invoke(req: ClientCompatRequest) {
@@ -232,6 +236,9 @@ async function unary(
       if (err !== null) {
         isError = true;
         unaryErrCount++;
+        if (seenStatus) {
+          unaryCountStatusBeforeError++;
+        }
         resp.setError(convertGrpcToProtoError(err));
         let md = err.metadata
         if (md !== undefined) {
@@ -241,7 +248,9 @@ async function unary(
           if (isResolved) {
             return
           }
-          unaryCountErrWithoutStatus++;
+          if (!seenStatus) {
+            unaryCountErrWithoutStatus++;
+          }
           unaryCountErrWithoutEnd++;
           res(resp)
         }, 1000);
@@ -345,6 +354,9 @@ async function serverStream(
   stream.on("error", (err: RpcError) => {
     isError = true;
     streamErrCount++;
+    if (seenStatus) {
+      streamCountStatusBeforeError++;
+    }
     resp.setError(convertGrpcToProtoError(err));
     let md = err.metadata
     if (md !== undefined) {
@@ -354,7 +366,9 @@ async function serverStream(
       if (isResolved) {
         return
       }
-      streamCountErrWithoutStatus++;
+      if (!seenStatus) {
+        unaryCountErrWithoutStatus++;
+      }
       streamCountErrWithoutEnd++;
       res(resp)
     }, 1000);
