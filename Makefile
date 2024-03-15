@@ -110,11 +110,7 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclie
 	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode client --trace \
 		--known-failing @./testing/grpcclient-known-failing.txt \
 		-- $(BIN)/grpcclient
-	@# Note that use of --skip is discouraged, but if we don't skip them the client crashes.
-	@# TODO: troubleshoot the skipped test cases and figure out why they crash.
 	$(BIN)/connectconformance -v --conf ./testing/grpc-web-client-impl-config.yaml --mode client --trace \
-		--skip "**/trailers-only/missing-status" \
-		--skip "**/trailers-only/unary-ok-but-no-response" \
 		--known-failing @./testing/grpcwebclient-known-failing.txt \
 		-- ./testing/grpcwebclient/bin/grpcwebclient
 

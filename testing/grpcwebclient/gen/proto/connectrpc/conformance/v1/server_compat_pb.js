@@ -117,7 +117,8 @@ proto.connectrpc.conformance.v1.ServerCompatRequest.toObject = function(includeI
     httpVersion: jspb.Message.getFieldWithDefault(msg, 2, 0),
     useTls: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
     clientTlsCert: msg.getClientTlsCert_asB64(),
-    messageReceiveLimit: jspb.Message.getFieldWithDefault(msg, 6, 0)
+    messageReceiveLimit: jspb.Message.getFieldWithDefault(msg, 6, 0),
+    serverCreds: (f = msg.getServerCreds()) && connectrpc_conformance_v1_config_pb.TLSCreds.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -173,6 +174,11 @@ proto.connectrpc.conformance.v1.ServerCompatRequest.deserializeBinaryFromReader 
     case 6:
       var value = /** @type {number} */ (reader.readUint32());
       msg.setMessageReceiveLimit(value);
+      break;
+    case 7:
+      var value = new connectrpc_conformance_v1_config_pb.TLSCreds;
+      reader.readMessage(value,connectrpc_conformance_v1_config_pb.TLSCreds.deserializeBinaryFromReader);
+      msg.setServerCreds(value);
       break;
     default:
       reader.skipField();
@@ -236,6 +242,14 @@ proto.connectrpc.conformance.v1.ServerCompatRequest.serializeBinaryToWriter = fu
     writer.writeUint32(
       6,
       f
+    );
+  }
+  f = message.getServerCreds();
+  if (f != null) {
+    writer.writeMessage(
+      7,
+      f,
+      connectrpc_conformance_v1_config_pb.TLSCreds.serializeBinaryToWriter
     );
   }
 };
@@ -352,6 +366,43 @@ proto.connectrpc.conformance.v1.ServerCompatRequest.prototype.getMessageReceiveL
  */
 proto.connectrpc.conformance.v1.ServerCompatRequest.prototype.setMessageReceiveLimit = function(value) {
   return jspb.Message.setProto3IntField(this, 6, value);
+};
+
+
+/**
+ * optional TLSCreds server_creds = 7;
+ * @return {?proto.connectrpc.conformance.v1.TLSCreds}
+ */
+proto.connectrpc.conformance.v1.ServerCompatRequest.prototype.getServerCreds = function() {
+  return /** @type{?proto.connectrpc.conformance.v1.TLSCreds} */ (
+    jspb.Message.getWrapperField(this, connectrpc_conformance_v1_config_pb.TLSCreds, 7));
+};
+
+
+/**
+ * @param {?proto.connectrpc.conformance.v1.TLSCreds|undefined} value
+ * @return {!proto.connectrpc.conformance.v1.ServerCompatRequest} returns this
+*/
+proto.connectrpc.conformance.v1.ServerCompatRequest.prototype.setServerCreds = function(value) {
+  return jspb.Message.setWrapperField(this, 7, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.connectrpc.conformance.v1.ServerCompatRequest} returns this
+ */
+proto.connectrpc.conformance.v1.ServerCompatRequest.prototype.clearServerCreds = function() {
+  return this.setServerCreds(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.connectrpc.conformance.v1.ServerCompatRequest.prototype.hasServerCreds = function() {
+  return jspb.Message.getField(this, 7) != null;
 };
 
 

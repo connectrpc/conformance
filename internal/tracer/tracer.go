@@ -30,6 +30,10 @@ import (
 )
 
 const (
+	// TraceTimeout is the delay that a consumer should be willing to wait
+	// for a trace, since they are produced asynchronously.
+	TraceTimeout = 5 * time.Second
+
 	requestPrefix  = " request>"
 	responsePrefix = "response<"
 )

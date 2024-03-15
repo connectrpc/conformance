@@ -228,14 +228,24 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	var clientCreds *conformancev1.ClientCompatRequest_TLSCreds
+	var serverCreds, clientCreds *conformancev1.TLSCreds
 	for svrInstance := range testCaseLib.casesByServer {
+		if svrInstance.useTLS && serverCreds == nil {
+			serverCertBytes, serverKeyBytes, err := internal.NewServerCert()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate server certificate: %w", err)
+			}
+			serverCreds = &conformancev1.TLSCreds{
+				Cert: serverCertBytes,
+				Key:  serverKeyBytes,
+			}
+		}
 		if svrInstance.useTLSClientCerts {
 			clientCertBytes, clientKeyBytes, err := internal.NewClientCert()
 			if err != nil {
 				return nil, fmt.Errorf("failed to generate client certificate: %w", err)
 			}
-			clientCreds = &conformancev1.ClientCompatRequest_TLSCreds{
+			clientCreds = &conformancev1.TLSCreds{
 				Cert: clientCertBytes,
 				Key:  clientKeyBytes,
 			}
@@ -269,7 +279,9 @@ func run( //nolint:gocyclo
 				start: runInProcess([]string{
 					"grpc-reference-client",
 					"-p", strconv.Itoa(int(flags.Parallelism)),
-				}, grpcclient.Run),
+				}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+					return grpcclient.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
+				}),
 				isGrpcImpl: true,
 			},
 		}
@@ -312,7 +324,9 @@ func run( //nolint:gocyclo
 						"grpc-reference-server",
 						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
 						"-bind", flags.ServerBind,
-					}, grpcserver.Run),
+					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+						return grpcserver.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
+					}),
 					isGrpcImpl: true,
 				},
 			}
@@ -376,6 +390,7 @@ func run( //nolint:gocyclo
 							serverInfo.isReferenceImpl,
 							svrInstance,
 							testCases,
+							serverCreds,
 							clientCreds,
 							serverInfo.start,
 							logPrinter,
