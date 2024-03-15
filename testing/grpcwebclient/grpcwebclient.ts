@@ -42,8 +42,10 @@ export async function run() {
   });
 
   await page.evaluate(() => {
+    // This allows us log uncaught errors in the browser to this script's
+    // stderr, so they can be seen in the console output when running tests.
     // @ts-ignore
-    return window.initTests();
+    return window.addErrorListeners();
   });
 
   for await (const next of readReqBuffers(process.stdin)) {

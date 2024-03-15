@@ -53,7 +53,7 @@ async function runTestCase(data: number[]): Promise<number[]> {
   return Array.from(result.serializeBinary());
 }
 
-function initTests() {
+function addErrorListeners() {
   window.addEventListener("error", function (e) {
     // @ts-ignore
     window.log("ERROR: uncaught error in browser: " + e.error.filename + ":" + e.error.lineno + ": " + e.message);
@@ -249,8 +249,8 @@ async function unary(
     // consistency would make it much easier to implement interceptors or
     // decorators, to instrument all RPCs with cross-cutting concerns, like
     // metrics, logging, etc). But one would be wrong: as of 3/15/2024, there
-    // are at least two cases where the "status" event is never delivered
-    // (both cases are RPC failures).
+    // are 2 cases where the "status" event is never delivered (both cases
+    // are RPC failures).
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
@@ -314,8 +314,7 @@ async function serverStream(
     }
     // Ideally, we'd complete the promise from the "end" event. However, there
     // are some RPCs that result in an RPC error (as of 3/15/2024, 3 out of 44
-    // failed RPCs) that produce neither a "status" nor an "end" event after
-    // the "error" event.
+    // failed RPCs) that do not produce an "end" event after the "error" event.
     res(resp);
   });
 
@@ -325,9 +324,8 @@ async function serverStream(
     // consistency would make it much easier to implement interceptors or
     // decorators, to instrument all RPCs with cross-cutting concerns, like
     // metrics, logging, etc). But one would be wrong: as of 3/15/2024, there
-    // are four cases where the "status" event is never delivered for a
-    // streaming call (3 of these cases are RPC failures; more surprisingly,
-    // 1 case is a successful RPC!).
+    // is one case (out of 62 total RPCs) where the "status" event is never
+    // delivered for a streaming call.
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
@@ -395,4 +393,4 @@ async function unimplemented(
 // @ts-ignore
 window.runTestCase = runTestCase;
 // @ts-ignore
-window.initTests = initTests;
+window.addErrorListeners = addErrorListeners;
