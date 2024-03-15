@@ -141,4 +141,6 @@ message TestCase {
   // Specifying an expected response explicitly in test definitions will override
   // the auto-generation of the test runner.
   ClientResponseResult expected_response = 3;
+
+  repeated Code other_allowed_error_codes = 4;
 }

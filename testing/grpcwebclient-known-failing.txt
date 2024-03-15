@@ -16,9 +16,8 @@ Duplicate Metadata/**/server-stream/**
 gRPC-Web Trailers/**/trailers-in-body/duplicate-metadata
 gRPC-Web Trailers/**/trailers-in-body/mixed-case
 
-# The gRPC-Web client also does not use the expected error codes for some error situations.
-# It appears to use "unknown" for nearly (which likely means it's just not classifying them
-# at all, which is certainly a bug).
-gRPC-Web Unexpected Responses/**/unexpected-codec
+# The gRPC-Web client reports "unknown" for these cases.
 gRPC-Web Unexpected Responses/**/unexpected-compressed-message
 gRPC-Web Unexpected Responses/**/unexpected-compression
+gRPC-Web Unexpected Responses/**/multiple-responses
+gRPC-Web Unexpected Responses/**/ok-but-no-response

@@ -106,6 +106,7 @@ runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserv
 .PHONY: runclienttests
 runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient buildgrpcweb
 	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode client --trace \
+		--known-failing @./testing/referenceclient-known-failing.txt \
 		-- $(BIN)/referenceclient
 	$(BIN)/connectconformance -v --conf ./testing/grpc-impls-config.yaml --mode client --trace \
 		--known-failing @./testing/grpcclient-known-failing.txt \

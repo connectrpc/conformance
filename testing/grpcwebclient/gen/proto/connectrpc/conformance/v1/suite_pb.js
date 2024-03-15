@@ -705,7 +705,7 @@ proto.connectrpc.conformance.v1.TestSuite.prototype.setReliesOnMessageReceiveLim
  * @private {!Array<number>}
  * @const
  */
-proto.connectrpc.conformance.v1.TestCase.repeatedFields_ = [2];
+proto.connectrpc.conformance.v1.TestCase.repeatedFields_ = [2,4];
 
 
 
@@ -741,7 +741,8 @@ proto.connectrpc.conformance.v1.TestCase.toObject = function(includeInstance, ms
     request: (f = msg.getRequest()) && connectrpc_conformance_v1_client_compat_pb.ClientCompatRequest.toObject(includeInstance, f),
     expandRequestsList: jspb.Message.toObjectList(msg.getExpandRequestsList(),
     proto.connectrpc.conformance.v1.TestCase.ExpandedSize.toObject, includeInstance),
-    expectedResponse: (f = msg.getExpectedResponse()) && connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.toObject(includeInstance, f)
+    expectedResponse: (f = msg.getExpectedResponse()) && connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.toObject(includeInstance, f),
+    otherAllowedErrorCodesList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -792,6 +793,12 @@ proto.connectrpc.conformance.v1.TestCase.deserializeBinaryFromReader = function(
       var value = new connectrpc_conformance_v1_client_compat_pb.ClientResponseResult;
       reader.readMessage(value,connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.deserializeBinaryFromReader);
       msg.setExpectedResponse(value);
+      break;
+    case 4:
+      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Code>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addOtherAllowedErrorCodes(values[i]);
+      }
       break;
     default:
       reader.skipField();
@@ -844,6 +851,13 @@ proto.connectrpc.conformance.v1.TestCase.serializeBinaryToWriter = function(mess
       3,
       f,
       connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.serializeBinaryToWriter
+    );
+  }
+  f = message.getOtherAllowedErrorCodesList();
+  if (f.length > 0) {
+    writer.writePackedEnum(
+      4,
+      f
     );
   }
 };
@@ -1106,6 +1120,43 @@ proto.connectrpc.conformance.v1.TestCase.prototype.clearExpectedResponse = funct
  */
 proto.connectrpc.conformance.v1.TestCase.prototype.hasExpectedResponse = function() {
   return jspb.Message.getField(this, 3) != null;
+};
+
+
+/**
+ * repeated Code other_allowed_error_codes = 4;
+ * @return {!Array<!proto.connectrpc.conformance.v1.Code>}
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.getOtherAllowedErrorCodesList = function() {
+  return /** @type {!Array<!proto.connectrpc.conformance.v1.Code>} */ (jspb.Message.getRepeatedField(this, 4));
+};
+
+
+/**
+ * @param {!Array<!proto.connectrpc.conformance.v1.Code>} value
+ * @return {!proto.connectrpc.conformance.v1.TestCase} returns this
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.setOtherAllowedErrorCodesList = function(value) {
+  return jspb.Message.setField(this, 4, value || []);
+};
+
+
+/**
+ * @param {!proto.connectrpc.conformance.v1.Code} value
+ * @param {number=} opt_index
+ * @return {!proto.connectrpc.conformance.v1.TestCase} returns this
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.addOtherAllowedErrorCodes = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 4, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.connectrpc.conformance.v1.TestCase} returns this
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.clearOtherAllowedErrorCodesList = function() {
+  return this.setOtherAllowedErrorCodesList([]);
 };
 
 

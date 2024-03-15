@@ -158,7 +158,7 @@ func (r *testResults) assert(
 	expected := definition.ExpectedResponse
 	var errs multiErrors
 
-	errs = append(errs, checkError(expected.Error, actual.Error)...)
+	errs = append(errs, checkError(expected.Error, actual.Error, definition.OtherAllowedErrorCodes)...)
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
 	if len(expected.Payloads) == 0 &&
@@ -459,7 +459,7 @@ func checkPayloads(expected, actual []*conformancev1.ConformancePayload) multiEr
 	return errs
 }
 
-func checkError(expected, actual *conformancev1.Error) multiErrors {
+func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev1.Code) multiErrors {
 	switch {
 	case expected == nil && actual == nil:
 		// nothing to do
@@ -471,13 +471,27 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 	}
 
 	var errs multiErrors
-	if expected.Code != actual.Code {
-		errs = append(errs, fmt.Errorf("actual error code %d (%s) does not match expected code %d (%s)",
-			actual.Code, connect.Code(actual.Code).String(), expected.Code, connect.Code(expected.Code).String()))
+	if expected.Code != actual.Code && !inSlice(actual.Code, otherCodes) {
+		expectedCode := fmt.Sprintf("%d (%s)", expected.Code, connect.Code(expected.Code).String())
+		if len(otherCodes) > 0 {
+			allowedCodes := make([]string, len(otherCodes)+1)
+			allowedCodes[0] = expectedCode
+			for i, otherCode := range otherCodes {
+				allowedCodes[i+1] = fmt.Sprintf("%d (%s)", otherCode, connect.Code(otherCode).String())
+			}
+			if len(allowedCodes) == 2 {
+				expectedCode = allowedCodes[0] + " or " + allowedCodes[1]
+			} else {
+				allowedCodes[len(allowedCodes)-1] = "or " + allowedCodes[len(allowedCodes)-1]
+				expectedCode = strings.Join(allowedCodes, ", ")
+			}
+		}
+		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected code %s",
+			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedCode))
 	}
 	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() {
-		errs = append(errs, fmt.Errorf("actual error message %q does not match expected message %q",
-			actual.GetMessage(), expected.GetMessage()))
+		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected message %q",
+			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expected.GetMessage()))
 	}
 	if len(expected.Details) != len(actual.Details) {
 		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
@@ -529,4 +543,13 @@ func indent(s string) string {
 		lines[i] = "\t" + line
 	}
 	return strings.Join(lines, "\n")
+}
+
+func inSlice[T comparable](elem T, slice []T) bool {
+	for _, item := range slice {
+		if item == elem {
+			return true
+		}
+	}
+	return false
 }
