@@ -62,6 +62,24 @@ message ServerCompatRequest {
   // If non-zero, indicates the maximum size in bytes for a message.
   // If the client sends anything larger, the server should reject it.
   uint32 message_receive_limit = 6;
+
+  // If use_tls is true, this provides details for a self-signed TLS
+  // cert that the server may use.
+  //
+  // The provided certificate is only good for loopback communication:
+  // it uses "localhost" and "127.0.0.1" as the IP and DNS names in
+  // the certificate's subject. If the server needs a different subject
+  // or the client is in an environment where configuring trust of a
+  // self-signed certificate is difficult or infeasible.
+  //
+  // If the server implementation chooses to use these credentials,
+  // it must echo back the certificate in the ServerCompatResponse and
+  // should also leave the host field empty or explicitly set to
+  // "127.0.0.1".
+  //
+  // If it chooses to use a different certificate and key, it must send
+  // back the corresponding certificate in the ServerCompatResponse.
+  TLSCreds server_creds = 7;
 }
 
 // The outcome of one ServerCompatRequest.

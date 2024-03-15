@@ -17,7 +17,6 @@ package referenceserver
 import (
 	"context"
 	"crypto/tls"
-	"crypto/x509"
 	"errors"
 	"flag"
 	"fmt"
@@ -36,7 +35,7 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
-	connect "connectrpc.com/connect"
+	"connectrpc.com/connect"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
@@ -231,30 +230,31 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	var tlsConf *tls.Config
 	var certBytes []byte
 	if req.UseTls { //nolint:nestif
-		var cert tls.Certificate
+		var keyBytes []byte
 		var err error
-		if tlsCertFile != "" {
+		switch {
+		case tlsCertFile != "":
 			certBytes, err = os.ReadFile(tlsCertFile)
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not load TLS cert: %w", err)
 			}
-			keyBytes, err := os.ReadFile(tlsKeyFile)
+			keyBytes, err = os.ReadFile(tlsKeyFile)
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not load TLS key: %w", err)
 			}
-			cert, err = tls.X509KeyPair(certBytes, keyBytes)
-			if err != nil {
-				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
-			}
-			cert.Leaf, err = x509.ParseCertificate(cert.Certificate[0])
-			if err != nil {
-				return nil, nil, fmt.Errorf("could not load TLS certificate and key: %w", err)
-			}
-		} else {
-			cert, certBytes, err = internal.NewServerCert()
+		case req.ServerCreds != nil:
+			certBytes = req.ServerCreds.Cert
+			keyBytes = req.ServerCreds.Key
+		default:
+			// This generally shouldn't happen. If we're using TLS, test framework should provide one we can use.
+			certBytes, keyBytes, err = internal.NewServerCert()
 			if err != nil {
 				return nil, nil, fmt.Errorf("could not generate TLS cert: %w", err)
 			}
+		}
+		cert, err := internal.ParseServerCert(certBytes, keyBytes)
+		if err != nil {
+			return nil, nil, fmt.Errorf("could not parse TLS certificate and key: %w", err)
 		}
 		clientCertMode := tls.NoClientCert
 		if len(req.ClientTlsCert) > 0 {

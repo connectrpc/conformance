@@ -48,8 +48,8 @@ export class ClientCompatRequest extends jspb.Message {
   getServerTlsCert_asB64(): string;
   setServerTlsCert(value: Uint8Array | string): ClientCompatRequest;
 
-  getClientTlsCreds(): ClientCompatRequest.TLSCreds | undefined;
-  setClientTlsCreds(value?: ClientCompatRequest.TLSCreds): ClientCompatRequest;
+  getClientTlsCreds(): connectrpc_conformance_v1_config_pb.TLSCreds | undefined;
+  setClientTlsCreds(value?: connectrpc_conformance_v1_config_pb.TLSCreds): ClientCompatRequest;
   hasClientTlsCreds(): boolean;
   clearClientTlsCreds(): ClientCompatRequest;
 
@@ -118,7 +118,7 @@ export namespace ClientCompatRequest {
     host: string,
     port: number,
     serverTlsCert: Uint8Array | string,
-    clientTlsCreds?: ClientCompatRequest.TLSCreds.AsObject,
+    clientTlsCreds?: connectrpc_conformance_v1_config_pb.TLSCreds.AsObject,
     messageReceiveLimit: number,
     service?: string,
     method?: string,
@@ -131,33 +131,6 @@ export namespace ClientCompatRequest {
     cancel?: ClientCompatRequest.Cancel.AsObject,
     rawRequest?: connectrpc_conformance_v1_service_pb.RawHTTPRequest.AsObject,
   }
-
-  export class TLSCreds extends jspb.Message {
-    getCert(): Uint8Array | string;
-    getCert_asU8(): Uint8Array;
-    getCert_asB64(): string;
-    setCert(value: Uint8Array | string): TLSCreds;
-
-    getKey(): Uint8Array | string;
-    getKey_asU8(): Uint8Array;
-    getKey_asB64(): string;
-    setKey(value: Uint8Array | string): TLSCreds;
-
-    serializeBinary(): Uint8Array;
-    toObject(includeInstance?: boolean): TLSCreds.AsObject;
-    static toObject(includeInstance: boolean, msg: TLSCreds): TLSCreds.AsObject;
-    static serializeBinaryToWriter(message: TLSCreds, writer: jspb.BinaryWriter): void;
-    static deserializeBinary(bytes: Uint8Array): TLSCreds;
-    static deserializeBinaryFromReader(message: TLSCreds, reader: jspb.BinaryReader): TLSCreds;
-  }
-
-  export namespace TLSCreds {
-    export type AsObject = {
-      cert: Uint8Array | string,
-      key: Uint8Array | string,
-    }
-  }
-
 
   export class Cancel extends jspb.Message {
     getBeforeCloseSend(): google_protobuf_empty_pb.Empty | undefined;
