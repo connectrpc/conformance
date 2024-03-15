@@ -142,6 +142,10 @@ func runTestCasesForServer(
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
 		return
 	}
+	if meta.useTLS && len(resp.PemCert) == 0 {
+		results.failedToStart(testCases, errors.New("server config uses TLS, but server response did not indicate a certificate"))
+		return
+	}
 
 	// Send all test cases to the client.
 	var wg sync.WaitGroup
