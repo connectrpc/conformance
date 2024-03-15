@@ -36,13 +36,34 @@ import {
 } from "grpc-web";
 
 // The main entry point into the browser code running in Puppeteer/headless Chrome.
-// This function is invoked by the page.evalulate call in grpcwebclient.
+// This function is invoked by the page.evaluate call in grpcwebclient.
 async function runTestCase(data: number[]): Promise<number[]> {
   const request = ClientCompatRequest.deserializeBinary(new Uint8Array(data));
 
-  const result = await invoke(request);
+  const rpcResult = invoke(request);
+  const timeout = new Promise<ClientResponseResult>((_, reject) => {
+    // Fail if we still don't have a response after 15 seconds
+    // so that user can at least see exactly which test case timed out.
+    setTimeout(() => {
+      reject(new Error("promise never resolved after 15s!"));
+    }, 15*1000);
+  });
+  const result = await Promise.race([rpcResult, timeout]);
 
   return Array.from(result.serializeBinary());
+}
+
+function addErrorListeners() {
+  window.addEventListener("error", function (e) {
+    // @ts-ignore
+    window.log("ERROR: uncaught error in browser: " + e.error.filename + ":" + e.error.lineno + ": " + e.message);
+    return false;
+  })
+  window.addEventListener("unhandledrejection", function (e) {
+    // @ts-ignore
+    window.log("ERROR: unhandled promise failure in browser: " + e.reason);
+    return false;
+  })
 }
 
 function invoke(req: ClientCompatRequest) {
@@ -117,10 +138,13 @@ function convertGrpcToProtoError(rpcErr: RpcError): ProtoError {
   err.setCode(convertStatusCodeToCode(rpcErr.code));
   err.setMessage(rpcErr.message);
 
-  const value = rpcErr.metadata["grpc-status-details-bin"];
-  if (value) {
-    const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
-    err.setDetailsList(status.getDetailsList());
+  let md = rpcErr.metadata;
+  if (md !== undefined) {
+    const value = md["grpc-status-details-bin"];
+    if (value) {
+      const status = Status.deserializeBinary(stringToUint8Array(atob(value)));
+      err.setDetailsList(status.getDetailsList());
+    }
   }
 
   return err;
@@ -194,6 +218,15 @@ async function unary(
     (err: RpcError, response: UnaryResponse) => {
       if (err !== null) {
         resp.setError(convertGrpcToProtoError(err));
+        let md = err.metadata;
+        if (md !== undefined) {
+          resp.setResponseTrailersList(convertMetadataToHeader(md));
+        }
+        // Ideally, we'd complete the promise from the "end" event. However,
+        // most RPCs that result in an RPC error (as of 3/15/2024, 50 out of
+        // 57 failed RPCs) do not produce an "end" event after the callback
+        // is invoked with an error.
+        res(resp);
       } else {
         const payload = response.getPayload();
         if (payload !== undefined) {
@@ -212,11 +245,20 @@ async function unary(
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   result.on("status", (status: GrpcWebStatus) => {
+    // One might expect that the "status" event is always delivered (since
+    // consistency would make it much easier to implement interceptors or
+    // decorators, to instrument all RPCs with cross-cutting concerns, like
+    // metrics, logging, etc). But one would be wrong: as of 3/15/2024, there
+    // are 2 cases where the "status" event is never delivered (both cases
+    // are RPC failures).
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
-      res(resp);
     }
+  });
+
+  result.on("end", () => {
+    res(resp);
   });
 
   return prom;
@@ -266,18 +308,31 @@ async function serverStream(
   });
   stream.on("error", (err: RpcError) => {
     resp.setError(convertGrpcToProtoError(err));
+    let md = err.metadata;
+    if (md !== undefined) {
+      resp.setResponseTrailersList(convertMetadataToHeader(md));
+    }
+    // Ideally, we'd complete the promise from the "end" event. However, there
+    // are some RPCs that result in an RPC error (as of 3/15/2024, 3 out of 44
+    // failed RPCs) that do not produce an "end" event after the "error" event.
     res(resp);
   });
 
   // Response trailers (i.e. trailing metadata) are sent in the 'status' event
   stream.on("status", (status: GrpcWebStatus) => {
+    // One might expect that the "status" event is always delivered (since
+    // consistency would make it much easier to implement interceptors or
+    // decorators, to instrument all RPCs with cross-cutting concerns, like
+    // metrics, logging, etc). But one would be wrong: as of 3/15/2024, there
+    // is one case (out of 62 total RPCs) where the "status" event is never
+    // delivered for a streaming call.
     const md = status.metadata;
     if (md !== undefined) {
       resp.setResponseTrailersList(convertMetadataToHeader(md));
     }
   });
 
-  stream.on("end", function () {
+  stream.on("end", () => {
     res(resp);
   });
 
@@ -337,3 +392,5 @@ async function unimplemented(
 
 // @ts-ignore
 window.runTestCase = runTestCase;
+// @ts-ignore
+window.addErrorListeners = addErrorListeners;
