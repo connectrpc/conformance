@@ -17,10 +17,13 @@ package connectconformance
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 )
@@ -82,13 +85,27 @@ func runCommand(command []string) processStarter {
 		cmdProc := &cmdProcess{
 			cmd:    cmd,
 			cancel: cancel,
-			done:   make(chan struct{}),
+			forceClose: func() {
+				// try closing input/output to see if that unblocks any I/O
+				// goroutines that might otherwise be wedged
+				if stdin != os.Stdin {
+					_ = stdin.Close()
+				}
+				if stdout != os.Stdout {
+					_ = stdout.Close()
+				}
+				if stderr != os.Stderr {
+					_ = stderr.Close()
+				}
+			},
+			done: make(chan struct{}),
 		}
 		go func() {
 			// cmd.Wait can only be called once. So we call it from this goroutine
 			// and then publish the result so it can be read via cmdProc.result()
-			defer close(cmdProc.done)
-			cmdProc.cmdResult = cmd.Wait()
+			defer cmdProc.markDone()
+			err := cmd.Wait()
+			cmdProc.cmdResult.CompareAndSwap(nil, &err)
 			// Also close pipes when the process exits, just so any goroutines that
 			// are blocked reading/writing can wake up and observe EOF.
 			if stdin != os.Stdin {
@@ -171,25 +188,60 @@ func makeProcess(procFunc func(ctx context.Context, stdin io.ReadCloser, stdout,
 }
 
 type cmdProcess struct {
-	cmd       *exec.Cmd
-	cancel    context.CancelFunc
-	done      chan struct{}
-	cmdResult error
+	cmd        *exec.Cmd
+	cancel     context.CancelFunc
+	forceClose context.CancelFunc
+	abortOnce  sync.Once
+	doneOnce   sync.Once
+	done       chan struct{}
+	cmdResult  atomic.Pointer[error]
 }
 
 func (c *cmdProcess) result() error {
 	<-c.done
-	return c.cmdResult
+	errPtr := c.cmdResult.Load()
+	if errPtr == nil {
+		// shouldn't happen?
+		return errors.New("process marked done without recording final disposition")
+	}
+	return *errPtr
 }
 
 func (c *cmdProcess) abort() {
 	c.cancel()
+	c.abortOnce.Do(func() {
+		go func() {
+			select {
+			case <-c.done:
+				return
+			case <-time.After(gracefulShutdownPeriod):
+			}
+			// See if we can force the process to complete.
+			c.forceClose()
+			select {
+			case <-c.done:
+				return
+			case <-time.After(gracefulShutdownPeriod):
+			}
+			// Give up waiting.
+			err := errors.New("process took too long terminate")
+			if c.cmdResult.CompareAndSwap(nil, &err) {
+				c.markDone()
+			}
+		}()
+	})
 }
 
 func (c *cmdProcess) whenDone(action func(error)) {
 	go func() {
 		action(c.result())
 	}()
+}
+
+func (c *cmdProcess) markDone() {
+	c.doneOnce.Do(func() {
+		close(c.done)
+	})
 }
 
 type localProcess struct {
