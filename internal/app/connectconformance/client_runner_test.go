@@ -19,7 +19,6 @@ import (
 	"errors"
 	"io"
 	"math/rand"
-	"sort"
 	"testing"
 
 	"connectrpc.com/conformance/internal"
@@ -143,7 +142,7 @@ func (c *testClientProcess) run(_ context.Context, _ []string, in io.ReadCloser,
 	var count int
 	for {
 		req := &conformancev1.ClientCompatRequest{}
-		if err := internal.ReadDelimitedMessage(in, req); err != nil {
+		if err := internal.ReadDelimitedMessage(in, req, "client", clientResponseTimeout, maxClientResponseSize); err != nil {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
@@ -173,7 +172,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 	var allCases []string
 	for {
 		req := &conformancev1.ClientCompatRequest{}
-		if err := internal.ReadDelimitedMessage(in, req); err != nil {
+		if err := internal.ReadDelimitedMessage(in, req, "client", clientResponseTimeout, maxClientResponseSize); err != nil {
 			if errors.Is(err, io.EOF) {
 				break
 			}
@@ -182,15 +181,14 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 		allCases = append(allCases, req.TestName)
 	}
 
+	originalCases := make([]string, len(allCases))
+	copy(originalCases, allCases)
 	for {
 		rand.Shuffle(len(allCases), func(i, j int) {
-
+			allCases[i], allCases[j] = allCases[j], allCases[i]
 		})
 		// just make sure we didn't shuffle to a non-random permutation
-		isSorted := !sort.SliceIsSorted(allCases, func(i, j int) bool {
-			return allCases[i] < allCases[j]
-		})
-		if isSorted {
+		if slicesEqual(originalCases, allCases) {
 			continue // try again
 		}
 		break
@@ -217,4 +215,16 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 func testClientProcessBroken(_ context.Context, _ []string, in io.ReadCloser, _, _ io.WriteCloser) error {
 	_, _ = io.Copy(io.Discard, in)
 	return errors.New("broken")
+}
+
+func slicesEqual[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

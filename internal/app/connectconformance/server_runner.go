@@ -23,11 +23,17 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/tracer"
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	serverResponseTimeout = 10 * time.Second
+	maxServerResponseSize = 1024 * 1024 // 1 MB
 )
 
 // runTestCasesForServer runs starts a server process and runs the given test cases while
@@ -137,9 +143,13 @@ func runTestCasesForServer(
 
 	// Read response.
 	var resp conformancev1.ServerCompatResponse
-	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp)
+	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp, "server", serverResponseTimeout, maxServerResponseSize)
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
+		return
+	}
+	if meta.useTLS && len(resp.PemCert) == 0 {
+		results.failedToStart(testCases, errors.New("server config uses TLS, but server response did not indicate a certificate"))
 		return
 	}
 

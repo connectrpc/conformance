@@ -27,7 +27,10 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 )
 
-const testCaseTimeout = 20 * time.Second
+const (
+	clientResponseTimeout = 20 * time.Second
+	maxClientResponseSize = 16 * 1024 * 1024 // 16 MB
+)
 
 var errClosed = errors.New("send-to-client is closed")
 var errDuplicate = errors.New("duplicate test case")
@@ -151,11 +154,7 @@ func (c *clientProcessRunner) waitForResponses() error {
 	case <-time.After(3 * time.Second):
 		// Not closing fast enough. Let's prod it along
 		c.proc.abort()
-		select {
-		case procErr = <-procErrChan:
-		case <-time.After(3 * time.Second):
-			procErr = errors.New("client process took to long terminate")
-		}
+		procErr = <-procErrChan
 	}
 
 	err := c.err.Load()
@@ -201,21 +200,9 @@ func (c *clientProcessRunner) consumeOutput() {
 	testCaseNames := map[string]struct{}{}
 	for {
 		resp := &conformancev1.ClientCompatResponse{}
-		var readErr error
-		readDone := make(chan struct{})
-		go func() {
-			defer close(readDone)
-			readErr = internal.ReadDelimitedMessage(c.proc.stdout, resp)
-		}()
-
-		select {
-		case <-readDone:
-			if readErr != nil {
-				reasonForReturn = readErr
-				return
-			}
-		case <-time.After(testCaseTimeout):
-			reasonForReturn = errors.New("timed out waiting for result from client")
+		readErr := internal.ReadDelimitedMessage(c.proc.stdout, resp, "client", clientResponseTimeout, maxClientResponseSize)
+		if readErr != nil {
+			reasonForReturn = readErr
 			return
 		}
 
