@@ -329,7 +329,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				"actual error code 11 (out_of_range) does not match expected code 5 (not_found)",
+				`actual error {code: 11 (out_of_range), message: "foobar"} does not match expected code 5 (not_found)`,
 			},
 		},
 		{
@@ -347,7 +347,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				`actual error message "oof!" does not match expected message "foobar"`,
+				`actual error {code: 5 (not_found), message: "oof!"} does not match expected message "foobar"`,
 			},
 		},
 		{
