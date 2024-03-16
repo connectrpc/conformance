@@ -17,10 +17,8 @@ package connectconformance
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"math/rand"
-	"reflect"
 	"testing"
 
 	"connectrpc.com/conformance/internal"
@@ -185,12 +183,15 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 
 	originalCases := make([]string, len(allCases))
 	copy(originalCases, allCases)
-	rand.Shuffle(len(allCases), func(i, j int) {
-		allCases[i], allCases[j] = allCases[j], allCases[i]
-	})
-	// sanity check that shuffling put them out of order
-	if reflect.DeepEqual(originalCases, allCases) {
-		return fmt.Errorf("shuffle failed to rearrange test cases")
+	for {
+		rand.Shuffle(len(allCases), func(i, j int) {
+			allCases[i], allCases[j] = allCases[j], allCases[i]
+		})
+		// just make sure we didn't shuffle to a non-random permutation
+		if slicesEqual(originalCases, allCases) {
+			continue // try again
+		}
+		break
 	}
 
 	for _, name := range allCases {
@@ -214,4 +215,16 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 func testClientProcessBroken(_ context.Context, _ []string, in io.ReadCloser, _, _ io.WriteCloser) error {
 	_, _ = io.Copy(io.Discard, in)
 	return errors.New("broken")
+}
+
+func slicesEqual[T comparable](a, b []T) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
