@@ -248,33 +248,31 @@ testCases:
       error:
         code: CODE_UNKNOWN
         message: oops
-#  # TODO: uncomment this once connect-go can de-serialize the
-#  #        rest of the JSON in the face of an invalid code
-#  - request:
-#      testName: end-stream/unrecognized-code
-#      service: connectrpc.conformance.v1.ConformanceService
-#      method: ServerStream
-#      streamType: STREAM_TYPE_SERVER_STREAM
-#      requestMessages:
-#        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
-#          responseDefinition:
-#            rawResponse:
-#              statusCode: 200
-#              headers:
-#                - name: content-type
-#                  value: [ "application/connect+proto" ]
-#              stream:
-#                items:
-#                  - flags: 2
-#                    payload:
-#                      text: |
-#                        {
-#                          "error": { "code": "foobar", "message": "oops" }
-#                        }
-#    expectedResponse:
-#      error:
-#        code: CODE_UNKNOWN
-#        message: oops
+  - request:
+      testName: end-stream/unrecognized-code
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": { "code": "foobar", "message": "oops" }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+        message: oops
   - request:
       testName: end-stream/allow-unrecognized-fields
       service: connectrpc.conformance.v1.ConformanceService

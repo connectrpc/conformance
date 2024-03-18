@@ -128,32 +128,33 @@ testCases:
     expectedResponse:
       error:
         code: CODE_UNIMPLEMENTED
-## TODO: uncomment this test case once connect-go distinguishes between unknown
-##       (content-type that is clearly not an RPC client, can send back 415 status)
-##       and internal (looks like an RPC client, but unsupported codec, so send
-##       back RPC error response).
-## https://github.com/connectrpc/connect-go/issues/689
-#  - request:
-#      testName: unexpected codec
-#      streamType: STREAM_TYPE_UNARY
-#      requestMessages:
-#        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#      rawRequest:
-#        verb: POST
-#        uri: /connectrpc.conformance.v1.ConformanceService/Unary
-#        headers:
-#          - name: content-type
-#            value: [ "application/grpc+foo" ]
-#          - name: te
-#            value: [ "trailers" ]
-#        stream:
-#          items:
-#            - flags: 0
-#              payload:
-#                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
-#    expectedResponse:
-#      error:
-#        code: CODE_INTERNAL
+  - request:
+      testName: unexpected codec
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/grpc+foo" ]
+          - name: te
+            value: [ "trailers" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense. There may be
+      # an argument for unimplemented, too.
+      - CODE_INTERNAL
+      - CODE_UNIMPLEMENTED
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
   - request:
       testName: unexpected-compression
       streamType: STREAM_TYPE_UNARY
