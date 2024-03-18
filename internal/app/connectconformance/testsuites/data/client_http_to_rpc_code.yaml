@@ -1,4 +1,4 @@
-name: HTTP to Connect Code Mapping
+name: HTTP to RPC Code Mapping
 # If a server returns a non-200 HTTP code for unary requests without an
 # explicit RPC error code, the client must synthesize an RPC code
 # from the HTTP code. These tests cases verify that mapping by forcing
