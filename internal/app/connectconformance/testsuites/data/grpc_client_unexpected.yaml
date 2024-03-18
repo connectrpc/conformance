@@ -24,34 +24,33 @@ testCases:
               trailers:
                 - name: "grpc-message"
                   value: ["error"]
-              stream:
-                items:
-                  - flags: 128
-                    payload:
-                      text: "grpc-message: error\r\n"
-    expectedResponse:
-      error:
-        code: CODE_INTERNAL
-  - request:
-      testName: unary-ok-but-no-response
-      streamType: STREAM_TYPE_UNARY
-      requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-          responseDefinition:
-            rawResponse:
-              status_code: 200
-              headers:
-                - name: content-type
-                  value: [ "application/grpc" ]
-              trailers:
-                - name: "grpc-status"
-                  value: ["0"]
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense.
+      - CODE_INTERNAL
     expectedResponse:
       error:
         code: CODE_UNKNOWN
 
   - request:
-      testName: unary-multiple-responses
+      testName: unary/ok-but-no-response
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+              trailers:
+                - name: "grpc-status"
+                  value: ["0"]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: unary/multiple-responses
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -76,7 +75,52 @@ testCases:
                   value: ["0"]
     expectedResponse:
       error:
-        code: CODE_UNKNOWN
+        code: CODE_UNIMPLEMENTED
+
+  - request:
+      testName: client-stream/ok-but-no-response
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+              trailers:
+                - name: "grpc-status"
+                  value: ["0"]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: client-stream/multiple-responses
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+              trailers:
+                - name: "grpc-status"
+                  value: ["0"]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
 
   - request:
       testName: trailers-only/ignore-header-if-body-present
@@ -97,6 +141,10 @@ testCases:
                     payload:
                       binary_message:
                         "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense.
+      - CODE_UNKNOWN
     expectedResponse:
       error:
         code: CODE_INTERNAL # internal since trailers are entirely missing
@@ -122,6 +170,28 @@ testCases:
       error:
         code: 9
 
+  # Other anomalous responses.
+  - request:
+      testName: unexpected-content-type
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: Content-Type
+                  value: [ "image/jpeg" ]
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense. There may be
+      # an argument for unimplemented, too.
+      - CODE_INTERNAL
+      - CODE_UNIMPLEMENTED
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
   - request:
       testName: unexpected-codec
       streamType: STREAM_TYPE_UNARY
@@ -140,6 +210,12 @@ testCases:
               trailers:
                 - name: grpc-status
                   value: [ "0" ]
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense. There may be
+      # an argument for unimplemented, too.
+      - CODE_UNKNOWN
+      - CODE_UNIMPLEMENTED
     expectedResponse:
       error:
         code: CODE_INTERNAL

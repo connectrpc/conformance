@@ -158,7 +158,7 @@ func (r *testResults) assert(
 	expected := definition.ExpectedResponse
 	var errs multiErrors
 
-	errs = append(errs, checkError(expected.Error, actual.Error)...)
+	errs = append(errs, checkError(expected.Error, actual.Error, definition.OtherAllowedErrorCodes)...)
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
 	if len(expected.Payloads) == 0 &&
@@ -459,7 +459,7 @@ func checkPayloads(expected, actual []*conformancev1.ConformancePayload) multiEr
 	return errs
 }
 
-func checkError(expected, actual *conformancev1.Error) multiErrors {
+func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev1.Code) multiErrors {
 	switch {
 	case expected == nil && actual == nil:
 		// nothing to do
@@ -471,13 +471,14 @@ func checkError(expected, actual *conformancev1.Error) multiErrors {
 	}
 
 	var errs multiErrors
-	if expected.Code != actual.Code {
-		errs = append(errs, fmt.Errorf("actual error code %d (%s) does not match expected code %d (%s)",
-			actual.Code, connect.Code(actual.Code).String(), expected.Code, connect.Code(expected.Code).String()))
+	if expected.Code != actual.Code && !inSlice(actual.Code, otherCodes) {
+		expectedCodes := expectedCodeString(expected.Code, otherCodes)
+		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected code %s",
+			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedCodes))
 	}
 	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() {
-		errs = append(errs, fmt.Errorf("actual error message %q does not match expected message %q",
-			actual.GetMessage(), expected.GetMessage()))
+		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected message %q",
+			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expected.GetMessage()))
 	}
 	if len(expected.Details) != len(actual.Details) {
 		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
@@ -529,4 +530,29 @@ func indent(s string) string {
 		lines[i] = "\t" + line
 	}
 	return strings.Join(lines, "\n")
+}
+
+func inSlice[T comparable](elem T, slice []T) bool {
+	// TODO: delete this function when this repo is using Go 1.21
+	//	     and update call sites to instead use slices.Contains
+	for _, item := range slice {
+		if item == elem {
+			return true
+		}
+	}
+	return false
+}
+
+func expectedCodeString(expectedCode conformancev1.Code, otherAllowedCodes []conformancev1.Code) string {
+	allowedCodes := make([]string, len(otherAllowedCodes)+1)
+	for i, code := range append([]conformancev1.Code{expectedCode}, otherAllowedCodes...) {
+		allowedCodes[i] = fmt.Sprintf("%d (%s)", code, connect.Code(code).String())
+		if i == len(allowedCodes)-1 && i != 0 {
+			allowedCodes[i] = "or " + allowedCodes[i]
+		}
+	}
+	if len(allowedCodes) < 3 {
+		return strings.Join(allowedCodes, " ")
+	}
+	return strings.Join(allowedCodes, ", ")
 }

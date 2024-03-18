@@ -8,6 +8,45 @@ relevantCodecs:
   - CODEC_PROTO
 testCases:
   - request:
+      testName: server-stream/no-request
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+proto" ]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: server-stream/multiple-requests
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+proto" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest"
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest"
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+
+  - request:
       testName: unexpected-verb
       streamType: STREAM_TYPE_UNARY
       requestMessages:
