@@ -3,7 +3,7 @@ module connectrpc.com/conformance
 go 1.20
 
 require (
-	connectrpc.com/connect v1.15.1-0.20240312013426-946e37a1e2d0
+	connectrpc.com/connect v1.15.1-0.20240318165016-0f46eaa59eb4
 	github.com/andybalholm/brotli v1.1.0
 	github.com/bufbuild/protoyaml-go v0.1.8
 	github.com/golang/snappy v0.0.4
@@ -20,7 +20,7 @@ require (
 	golang.org/x/sync v0.6.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240123012728-ef4313101c80
 	google.golang.org/grpc v1.62.0
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 )
 
 require (
