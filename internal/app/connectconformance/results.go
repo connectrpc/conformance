@@ -533,6 +533,8 @@ func indent(s string) string {
 }
 
 func inSlice[T comparable](elem T, slice []T) bool {
+	// TODO: delete this function when this repo is using Go 1.21
+	//	     and update call sites to instead use slices.Contains
 	for _, item := range slice {
 		if item == elem {
 			return true
