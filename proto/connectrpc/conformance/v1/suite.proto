@@ -142,5 +142,10 @@ message TestCase {
   // the auto-generation of the test runner.
   ClientResponseResult expected_response = 3;
 
+  // When expected_response indicates that an error is expected, in some cases, the
+  // actual error code returned may be flexible. In that case, this field provides
+  // other acceptable error codes, in addition to the one indicated in the
+  // expected_response. As long as the actual error's code matches any of these, the
+  // error is considered conformant, and the test case can pass.
   repeated Code other_allowed_error_codes = 4;
 }

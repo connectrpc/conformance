@@ -359,8 +359,13 @@ type TestCase struct {
 	//
 	// Specifying an expected response explicitly in test definitions will override
 	// the auto-generation of the test runner.
-	ExpectedResponse       *ClientResponseResult `protobuf:"bytes,3,opt,name=expected_response,json=expectedResponse,proto3" json:"expected_response,omitempty"`
-	OtherAllowedErrorCodes []Code                `protobuf:"varint,4,rep,packed,name=other_allowed_error_codes,json=otherAllowedErrorCodes,proto3,enum=connectrpc.conformance.v1.Code" json:"other_allowed_error_codes,omitempty"`
+	ExpectedResponse *ClientResponseResult `protobuf:"bytes,3,opt,name=expected_response,json=expectedResponse,proto3" json:"expected_response,omitempty"`
+	// When expected_response indicates that an error is expected, in some cases, the
+	// actual error code returned may be flexible. In that case, this field provides
+	// other acceptable error codes, in addition to the one indicated in the
+	// expected_response. As long as the actual error's code matches any of these, the
+	// error is considered conformant, and the test case can pass.
+	OtherAllowedErrorCodes []Code `protobuf:"varint,4,rep,packed,name=other_allowed_error_codes,json=otherAllowedErrorCodes,proto3,enum=connectrpc.conformance.v1.Code" json:"other_allowed_error_codes,omitempty"`
 }
 
 func (x *TestCase) Reset() {
