@@ -101,10 +101,18 @@ testCases:
             - flags: 0
               payload:
                 binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"}
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense. There may be
+      # an argument for unimplemented, too.
+      - CODE_INTERNAL
+      - CODE_UNIMPLEMENTED
     expectedResponse:
-      httpStatusCode: 405
+      # Ideally, the server would return a 405. But it's not actually specified :/
+      # httpStatusCode: 405
       error:
         code: CODE_UNKNOWN
+
   - request:
       testName: unexpected-uri
       streamType: STREAM_TYPE_UNARY
