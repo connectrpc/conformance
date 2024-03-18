@@ -472,22 +472,9 @@ func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev
 
 	var errs multiErrors
 	if expected.Code != actual.Code && !inSlice(actual.Code, otherCodes) {
-		expectedCode := fmt.Sprintf("%d (%s)", expected.Code, connect.Code(expected.Code).String())
-		if len(otherCodes) > 0 {
-			allowedCodes := make([]string, len(otherCodes)+1)
-			allowedCodes[0] = expectedCode
-			for i, otherCode := range otherCodes {
-				allowedCodes[i+1] = fmt.Sprintf("%d (%s)", otherCode, connect.Code(otherCode).String())
-			}
-			if len(allowedCodes) == 2 {
-				expectedCode = allowedCodes[0] + " or " + allowedCodes[1]
-			} else {
-				allowedCodes[len(allowedCodes)-1] = "or " + allowedCodes[len(allowedCodes)-1]
-				expectedCode = strings.Join(allowedCodes, ", ")
-			}
-		}
+		expectedCodes := expectedCodeString(expected.Code, otherCodes)
 		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected code %s",
-			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedCode))
+			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedCodes))
 	}
 	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() {
 		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected message %q",
@@ -552,4 +539,18 @@ func inSlice[T comparable](elem T, slice []T) bool {
 		}
 	}
 	return false
+}
+
+func expectedCodeString(expectedCode conformancev1.Code, otherAllowedCodes []conformancev1.Code) string {
+	allowedCodes := make([]string, len(otherAllowedCodes)+1)
+	for i, code := range append([]conformancev1.Code{expectedCode}, otherAllowedCodes...) {
+		allowedCodes[i] = fmt.Sprintf("%d (%s)", code, connect.Code(code).String())
+		if i == len(allowedCodes)-1 && i != 0 {
+			allowedCodes[i] = "or " + allowedCodes[i]
+		}
+	}
+	if len(allowedCodes) < 3 {
+		return strings.Join(allowedCodes, " ")
+	}
+	return strings.Join(allowedCodes, ", ")
 }
