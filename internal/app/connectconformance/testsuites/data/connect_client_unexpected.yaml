@@ -43,7 +43,7 @@ testCases:
                       text: |
                         {
                           "code": "out_of_range",
-                          "message": "oops",
+                          "message": "oops"
                         }
     expectedResponse:
       error:
@@ -74,7 +74,7 @@ testCases:
                       text: |
                         {
                           "code": "out_of_range",
-                          "message": "oops",
+                          "message": "oops"
                         }
     expectedResponse:
       error:
