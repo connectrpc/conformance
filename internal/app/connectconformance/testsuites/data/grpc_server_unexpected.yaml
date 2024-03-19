@@ -8,6 +8,84 @@ relevantCodecs:
   - CODEC_PROTO
 testCases:
   - request:
+      testName: unary/no-request
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/grpc+proto" ]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: unary/multiple-requests
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/grpc+proto" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+
+  - request:
+      testName: server-stream/no-request
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/grpc+proto" ]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: server-stream/multiple-requests
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/grpc+proto" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest"
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest"
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+
+  - request:
       testName: unexpected-verb
       streamType: STREAM_TYPE_UNARY
       requestMessages:

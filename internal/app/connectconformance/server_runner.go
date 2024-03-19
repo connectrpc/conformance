@@ -23,11 +23,17 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/tracer"
 	"google.golang.org/protobuf/proto"
+)
+
+const (
+	serverResponseTimeout = 10 * time.Second
+	maxServerResponseSize = 1024 * 1024 // 1 MB
 )
 
 // runTestCasesForServer runs starts a server process and runs the given test cases while
@@ -49,7 +55,8 @@ func runTestCasesForServer(
 	isReferenceServer bool,
 	meta serverInstance,
 	testCases []*conformancev1.TestCase,
-	clientCreds *conformancev1.ClientCompatRequest_TLSCreds,
+	serverCreds *conformancev1.TLSCreds,
+	clientCreds *conformancev1.TLSCreds,
 	startServer processStarter,
 	logPrinter internal.Printer,
 	errPrinter internal.Printer,
@@ -106,8 +113,11 @@ func runTestCasesForServer(
 		}()
 	}
 
+	// don't send cert info if these tests don't use them
+	if !meta.useTLS {
+		serverCreds = nil
+	}
 	if !meta.useTLSClientCerts {
-		// don't send client cert info if these tests don't use them
 		clientCreds = nil
 	}
 
@@ -116,6 +126,7 @@ func runTestCasesForServer(
 		Protocol:      meta.protocol,
 		HttpVersion:   meta.httpVersion,
 		UseTls:        meta.useTLS,
+		ServerCreds:   serverCreds,
 		ClientTlsCert: clientCreds.GetCert(),
 		// We always set this. If server-under-test does not support it, we just
 		// won't run the test cases that verify that it's enforced.
@@ -132,9 +143,13 @@ func runTestCasesForServer(
 
 	// Read response.
 	var resp conformancev1.ServerCompatResponse
-	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp)
+	err = internal.ReadDelimitedMessage(serverProcess.stdout, &resp, "server", serverResponseTimeout, maxServerResponseSize)
 	if err != nil {
 		results.failedToStart(testCases, fmt.Errorf("error reading server response: %w", err))
+		return
+	}
+	if meta.useTLS && len(resp.PemCert) == 0 {
+		results.failedToStart(testCases, errors.New("server config uses TLS, but server response did not indicate a certificate"))
 		return
 	}
 
@@ -206,8 +221,10 @@ func runTestCasesForServer(
 				results.setOutcome(name, true, err)
 			case resp.GetError() != nil:
 				results.failed(name, resp.GetError())
-			default:
+			case resp.GetResponse() != nil:
 				results.assert(name, testCase, resp.GetResponse())
+			default:
+				results.setOutcome(name, false, errors.New("client returned a response with neither an error nor result"))
 			}
 			if isReferenceClient && resp.GetResponse() != nil {
 				for _, msg := range resp.GetResponse().Feedback {

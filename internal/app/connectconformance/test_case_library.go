@@ -235,7 +235,7 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 			// to be replaced with actual cert provided by server
 			testCase.Request.ServerTlsCert = []byte("PLACEHOLDER")
 			if cfgCase.UseTLSClientCerts {
-				testCase.Request.ClientTlsCreds = &conformancev1.ClientCompatRequest_TLSCreds{
+				testCase.Request.ClientTlsCreds = &conformancev1.TLSCreds{
 					Key:  []byte("PLACEHOLDER"),
 					Cert: []byte("PLACEHOLDER"),
 				}

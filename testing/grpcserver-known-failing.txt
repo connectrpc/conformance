@@ -1,0 +1,8 @@
+# The entries for "cardinality violation" in the following doc indicate that
+# these cases should fail with "unimplemented":
+#   https://grpc.github.io/grpc/core/md_doc_statuscodes.html
+# But the grpc-go client instead fails with "unknown".
+**/unary/multiple-requests
+**/unary/no-request
+**/server-stream/multiple-requests
+**/server-stream/no-request

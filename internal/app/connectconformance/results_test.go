@@ -16,6 +16,7 @@ package connectconformance
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -329,7 +330,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				"actual error code 11 (out_of_range) does not match expected code 5 (not_found)",
+				`actual error {code: 11 (out_of_range), message: "foobar"} does not match expected code 5 (not_found)`,
 			},
 		},
 		{
@@ -347,7 +348,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 				}
 			}`,
 			expectedErrors: []string{
-				`actual error message "oof!" does not match expected message "foobar"`,
+				`actual error {code: 5 (not_found), message: "oof!"} does not match expected message "foobar"`,
 			},
 		},
 		{
@@ -838,6 +839,44 @@ func TestCanonicalizeHeaderVals(t *testing.T) {
 			t.Parallel()
 			result := canonicalizeHeaderVals(testCase.input)
 			require.Equal(t, testCase.output, result)
+		})
+	}
+}
+
+func TestExpectedCodeString(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		expectedCode   conformancev1.Code
+		otherCodes     []conformancev1.Code
+		expectedString string
+	}{
+		{
+			expectedCode:   conformancev1.Code_CODE_ABORTED,
+			expectedString: "10 (aborted)",
+		},
+		{
+			expectedCode:   conformancev1.Code_CODE_ABORTED,
+			otherCodes:     []conformancev1.Code{conformancev1.Code_CODE_INTERNAL},
+			expectedString: "10 (aborted) or 13 (internal)",
+		},
+		{
+			expectedCode:   conformancev1.Code_CODE_ABORTED,
+			otherCodes:     []conformancev1.Code{conformancev1.Code_CODE_INTERNAL, conformancev1.Code_CODE_CANCELED},
+			expectedString: "10 (aborted), 13 (internal), or 1 (canceled)",
+		},
+		{
+			expectedCode: conformancev1.Code_CODE_ABORTED,
+			otherCodes: []conformancev1.Code{
+				conformancev1.Code_CODE_INTERNAL, conformancev1.Code_CODE_CANCELED, conformancev1.Code_CODE_ALREADY_EXISTS,
+			},
+			expectedString: "10 (aborted), 13 (internal), 1 (canceled), or 6 (already_exists)",
+		},
+	}
+	for _, testCase := range testCases {
+		testCase := testCase
+		t.Run(fmt.Sprintf("%d_other_codes", len(testCase.otherCodes)), func(t *testing.T) {
+			t.Parallel()
+			require.Equal(t, testCase.expectedString, expectedCodeString(testCase.expectedCode, testCase.otherCodes))
 		})
 	}
 }

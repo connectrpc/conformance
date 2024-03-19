@@ -27,11 +27,16 @@ testCases:
                   - flags: 128
                     payload:
                       text: "grpc-message: error\r\n"
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense.
+      - CODE_INTERNAL
     expectedResponse:
       error:
         code: CODE_UNKNOWN
+
   - request:
-      testName: trailers-in-body/unary-ok-but-no-response
+      testName: trailers-in-body/unary/ok-but-no-response
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -52,9 +57,9 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        code: CODE_UNKNOWN
+        code: CODE_UNIMPLEMENTED
   - request:
-      testName: trailers-in-body/unary-multiple-responses
+      testName: trailers-in-body/unary/multiple-responses
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -79,9 +84,59 @@ testCases:
                       text: "grpc-status: 0\r\n"
     expectedResponse:
       error:
-        code: CODE_UNKNOWN
+        code: CODE_UNIMPLEMENTED
 
-  # TODO: Figure out why these next two cause JS gRPC web client to crash.
+  - request:
+      testName: trailers-in-body/client-stream/ok-but-no-response
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 0\r\n"
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: trailers-in-body/client-stream/multiple-responses
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 0\r\n"
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+
   - request:
       testName: trailers-only/missing-status
       streamType: STREAM_TYPE_UNARY
@@ -99,11 +154,16 @@ testCases:
                   value: [ "application/grpc-web" ]
                 - name: grpc-message
                   value: [ "error" ]
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense.
+      - CODE_INTERNAL
     expectedResponse:
       error:
         code: CODE_UNKNOWN
+
   - request:
-      testName: trailers-only/unary-ok-but-no-response
+      testName: trailers-only/unary/ok-but-no-response
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -121,7 +181,27 @@ testCases:
                   value: [ "0" ]
     expectedResponse:
       error:
-        code: CODE_UNKNOWN
+        code: CODE_UNIMPLEMENTED
+  - request:
+      testName: trailers-only/client-stream/ok-but-no-response
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: "access-control-allow-origin"
+                  value: [ "*" ]
+                - name: "access-control-expose-headers"
+                  value: [ "*" ]
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: grpc-status
+                  value: [ "0" ]
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
 
   - request:
       testName: trailers-only/ignore-header-if-body-present
@@ -151,6 +231,27 @@ testCases:
 
 # Other anomalous responses.
   - request:
+      testName: unexpected-content-type
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: Content-Type
+                  value: [ "image/jpeg" ]
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense. There may be
+      # an argument for unimplemented, too.
+      - CODE_INTERNAL
+      - CODE_UNIMPLEMENTED
+    expectedResponse:
+      error:
+        code: CODE_UNKNOWN
+  - request:
       testName: unexpected-codec
       streamType: STREAM_TYPE_UNARY
       requestMessages:
@@ -168,6 +269,12 @@ testCases:
                   - flags: 128
                     payload:
                       text: "grpc-status: 0\r\n"
+    otherAllowedErrorCodes:
+      # Not actually specified what error code to use, but only
+      # internal and unknown really make any sense. There may be
+      # an argument for unimplemented, too.
+      - CODE_UNKNOWN
+      - CODE_UNIMPLEMENTED
     expectedResponse:
       error:
         code: CODE_INTERNAL

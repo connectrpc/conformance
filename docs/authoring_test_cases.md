@@ -101,6 +101,40 @@ or must be specified together. If they are omitted, the runner will auto-populat
  >
  > If a test is specific to one of the first four fields, it should instead be indicated in the directives for the test suite itself.
 
+### Expected responses
+
+The expected response for a test, in the `expectedResponse` field, can be auto-generated based on the request details.
+The conformance runner will determine what the response should be according to the values specified in the individual
+test case requests.
+
+You also have the ability to explicitly specify your own expected response directly in the test definition. However,
+this is typically only needed for exception test cases. If the expected response is mostly re-stating the response
+definition that appears in the requests, you should rely on the auto-generation if possible. Otherwise, specifying
+an expected response can make the test YAML overly verbose and harder to read, write, and maintain.
+
+If the test induces behavior that prevents the server from sending or client from receiving the full response
+definition, it will be necessary to define the expected response explicitly. Timeouts, cancellations, and exceeding
+message size limits are good examples of this.
+
+If you do need to specify an explicit response, simply define an `expectedResponse` block for your test case and
+this will override the auto-generated expected response in the test runner.
+
+To see tests denoting an explicit response, search the [test suites][test-suite-dir] directory for the word `expectedResponse`.
+
+#### Lenience in Expected Error Codes
+
+There are some cases where a condition is obviously an error, based on the protocol specification, but that
+specification does not actually indicate how a client or server should behave in the face of that error. One
+example is if a gRPC server receives an HTTP/2 request that has an unexpected content-type or an HTTP method
+other than POST.
+
+For these cases, the test author should put the most sensible error code as the expected error code in the
+`expectedResponse` field of the test case, but then can also add other acceptable error codes in the
+`otherAllowedErrorCodes` field. Even when the error code is not specified, it is not good practice to allow
+_any_ error code since many error codes will obviously not apply, and some error codes should never be used
+by a client or server implementation library but are reserved for use by actual application logic (see the
+table at the bottom of the [gRPC status codes documentation](https://grpc.github.io/grpc/core/md_doc_statuscodes.html)).
+
 ### Raw Payloads
 
 There are two message types in the test case schema worth noting here - [`RawHTTPRequest`][raw-http-request] and 
@@ -168,25 +202,6 @@ These conventions allow for more granular control over running tests via the con
 for a specific protocol or only running the unary tests within a suite.
 
 Aside from the `/` for separating elements on the name, test case names should use `kebab-case` convention.
-
-## Expected responses
-
-The expected response for a test is auto-generated based on the request details. The conformance runner will determine 
-what the response should be according to the values specified in the test suite and individual test cases. 
-
-You also have the ability to explicitly specify your own expected response directly in the test definition itself. However, 
-this is typically only needed for exception test cases. If the expected response is mostly re-stating the response definition
-that appears in the requests, you should rely on the auto-generation if possible. Otherwise, specifying an expected response 
-can make the test YAML overly verbose and harder to read, write, and maintain. 
-
-If the test induces behavior that prevents the server from sending or client from receiving the full response definition, it 
-will be necessary to define the expected response explicitly. Timeouts, cancellations, and exceeding message size limits are 
-good examples of this.
-
-If you do need to specify an explicit response, simply define an `expectedResponse` block for your test case and this will
-override the auto-generated expected response in the test runner. 
-
-To see tests denoting an explicit response, search the [test suites][test-suite-dir] directory for the word `expectedResponse`.
 
 ## Running and Debugging New Tests
 
