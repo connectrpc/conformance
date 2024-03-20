@@ -1,7 +1,7 @@
 name: release
 on:
-  push:
-    tags: v*
+  release:
+    types: [published]
 permissions:
   # need write permission to create/edit release and attach artifacts
   contents: write
