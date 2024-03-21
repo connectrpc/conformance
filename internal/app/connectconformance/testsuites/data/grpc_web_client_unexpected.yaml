@@ -242,14 +242,9 @@ testCases:
               headers:
                 - name: Content-Type
                   value: [ "image/jpeg" ]
-    otherAllowedErrorCodes:
-      # Not actually specified what error code to use, but only
-      # internal and unknown really make any sense. There may be
-      # an argument for unimplemented, too.
-      - CODE_INTERNAL
-      - CODE_UNIMPLEMENTED
     expectedResponse:
       error:
+        # derived from 200 response code
         code: CODE_UNKNOWN
   - request:
       testName: unexpected-codec
