@@ -1,8 +1,0 @@
-name: Server Unexpected Requests
-mode: TEST_MODE_SERVER
-relevantCompressions:
-  - COMPRESSION_IDENTITY
-relevantCodecs:
-  - CODEC_PROTO
-testCases:
-
