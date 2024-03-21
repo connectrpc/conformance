@@ -14,7 +14,7 @@ testCases:
         error:
           code: CODE_CANCELED
   expectedResponse:
-    httpStatusCode: 408
+    httpStatusCode: 499
     error:
       code: CODE_CANCELED
       details: 
@@ -71,7 +71,7 @@ testCases:
         error:
           code: CODE_DEADLINE_EXCEEDED
   expectedResponse:
-    httpStatusCode: 408
+    httpStatusCode: 504
     error:
       code: CODE_DEADLINE_EXCEEDED
       details: 
@@ -166,7 +166,7 @@ testCases:
         error:
           code: CODE_FAILED_PRECONDITION
   expectedResponse:
-    httpStatusCode: 412
+    httpStatusCode: 400
     error:
       code: CODE_FAILED_PRECONDITION
       details: 
@@ -223,7 +223,7 @@ testCases:
         error:
           code: CODE_UNIMPLEMENTED
   expectedResponse:
-    httpStatusCode: 404
+    httpStatusCode: 501
     error:
       code: CODE_UNIMPLEMENTED
       details: 

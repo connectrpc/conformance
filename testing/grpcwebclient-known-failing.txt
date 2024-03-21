@@ -21,3 +21,17 @@ gRPC-Web Unexpected Responses/**/unexpected-compressed-message
 gRPC-Web Unexpected Responses/**/unexpected-compression
 gRPC-Web Unexpected Responses/**/multiple-responses
 gRPC-Web Unexpected Responses/**/ok-but-no-response
+
+# The gRPC-Web client does not appear to actually implement the HTTP to gRPC status code
+# mapping described in this part of the spec:
+#   https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
+# Instead, it always returns an "unknown" code if the response does not include a
+# grpc-status header/trailer key.
+HTTP to RPC Code Mapping/**/bad-gateway
+HTTP to RPC Code Mapping/**/bad-request
+HTTP to RPC Code Mapping/**/forbidden
+HTTP to RPC Code Mapping/**/gateway-timeout
+HTTP to RPC Code Mapping/**/not-found
+HTTP to RPC Code Mapping/**/service-unavailable
+HTTP to RPC Code Mapping/**/too-many-requests
+HTTP to RPC Code Mapping/**/unauthorized

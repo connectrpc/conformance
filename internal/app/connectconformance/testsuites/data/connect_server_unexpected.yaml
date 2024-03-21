@@ -8,6 +8,24 @@ relevantCodecs:
   - CODEC_PROTO
 testCases:
   - request:
+      testName: unexpected-content-type
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "image/jpeg" ]
+        unary:
+          binary: "12345678"
+    expectedResponse:
+      httpStatusCode: 415
+      error:
+        code: CODE_UNKNOWN
+
+  - request:
       testName: server-stream/no-request
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
