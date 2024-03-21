@@ -35,6 +35,7 @@ manually curating the release notes.
    * Title the Release the same as the tag: “vX.Y.Z”.
    * Click “Set as latest release”.
    * If this is a release candidate, or any other kind of pre-release, click "Set as a pre-release".
+     A pre-v1.0.0 number, like "v0.3.0", should not be marked as a pre-release.
    * Set the last version as the “Previous tag”.
    * Click “Generate release notes” to autogenerate release notes.
    * Edit the release notes.
