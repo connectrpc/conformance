@@ -1,11 +1,1 @@
-# Currently, connect-go returns an "internal" error when either of these occurs.
-# However, the gRPC specs state that a problem with message cardinality (where
-# a single message is expected but stream actually has a different number), in
-# both clients and servers, should be an "unimplemented" error.
-#
-# Search for "cardinality violation" in this doc:
-#   https://grpc.github.io/grpc/core/md_doc_statuscodes.html
-**/unary/multiple-responses
-**/unary/ok-but-no-response
-**/client-stream/multiple-responses
-**/client-stream/ok-but-no-response
+# There are no known failures in the reference client.

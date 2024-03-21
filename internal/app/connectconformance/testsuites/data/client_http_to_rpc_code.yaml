@@ -1,16 +1,10 @@
-name: HTTP to Connect Code Mapping
+name: HTTP to RPC Code Mapping
 # If a server returns a non-200 HTTP code for unary requests without an
-# explicit Connect error code, the client must synthesize an RPC code
+# explicit RPC error code, the client must synthesize an RPC code
 # from the HTTP code. These tests cases verify that mapping by forcing
 # the server to return a specified HTTP code and then test whether the
 # client correctly returns the required RPC code.
-#
-# TODO: Remove relevant protocols once the Connect code mapping table
-#       is updated to align with gRPC.
-## https://github.com/connectrpc/connectrpc.com/pull/130
 mode: TEST_MODE_CLIENT
-relevantProtocols:
-  - PROTOCOL_CONNECT
 testCases:
 - request:
     testName: bad-request
@@ -18,12 +12,11 @@ testCases:
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       responseDefinition:
-        responseData: "dGVzdCByZXNwb25zZQ=="
         rawResponse:
           statusCode: 400
   expectedResponse:
     error:
-      code: CODE_INVALID_ARGUMENT
+      code: CODE_INTERNAL
 - request:
     testName: unauthorized
     streamType: STREAM_TYPE_UNARY
@@ -58,17 +51,6 @@ testCases:
     error:
       code: CODE_UNIMPLEMENTED
 - request:
-    testName: request-timeout
-    streamType: STREAM_TYPE_UNARY
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      responseDefinition:
-        rawResponse:
-          statusCode: 408
-  expectedResponse:
-    error:
-      code: CODE_DEADLINE_EXCEEDED
-- request:
      testName: conflict
      streamType: STREAM_TYPE_UNARY
      requestMessages:
@@ -78,7 +60,7 @@ testCases:
            statusCode: 409
   expectedResponse:
     error:
-      code: CODE_ABORTED
+      code: CODE_UNKNOWN
 - request:
     testName: precondition-failed
     streamType: STREAM_TYPE_UNARY
@@ -89,7 +71,7 @@ testCases:
           statusCode: 412
   expectedResponse:
     error:
-      code: CODE_FAILED_PRECONDITION
+      code: CODE_UNKNOWN
 - request:
     testName: payload-too-large
     streamType: STREAM_TYPE_UNARY
@@ -100,20 +82,18 @@ testCases:
           statusCode: 413
   expectedResponse:
     error:
-      code: CODE_RESOURCE_EXHAUSTED
-# TODO - uncomment when conformance is updated to the latest release of connect-go
-# that includes this fix
-# - request:
-#     testName: unsupported media type
-#     streamType: STREAM_TYPE_UNARY
-#     requestMessages:
-#     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-#       responseDefinition:
-#         rawResponse:
-#           statusCode: 415
-#  expectedResponse:
-#    error:
-#      code: CODE_INTERNAL
+      code: CODE_UNKNOWN
+- request:
+    testName: unsupported media type
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        rawResponse:
+          statusCode: 415
+  expectedResponse:
+    error:
+      code: CODE_UNKNOWN
 - request:
     testName: too-many-requests
     streamType: STREAM_TYPE_UNARY
@@ -135,7 +115,7 @@ testCases:
           statusCode: 431
   expectedResponse:
     error:
-      code: CODE_RESOURCE_EXHAUSTED
+      code: CODE_UNKNOWN
 - request:
     testName: bad-gateway
     streamType: STREAM_TYPE_UNARY
@@ -169,4 +149,14 @@ testCases:
   expectedResponse:
     error:
       code: CODE_UNAVAILABLE
-
+- request:
+    testName: http-version-not-supported
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+        responseDefinition:
+          rawResponse:
+            statusCode: 505
+  expectedResponse:
+    error:
+      code: CODE_UNKNOWN
