@@ -22,3 +22,12 @@ archives:
     name_template: 'connectconformance-{{ .Tag }}-{{ title .Os }}-{{ if and (eq .Os "linux") (eq .Arch "arm64")}}aarch64{{ else if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
     files:
       - LICENSE
+release:
+  github:
+    owner: connectrpc
+    name: conformance
+  # Don't overwrite release notes. The process is to create the release manually in
+  # the GitHub UI, curating the release notes by editing the auto-generated notes.
+  # A GitHub action will then act when the tag is created and run goreleaser to
+  # generate the release artifacts and upload them and attach them to the release.
+  mode: keep-existing
