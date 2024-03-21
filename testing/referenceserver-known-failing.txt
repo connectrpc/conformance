@@ -1,1 +1,1 @@
-# W00T! There are no known failures in the reference server.
+# There are no known failures in the reference server.

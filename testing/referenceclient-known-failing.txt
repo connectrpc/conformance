@@ -1,1 +1,1 @@
-# W00T! There are no known failures in the reference client.
+# There are no known failures in the reference client.
