@@ -43,6 +43,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc+proto" ]
+          - name: te
+            value: [ "trailers" ]
     expectedResponse:
       error:
         code: CODE_UNIMPLEMENTED
@@ -57,6 +59,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc+proto" ]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0
@@ -82,6 +86,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc+proto" ]
+          - name: te
+            value: [ "trailers" ]
     expectedResponse:
       error:
         code: CODE_UNIMPLEMENTED
@@ -96,6 +102,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/grpc+proto" ]
+          - name: te
+            value: [ "trailers" ]
         stream:
           items:
             - flags: 0

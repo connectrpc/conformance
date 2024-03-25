@@ -202,6 +202,28 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	if referenceMode {
 		handler = referenceServerChecks(handler, errPrinter)
 		handler = rawResponder(handler, errPrinter)
+	} else {
+		// When in reference mode, checking requests from a client-under-test, we make sure that the
+		// client sends a "TE: trailers" header.
+		// But when NOT in reference mode, we may handle a test case defined with a "raw HTTP request",
+		// sent by the reference client. We want to make sure these are all correctly formed, and neither
+		// the underlying connect-go nor grpc-go implementations complain about this. So we complain
+		// about it here. So if we write a raw request test case that fails to include it, we'll know
+		// about it before it finds its way into a release and then is discovered when integrating with
+		// the grpc-cpp implementation, for example, which has a *hard* requirement that the header is
+		// present.
+		orig := handler
+		handler = http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+			contentType := req.Header.Get("Content-Type")
+			if (contentType == grpcContentType || strings.HasPrefix(contentType, grpcContentTypePrefix)) &&
+				req.Header.Get("TE") != "trailers" {
+				errWriter := connect.NewErrorWriter()
+				_ = errWriter.Write(respWriter, req,
+					connect.NewError(connect.CodeUnknown, errors.New("missing 'TE: trailers' header")))
+				return
+			}
+			orig.ServeHTTP(respWriter, req)
+		})
 	}
 	if trace != nil {
 		handler = tracer.TracingHandler(handler, trace)
