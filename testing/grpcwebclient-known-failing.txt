@@ -11,8 +11,9 @@ Client Cancellation/**/server-stream/**/cancel-after-zero-responses
 # And since that uses an object keyed to trailer name, it will eliminate dupes. Responses that use a
 # "trailers only" response can succeed, however, because those trailers are actually encoded as HTTP
 # headers, which are not parsed with the above code.
-Duplicate Metadata/**/unary/**/success
-Duplicate Metadata/**/server-stream/**
+#Duplicate Metadata/**/unary/**/success
+#Duplicate Metadata/**/server-stream/**
+Duplicate Metadata/**
 gRPC-Web Trailers/**/trailers-in-body/duplicate-metadata
 gRPC-Web Trailers/**/trailers-in-body/mixed-case
 

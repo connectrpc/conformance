@@ -55,7 +55,7 @@ func (c *conformanceServiceServer) Unary(
 	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil {
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(req.ResponseDefinition.ResponseHeaders)
-		if err := grpc.SetHeader(ctx, headerMD); err != nil {
+		if err := grpc.SendHeader(ctx, headerMD); err != nil {
 			return nil, err
 		}
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(req.ResponseDefinition.ResponseTrailers)
@@ -68,7 +68,7 @@ func (c *conformanceServiceServer) Unary(
 	md, _ := metadata.FromIncomingContext(ctx)
 	payload, grpcErr := parseUnaryResponseDefinition(
 		ctx,
-		req.ResponseDefinition,
+		responseDefinition,
 		md,
 		[]*anypb.Any{msgAsAny},
 	)
@@ -116,7 +116,7 @@ func (c *conformanceServiceServer) ClientStream(
 	// Set headers and trailers on stream
 	if responseDefinition != nil {
 		headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
-		if err := stream.SetHeader(headerMD); err != nil {
+		if err := stream.SendHeader(headerMD); err != nil {
 			return err
 		}
 
