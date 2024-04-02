@@ -40,7 +40,7 @@ func TestRawResponseRecorder(t *testing.T) {
 		conformancev1connect.UnimplementedConformanceServiceHandler{},
 		connect.WithInterceptors(rawResponseRecorder{}),
 	)
-	svr := httptest.NewUnstartedServer(rawResponder(handler, internal.NewPrinter(&bytes.Buffer{})))
+	svr := httptest.NewUnstartedServer(rawResponder(handler))
 	svr.EnableHTTP2 = true // so we can test bidi stream
 	svr.StartTLS()
 	t.Cleanup(svr.Close)
