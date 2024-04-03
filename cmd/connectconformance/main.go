@@ -127,7 +127,10 @@ line.
 		},
 	}
 	bind(rootCmd, flagset)
-	_ = rootCmd.Execute()
+	err := rootCmd.Execute()
+	if err != nil {
+		os.Exit(2)
+	}
 }
 
 func bind(cmd *cobra.Command, flags *flags) {
