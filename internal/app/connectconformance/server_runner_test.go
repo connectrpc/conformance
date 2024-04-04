@@ -196,7 +196,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			results := newResults(&testTrie{}, &testTrie{}, nil)
+			results := newResults(len(requests), &testTrie{}, &testTrie{}, nil)
 
 			var procAddr atomic.Pointer[process] // populated when server process created
 			var actualSvrRequest bytes.Buffer

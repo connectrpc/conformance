@@ -45,9 +45,10 @@ const timeoutCheckGracePeriodMillis = 250
 // log writer. It can also incorporate data provided out-of-band by a reference
 // server, when testing a client implementation.
 type testResults struct {
-	knownFailing *testTrie
-	knownFlaky   *testTrie
-	tracer       *tracer.Tracer
+	totalTestCount int
+	knownFailing   *testTrie
+	knownFlaky     *testTrie
+	tracer         *tracer.Tracer
 
 	traceWaitGroup sync.WaitGroup
 
@@ -57,8 +58,9 @@ type testResults struct {
 	serverSideband map[string]string
 }
 
-func newResults(knownFailing, knownFlaky *testTrie, tracer *tracer.Tracer) *testResults {
+func newResults(totalTestCount int, knownFailing, knownFlaky *testTrie, tracer *tracer.Tracer) *testResults {
 	return &testResults{
+		totalTestCount: totalTestCount,
 		knownFailing:   knownFailing,
 		knownFlaky:     knownFlaky,
 		tracer:         tracer,
@@ -241,6 +243,10 @@ func (r *testResults) report(printer internal.Printer) bool {
 		testCaseNames = append(testCaseNames, testCaseName)
 	}
 	var succeeded, failed, expectedFailures int
+	couldNotRun := r.totalTestCount - len(testCaseNames)
+	if couldNotRun < 0 {
+		couldNotRun = 0 // Possible in tests that don't bother configuring actual test count.
+	}
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
@@ -249,7 +255,10 @@ func (r *testResults) report(printer internal.Printer) bool {
 			expectError = outcome.knownFailing ||
 				(outcome.knownFlaky && outcome.actualFailure != nil)
 		}
+		var noRun *couldNotRunError
 		switch {
+		case errors.As(outcome.actualFailure, &noRun):
+			couldNotRun++
 		case !expectError && outcome.actualFailure != nil:
 			printer.Printf("FAILED: %s:\n%s", name, indent(outcome.actualFailure.Error()))
 			trace := r.traces[name]
@@ -273,7 +282,11 @@ func (r *testResults) report(printer internal.Printer) bool {
 		// Add a blank line to separate summary from messages above
 		printer.Printf("\n")
 	}
+
 	printer.Printf("Total cases: %d\n%d passed, %d failed", len(r.outcomes), succeeded, failed)
+	if couldNotRun > 0 {
+		printer.Printf("Another %d could not be run due to client timing out or exiting prematurely.", couldNotRun)
+	}
 	if expectedFailures > 0 {
 		printer.Printf("(Another %d failed as expected due to being known failures/flakes.)", expectedFailures)
 	}
