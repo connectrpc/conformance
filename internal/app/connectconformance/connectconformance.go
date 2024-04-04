@@ -233,7 +233,7 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	if flags.Verbose { //nolint:nestif
+	if flags.Verbose {
 		logPrinter.Printf("Computed %d test case permutation(s) across %d server configuration(s).",
 			len(allPermutations), len(allServerConfigs))
 

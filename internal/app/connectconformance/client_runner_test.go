@@ -67,7 +67,7 @@ func TestRunClient(t *testing.T) {
 			name:       "client fails",
 			clientFunc: (&testClientProcess{failAfter: 2}).run,
 			failToSend: 2,
-			expectErr:  "could not write request: client closed stdin",
+			expectErr:  "could not send request: client stdin is closedx",
 			expectedResults: map[string]bool{
 				"TestSuite1/testcase1": true,
 				"TestSuite1/testcase2": true,

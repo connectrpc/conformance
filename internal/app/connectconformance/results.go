@@ -255,7 +255,7 @@ func (r *testResults) report(printer internal.Printer) bool {
 			expectError = outcome.knownFailing ||
 				(outcome.knownFlaky && outcome.actualFailure != nil)
 		}
-		var noRun *errCouldNotRun
+		var noRun *couldNotRunError
 		switch {
 		case errors.As(outcome.actualFailure, &noRun):
 			couldNotRun++

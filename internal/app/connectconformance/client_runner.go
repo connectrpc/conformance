@@ -195,7 +195,7 @@ func (c *clientProcessRunner) consumeOutput() {
 			if err == nil || errors.Is(err, io.EOF) {
 				err = errNoOutcome
 			}
-			action(key, nil, &errFailedToGetResult{err})
+			action(key, nil, &failedToGetResultError{err})
 			delete(c.pendingOps, key)
 		}
 	}()
@@ -229,14 +229,14 @@ func (c *clientProcessRunner) consumeOutput() {
 	}
 }
 
-type errFailedToGetResult struct {
+type failedToGetResultError struct {
 	err error
 }
 
-func (e *errFailedToGetResult) Error() string {
+func (e *failedToGetResultError) Error() string {
 	return fmt.Sprintf("failed to get result from client: %v", e.err)
 }
 
-func (e *errFailedToGetResult) Unwrap() error {
+func (e *failedToGetResultError) Unwrap() error {
 	return e.err
 }
