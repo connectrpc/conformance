@@ -32,8 +32,11 @@ const (
 	maxClientResponseSize = 16 * 1024 * 1024 // 16 MB
 )
 
-var errClosed = errors.New("send-to-client is closed")
-var errDuplicate = errors.New("duplicate test case")
+var (
+	errClosed    = errors.New("could not send request: client stdin is closed")
+	errDuplicate = errors.New("duplicate test case")
+	errNoOutcome = errors.New("no outcome ever received")
+)
 
 type clientRunner interface {
 	sendRequest(req *conformancev1.ClientCompatRequest, whenDone func(string, *conformancev1.ClientCompatResponse, error)) error
@@ -124,7 +127,7 @@ func (c *clientProcessRunner) sendRequest(req *conformancev1.ClientCompatRequest
 		}
 
 		if errors.Is(err, io.ErrClosedPipe) {
-			err = errors.New("could not write request: client closed stdin")
+			err = errClosed
 		}
 		c.err.CompareAndSwap(nil, &err)
 		return err
@@ -190,9 +193,9 @@ func (c *clientProcessRunner) consumeOutput() {
 		for key, action := range c.pendingOps {
 			err := reasonForReturn
 			if err == nil || errors.Is(err, io.EOF) {
-				err = fmt.Errorf("client never provided response for test case %q", key)
+				err = errNoOutcome
 			}
-			action(key, nil, err)
+			action(key, nil, &failedToGetResultError{err})
 			delete(c.pendingOps, key)
 		}
 	}()
@@ -224,4 +227,16 @@ func (c *clientProcessRunner) consumeOutput() {
 		testCaseNames[resp.TestName] = struct{}{}
 		action(resp.TestName, resp, nil)
 	}
+}
+
+type failedToGetResultError struct {
+	err error
+}
+
+func (e *failedToGetResultError) Error() string {
+	return fmt.Sprintf("failed to get result from client: %v", e.err)
+}
+
+func (e *failedToGetResultError) Unwrap() error {
+	return e.err
 }

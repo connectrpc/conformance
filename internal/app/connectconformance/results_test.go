@@ -30,7 +30,7 @@ import (
 
 func TestResults_SetOutcome(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("foo/bar/2", true, errors.New("fail"))
 	results.setOutcome("foo/bar/3", false, errors.New("fail"))
@@ -58,7 +58,7 @@ func TestResults_SetOutcome(t *testing.T) {
 
 func TestResults_FailedToStart(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.failedToStart([]*conformancev1.TestCase{
 		{Request: &conformancev1.ClientCompatRequest{TestName: "foo/bar/1"}},
 		{Request: &conformancev1.ClientCompatRequest{TestName: "known-to-fail/1"}},
@@ -76,7 +76,7 @@ func TestResults_FailedToStart(t *testing.T) {
 
 func TestResults_FailRemaining(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("known-to-fail/1", false, errors.New("fail"))
 	results.failRemaining([]*conformancev1.TestCase{
@@ -101,7 +101,7 @@ func TestResults_FailRemaining(t *testing.T) {
 
 func TestResults_Failed(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.failed("foo/bar/1", &conformancev1.ClientErrorResult{Message: "fail"})
 	results.failed("known-to-fail/1", &conformancev1.ClientErrorResult{Message: "fail"})
 
@@ -116,7 +116,7 @@ func TestResults_Failed(t *testing.T) {
 
 func TestResults_Assert(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	payload1 := &conformancev1.ClientResponseResult{
 		Payloads: []*conformancev1.ConformancePayload{
 			{Data: []byte{0, 1, 2, 3, 4}},
@@ -678,7 +678,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			results := newResults(&testTrie{}, &testTrie{}, nil)
+			results := newResults(0, &testTrie{}, &testTrie{}, nil)
 
 			expected := &conformancev1.TestCase{
 				Request:          &conformancev1.ClientCompatRequest{StreamType: conformancev1.StreamType_STREAM_TYPE_UNARY},
@@ -715,7 +715,7 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 
 func TestResults_ServerSideband(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("foo/bar/1", false, nil)
 	results.setOutcome("foo/bar/2", false, errors.New("fail"))
 	results.setOutcome("foo/bar/3", false, nil)
@@ -738,7 +738,7 @@ func TestResults_ServerSideband(t *testing.T) {
 
 func TestResults_Report(t *testing.T) {
 	t.Parallel()
-	results := newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results := newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	logger := &internal.SimplePrinter{}
 
 	// No test cases? Report success.
@@ -746,42 +746,42 @@ func TestResults_Report(t *testing.T) {
 	require.True(t, success)
 
 	// Only successful outcomes? Report success.
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("foo/bar/1", false, nil)
 	success = results.report(logger)
 	require.True(t, success)
 
 	// Unexpected failure? Report failure.
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("foo/bar/1", false, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.False(t, success)
 
 	// Unexpected failure during setup? Report failure.
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("foo/bar/1", true, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.False(t, success)
 
 	// Expected failure? Report success.
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("known-to-fail/1", false, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.True(t, success)
 
 	// Setup error from expected failure? Report failure (setup errors never acceptable).
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("known-to-fail/1", true, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.False(t, success)
 
 	// Flaky? Report success whether it passes or fails
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("known-to-flake/1", false, nil) // succeeds
 	success = results.report(logger)
 	require.True(t, success)
 
-	results = newResults(makeKnownFailing(), makeKnownFlaky(), nil)
+	results = newResults(0, makeKnownFailing(), makeKnownFlaky(), nil)
 	results.setOutcome("known-to-flake/1", false, errors.New("ruh roh"))
 	success = results.report(logger)
 	require.True(t, success)

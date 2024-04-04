@@ -186,7 +186,7 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	}
 
 	mux.Handle(conformancev1connect.NewConformanceServiceHandler(
-		&conformanceServer{},
+		&conformanceServer{referenceMode: referenceMode},
 		opts...,
 	))
 	handler := http.Handler(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
@@ -201,7 +201,7 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	}))
 	if referenceMode {
 		handler = referenceServerChecks(handler, errPrinter)
-		handler = rawResponder(handler, errPrinter)
+		handler = rawResponder(handler)
 	} else {
 		// When in reference mode, checking requests from a client-under-test, we make sure that the
 		// client sends a "TE: trailers" header.

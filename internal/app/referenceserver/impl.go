@@ -15,7 +15,9 @@
 package referenceserver
 
 import (
+	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
@@ -27,8 +29,9 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	connect "connectrpc.com/connect"
-	proto "google.golang.org/protobuf/proto"
+	"connectrpc.com/connect"
+	"google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -42,74 +45,72 @@ type ConformanceRequest interface {
 
 type conformanceServer struct {
 	conformancev1connect.UnimplementedConformanceServiceHandler
+	referenceMode bool
 }
 
 func (s *conformanceServer) Unary(
 	ctx context.Context,
 	req *connect.Request[conformancev1.UnaryRequest],
 ) (*connect.Response[conformancev1.UnaryResponse], error) {
-	msgAsAny, err := asAny(req.Msg)
-	if err != nil {
-		return nil, err
-	}
-	payload, connectErr := parseUnaryResponseDefinition(
-		ctx,
-		req.Msg.ResponseDefinition,
-		req.Header(),
-		req.Peer().Query,
-		[]*anypb.Any{msgAsAny},
-	)
-	if connectErr != nil {
-		return nil, connectErr
-	}
-
-	resp := connect.NewResponse(&conformancev1.UnaryResponse{
-		Payload: payload,
+	return doUnary(ctx, req, s.referenceMode, func(payload *conformancev1.ConformancePayload) *conformancev1.UnaryResponse {
+		return &conformancev1.UnaryResponse{
+			Payload: payload,
+		}
 	})
-
-	if req.Msg.ResponseDefinition != nil {
-		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
-		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
-
-		// If a response delay was specified, sleep for that amount of ms before responding
-		responseDelay := time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond
-		time.Sleep(responseDelay)
-	}
-
-	return resp, nil
 }
 
-// TODO - This should be consolidated with the unary implementation since they are
-// mostly the same. See https://github.com/connectrpc/conformance/pull/721/files#r1415699842
-// for an example.
 func (s *conformanceServer) IdempotentUnary(
 	ctx context.Context,
 	req *connect.Request[conformancev1.IdempotentUnaryRequest],
 ) (*connect.Response[conformancev1.IdempotentUnaryResponse], error) {
-	msgAsAny, err := asAny(req.Msg)
+	return doUnary(ctx, req, s.referenceMode, func(payload *conformancev1.ConformancePayload) *conformancev1.IdempotentUnaryResponse {
+		return &conformancev1.IdempotentUnaryResponse{
+			Payload: payload,
+		}
+	})
+}
+
+type hasUnaryResponseDefinition[T any] interface {
+	*T
+	proto.Message
+	GetResponseDefinition() *conformancev1.UnaryResponseDefinition
+}
+
+func doUnary[ReqT, RespT any, Req hasUnaryResponseDefinition[ReqT]](
+	ctx context.Context,
+	req *connect.Request[ReqT],
+	referenceMode bool,
+	makeResp func(payload *conformancev1.ConformancePayload) *RespT,
+) (*connect.Response[RespT], error) {
+	msg := Req(req.Msg)
+	msgAsAny, err := asAny(msg)
 	if err != nil {
 		return nil, err
 	}
 	payload, connectErr := parseUnaryResponseDefinition(
 		ctx,
-		req.Msg.ResponseDefinition,
+		referenceMode,
+		msg.GetResponseDefinition(),
 		req.Header(),
 		req.Peer().Query,
+		req.Peer().Protocol,
+		req.Header().Get("Content-Type"),
+		nil,
 		[]*anypb.Any{msgAsAny},
 	)
 	if connectErr != nil {
 		return nil, connectErr
 	}
 
-	resp := connect.NewResponse(&conformancev1.IdempotentUnaryResponse{
-		Payload: payload,
-	})
+	resp := connect.NewResponse(makeResp(payload))
 
-	if req.Msg.ResponseDefinition != nil {
-		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseHeaders, resp.Header())
-		internal.AddHeaders(req.Msg.ResponseDefinition.ResponseTrailers, resp.Trailer())
+	if msg.GetResponseDefinition() != nil {
+		internal.AddHeaders(msg.GetResponseDefinition().ResponseHeaders, resp.Header())
+		internal.AddHeaders(msg.GetResponseDefinition().ResponseTrailers, resp.Trailer())
 
-		time.Sleep((time.Duration(req.Msg.ResponseDefinition.ResponseDelayMs) * time.Millisecond))
+		// If a response delay was specified, sleep for that amount of ms before responding
+		responseDelay := time.Duration(msg.GetResponseDefinition().ResponseDelayMs) * time.Millisecond
+		time.Sleep(responseDelay)
 	}
 
 	return resp, nil
@@ -145,9 +146,13 @@ func (s *conformanceServer) ClientStream(
 
 	payload, err := parseUnaryResponseDefinition(
 		ctx,
+		s.referenceMode,
 		responseDefinition,
 		stream.RequestHeader(),
 		stream.Peer().Query,
+		stream.Peer().Protocol,
+		stream.RequestHeader().Get("Content-Type"),
+		stream.Conn(),
 		reqs,
 	)
 	if err != nil {
@@ -396,9 +401,13 @@ func (s *conformanceServer) BidiStream(
 // a built payload or a connect error based on the definition.
 func parseUnaryResponseDefinition(
 	ctx context.Context,
+	referenceMode bool,
 	def *conformancev1.UnaryResponseDefinition,
 	hdrs http.Header,
 	queryParams url.Values,
+	protocol string,
+	contentType string,
+	conn connect.StreamingHandlerConn,
 	reqs []*anypb.Any,
 ) (*conformancev1.ConformancePayload, *connect.Error) {
 	reqInfo := createRequestInfo(ctx, hdrs, queryParams, reqs)
@@ -422,8 +431,70 @@ func parseUnaryResponseDefinition(
 
 		connectErr := internal.ConvertProtoToConnectError(respType.Error)
 
-		internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
-		internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
+		if !referenceMode { //nolint:nestif
+			// The connect-go APIs don't provide a way to set headers and
+			// trailers independently in the face of an error for a unary
+			// response.
+			//
+			// In normal mode, we go with the flow of these APIs and use
+			// connectErr.Meta to provide all metadata.
+			internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
+			internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
+		} else {
+			// In reference mode, however, it is counter-intuitive that an HTTP
+			// trace from the reference server shows headers and trailers all
+			// jumbled together. While that is semantically fine (and handled
+			// by the conformance test runner's assertion of the header and
+			// trailer results), it is confusing to see when someone is
+			// debugging a failing test case.
+			//
+			// So, in reference mode, we will go against the grain of the
+			// connect-go APIs and forcibly set headers and trailers.
+			if conn != nil {
+				// For client stream operations, we can set the headers and
+				// trailers independently via the underlying streaming conn.
+				internal.AddHeaders(def.GetResponseHeaders(), conn.ResponseHeader())
+				internal.AddHeaders(def.GetResponseTrailers(), conn.ResponseTrailer())
+			} else {
+				// Not a stream? It gets trickier. There's just *no way* in the
+				// connect-go API to independently set headers and trailers in the face
+				// of an error. So we have to get a bit more clever.
+				switch protocol {
+				case connect.ProtocolConnect:
+					// For the connect unary protocol, everything will end up in HTTP
+					// headers. So, to distinguish headers from trailers, we can prefix
+					// the trailers with "trailer-".
+					internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
+					for _, hdr := range def.GetResponseTrailers() {
+						hdr.Name = "trailer-" + hdr.Name
+					}
+					internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
+				case connect.ProtocolGRPC:
+					// For gRPC and gRPC-web, we resort to hacking in a raw response,
+					// which gives us much greater control over the response.
+					rawResp := makeRawGRPCResponse(connectErr, contentType, def.GetResponseHeaders(), def.GetResponseTrailers())
+					if err := setRawResponse(ctx, rawResp); err != nil {
+						return nil, connect.NewError(connect.CodeUnknown, err)
+					}
+				case connect.ProtocolGRPCWeb:
+					if len(def.GetResponseHeaders()) == 0 {
+						// For gRPC-web, if there are no custom headers, then we don't have
+						// to do anything special: the connect-go framework will send a
+						// trailers-only response, so any error metadata will be interpreted
+						// as "trailers".
+						internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
+					} else {
+						// But otherwise, we have to employ the same tactics as for gRPC above.
+						rawResp := makeRawGRPCWebResponse(connectErr, contentType, def.GetResponseHeaders(), def.GetResponseTrailers())
+						if err := setRawResponse(ctx, rawResp); err != nil {
+							return nil, connect.NewError(connect.CodeUnknown, err)
+						}
+					}
+				default:
+					return nil, connect.NewError(connect.CodeUnknown, fmt.Errorf("unrecognized protocol: %s", protocol))
+				}
+			}
+		}
 
 		return nil, connectErr
 
@@ -525,4 +596,81 @@ func (i serverNameHandlerInterceptor) WrapStreamingHandler(next connect.Streamin
 		stream.ResponseHeader().Set("Server", server)
 		return next(ctx, stream)
 	}
+}
+
+func makeRawGRPCResponse(err *connect.Error, contentType string, headers, trailers []*conformancev1.Header) *conformancev1.RawHTTPResponse {
+	return &conformancev1.RawHTTPResponse{
+		Headers:  append(headers, &conformancev1.Header{Name: "Content-Type", Value: []string{contentType}}),
+		Trailers: append(trailers, grpcStatusTrailers(err)...),
+	}
+}
+
+func makeRawGRPCWebResponse(err *connect.Error, contentType string, headers, trailers []*conformancev1.Header) *conformancev1.RawHTTPResponse {
+	return &conformancev1.RawHTTPResponse{
+		Headers: append(
+			headers,
+			&conformancev1.Header{Name: "Content-Type", Value: []string{contentType}},
+			&conformancev1.Header{Name: "Access-Control-Allow-Origin", Value: []string{"*"}},
+			&conformancev1.Header{Name: "Access-Control-Expose-Headers", Value: []string{"*"}},
+		),
+		Body: &conformancev1.RawHTTPResponse_Stream{
+			Stream: &conformancev1.StreamContents{
+				Items: []*conformancev1.StreamContents_StreamItem{
+					{
+						Flags: 128, // indicates end-of-stream message w/ trailers
+						Payload: &conformancev1.MessageContents{
+							Data: &conformancev1.MessageContents_Text{
+								Text: grpcWebStatusEndStream(err, trailers),
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+func grpcStatusTrailers(err *connect.Error) []*conformancev1.Header {
+	trailers := []*conformancev1.Header{
+		{
+			Name:  "grpc-status",
+			Value: []string{fmt.Sprintf("%d", err.Code())},
+		},
+		{
+			Name:  "grpc-message",
+			Value: []string{err.Message()},
+		},
+	}
+	if len(err.Details()) > 0 {
+		statProto := &status.Status{
+			Code:    int32(err.Code()),
+			Message: err.Message(),
+			Details: make([]*anypb.Any, len(err.Details())),
+		}
+		for i, detail := range err.Details() {
+			statProto.Details[i] = &anypb.Any{
+				TypeUrl: internal.DefaultAnyResolverPrefix + detail.Type(),
+				Value:   detail.Bytes(),
+			}
+		}
+		data, marshalErr := proto.Marshal(statProto)
+		if marshalErr == nil {
+			trailers = append(trailers, &conformancev1.Header{
+				Name:  "grpc-status-details-bin",
+				Value: []string{base64.RawStdEncoding.EncodeToString(data)},
+			})
+		}
+	}
+	return trailers
+}
+
+func grpcWebStatusEndStream(err *connect.Error, trailers []*conformancev1.Header) string {
+	trailers = append(grpcStatusTrailers(err), trailers...)
+	var buf bytes.Buffer
+	for _, trailer := range trailers {
+		for _, val := range trailer.Value {
+			_, _ = fmt.Fprintf(&buf, "%s: %s\r\n", strings.ToLower(trailer.Name), val)
+		}
+	}
+	return buf.String()
 }

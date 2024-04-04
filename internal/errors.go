@@ -89,7 +89,7 @@ func ConvertProtoToConnectError(err *conformancev1.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}
-	connectErr := connect.NewError(connect.Code(int32(err.Code)), errors.New(err.GetMessage()))
+	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.GetMessage()))
 	for _, detail := range err.Details {
 		connectDetail, err := connect.NewErrorDetail(detail)
 		if err != nil {

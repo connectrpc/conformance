@@ -213,7 +213,8 @@ func runTestCasesForServer(
 		}
 		err := client.sendRequest(req, func(name string, resp *conformancev1.ClientCompatResponse, err error) {
 			defer wg.Done()
-			if logEach {
+			var errNoResult *failedToGetResultError
+			if logEach && !errors.As(err, &errNoResult) {
 				logPrinter.Printf("Received response for %q...", req.TestName)
 			}
 			switch {
@@ -236,8 +237,9 @@ func runTestCasesForServer(
 			wg.Done() // call it explicitly since callback above won't be invoked
 			// client pipe broken: mark remaining tests, including this one, as failed
 			for j := i; j < len(testCases); j++ {
-				results.setOutcome(testCases[j].Request.TestName, true, err)
+				results.setOutcome(testCases[j].Request.TestName, true, &couldNotRunError{err})
 			}
+			break
 		}
 	}
 
@@ -251,5 +253,17 @@ func runTestCasesForServer(
 	}
 
 	// If there are any tests without outcomes, mark them now.
-	results.failRemaining(testCases, errors.New("no outcome received from the client"))
+	results.failRemaining(testCases, &failedToGetResultError{errNoOutcome})
+}
+
+type couldNotRunError struct {
+	err error
+}
+
+func (e *couldNotRunError) Error() string {
+	return e.err.Error()
+}
+
+func (e *couldNotRunError) Unwrap() error {
+	return e.err
 }

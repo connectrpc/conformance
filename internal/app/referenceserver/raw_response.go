@@ -28,6 +28,9 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+var errNoRawResponseHolder = errors.New("reference server needs to use raw response but no RawHTTPResponse holder in context")
+var errNonRawResponseStarted = errors.New("reference server needs to use raw response but non-raw response already started")
+
 // rawResponseKey is used to store the raw response that the server
 // should send in the context. The value type will be **conformancev1.RawHTTPResponse.
 type rawResponseKey struct{}
@@ -38,7 +41,7 @@ type rawResponseKey struct{}
 // response writer. (If response writer interactions and no raw response has
 // been stored, those response writer interactions take precedence and no
 // raw response can be sent.)
-func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handler {
+func rawResponder(handler http.Handler) http.Handler {
 	errorWriter := connect.NewErrorWriter()
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 		testCaseName := req.Header.Get("x-test-case-name")
@@ -57,24 +60,19 @@ func rawResponder(handler http.Handler, errPrinter internal.Printer) http.Handle
 			}
 			return
 		}
-		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
 
-		// We stash this placeholder into context so the rawResponseRecorder
-		// interceptor can populate it and then abort the handler and let us
-		// take over the response.
-		var rawResponse *conformancev1.RawHTTPResponse
-		ctx := context.WithValue(req.Context(), rawResponseKey{}, &rawResponse)
+		rawResponder := &rawResponseWriter{respWriter: respWriter}
+		ctx := context.WithValue(req.Context(), rawResponseKey{}, rawResponder)
 		req = req.WithContext(ctx)
-		rawResponder := &rawResponseWriter{respWriter: respWriter, rawResp: &rawResponse}
 		handler.ServeHTTP(rawResponder, req)
-		rawResponder.finish(feedback)
+		rawResponder.finish()
 	})
 }
 
 type rawResponseWriter struct {
 	respWriter      http.ResponseWriter
 	mu              sync.Mutex
-	rawResp         **conformancev1.RawHTTPResponse
+	rawResp         *conformancev1.RawHTTPResponse
 	startedResponse bool
 }
 
@@ -87,7 +85,7 @@ func (r *rawResponseWriter) canSendResponse() bool {
 	if r.startedResponse {
 		return true
 	}
-	if *r.rawResp == nil {
+	if r.rawResp == nil {
 		r.startedResponse = true
 		return true
 	}
@@ -97,17 +95,20 @@ func (r *rawResponseWriter) canSendResponse() bool {
 // rawResponse returns non-nil if the call will be finished with a
 // raw response. If it returns nil, nothing need be done to finish
 // the call; the server handler was already allowed to send it.
-func (r *rawResponseWriter) rawResponse(feedback *feedbackPrinter) *conformancev1.RawHTTPResponse {
+func (r *rawResponseWriter) rawResponse() *conformancev1.RawHTTPResponse {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.rawResp
+}
+
+func (r *rawResponseWriter) setRawResponse(resp *conformancev1.RawHTTPResponse) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.startedResponse {
-		if *r.rawResp != nil {
-			// Oops. There's a raw response, but it was set too late.
-			feedback.Printf("Could not send raw response; handler sent response too soon")
-		}
-		return nil
+		return false
 	}
-	return *r.rawResp
+	r.rawResp = resp
+	return true
 }
 
 func (r *rawResponseWriter) Header() http.Header {
@@ -139,8 +140,8 @@ func (r *rawResponseWriter) Unwrap() http.ResponseWriter {
 	return r.respWriter
 }
 
-func (r *rawResponseWriter) finish(feedback *feedbackPrinter) {
-	resp := r.rawResponse(feedback)
+func (r *rawResponseWriter) finish() {
+	resp := r.rawResponse()
 	if resp == nil {
 		return
 	}
@@ -178,11 +179,9 @@ func (r rawResponseRecorder) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc
 		if msg, ok := req.Any().(*conformancev1.UnaryRequest); ok {
 			rawResponse := msg.GetResponseDefinition().GetRawResponse()
 			if rawResponse != nil {
-				respPtr, ok := ctx.Value(rawResponseKey{}).(**conformancev1.RawHTTPResponse)
-				if !ok {
-					return nil, errors.New("request contains raw response definition but no RawHTTPResponse holder in context")
+				if err := setRawResponse(ctx, rawResponse); err != nil {
+					return nil, err
 				}
-				*respPtr = rawResponse
 				return nil, connect.NewError(connect.CodeAborted, errors.New("use raw response instead"))
 			}
 		}
@@ -226,11 +225,9 @@ func (r rawResponseRecorder) WrapStreamingHandler(next connect.StreamingHandlerF
 		if reqErr == nil { //nolint:nestif
 			rawResponse := rawResponseFunc()
 			if rawResponse != nil {
-				respPtr, ok := ctx.Value(rawResponseKey{}).(**conformancev1.RawHTTPResponse)
-				if !ok {
-					return errors.New("request contains raw response definition but no RawHTTPResponse holder in context")
+				if err := setRawResponse(ctx, rawResponse); err != nil {
+					return err
 				}
-				*respPtr = rawResponse
 				// If we have a raw response, go ahead and drain the request stream
 				// before sending back the raw response.
 				// NOTE: This means that raw responses cannot be used with full-duplex
@@ -280,4 +277,15 @@ func (str *firstReqCachingStream) Receive(dest any) error {
 	// Otherwise, we've already provided the cached first request.
 	// So all subsequent receives use the underlying stream.
 	return str.StreamingHandlerConn.Receive(dest)
+}
+
+func setRawResponse(ctx context.Context, resp *conformancev1.RawHTTPResponse) error {
+	respWriter, ok := ctx.Value(rawResponseKey{}).(*rawResponseWriter)
+	if !ok {
+		return errNoRawResponseHolder
+	}
+	if !respWriter.setRawResponse(resp) {
+		return errNonRawResponseStarted
+	}
+	return nil
 }

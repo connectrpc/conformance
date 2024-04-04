@@ -115,10 +115,13 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 	}
 
 	results, err := run(configCases, knownFailing, knownFlaky, runPatterns, skipPatterns, allSuites, logPrinter, errPrinter, flags)
-	if err != nil {
+	if results == nil {
 		return false, err
 	}
-	return results.report(logPrinter), nil
+	if err != nil {
+		errPrinter.Printf("%v", err)
+	}
+	return results.report(logPrinter) && err == nil, nil
 }
 
 func run( //nolint:gocyclo
@@ -204,27 +207,39 @@ func run( //nolint:gocyclo
 	}
 
 	filter := newFilter(run, skip)
-	if flags.Verbose { //nolint:nestif
+	var filteredTestCount int
+	type serverConfig struct {
+		serverInstance
+		isGrpcClient, isGrpcServer bool
+	}
+	allServerConfigs, filteredServerConfigs := map[serverConfig]struct{}{}, map[serverConfig]struct{}{}
+	for _, testCase := range allPermutations {
+		svrConfig := serverConfig{
+			serverInstance: serverInstance{
+				protocol:          testCase.Request.Protocol,
+				httpVersion:       testCase.Request.HttpVersion,
+				useTLS:            len(testCase.Request.ServerTlsCert) > 0,
+				useTLSClientCerts: testCase.Request.ClientTlsCreds != nil,
+			},
+			isGrpcClient: strings.Contains(testCase.Request.TestName, grpcImplMarker) ||
+				strings.Contains(testCase.Request.TestName, grpcClientImplMarker),
+			isGrpcServer: strings.Contains(testCase.Request.TestName, grpcImplMarker) ||
+				strings.Contains(testCase.Request.TestName, grpcServerImplMarker),
+		}
+		allServerConfigs[svrConfig] = struct{}{}
+		if filter.accept(testCase) {
+			filteredTestCount++
+			filteredServerConfigs[svrConfig] = struct{}{}
+		}
+	}
+
+	if flags.Verbose {
 		logPrinter.Printf("Computed %d test case permutation(s) across %d server configuration(s).",
-			len(allPermutations), len(testCaseLib.casesByServer))
-		if filter != nil {
-			var count int
-			filteredServerInstances := map[serverInstance]struct{}{}
-			for _, testCase := range allPermutations {
-				if filter.accept(testCase) {
-					count++
-					filteredServerInstances[serverInstance{
-						protocol:          testCase.Request.Protocol,
-						httpVersion:       testCase.Request.HttpVersion,
-						useTLS:            len(testCase.Request.ServerTlsCert) > 0,
-						useTLSClientCerts: testCase.Request.ClientTlsCreds != nil,
-					}] = struct{}{}
-				}
-			}
-			if count != len(allPermutations) {
-				logPrinter.Printf("Filtered tests to %d test case permutation(s) across %d server configuration(s).",
-					count, len(filteredServerInstances))
-			}
+			len(allPermutations), len(allServerConfigs))
+
+		if filteredTestCount != len(allPermutations) {
+			logPrinter.Printf("Filtered tests to %d test case permutation(s) across %d server configuration(s).",
+				filteredTestCount, len(filteredServerConfigs))
 		}
 	}
 
@@ -293,7 +308,7 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	results := newResults(knownFailing, knownFlaky, trace)
+	results := newResults(filteredTestCount, knownFailing, knownFlaky, trace)
 
 	for _, clientInfo := range clients {
 		clientProcess, err := runClient(ctx, clientInfo.start)
@@ -356,6 +371,15 @@ func run( //nolint:gocyclo
 						return err
 					}
 
+					// Double-check that client is still running before spawning a server process.
+					if !clientProcess.isRunning() {
+						err := clientProcess.waitForResponses()
+						if err == nil {
+							err = errors.New("client process unexpectedly stopped")
+						}
+						return err
+					}
+
 					if flags.Verbose {
 						var with string
 						switch {
@@ -367,17 +391,6 @@ func run( //nolint:gocyclo
 							with = serverInfo.name
 						}
 						logTestCaseInfo(with, svrInstance, len(testCases), logPrinter)
-					}
-
-					// Double-check that client is still running before spawning a server process.
-					if !clientProcess.isRunning() {
-						err := clientProcess.waitForResponses()
-						if err == nil {
-							err = errors.New("client process unexpectedly stopped")
-						} else {
-							err = fmt.Errorf("client process unexpectedly stopped: %w", err)
-						}
-						return err
 					}
 
 					wg.Add(1)
@@ -407,12 +420,12 @@ func run( //nolint:gocyclo
 		}()
 
 		if err != nil {
-			return nil, err
+			return results, err
 		}
 
 		clientProcess.closeSend()
 		if err := clientProcess.waitForResponses(); err != nil {
-			return nil, err
+			return results, err
 		}
 	}
 
