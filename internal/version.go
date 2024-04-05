@@ -17,7 +17,7 @@ package internal
 //nolint:gochecknoglobals
 var (
 	// NB: These are vars instead of consts so they can be changed via -X ldflags.
-	buildVersion       = "v1.1.0-dev"
+	buildVersion       = "v1.0.1"
 	buildVersionSuffix = ""
 
 	// Version is the version to report from all binaries.
