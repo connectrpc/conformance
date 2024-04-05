@@ -22,10 +22,6 @@ To verify compatibility with other protocol implementations, the conformance tes
 and server implementations that use the [gRPC-Go module](https://github.com/grpc/grpc-go) and a reference
 server implementation that uses the [gRPC-Web Go server](https://github.com/improbable-eng/grpc-web).
 
-Also, please note that this project is currently pre-v1.0.0. As a result, it does not currently make backward compatibility
-guarantees. The goal is to publish a stable release but please be aware we may make changes
-as we gather feedback from early adopters.
-
 ## Documentation
 
 Detailed guides can be found in the "docs" sub-directory of this repo. If you first want to read a
@@ -142,9 +138,18 @@ Both of the above clients are tested against both the Connect reference server a
 The servers are tested against the Connect reference client and the gRPC client. And since the gRPC
 client does not support gRPC-Web, the servers are also tested against the official gRPC-Web JS client.
 
-## Status: Pre-v1.0.0
+## Status: Stable
 
-This project is currently pre-v1.0.0. The API should be considered unstable and likely to change.
+This repo is stable and follows semantic versioning.
+
+We will _not_ make breaking changes to the command-line interface, the YAML config
+formats, or the Protobuf messages used by clients and servers under test in the
+1.x series of releases.
+
+Note, however, that we reserve the right to rename, remove, or re-organize
+individual test cases, which may impact the "known failing" and "known flaky"
+configurations for an implementation under test. We will document these changes
+in the release notes.
 
 ## Ecosystem
 
