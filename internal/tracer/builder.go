@@ -130,6 +130,8 @@ func (b *builder) add(event Event) {
 			// for client-side traces, the HTTP version of the request
 			// isn't known until we get back the response
 			b.trace.Request.Proto = event.Response.Proto
+			b.trace.Request.ProtoMajor = event.Response.ProtoMajor
+			b.trace.Request.ProtoMinor = event.Response.ProtoMinor
 		}
 	case *ResponseError:
 		b.trace.Err = event.Err
