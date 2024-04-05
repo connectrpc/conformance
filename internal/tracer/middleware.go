@@ -42,6 +42,10 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 			cancel()
 			return nil, err
 		}
+		// copy over info about the HTTP version to the request
+		builder.trace.Request.Proto = resp.Proto
+		builder.trace.Request.ProtoMajor = resp.ProtoMajor
+		builder.trace.Request.ProtoMinor = resp.ProtoMinor
 		builder.add(&ResponseStart{Response: resp})
 		resp.Body = newReader(resp.Header, resp.Body, false, builder, cancel)
 		return resp, nil
