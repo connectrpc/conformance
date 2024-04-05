@@ -149,7 +149,7 @@ formats, or the Protobuf messages used by clients and servers under test in the
 Note, however, that we reserve the right to rename, remove, or re-organize
 individual test cases, which may impact the "known failing" and "known flaky"
 configurations for an implementation under test. We will document these changes
-in the release notes.
+in the [release notes](https://github.com/connectrpc/conformance/releases).
 
 ## Ecosystem
 
