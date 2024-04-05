@@ -116,7 +116,7 @@ func (b *builder) add(event Event) {
 		event.MessageIndex = b.reqCount
 		b.reqCount++
 	case *RequestBodyEnd:
-		if b.trace.Err != nil {
+		if b.trace.Err == nil {
 			b.trace.Err = event.Err
 		}
 		if event.Err != nil {
@@ -149,11 +149,14 @@ func (b *builder) add(event Event) {
 		event.MessageIndex = b.respCount
 		b.respCount++
 	case *ResponseBodyEnd:
-		if b.trace.Err != nil {
+		if b.trace.Err == nil {
 			b.trace.Err = event.Err
 		}
 		finish = true
 	case *RequestCanceled:
+		if b.trace.Err == nil {
+			b.trace.Err = context.Canceled
+		}
 		finish = true
 	}
 	event.setEventOffset(time.Since(b.start))

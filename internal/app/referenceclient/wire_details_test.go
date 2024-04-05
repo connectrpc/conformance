@@ -18,8 +18,10 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
+	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -33,6 +35,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/genproto/googleapis/rpc/status"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestExamineConnectError(t *testing.T) {
@@ -502,10 +507,43 @@ func TestExamineConnectEndStream(t *testing.T) {
 
 func TestExamineGRPCEndStream(t *testing.T) {
 	t.Parallel()
+	stat := &status.Status{
+		Code:    3,
+		Message: "foo",
+	}
+	data, err := proto.Marshal(stat)
+	require.NoError(t, err)
+	statusCode3MessageFooNoDetails := base64.RawStdEncoding.EncodeToString(data)
+	statusCode3MessageFooNoDetailsPadded := base64.StdEncoding.EncodeToString(data)
+	stat = &status.Status{
+		Code:    3,
+		Message: "foo",
+		Details: []*anypb.Any{
+			{TypeUrl: "type.googleapis.com/google.rpc.Status", Value: data},
+		},
+	}
+	data, err = proto.Marshal(stat)
+	require.NoError(t, err)
+	statusCode3MessageFooDetails := base64.RawStdEncoding.EncodeToString(data)
+	stat = &status.Status{
+		Code: 0,
+		Details: []*anypb.Any{
+			{TypeUrl: "type.googleapis.com/google.rpc.Status", Value: data},
+		},
+	}
+	data, err = proto.Marshal(stat)
+	require.NoError(t, err)
+	statusCode0EmptyMessageDetails := base64.RawStdEncoding.EncodeToString(data)
+	stat = &status.Status{Code: 0}
+	data, err = proto.Marshal(stat)
+	require.NoError(t, err)
+	statusCode0EmptyMessageNoDetails := base64.RawStdEncoding.EncodeToString(data)
+
 	testCases := []struct {
 		name             string
 		compressed       bool
 		endStream        string
+		expectedCode     connect.Code
 		expectedFeedback []string
 	}{
 		{
@@ -513,6 +551,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: foobar\r\n",
+			expectedCode: 6,
 		},
 		{
 			name:       "compressed",
@@ -520,24 +559,28 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: foobar\r\n",
+			expectedCode: 6,
 		},
 		{
 			name: "allowed special chars in key",
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"`~blah.blah-#blah|blah%blah's~`: foobar\r\n",
+			expectedCode: 6,
 		},
 		{
 			name: "allowed special chars in value",
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: {foobar} \"baz\" 🤷🦸\r\n",
+			expectedCode: 6,
 		},
 		{
 			name: "mixed case",
 			endStream: "Grpc-Status: 6\r\n" +
 				"Grpc-Message: foo\r\n" +
 				"Blah-Blah: foobar\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				`grpc-web trailers include non-lower-case field key: "Grpc-Status"`,
 				`grpc-web trailers include non-lower-case field key: "Grpc-Message"`,
@@ -549,6 +592,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: foobar",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				"grpc-web trailers should end with CRLF but does not",
 			},
@@ -558,6 +602,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				`grpc-web trailers include invalid field (missing colon): "blah-blah"`,
 			},
@@ -568,6 +613,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 				"grpc-message: foo\r\n" +
 				"blah-blah: foobar\r\n" +
 				"\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				"grpc-web trailers ends in extra blank line",
 			},
@@ -578,6 +624,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 				"grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: foobar\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				"grpc-web trailers include blank lines",
 			},
@@ -588,6 +635,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 				"grpc-message: foo\r\n" +
 				"\r\n" +
 				"blah-blah: foobar\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				"grpc-web trailers include blank lines",
 			},
@@ -595,10 +643,11 @@ func TestExamineGRPCEndStream(t *testing.T) {
 		{
 			name: "obsolete line folding",
 			endStream: "grpc-status: 6\r\n" +
-				"grpc-message: foo\r\n" +
+				"grpc-message: foobar\r\n" +
+				"blah-blah: foo\r\n" +
 				" \tbar\r\n" +
-				" \tbaz\r\n" +
-				"blah-blah: foobar\r\n",
+				" \tbaz\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				"grpc-web trailers use obsolete line-folding",
 			},
@@ -608,6 +657,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah-blah: foo\x00bar\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				`grpc-web trailers include invalid field; value contains invalid characters: "blah-blah: foo\x00bar"`,
 			},
@@ -617,8 +667,214 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			endStream: "grpc-status: 6\r\n" +
 				"grpc-message: foo\r\n" +
 				"blah[blah]blah: foo bar\r\n",
+			expectedCode: 6,
 			expectedFeedback: []string{
 				`grpc-web trailers include invalid field; name contains invalid characters: "blah[blah]blah: foo bar"`,
+			},
+		},
+		{
+			name: "missing grpc-status",
+			endStream: "grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: connect.CodeUnknown,
+			expectedFeedback: []string{
+				`trailers did not include 'grpc-status' key`,
+			},
+		},
+		{
+			name: "multiple grpc-status",
+			endStream: "grpc-status: 1\r\n" +
+				"grpc-status: 1\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 1,
+			expectedFeedback: []string{
+				`trailers include multiple 'grpc-status' keys (2)`,
+			},
+		},
+		{
+			name: "invalid grpc-status",
+			endStream: "grpc-status: abc\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: connect.CodeUnknown,
+			expectedFeedback: []string{
+				`trailers include invalid 'grpc-status' value "abc": strconv.Atoi: parsing "abc": invalid syntax`,
+			},
+		},
+		{
+			name: "negative grpc-status",
+			endStream: "grpc-status: -1\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: connect.CodeUnknown,
+			expectedFeedback: []string{
+				`trailers include invalid 'grpc-status' value -1: should be >= 0 && <= 16`,
+			},
+		},
+		{
+			name: "out-of-range grpc-status",
+			endStream: "grpc-status: 17\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 17,
+			expectedFeedback: []string{
+				`trailers include invalid 'grpc-status' value 17: should be >= 0 && <= 16`,
+			},
+		},
+		{
+			name: "multiple grpc-message",
+			endStream: "grpc-status: 1\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 1,
+			expectedFeedback: []string{
+				`trailers include multiple 'grpc-message' keys (3)`,
+			},
+		},
+		{
+			name: "invalid grpc-message - not percent encoded",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: abc\tdef\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include incorrectly-encoded 'grpc-message' value "abc\tdef": byte at position 3 (0x09) should be percent-encoded`,
+			},
+		},
+		{
+			name: "invalid grpc-message - not percent encoded 2",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: abc def 🧐\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include incorrectly-encoded 'grpc-message' value "abc def 🧐": byte at position 8 (0xf0) should be percent-encoded`,
+			},
+		},
+		{
+			name: "invalid grpc-message - illegal percent encoding",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: abc def %x12\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include incorrectly-encoded 'grpc-message' value "abc def %x12": byte at position 9 (0x78) should be hexadecimal digit`,
+			},
+		},
+		{
+			name: "invalid grpc-message - incomplete percent encoding",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: %ab %de %f0 %1\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include incorrectly-encoded 'grpc-message' value "%ab %de %f0 %1": incomplete percent-encoded character at the end`,
+			},
+		},
+		{
+			name: "unnecessary grpc-message okay if blank",
+			endStream: "grpc-status: 0\r\n" +
+				"grpc-message: \r\n" +
+				"blah-blah: foo bar\r\n",
+		},
+		{
+			name: "unnecessary grpc-message",
+			endStream: "grpc-status: 0\r\n" +
+				"grpc-message: foo\r\n" +
+				"blah-blah: foo bar\r\n",
+			expectedFeedback: []string{
+				`trailers include a non-empty 'grpc-message' value with zero/okay 'grpc-status'`,
+			},
+		},
+		{
+			name: "with grpc-status-details-bin",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-status-details-bin: " + statusCode3MessageFooDetails + "\r\n",
+			expectedCode: 3,
+		},
+		{
+			name: "invalid grpc-status-details-bin - not base64",
+			endStream: "grpc-status: 12\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-status-details-bin: foo bar\r\n",
+			expectedCode: 12,
+			expectedFeedback: []string{
+				`trailers include incorrectly-encoded 'grpc-status-details-bin' value: illegal base64 data at input byte 3`,
+			},
+		},
+		{
+			name: "invalid grpc-status-details-bin - padded",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-status-details-bin: " + statusCode3MessageFooNoDetailsPadded + "\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include 'grpc-status-details-bin' value with padding but servers should emit unpadded: ` + statusCode3MessageFooNoDetailsPadded,
+			},
+		},
+		{
+			name: "invalid grpc-status-details-bin - not proto",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-status-details-bin: AbCdEfG\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include un-parseable 'grpc-status-details-bin' value: proto: cannot parse invalid wire-format data`,
+			},
+		},
+		{
+			name: "grpc-status-details-bin disagrees with grpc-status",
+			endStream: "grpc-status: 12\r\n" +
+				"grpc-message: foo\r\n" +
+				"grpc-status-details-bin: " + statusCode3MessageFooNoDetails + "\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include 'grpc-status-details-bin' value that disagrees with 'grpc-status' value: 3 != 12`,
+			},
+		},
+		{
+			name: "grpc-status-details-bin disagrees with grpc-message",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: bar\r\n" +
+				"grpc-status-details-bin: " + statusCode3MessageFooDetails + "\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`trailers include 'grpc-status-details-bin' value that disagrees with 'grpc-message' value: "foo" != "bar"`,
+			},
+		},
+		{
+			name: "unnecessary grpc-status-details-bin",
+			endStream: "grpc-status: 0\r\n" +
+				"grpc-status-details-bin: " + statusCode0EmptyMessageDetails + "\r\n",
+			expectedFeedback: []string{
+				`trailers include 'grpc-status-details-bin' value with zero/okay 'grpc-status' and non-empty details`,
+			},
+		},
+		{
+			name: "unnecessary grpc-status-details-bin okay if details empty",
+			endStream: "grpc-status: 0\r\n" +
+				"grpc-status-details-bin: " + statusCode0EmptyMessageNoDetails + "\r\n",
+		},
+		{
+			name: "invalid binary metadata - not base64",
+			endStream: "grpc-status: 0\r\n" +
+				"foo-bar-bin: foo bar\r\n",
+			expectedFeedback: []string{
+				`trailers include incorrectly-encoded 'Foo-Bar-Bin' value: illegal base64 data at input byte 3`,
+			},
+		},
+		{
+			name: "invalid binary metadata - padded",
+			endStream: "grpc-status: 3\r\n" +
+				"grpc-message: foo\r\n" +
+				"foo-bar-bin: AbCcDdEeFfGg01==\r\n",
+			expectedCode: 3,
+			expectedFeedback: []string{
+				`metadata include 'Foo-Bar-Bin' value with padding but servers should emit unpadded: AbCcDdEeFfGg01==`,
 			},
 		},
 	}
@@ -628,6 +884,11 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			t.Parallel()
 			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 				respWriter.Header().Set("Content-Type", "application/grpc-web")
+				if req.Header.Get("Expect-Code") == "" {
+					// Not expecting an error, so send a message.
+					_, _ = respWriter.Write([]byte{0}) // flags indicate simple message
+					writeStreamFrame(nil, false, respWriter)
+				}
 				if testCase.compressed {
 					respWriter.Header().Set("Grpc-Encoding", "gzip")
 					_, _ = respWriter.Write([]byte{129}) // end-stream + compressed flags
@@ -645,26 +906,59 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			ctx := withWireCapture(context.Background())
 			req := connect.NewRequest(&conformancev1.UnaryRequest{})
 			req.Header().Set("x-test-case-name", "foo") // needed to enable tracing
-			_, err := client.Unary(ctx, req)
-			require.Error(t, err)
+			if testCase.expectedCode != 0 {
+				req.Header().Set("Expect-Code", testCase.expectedCode.String())
+			}
+			resp, err := client.Unary(ctx, req)
+
+			// Now we can check the details and report issues:
 			printer := &internal.SimplePrinter{}
 			examineWireDetails(ctx, printer)
-			if len(testCase.expectedFeedback) == 0 {
-				assert.Equal(t, connect.CodeAlreadyExists, connect.CodeOf(err), "unexpected error: %v", err)
-				assert.Empty(t, printer.Messages)
+			// Check binary headers/trailers, too
+			if err != nil {
+				var connErr *connect.Error
+				if errors.As(err, &connErr) {
+					checkBinaryMetadata("metadata", internal.ConvertToProtoHeader(connErr.Meta()), printer)
+				}
 			} else {
-				// When there's feedback, the connect-go client may complain about the end-stream message
-				// and report a different code.
+				checkBinaryMetadata("headers", internal.ConvertToProtoHeader(resp.Header()), printer)
+				checkBinaryMetadata("trailers", internal.ConvertToProtoHeader(resp.Trailer()), printer)
+			}
+
+			if len(testCase.expectedFeedback) == 0 {
+				if testCase.expectedCode == 0 {
+					require.NoError(t, err)
+				} else {
+					require.Error(t, err)
+					assert.Equal(t, testCase.expectedCode, connect.CodeOf(err), "unexpected error: %v", err)
+				}
+				assert.Empty(t, printer.Messages)
+				return
+			}
+
+			// When there's feedback, the connect-go client may complain about the end-stream message
+			// and report a different code.
+			options := []connect.Code{connect.CodeInternal, connect.CodeUnknown}
+			if testCase.expectedCode != 0 {
+				require.Error(t, err)
+				options = append(options, testCase.expectedCode)
+			}
+			if err != nil {
 				assert.Contains(t,
-					[]connect.Code{connect.CodeAlreadyExists, connect.CodeInternal, connect.CodeUnknown},
+					options,
 					connect.CodeOf(err),
 					"unexpected error: %v", err,
 				)
-				for i := range printer.Messages {
-					printer.Messages[i] = strings.TrimSuffix(printer.Messages[i], "\n")
-				}
-				assert.Empty(t, cmp.Diff(testCase.expectedFeedback, printer.Messages))
 			}
+			for i := range printer.Messages {
+				printer.Messages[i] = strings.TrimSuffix(printer.Messages[i], "\n")
+			}
+			// Ugh, proto library doesn't want its error messages used in tests so makes the
+			// output non-deterministic, sometimes using a non-breaking space instead of space :/
+			for i, msg := range printer.Messages {
+				printer.Messages[i] = strings.ReplaceAll(msg, "\u00a0", " ")
+			}
+			assert.Empty(t, cmp.Diff(testCase.expectedFeedback, printer.Messages))
 		})
 	}
 }

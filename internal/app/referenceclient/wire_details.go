@@ -22,15 +22,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/textproto"
+	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
 	"connectrpc.com/conformance/internal"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/conformance/internal/grpcutil"
 	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
 	"github.com/google/go-cmp/cmp"
 	"golang.org/x/exp/constraints"
+	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
@@ -166,7 +172,7 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 		printer.Printf("unable to examine wire details: completed trace not found in call context.")
 		return 0, false
 	}
-	trace := wrapper.trace
+	trace := &wrapper.trace
 	if trace.Response == nil {
 		// A nil response in the trace is valid if the HTTP round trip failed.
 		return 0, false
@@ -197,7 +203,16 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 		// or trimming of excess whitespace so that the full values are available to check.
 		endStreamContent, ok := getBodyEndStream(trace)
 		if ok {
-			examineGRPCEndStream(endStreamContent, printer)
+			headers := examineGRPCEndStream(endStreamContent, printer)
+			checkGRPCStatus(headers, printer)
+		} else if isTrailersOnlyResponse(trace) {
+			checkGRPCStatus(trace.Response.Header, printer)
+		}
+	case strings.HasPrefix(contentType, "application/grpc"):
+		if isTrailersOnlyResponse(trace) {
+			checkGRPCStatus(trace.Response.Header, printer)
+		} else if len(trace.Response.Trailer) > 0 {
+			checkGRPCStatus(trace.Response.Trailer, printer)
 		}
 	}
 
@@ -234,7 +249,7 @@ func isUnaryJSONError(contentType string, statusCode int) bool {
 // getBodyEndStream returns the contents of any end-stream message in the trace.
 // The bool value will be true if an end-stream message is found and otherwise
 // it will be false.
-func getBodyEndStream(trace tracer.Trace) (string, bool) {
+func getBodyEndStream(trace *tracer.Trace) (string, bool) {
 	for _, event := range trace.Events {
 		endStream, ok := event.(*tracer.ResponseBodyEndStream)
 		if !ok {
@@ -455,15 +470,17 @@ func examineConnectEndStream(endStreamJSON json.RawMessage, printer internal.Pri
 	}
 }
 
-func examineGRPCEndStream(endStream string, printer internal.Printer) {
+func examineGRPCEndStream(endStream string, printer internal.Printer) http.Header {
 	// We break it using just LF, so we can handle alternate line ending. But we then complain
 	// below if CRLF isn't used.
 	endStreamLines := strings.Split(endStream, "\n")
+	trailers := make(http.Header, len(endStreamLines))
 	var linesWithoutCR int
 	var blankLines int
 	var endsInCRLF bool
 	var blankLineAtEnd bool
 	var obsLineFolds int
+	var prevKey string
 	for i, trailerLine := range endStreamLines {
 		// Whole thing should end with CRLF, so last line should be blank
 		switch {
@@ -493,14 +510,24 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 
 		parts := strings.SplitN(trailerLine, ":", 2)
 		key := parts[0]
-		if i > 0 && len(key) > 0 && key[0] == ' ' || key[0] == '\t' {
+		if i > blankLines && len(key) > 0 && (key[0] == ' ' || key[0] == '\t') {
 			// Obsolete line-folding.
 			// (See spec https://datatracker.ietf.org/doc/html/rfc7230#section-3.2.4)
 			obsLineFolds++
+			vals := trailers[prevKey]
+			if len(vals) == 0 {
+				// shouldn't be possible...
+				trailers.Set(prevKey, strings.Trim(trailerLine, " \t"))
+			} else {
+				vals[len(vals)-1] += " " + strings.Trim(trailerLine, " \t")
+			}
 			continue
 		}
+		canonicalKey := textproto.CanonicalMIMEHeaderKey(key)
 		if len(parts) != 2 {
 			printer.Printf("grpc-web trailers include invalid field (missing colon): %q", trailerLine)
+			trailers[canonicalKey] = append(trailers[canonicalKey], "")
+			prevKey = canonicalKey
 			continue
 		}
 		if !isValidHTTPFieldName(key) {
@@ -516,6 +543,8 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 		if !isValidHTTPFieldValue(val) {
 			printer.Printf("grpc-web trailers include invalid field; value contains invalid characters: %q", trailerLine)
 		}
+		trailers[canonicalKey] = append(trailers[canonicalKey], val)
+		prevKey = canonicalKey
 	}
 	if obsLineFolds > 0 {
 		printer.Printf("grpc-web trailers use obsolete line-folding")
@@ -533,6 +562,7 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) {
 	if !endsInCRLF {
 		printer.Printf("grpc-web trailers should end with CRLF but does not")
 	}
+	return trailers
 }
 
 // isValidHTTPFieldValue returns true if the given string is a valid
@@ -676,6 +706,148 @@ func checkNoDuplicateKeys(what string, dec *json.Decoder) (json.Token, error) {
 		}
 		if _, err := checkNoDuplicateKeys(elemWhat, dec); err != nil {
 			return nil, err
+		}
+	}
+}
+
+func isTrailersOnlyResponse(trace *tracer.Trace) bool {
+	if trace.Response == nil {
+		// no response received
+		return false
+	}
+	if trace.Err != nil {
+		// an error prevented us from seeing the end of the
+		// response, so we can't tell if it's trailers-only or not
+		return false
+	}
+	for _, trailer := range trace.Response.Trailer {
+		if len(trailer) > 0 {
+			// got actual trailers (in addition to headers)
+			// so not trailers-only
+			return false
+		}
+	}
+	for _, event := range trace.Events {
+		if _, ok := event.(*tracer.ResponseBodyData); ok {
+			// got response body, so not trailers-only
+			return false
+		}
+	}
+	// We have a response that has no body and no trailers, so we
+	// can indeed interpret it as a trailers-only response.
+	return true
+}
+
+func checkGRPCStatus(headers http.Header, printer internal.Printer) { //nolint:gocyclo
+	statusVals := headers.Values("Grpc-Status")
+	var statusCode *int
+	switch {
+	case len(statusVals) > 1:
+		printer.Printf("trailers include multiple 'grpc-status' keys (%d)", len(statusVals))
+	case len(statusVals) == 0:
+		printer.Printf("trailers did not include 'grpc-status' key")
+	default:
+		statusStr := statusVals[0]
+		code, err := strconv.Atoi(statusStr)
+		if err != nil {
+			printer.Printf("trailers include invalid 'grpc-status' value %q: %v", statusStr, err)
+		} else {
+			statusCode = &code
+			if code < 0 || code > 16 {
+				printer.Printf("trailers include invalid 'grpc-status' value %d: should be >= 0 && <= 16", code)
+			}
+		}
+	}
+
+	msgVals := headers.Values("Grpc-Message")
+	if len(msgVals) > 1 {
+		printer.Printf("trailers include multiple 'grpc-message' keys (%d)", len(msgVals))
+	}
+	var msg *string
+	if len(msgVals) > 0 { //nolint:nestif
+		msgStr := msgVals[0]
+		var expectHex int
+		for i := 0; i < len(msgStr); i++ {
+			char := msgStr[i]
+			if expectHex > 0 {
+				if (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F') || (char >= '0' && char <= '9') {
+					expectHex--
+					continue
+				}
+				printer.Printf("trailers include incorrectly-encoded 'grpc-message' value %q: byte at position %d (0x%02x) should be hexadecimal digit", msgStr, i, char)
+				expectHex = 0
+				break
+			}
+			if char == '%' {
+				expectHex = 2
+				continue
+			}
+			if grpcutil.ShouldEscapeByteInMessage(char) {
+				printer.Printf("trailers include incorrectly-encoded 'grpc-message' value %q: byte at position %d (0x%02x) should be percent-encoded", msgStr, i, char)
+				break
+			}
+		}
+		if expectHex > 0 {
+			printer.Printf("trailers include incorrectly-encoded 'grpc-message' value %q: incomplete percent-encoded character at the end", msgStr)
+		}
+		if statusCode != nil && *statusCode == 0 && msgStr != "" {
+			printer.Printf("trailers include a non-empty 'grpc-message' value with zero/okay 'grpc-status'")
+		}
+		if decoded, err := url.PathUnescape(msgStr); err == nil {
+			msg = &decoded
+		}
+	}
+
+	detailsBinVals := headers.Values("Grpc-Status-Details-Bin")
+	if len(detailsBinVals) > 1 {
+		printer.Printf("trailers include multiple 'grpc-status-details-bin' keys (%d)", len(detailsBinVals))
+	}
+	if len(detailsBinVals) == 0 {
+		return // nothing else to check
+	}
+	detailsBin := detailsBinVals[0]
+	data, err := base64.RawStdEncoding.DecodeString(detailsBin)
+	if err != nil {
+		data, err = base64.StdEncoding.DecodeString(detailsBin)
+		if err != nil {
+			printer.Printf("trailers include incorrectly-encoded 'grpc-status-details-bin' value: %v", err)
+			return
+		}
+		printer.Printf("trailers include 'grpc-status-details-bin' value with padding but servers should emit unpadded: %s", detailsBin)
+	}
+	var statusProto status.Status
+	if err := proto.Unmarshal(data, &statusProto); err != nil {
+		printer.Printf("trailers include un-parseable 'grpc-status-details-bin' value: %v", err)
+		return
+	}
+	if statusCode != nil && statusProto.Code != int32(*statusCode) {
+		printer.Printf("trailers include 'grpc-status-details-bin' value that disagrees with 'grpc-status' value: %d != %d", statusProto.Code, *statusCode)
+	}
+	if statusProto.Code == 0 && len(statusProto.Details) > 0 {
+		printer.Printf("trailers include 'grpc-status-details-bin' value with zero/okay 'grpc-status' and non-empty details")
+	}
+	if msg != nil && statusProto.Message != *msg {
+		printer.Printf("trailers include 'grpc-status-details-bin' value that disagrees with 'grpc-message' value: %q != %q", statusProto.Message, *msg)
+	}
+}
+
+func checkBinaryMetadata(name string, metadata []*conformancev1.Header, printer internal.Printer) {
+	for _, entry := range metadata {
+		lowerName := strings.ToLower(entry.Name)
+		if !strings.HasSuffix(lowerName, "-bin") || lowerName == "grpc-status-details-bin" {
+			// checked elsewhere when also verifying details match grpc-status and grpc-message trailers
+			continue
+		}
+		for _, val := range entry.Value {
+			_, err := base64.RawStdEncoding.DecodeString(val)
+			if err != nil {
+				_, err = base64.StdEncoding.DecodeString(val)
+				if err != nil {
+					printer.Printf("%s include incorrectly-encoded '%s' value: %v", name, entry.Name, err)
+					return
+				}
+				printer.Printf("%s include '%s' value with padding but servers should emit unpadded: %s", name, entry.Name, val)
+			}
 		}
 	}
 }

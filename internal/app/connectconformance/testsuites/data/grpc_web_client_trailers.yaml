@@ -122,8 +122,6 @@ testCases:
                   value: [ "*" ]
                 - name: content-type
                   value: [ "application/grpc-web" ]
-                - name: x-custom-header
-                  value: [ "foo" ]
                 - name: x-custom-trailer
                   value: [ "bing" ]
                 - name: grpc-status
@@ -131,9 +129,6 @@ testCases:
                 - name: grpc-message
                   value: [ "error" ]
     expectedResponse:
-      responseHeaders:
-        - name: x-custom-header
-          value: [ "foo" ]
       error:
         code: 9
         message: error
@@ -155,8 +150,6 @@ testCases:
                   value: [ "*" ]
                 - name: content-type
                   value: [ "application/grpc-web" ]
-                - name: x-custom-header
-                  value: [ "foo", "bar", "baz" ]
                 - name: x-custom-trailer
                   value: [ "bing", "quuz" ]
                 - name: grpc-status
@@ -164,9 +157,6 @@ testCases:
                 - name: grpc-message
                   value: [ "error" ]
     expectedResponse:
-      responseHeaders:
-        - name: x-custom-header
-          value: [ "foo", "bar", "baz" ]
       error:
         code: 9
         message: error

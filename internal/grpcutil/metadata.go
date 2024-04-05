@@ -81,3 +81,39 @@ func AppendToOutgoingContext(ctx context.Context, src []*conformancev1.Header) c
 	}
 	return ctx
 }
+
+// PercentEncodeMessage percent-encodes the given string per the rules in the
+// gRPC spec for the "grpc-message" trailer value.
+func PercentEncodeMessage(msg string) string {
+	const upperhex = "0123456789ABCDEF"
+	var hexCount int
+	for i := 0; i < len(msg); i++ {
+		if ShouldEscapeByteInMessage(msg[i]) {
+			hexCount++
+		}
+	}
+	if hexCount == 0 {
+		return msg
+	}
+	// We need to escape some characters, so we'll need to allocate a new string.
+	var out strings.Builder
+	out.Grow(len(msg) + 2*hexCount)
+	for i := 0; i < len(msg); i++ {
+		switch char := msg[i]; {
+		case ShouldEscapeByteInMessage(char):
+			out.WriteByte('%')
+			out.WriteByte(upperhex[char>>4])
+			out.WriteByte(upperhex[char&15])
+		default:
+			out.WriteByte(char)
+		}
+	}
+	return out.String()
+}
+
+// ShouldEscapeByteInMessage returns true if the given byte
+// should be percent-escaped when written in the value of a
+// "grpc-message" response trailer.
+func ShouldEscapeByteInMessage(char byte) bool {
+	return char < ' ' || char > '~' || char == '%'
+}
