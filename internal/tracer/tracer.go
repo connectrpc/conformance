@@ -140,7 +140,7 @@ func (t *Trace) Print(printer internal.Printer) {
 	}
 	if t.Response != nil && len(t.Response.Trailer) > 0 {
 		printer.Printf(responsePrefix)
-		printHeaders(responsePrefix, t.Response.Trailer, printer)
+		printHeaders(responsePrefix, t.Response.ProtoMajor == 1, t.Response.Trailer, printer)
 	}
 }
 
@@ -190,7 +190,7 @@ func (r *RequestStart) print(printer internal.Printer) {
 		urlClone.Scheme = "http"
 	}
 	printer.Printf("%s %9.3fms %s %s %s", requestPrefix, r.offsetMillis(), r.Request.Method, urlClone.String(), r.Request.Proto)
-	printHeaders(requestPrefix, r.getHeaders(), printer)
+	printHeaders(requestPrefix, r.Request.ProtoMajor == 1, r.getHeaders(), printer)
 	printer.Printf(requestPrefix)
 }
 
@@ -256,7 +256,7 @@ type ResponseStart struct {
 
 func (r *ResponseStart) print(printer internal.Printer) {
 	printer.Printf("%s %9.3fms %s", responsePrefix, r.offsetMillis(), r.Response.Status)
-	printHeaders(responsePrefix, r.Response.Header, printer)
+	printHeaders(responsePrefix, r.Response.ProtoMajor == 1, r.Response.Header, printer)
 	if r.Response.ContentLength != -1 && len(r.Response.Header.Values("Content-Length")) == 0 {
 		printer.Printf("%s %11s Content-Length: %d", responsePrefix, "", r.Response.ContentLength)
 	}
@@ -398,7 +398,7 @@ func (o *eventOffset) offsetMillis() float64 {
 	return o.Offset.Seconds() * 1000
 }
 
-func printHeaders(prefix string, headers http.Header, printer internal.Printer) {
+func printHeaders(prefix string, isHTTP1 bool, headers http.Header, printer internal.Printer) {
 	keys := make([]string, 0, len(headers))
 	for key := range headers {
 		keys = append(keys, key)
@@ -406,9 +406,30 @@ func printHeaders(prefix string, headers http.Header, printer internal.Printer) 
 	sort.Strings(keys)
 	for _, key := range keys {
 		for _, val := range headers[key] {
+			if isHTTP1 {
+				// Under the hood, net/http replaces "\n" and "\r" characters in the header
+				// with spaces for HTTP 1.1
+				val = strings.ReplaceAll(val, "\n", " ")
+				val = strings.ReplaceAll(val, "\r", " ")
+			} else if !isPrintableASCII(val) {
+				// But the HTTP/2 implementation is more strict. The HTTP/2 spec states
+				// that values outside the printable range (which is 0x20-0x7E) are invalid,
+				// the Go implementation of HTTP/2 simply discards headers that have invalid
+				// values.
+				continue
+			}
 			printer.Printf("%s %11s %s: %s", prefix, "", key, val)
 		}
 	}
+}
+
+func isPrintableASCII(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] < 0x20 || s[i] > 0x7E {
+			return false
+		}
+	}
+	return true
 }
 
 func printData(prefix string, offsetMillis float64, index int, env *Envelope, length uint64, printer internal.Printer) {

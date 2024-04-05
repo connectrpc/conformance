@@ -117,13 +117,41 @@ func (i *invoker) unary(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
+	return doUnary(ctx, req, i, i.client.Unary,
+		func(resp *conformancev1.UnaryResponse) *conformancev1.ConformancePayload {
+			return resp.Payload
+		})
+}
+
+func (i *invoker) idempotentUnary(
+	ctx context.Context,
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
+	return doUnary(ctx, req, i, i.client.IdempotentUnary,
+		func(resp *conformancev1.IdempotentUnaryResponse) *conformancev1.ConformancePayload {
+			return resp.Payload
+		})
+}
+
+type pointerMessage[T any] interface {
+	*T
+	proto.Message
+}
+
+func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
+	ctx context.Context,
+	req *conformancev1.ClientCompatRequest,
+	inv *invoker,
+	stub func(context.Context, *connect.Request[ReqT]) (*connect.Response[RespT], error),
+	getPayload func(*RespT) *conformancev1.ConformancePayload,
+) (*conformancev1.ClientResponseResult, error) {
 	msg := req.RequestMessages[0]
-	ur := &conformancev1.UnaryRequest{}
-	if err := msg.UnmarshalTo(ur); err != nil {
+	rpcReq := new(ReqT)
+	if err := msg.UnmarshalTo(Req(rpcReq)); err != nil {
 		return nil, err
 	}
 
-	request := connect.NewRequest(ur)
+	request := connect.NewRequest(rpcReq)
 
 	// Add the specified request headers to the request
 	internal.AddHeaders(req.RequestHeaders, request.Header())
@@ -133,10 +161,10 @@ func (i *invoker) unary(
 	var trailers []*conformancev1.Header
 	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
-	ctx = i.withWireCapture(ctx)
+	ctx = inv.withWireCapture(ctx)
 
 	// Invoke the Unary call
-	resp, err := i.client.Unary(ctx, request)
+	resp, err := stub(ctx, request)
 
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
@@ -150,67 +178,13 @@ func (i *invoker) unary(
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 		// If there's a payload, add that to the response also
-		if resp.Msg.Payload != nil {
-			payloads = append(payloads, resp.Msg.Payload)
+		payload := getPayload(resp.Msg)
+		if payload != nil {
+			payloads = append(payloads, payload)
 		}
 	}
 
-	statusCode, feedback := i.examineWireDetails(ctx)
-
-	return &conformancev1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-		HttpStatusCode:   statusCode,
-		Feedback:         feedback,
-	}, nil
-}
-
-// TODO - This should be consolidated with the unary implementation since they are
-// mostly the same. See https://github.com/connectrpc/conformance/pull/721/files#r1415699842
-// for an example.
-func (i *invoker) idempotentUnary(
-	ctx context.Context,
-	req *conformancev1.ClientCompatRequest,
-) (*conformancev1.ClientResponseResult, error) {
-	msg := req.RequestMessages[0]
-	ur := &conformancev1.IdempotentUnaryRequest{}
-	if err := msg.UnmarshalTo(ur); err != nil {
-		return nil, err
-	}
-
-	request := connect.NewRequest(ur)
-
-	// Add the specified request headers to the request
-	internal.AddHeaders(req.RequestHeaders, request.Header())
-
-	var protoErr *conformancev1.Error
-	var headers []*conformancev1.Header
-	var trailers []*conformancev1.Header
-	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
-
-	ctx = i.withWireCapture(ctx)
-
-	// Invoke the Unary call
-	resp, err := i.client.IdempotentUnary(ctx, request)
-
-	if err != nil {
-		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
-		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := internal.ConvertErrorToConnectError(err)
-		headers = internal.ConvertToProtoHeader(connectErr.Meta())
-		protoErr = internal.ConvertConnectToProtoError(connectErr)
-	} else {
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
-		payloads = append(payloads, resp.Msg.Payload)
-		headers = internal.ConvertToProtoHeader(resp.Header())
-		trailers = internal.ConvertToProtoHeader(resp.Trailer())
-	}
-
-	statusCode, feedback := i.examineWireDetails(ctx)
+	statusCode, feedback := inv.examineWireDetails(ctx, headers, trailers)
 
 	return &conformancev1.ClientResponseResult{
 		ResponseHeaders:  headers,
@@ -270,7 +244,7 @@ func (i *invoker) serverStream(
 			// Read headers and trailers from the stream
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
 			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
-			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx)
+			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
 		}
 	}()
 
@@ -371,7 +345,7 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
 	}
 
-	statusCode, feedback := i.examineWireDetails(ctx)
+	statusCode, feedback := i.examineWireDetails(ctx, headers, trailers)
 
 	return &conformancev1.ClientResponseResult{
 		ResponseHeaders:   headers,
@@ -409,7 +383,7 @@ func (i *invoker) bidiStream(
 			// Read headers and trailers from the stream
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
 			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
-			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx)
+			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
 		}
 	}()
 
@@ -524,27 +498,10 @@ func (i *invoker) unimplemented(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
-	msg := req.RequestMessages[0]
-	ur := &conformancev1.UnimplementedRequest{}
-	if err := msg.UnmarshalTo(ur); err != nil {
-		return nil, err
-	}
-
-	request := connect.NewRequest(ur)
-	internal.AddHeaders(req.RequestHeaders, request.Header())
-
-	ctx = i.withWireCapture(ctx)
-
-	// Invoke the Unary call
-	_, err := i.client.Unimplemented(ctx, request)
-
-	statusCode, feedback := i.examineWireDetails(ctx)
-
-	return &conformancev1.ClientResponseResult{
-		Error:          internal.ConvertErrorToProtoError(err),
-		HttpStatusCode: statusCode,
-		Feedback:       feedback,
-	}, nil
+	return doUnary(ctx, req, i, i.client.Unimplemented,
+		func(resp *conformancev1.UnimplementedResponse) *conformancev1.ConformancePayload {
+			return nil
+		})
 }
 
 func (i *invoker) withWireCapture(ctx context.Context) context.Context {
@@ -554,7 +511,7 @@ func (i *invoker) withWireCapture(ctx context.Context) context.Context {
 	return withWireCapture(ctx)
 }
 
-func (i *invoker) examineWireDetails(ctx context.Context) (*int32, []string) {
+func (i *invoker) examineWireDetails(ctx context.Context, headers, trailers []*conformancev1.Header) (*int32, []string) {
 	if !i.referenceMode {
 		return nil, nil
 	}
@@ -563,6 +520,13 @@ func (i *invoker) examineWireDetails(ctx context.Context) (*int32, []string) {
 	var statusCodePtr *int32
 	if ok {
 		statusCodePtr = proto.Int32(int32(statusCode))
+	}
+	if headers != nil {
+		checkBinaryMetadata("headers", headers, printer)
+		checkBinaryMetadata("trailers", trailers, printer)
+	} else {
+		// all metadata together in one, from an error
+		checkBinaryMetadata("metadata", trailers, printer)
 	}
 	return statusCodePtr, printer.Messages
 }

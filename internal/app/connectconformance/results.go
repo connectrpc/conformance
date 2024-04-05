@@ -174,14 +174,18 @@ func (r *testResults) assert(
 		// "error metadata". The conformance client should record those as trailers when
 		// sending back a ClientResponseResult message.
 
-		// So first we see if normal attribute succeeds
+		// So first we see if normal attribution succeeds.
 		metadataErrs := checkHeaders("response headers", expected.ResponseHeaders, actual.ResponseHeaders)
 		metadataErrs = append(metadataErrs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 		if len(metadataErrs) > 0 {
-			// That did not work. So we test to see if client attributed them all as trailers.
+			// That did not work. So we test to see if client attributed them all as headers
+			// or all as trailers.
 			merged := mergeHeaders(expected.ResponseHeaders, expected.ResponseTrailers)
-			if allTrailersErrs := checkHeaders("response metadata", merged, actual.ResponseTrailers); len(allTrailersErrs) != 0 {
-				// That check failed also. So the received headers/trailers are incorrect.
+			allHeadersErrs := checkHeaders("response metadata", merged, actual.ResponseHeaders)
+			allTrailersErrs := checkHeaders("response metadata", merged, actual.ResponseTrailers)
+			// That check failed also. So see if client attributed them all as headers.
+			if len(allHeadersErrs) != 0 && len(allTrailersErrs) != 0 {
+				// These checks failed also. So the received headers/trailers are incorrect.
 				// Report the original errors computed above.
 				errs = append(errs, metadataErrs...)
 			}

@@ -116,7 +116,7 @@ func (b *builder) add(event Event) {
 		event.MessageIndex = b.reqCount
 		b.reqCount++
 	case *RequestBodyEnd:
-		if b.trace.Err != nil {
+		if b.trace.Err == nil {
 			b.trace.Err = event.Err
 		}
 		if event.Err != nil {
@@ -130,6 +130,8 @@ func (b *builder) add(event Event) {
 			// for client-side traces, the HTTP version of the request
 			// isn't known until we get back the response
 			b.trace.Request.Proto = event.Response.Proto
+			b.trace.Request.ProtoMajor = event.Response.ProtoMajor
+			b.trace.Request.ProtoMinor = event.Response.ProtoMinor
 		}
 	case *ResponseError:
 		b.trace.Err = event.Err
@@ -149,11 +151,14 @@ func (b *builder) add(event Event) {
 		event.MessageIndex = b.respCount
 		b.respCount++
 	case *ResponseBodyEnd:
-		if b.trace.Err != nil {
+		if b.trace.Err == nil {
 			b.trace.Err = event.Err
 		}
 		finish = true
 	case *RequestCanceled:
+		if b.trace.Err == nil {
+			b.trace.Err = context.Canceled
+		}
 		finish = true
 	}
 	event.setEventOffset(time.Since(b.start))

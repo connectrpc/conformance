@@ -29,6 +29,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
+	"connectrpc.com/conformance/internal/grpcutil"
 	"connectrpc.com/connect"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/proto"
@@ -463,25 +464,33 @@ func parseUnaryResponseDefinition(
 				case connect.ProtocolConnect:
 					// For the connect unary protocol, everything will end up in HTTP
 					// headers. So, to distinguish headers from trailers, we can prefix
-					// the trailers with "trailer-".
+					// the trailers with "trailer-" (per the Connect spec for how unary
+					// operations represent trailers).
 					internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
 					for _, hdr := range def.GetResponseTrailers() {
 						hdr.Name = "trailer-" + hdr.Name
 					}
 					internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
 				case connect.ProtocolGRPC:
-					// For gRPC and gRPC-web, we resort to hacking in a raw response,
-					// which gives us much greater control over the response.
-					rawResp := makeRawGRPCResponse(connectErr, contentType, def.GetResponseHeaders(), def.GetResponseTrailers())
-					if err := setRawResponse(ctx, rawResp); err != nil {
-						return nil, connect.NewError(connect.CodeUnknown, err)
+					if len(def.GetResponseHeaders()) == 0 {
+						// For gRPC, if there are no custom headers, then we don't have
+						// to do anything special: the connect-go framework will send
+						// the error metadata as trailers.
+						internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
+					} else {
+						// Otherwise, we must resort to hacking in a raw response,
+						// which gives us much greater control over the response.
+						rawResp := makeRawGRPCResponse(connectErr, contentType, def.GetResponseHeaders(), def.GetResponseTrailers())
+						if err := setRawResponse(ctx, rawResp); err != nil {
+							return nil, connect.NewError(connect.CodeUnknown, err)
+						}
 					}
 				case connect.ProtocolGRPCWeb:
 					if len(def.GetResponseHeaders()) == 0 {
 						// For gRPC-web, if there are no custom headers, then we don't have
 						// to do anything special: the connect-go framework will send a
 						// trailers-only response, so any error metadata will be interpreted
-						// as "trailers".
+						// as trailers.
 						internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
 					} else {
 						// But otherwise, we have to employ the same tactics as for gRPC above.
@@ -638,7 +647,7 @@ func grpcStatusTrailers(err *connect.Error) []*conformancev1.Header {
 		},
 		{
 			Name:  "grpc-message",
-			Value: []string{err.Message()},
+			Value: []string{grpcutil.PercentEncodeMessage(err.Message())},
 		},
 	}
 	if len(err.Details()) > 0 {
