@@ -314,6 +314,8 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          nopLogger(),
+		// We disable automatic HTTP/2 support by setting this to non-nil
+		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
 	}
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -333,6 +335,9 @@ func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          nopLogger(),
+		// There's no way to disable HTTP 1.1 support and *require* HTTP/2. So
+		// if the client says it supports HTTP/2, we rely on it negotiating
+		// that during ALPN of TLS handshake instead of HTTP 1.1. ¯\_(ツ)_/¯
 	}
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
