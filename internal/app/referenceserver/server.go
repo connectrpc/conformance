@@ -231,6 +231,13 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
 	handler = cors.New(cors.Options{
+		// In case TLS client certs are used.
+		AllowCredentials: true,
+		// If credentials are used, default "allow all origins" doesn't work since
+		// it echos back "*" in the "Access-Control-Allow-Origin" header. But asterisk
+		// isn't accepted by clients when credentials are used. So we have to allow
+		// all this way:
+		AllowOriginFunc: func(string) bool { return true },
 		AllowedMethods: []string{
 			http.MethodHead,
 			http.MethodGet,

@@ -42,30 +42,13 @@ type rawResponseKey struct{}
 // been stored, those response writer interactions take precedence and no
 // raw response can be sent.)
 func rawResponder(handler http.Handler) http.Handler {
-	errorWriter := connect.NewErrorWriter()
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-		testCaseName := req.Header.Get("x-test-case-name")
-		// This is the only hard failure. Without it, we cannot provide feedback.
-		// All other checks below write to stderr to provide feedback.
-		if testCaseName == "" {
-			const msg = "missing x-test-case-name header"
-			if errorWriter.IsSupported(req) {
-				invalidArg := connect.NewError(connect.CodeInvalidArgument, errors.New(msg))
-				err := errorWriter.Write(respWriter, req, invalidArg)
-				if err != nil {
-					http.Error(respWriter, err.Error(), http.StatusInternalServerError)
-				}
-			} else {
-				http.Error(respWriter, msg, http.StatusBadRequest)
-			}
-			return
-		}
-
+		snapshotHeaders := respWriter.Header().Clone()
 		rawResponder := &rawResponseWriter{respWriter: respWriter}
 		ctx := context.WithValue(req.Context(), rawResponseKey{}, rawResponder)
 		req = req.WithContext(ctx)
 		handler.ServeHTTP(rawResponder, req)
-		rawResponder.finish()
+		rawResponder.finish(snapshotHeaders)
 	})
 }
 
@@ -140,16 +123,22 @@ func (r *rawResponseWriter) Unwrap() http.ResponseWriter {
 	return r.respWriter
 }
 
-func (r *rawResponseWriter) finish() {
+func (r *rawResponseWriter) finish(snapshotHeaders http.Header) {
 	resp := r.rawResponse()
 	if resp == nil {
 		return
 	}
 
 	// clean any headers that may have been set by the handler
+	// and restore to the snapshot we initially took (which
+	// may have headers set by earlier middleware, like CORS)
 	for k := range r.respWriter.Header() {
 		delete(r.respWriter.Header(), k)
 	}
+	for k, v := range snapshotHeaders {
+		r.respWriter.Header()[k] = v
+	}
+
 	internal.AddHeaders(resp.Headers, r.respWriter.Header())
 	r.respWriter.Header()["Date"] = nil // suppress automatic date header
 	// We must pre-declare trailers to make sure that chunked encoding is used and
