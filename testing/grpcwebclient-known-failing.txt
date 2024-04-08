@@ -30,9 +30,11 @@ gRPC-Web Unexpected Responses/**/ok-but-no-response
 # grpc-status header/trailer key.
 HTTP to RPC Code Mapping/**/bad-gateway
 HTTP to RPC Code Mapping/**/bad-request
-HTTP to RPC Code Mapping/**/forbidden
 HTTP to RPC Code Mapping/**/gateway-timeout
 HTTP to RPC Code Mapping/**/not-found
-HTTP to RPC Code Mapping/**/service-unavailable
 HTTP to RPC Code Mapping/**/too-many-requests
-HTTP to RPC Code Mapping/**/unauthorized
+
+# The above table maps 409 and 412 to "unknown" RPC code. But this client
+# instead maps them to "aborted" and "failed_precondition" respectively.
+HTTP to RPC Code Mapping/**/conflict
+HTTP to RPC Code Mapping/**/precondition-failed

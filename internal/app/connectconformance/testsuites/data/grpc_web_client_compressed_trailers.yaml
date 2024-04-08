@@ -21,10 +21,6 @@ testCases:
             rawResponse:
               status_code: 200
               headers:
-                - name: "access-control-allow-origin"
-                  value: [ "*" ]
-                - name: "access-control-expose-headers"
-                  value: [ "*" ]
                 - name: content-type
                   value: [ "application/grpc-web" ]
                 - name: grpc-encoding
