@@ -15,10 +15,6 @@ testCases:
           responseDefinition:
             rawResponse:
               headers:
-                - name: "access-control-allow-origin"
-                  value: [ "*" ]
-                - name: "access-control-expose-headers"
-                  value: [ "*" ]
                 - name: content-type
                   value: [ "application/grpc-web+proto" ]
               stream:
@@ -44,10 +40,6 @@ testCases:
           responseDefinition:
             rawResponse:
               headers:
-                - name: "access-control-allow-origin"
-                  value: [ "*" ]
-                - name: "access-control-expose-headers"
-                  value: [ "*" ]
                 - name: content-type
                   value: [ "application/grpc-web" ]
               stream:

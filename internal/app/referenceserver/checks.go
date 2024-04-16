@@ -51,16 +51,10 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 	var callsMu sync.Mutex
 	calls := map[string]int{}
 	return func(respWriter http.ResponseWriter, req *http.Request) {
-		testCaseName := req.Header.Get("x-test-case-name")
-		if testCaseName == "" {
-			// This is the only hard failure. Without it, we cannot provide feedback.
+		testCaseName, ok := getTestCaseName(respWriter, req)
+		if !ok {
+			// This is the only hard failure. Without the test case name, we cannot provide feedback.
 			// All other checks below write to stderr to provide feedback and require the test case name.
-			errWriter := connect.NewErrorWriter()
-			_ = errWriter.Write(
-				respWriter,
-				req,
-				connect.NewError(connect.CodeInvalidArgument, errors.New("missing x-test-case-name header")),
-			)
 			return
 		}
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
@@ -314,4 +308,17 @@ type feedbackPrinter struct {
 
 func (p *feedbackPrinter) Printf(format string, args ...any) {
 	p.p.PrefixPrintf(p.testCaseName, format, args...)
+}
+
+func getTestCaseName(respWriter http.ResponseWriter, req *http.Request) (string, bool) {
+	testCaseName := req.Header.Get("x-test-case-name")
+	if testCaseName == "" {
+		_ = connect.NewErrorWriter().Write(
+			respWriter,
+			req,
+			connect.NewError(connect.CodeInvalidArgument, errors.New("missing x-test-case-name header")),
+		)
+		return "", false
+	}
+	return testCaseName, true
 }

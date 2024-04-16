@@ -231,6 +231,13 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.
 	handler = cors.New(cors.Options{
+		// In case TLS client certs are used.
+		AllowCredentials: true,
+		// If credentials are used, default "allow all origins" doesn't work since
+		// it echos back "*" in the "Access-Control-Allow-Origin" header. But asterisk
+		// isn't accepted by clients when credentials are used. So we have to allow
+		// all this way:
+		AllowOriginFunc: func(string) bool { return true },
 		AllowedMethods: []string{
 			http.MethodHead,
 			http.MethodGet,
@@ -314,6 +321,8 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          nopLogger(),
+		// We disable automatic HTTP/2 support by setting this to non-nil
+		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
 	}
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
@@ -333,6 +342,9 @@ func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          nopLogger(),
+		// There's no way to disable HTTP 1.1 support and *require* HTTP/2. So
+		// if the client says it supports HTTP/2, we rely on it negotiating
+		// that during ALPN of TLS handshake instead of HTTP 1.1. ¯\_(ツ)_/¯
 	}
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {

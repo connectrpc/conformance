@@ -619,8 +619,6 @@ func makeRawGRPCWebResponse(err *connect.Error, contentType string, headers, tra
 		Headers: append(
 			headers,
 			&conformancev1.Header{Name: "Content-Type", Value: []string{contentType}},
-			&conformancev1.Header{Name: "Access-Control-Allow-Origin", Value: []string{"*"}},
-			&conformancev1.Header{Name: "Access-Control-Expose-Headers", Value: []string{"*"}},
 		),
 		Body: &conformancev1.RawHTTPResponse_Stream{
 			Stream: &conformancev1.StreamContents{
