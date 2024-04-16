@@ -37,6 +37,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/proto"
+	_ "google.golang.org/protobuf/types/descriptorpb" // needed in global registry for test case
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
