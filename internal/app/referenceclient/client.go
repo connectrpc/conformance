@@ -227,7 +227,7 @@ func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, referen
 		transport = &contextFixTransport{http3.RoundTripper{
 			DisableCompression: true,
 			TLSClientConfig:    tlsConf,
-			QuicConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
+			QUICConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
 		}}
 	case conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
 		return nil, errors.New("an HTTP version must be specified")
