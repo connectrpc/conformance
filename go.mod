@@ -10,7 +10,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.17.8
-	github.com/quic-go/quic-go v0.43.0
+	github.com/quic-go/quic-go v0.43.1
 	github.com/rs/cors v1.11.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
