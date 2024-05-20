@@ -33,6 +33,7 @@ import (
 	"connectrpc.com/conformance/internal/tracer"
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/encoding/gzip"
 )
@@ -148,16 +149,16 @@ func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, ou
 // the actual RPC invocation will be present in the returned ClientResponseResult.
 func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) {
 	transportCredentials := insecure.NewCredentials()
+	var latestConnectError atomic.Pointer[error]
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transportCredentials),
-		grpc.WithBlock(),
-		grpc.WithReturnConnectionError(),
 		grpc.WithUnaryInterceptor(userAgentUnaryClientInterceptor),
 		grpc.WithStreamInterceptor(userAgentStreamClientInterceptor),
 		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
 			dialer := net.Dialer{Timeout: 5 * time.Second}
 			conn, err := dialer.DialContext(ctx, "tcp", addr)
 			if err != nil {
+				latestConnectError.Store(&err)
 				return nil, err
 			}
 			if trace != nil {
@@ -170,15 +171,34 @@ func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, trace *
 		dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)))
 	}
 
-	dialCtx, dialCancel := context.WithTimeout(ctx, 5*time.Second)
-	defer dialCancel()
-	clientConn, err := grpc.DialContext(
-		dialCtx,
+	clientConn, err := grpc.NewClient(
 		net.JoinHostPort(req.Host, strconv.FormatUint(uint64(req.Port), 10)),
 		dialOpts...,
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	clientConn.Connect()
+	const connectTimeout = 5 * time.Second
+	dialCtx, dialCancel := context.WithTimeout(ctx, connectTimeout)
+	defer dialCancel()
+	for {
+		state := clientConn.GetState()
+		if state == connectivity.Ready {
+			break
+		}
+		if !clientConn.WaitForStateChange(dialCtx, state) {
+			var suffix string
+			// If we have an error from the Dial operation, include it.
+			errPtr := latestConnectError.Load()
+			if errPtr != nil {
+				if err := *errPtr; err != nil {
+					suffix = ": " + err.Error()
+				}
+			}
+			return nil, fmt.Errorf("connection failed to become ready after %v%s", connectTimeout, suffix)
+		}
 	}
 
 	switch req.GetService() {
