@@ -125,13 +125,16 @@ func (i *invoker) serverStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if timing.AfterCloseSendMs >= 0 {
-		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
-	}
 	stream, err := i.client.ServerStream(ctx, req)
 	if err != nil {
 		return nil, err
 	}
+
+	if timing.AfterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+		cancel()
+	}
+
 	// Read headers from the stream
 	hdr, err := stream.Header()
 	if err != nil {
@@ -145,11 +148,6 @@ func (i *invoker) serverStream(
 		}
 	}()
 
-	// If the cancel timing specifies after 0 responses, then cancel before
-	// receiving anything
-	if timing.AfterNumResponses == 0 {
-		cancel()
-	}
 	totalRcvd := 0
 	for {
 		msg, err := stream.Recv()
@@ -287,12 +285,8 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
-			if totalRcvd == timing.AfterNumResponses {
-				cancel()
-			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Recv()
-			totalRcvd++
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
@@ -306,6 +300,10 @@ func (i *invoker) bidiStream(
 			}
 			// If the call was successful, get the returned payloads
 			result.Payloads = append(result.Payloads, msg.Payload)
+			totalRcvd++
+			if totalRcvd == timing.AfterNumResponses {
+				cancel()
+			}
 		}
 	}
 
@@ -347,11 +345,7 @@ func (i *invoker) bidiStream(
 
 	// Receive any remaining responses
 	for {
-		if totalRcvd == timing.AfterNumResponses {
-			cancel()
-		}
 		msg, err := stream.Recv()
-		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// If an error was returned that is not an EOF, convert it
@@ -363,6 +357,10 @@ func (i *invoker) bidiStream(
 		}
 		// If the call was successful, save the payloads
 		result.Payloads = append(result.Payloads, msg.Payload)
+		totalRcvd++
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 	}
 
 	if protoErr != nil {

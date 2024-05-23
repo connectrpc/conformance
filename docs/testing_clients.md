@@ -475,6 +475,10 @@ for each request message {
 
    extract the payload field from the response and
       record it in array of payload values
+
+   if we should cancel after N response messages and this is the Nth {
+      cancel the RPC (but do not return)
+   }
 }
 
 if we should cancel before close send {

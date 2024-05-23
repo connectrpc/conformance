@@ -233,9 +233,6 @@ func (i *invoker) serverStream(
 
 	ctx = i.withWireCapture(ctx)
 
-	if timing.AfterCloseSendMs >= 0 {
-		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
-	}
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
@@ -266,15 +263,15 @@ func (i *invoker) serverStream(
 		}
 	}()
 
+	if timing.AfterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+		cancel()
+	}
+
 	if ssr.ResponseDefinition != nil {
 		result.Payloads = make([]*conformancev1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
-	// If the cancel timing specifies after 0 responses, then cancel before
-	// receiving anything
-	if timing.AfterNumResponses == 0 {
-		cancel()
-	}
 	totalRcvd := 0
 	for stream.Receive() {
 		totalRcvd++
@@ -338,10 +335,7 @@ func (i *invoker) clientStream(
 	if timing.BeforeCloseSend != nil {
 		cancel()
 	} else if timing.AfterCloseSendMs >= 0 {
-		go func() {
-			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
-			cancel()
-		}()
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
 	}
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
@@ -440,12 +434,8 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
-			if totalRcvd == timing.AfterNumResponses {
-				cancel()
-			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Receive()
-			totalRcvd++
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
@@ -459,6 +449,10 @@ func (i *invoker) bidiStream(
 			}
 			// If the call was successful, get the returned payloads
 			result.Payloads = append(result.Payloads, msg.Payload)
+			totalRcvd++
+			if totalRcvd == timing.AfterNumResponses {
+				cancel()
+			}
 		}
 	}
 
@@ -484,11 +478,7 @@ func (i *invoker) bidiStream(
 
 	// Receive any remaining responses
 	for {
-		if totalRcvd == timing.AfterNumResponses {
-			cancel()
-		}
 		msg, err := stream.Receive()
-		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// If an error was returned that is not an EOF, convert it
@@ -500,6 +490,10 @@ func (i *invoker) bidiStream(
 		}
 		// If the call was successful, save the payloads
 		result.Payloads = append(result.Payloads, msg.Payload)
+		totalRcvd++
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 	}
 
 	if protoErr != nil {
