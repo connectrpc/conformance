@@ -10,7 +10,6 @@ features:
   codecs:
   - CODEC_PROTO
   - CODEC_JSON
-  - CODEC_TEXT
   compressions:
   - COMPRESSION_IDENTITY
   - COMPRESSION_GZIP
