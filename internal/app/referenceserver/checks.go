@@ -41,7 +41,6 @@ const (
 
 	codecProto = "proto"
 	codecJSON  = "json"
-	codecText  = "text"
 )
 
 // TODO - We should add a check for the Connect version header and/or query param to the reference server checks
@@ -162,8 +161,6 @@ func checkCodec(expected conformancev1.Codec, req *http.Request, feedback *feedb
 		expect = codecProto
 	case conformancev1.Codec_CODEC_JSON:
 		expect = codecJSON
-	case conformancev1.Codec_CODEC_TEXT:
-		expect = codecText
 	default:
 		feedback.Printf("invalid expected codec %d", expected)
 		return
