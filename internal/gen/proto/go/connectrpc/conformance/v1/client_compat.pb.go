@@ -776,6 +776,7 @@ type ClientCompatRequest_Cancel_AfterCloseSendMs struct {
 type ClientCompatRequest_Cancel_AfterNumResponses struct {
 	// When present, the client should cancel right after
 	// reading this number of response messages from the stream.
+	// When present, this will be greater than zero.
 	//
 	// This applies only to server and bidi stream RPCs.
 	AfterNumResponses uint32 `protobuf:"varint,3,opt,name=after_num_responses,json=afterNumResponses,proto3,oneof"`

@@ -46,17 +46,6 @@ async function runTestCase(data: number[]): Promise<number[]> {
   return Array.from(result.serializeBinary());
 }
 
-function log(msg: string) {
-  let now = new Date();
-  // eek, there must be a better way...
-  let timestamp = now.getHours().toString().padStart(2, '0') + ":" +
-      now.getMinutes().toString().padStart(2, '0') + ":" +
-      now.getSeconds().toString().padStart(2, '0') + "." +
-      now.getMilliseconds().toString().padStart(3, '0')
-  // @ts-ignore
-  window.log(timestamp + ": " + msg);
-}
-
 function addErrorListeners() {
   window.addEventListener("error", function (e) {
     // @ts-ignore
