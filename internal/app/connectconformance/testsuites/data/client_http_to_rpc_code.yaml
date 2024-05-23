@@ -84,7 +84,7 @@ testCases:
     error:
       code: CODE_UNKNOWN
 - request:
-    testName: unsupported media type
+    testName: unsupported-media-type
     streamType: STREAM_TYPE_UNARY
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest

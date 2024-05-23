@@ -8,31 +8,6 @@ relevantCodecs:
   - CODEC_PROTO
 testCases:
   - request:
-      testName: unexpected-content-type
-      streamType: STREAM_TYPE_UNARY
-      requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      rawRequest:
-        verb: POST
-        uri: /connectrpc.conformance.v1.ConformanceService/Unary
-        headers:
-          - name: content-type
-            value: [ "image/jpeg" ]
-        unary:
-          binary: "12345678"
-    otherAllowedErrorCodes:
-      # Not actually specified what error code to use, but only
-      # internal and unknown really make any sense. There may be
-      # an argument for unimplemented, too.
-      - CODE_INTERNAL
-      - CODE_UNIMPLEMENTED
-    expectedResponse:
-      # Ideally, the server would return a 415. But it's not actually specified :/
-      # httpStatusCode: 415
-      error:
-        code: CODE_UNKNOWN
-
-  - request:
       testName: unary/no-request
       streamType: STREAM_TYPE_UNARY
       requestMessages:

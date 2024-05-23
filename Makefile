@@ -106,7 +106,7 @@ runservertests: $(BIN)/connectconformance $(BIN)/referenceserver $(BIN)/grpcserv
 		-- $(BIN)/grpcserver
 
 .PHONY: runclienttests
-runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient buildgrpcweb
+runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclient grpcwebclient
 	$(BIN)/connectconformance -v --conf ./testing/reference-impls-config.yaml --mode client --trace \
 		--known-failing @./testing/referenceclient-known-failing.txt \
 		-- $(BIN)/referenceclient
@@ -117,8 +117,8 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclie
 		--known-failing @./testing/grpcwebclient-known-failing.txt \
 		-- ./testing/grpcwebclient/bin/grpcwebclient
 
-.PHONY: buildgrpcweb
-buildgrpcweb: generate
+.PHONY: grpcwebclient
+grpcwebclient: generate
 	cd testing/grpcwebclient && npm run build
 
 $(BIN)/connectconformance: Makefile generate

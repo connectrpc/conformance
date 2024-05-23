@@ -1,7 +1,7 @@
 name: Connect to HTTP Code Mapping
 # These tests verify that an explicit Connect code maps to the correct HTTP code
 # according to the protocol.
-mode: TEST_MODE_CLIENT
+mode: TEST_MODE_SERVER
 relevantProtocols:
   - PROTOCOL_CONNECT
 testCases:

@@ -145,6 +145,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 	stub func(context.Context, *connect.Request[ReqT]) (*connect.Response[RespT], error),
 	getPayload func(*RespT) *conformancev1.ConformancePayload,
 ) (*conformancev1.ClientResponseResult, error) {
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
 	msg := req.RequestMessages[0]
 	rpcReq := new(ReqT)
 	if err := msg.UnmarshalTo(Req(rpcReq)); err != nil {
@@ -161,6 +166,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 	var trailers []*conformancev1.Header
 	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
+	if timing.AfterCloseSendMs >= 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
+	}
 	ctx = inv.withWireCapture(ctx)
 
 	// Invoke the Unary call
@@ -200,8 +210,10 @@ func (i *invoker) serverStream(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (result *conformancev1.ClientResponseResult, _ error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
 
 	msg := req.RequestMessages[0]
 	ssr := &conformancev1.ServerStreamRequest{}
@@ -215,6 +227,9 @@ func (i *invoker) serverStream(
 	internal.AddHeaders(req.RequestHeaders, request.Header())
 
 	result = &conformancev1.ClientResponseResult{}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
 	ctx = i.withWireCapture(ctx)
 
@@ -248,19 +263,15 @@ func (i *invoker) serverStream(
 		}
 	}()
 
+	if timing.AfterCloseSendMs >= 0 {
+		time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
+		cancel()
+	}
+
 	if ssr.ResponseDefinition != nil {
 		result.Payloads = make([]*conformancev1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
-	timing, err := internal.GetCancelTiming(req.Cancel)
-	if err != nil {
-		return nil, err
-	}
-	// If the cancel timing specifies after 0 responses, then cancel before
-	// receiving anything
-	if timing.AfterNumResponses == 0 {
-		cancel()
-	}
 	totalRcvd := 0
 	for stream.Receive() {
 		totalRcvd++
@@ -324,10 +335,7 @@ func (i *invoker) clientStream(
 	if timing.BeforeCloseSend != nil {
 		cancel()
 	} else if timing.AfterCloseSendMs >= 0 {
-		go func() {
-			time.Sleep(time.Duration(timing.AfterCloseSendMs) * time.Millisecond)
-			cancel()
-		}()
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
 	}
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
@@ -426,12 +434,8 @@ func (i *invoker) bidiStream(
 			break
 		}
 		if fullDuplex {
-			if totalRcvd == timing.AfterNumResponses {
-				cancel()
-			}
 			// If this is a full duplex stream, receive a response for each request
 			msg, err := stream.Receive()
-			totalRcvd++
 			if err != nil {
 				if !errors.Is(err, io.EOF) {
 					// If an error was returned that is not an EOF, convert it
@@ -445,6 +449,10 @@ func (i *invoker) bidiStream(
 			}
 			// If the call was successful, get the returned payloads
 			result.Payloads = append(result.Payloads, msg.Payload)
+			totalRcvd++
+			if totalRcvd == timing.AfterNumResponses {
+				cancel()
+			}
 		}
 	}
 
@@ -470,11 +478,7 @@ func (i *invoker) bidiStream(
 
 	// Receive any remaining responses
 	for {
-		if totalRcvd == timing.AfterNumResponses {
-			cancel()
-		}
 		msg, err := stream.Receive()
-		totalRcvd++
 		if err != nil {
 			if !errors.Is(err, io.EOF) {
 				// If an error was returned that is not an EOF, convert it
@@ -486,6 +490,10 @@ func (i *invoker) bidiStream(
 		}
 		// If the call was successful, save the payloads
 		result.Payloads = append(result.Payloads, msg.Payload)
+		totalRcvd++
+		if totalRcvd == timing.AfterNumResponses {
+			cancel()
+		}
 	}
 
 	if protoErr != nil {

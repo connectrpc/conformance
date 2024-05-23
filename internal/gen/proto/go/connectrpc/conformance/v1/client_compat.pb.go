@@ -86,7 +86,8 @@ type ClientCompatRequest struct {
 	// If specified, service must also be specified.
 	// If not specified, the test runner will auto-populate this field based on the stream_type.
 	Method *string `protobuf:"bytes,12,opt,name=method,proto3,oneof" json:"method,omitempty"`
-	// The stream type of `method` (i.e. Unary, Client-Streaming, Server-Streaming, Full Duplex Bidi, or Half Duplex Bidi).
+	// The stream type of `method` (i.e. unary, client stream, server stream, full-duplex bidi
+	// stream, or half-duplex bidi stream).
 	// When writing test cases, this is a required field.
 	StreamType StreamType `protobuf:"varint,13,opt,name=stream_type,json=streamType,proto3,enum=connectrpc.conformance.v1.StreamType" json:"stream_type,omitempty"`
 	// If protocol indicates Connect and stream type indicates
@@ -101,16 +102,16 @@ type ClientCompatRequest struct {
 	// The actual request messages that will sent to the server.
 	// The type URL for all entries should be equal to the request type of the
 	// method.
-	// There must be exactly one for unary and server-stream methods but
-	// can be zero or more for client- and bidi-stream methods.
-	// For client- and bidi-stream methods, all entries will have the
+	// There must be exactly one for unary and server stream methods but
+	// can be zero or more for client and bidi stream methods.
+	// For client and bidi stream methods, all entries will have the
 	// same type URL.
 	RequestMessages []*anypb.Any `protobuf:"bytes,16,rep,name=request_messages,json=requestMessages,proto3" json:"request_messages,omitempty"`
 	// The timeout, in milliseconds, for the request. This is equivalent to a
 	// deadline for the request. If unset, there will be no timeout.
 	TimeoutMs *uint32 `protobuf:"varint,17,opt,name=timeout_ms,json=timeoutMs,proto3,oneof" json:"timeout_ms,omitempty"`
 	// Wait this many milliseconds before sending a request message.
-	// For client- or bidi-streaming requests, this delay should be
+	// For client or bidi stream methods, this delay should be
 	// applied before each request sent.
 	RequestDelayMs uint32 `protobuf:"varint,18,opt,name=request_delay_ms,json=requestDelayMs,proto3" json:"request_delay_ms,omitempty"`
 	// If present, the client should cancel the RPC instead of
@@ -412,8 +413,8 @@ type ClientResponseResult struct {
 	ResponseHeaders []*Header `protobuf:"bytes,1,rep,name=response_headers,json=responseHeaders,proto3" json:"response_headers,omitempty"`
 	// Servers should echo back payloads that they received as part of the request.
 	// This field should contain all the payloads the server echoed back. Note that
-	// There will be zero-to-one for unary and client-stream methods and
-	// zero-to-many for server- and bidi-stream methods.
+	// There will be zero-to-one for unary and client stream methods and
+	// zero-to-many for server and bidi stream methods.
 	Payloads []*ConformancePayload `protobuf:"bytes,2,rep,name=payloads,proto3" json:"payloads,omitempty"`
 	// The error received from the actual RPC invocation. Note this is not representative
 	// of a runtime error and should always be the proto equivalent of a Connect
@@ -745,8 +746,9 @@ type isClientCompatRequest_Cancel_CancelTiming interface {
 type ClientCompatRequest_Cancel_BeforeCloseSend struct {
 	// When present, the client should cancel *instead of*
 	// closing the send side of the stream, after all requests
-	// have been sent. This applies only to client and bidi
-	// stream RPCs.
+	// have been sent.
+	//
+	// This applies only to client and bidi stream RPCs.
 	BeforeCloseSend *emptypb.Empty `protobuf:"bytes,1,opt,name=before_close_send,json=beforeCloseSend,proto3,oneof"`
 }
 
@@ -754,12 +756,28 @@ type ClientCompatRequest_Cancel_AfterCloseSendMs struct {
 	// When present, the client should delay for this many
 	// milliseconds after closing the send side of the stream
 	// and then cancel.
+	//
+	// This applies to all types of RPCs.
+	//
+	// For unary and server stream RPCs, where the API usually
+	// does not allow explicitly closing the send side, the
+	// cancellation should be done immediately after invoking
+	// the RPC (which should implicitly send the one-and-only
+	// request and then close the send-side).
+	//
+	// For APIs where unary RPCs block until the response
+	// is received, there is no point after the request is
+	// sent but before a response is received to cancel. So
+	// the client must arrange for the RPC to be canceled
+	// asynchronously before invoking the blocking unary call.
 	AfterCloseSendMs uint32 `protobuf:"varint,2,opt,name=after_close_send_ms,json=afterCloseSendMs,proto3,oneof"`
 }
 
 type ClientCompatRequest_Cancel_AfterNumResponses struct {
 	// When present, the client should cancel right after
 	// reading this number of response messages from the stream.
+	// When present, this will be greater than zero.
+	//
 	// This applies only to server and bidi stream RPCs.
 	AfterNumResponses uint32 `protobuf:"varint,3,opt,name=after_num_responses,json=afterNumResponses,proto3,oneof"`
 }

@@ -12,28 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { ConformanceServiceClient } from "./gen/proto/connectrpc/conformance/v1/ServiceServiceClientPb.js";
-import {
-  ClientCompatRequest,
-  ClientResponseResult,
-} from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
-import { Code } from "./gen/proto/connectrpc/conformance/v1/config_pb.js";
+import {ConformanceServiceClient} from "./gen/proto/connectrpc/conformance/v1/ServiceServiceClientPb.js";
+import {ClientCompatRequest, ClientResponseResult,} from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
+import {Code} from "./gen/proto/connectrpc/conformance/v1/config_pb.js";
 import {
   Error as ProtoError,
   Header,
-  UnaryRequest,
-  UnimplementedRequest,
   ServerStreamRequest,
   ServerStreamResponse,
+  UnaryRequest,
   UnaryResponse,
+  UnimplementedRequest,
 } from "./gen/proto/connectrpc/conformance/v1/service_pb.js";
-import { Status } from "@buf/googleapis_googleapis.protocolbuffers_js/google/rpc/status_pb.js";
-import {
-  Metadata,
-  RpcError,
-  StatusCode,
-  Status as GrpcWebStatus,
-} from "grpc-web";
+import {Status} from "@buf/googleapis_googleapis.protocolbuffers_js/google/rpc/status_pb.js";
+import {Metadata, RpcError, Status as GrpcWebStatus, StatusCode,} from "grpc-web";
+import CancelTimingCase = ClientCompatRequest.Cancel.CancelTimingCase;
 
 // The main entry point into the browser code running in Puppeteer/headless Chrome.
 // This function is invoked by the page.evaluate call in grpcwebclient.
@@ -236,6 +229,18 @@ async function unary(
     },
   );
 
+  if (req.getCancel()?.getCancelTimingCase() == CancelTimingCase.AFTER_CLOSE_SEND_MS) {
+    setTimeout(() => {
+      result.cancel()
+      // Annoyingly, when we cancel the RPC, no other callbacks or events get triggered.
+      // So we have to complete the promise here.
+      let err = new ProtoError()
+      err.setCode(Code.CODE_CANCELED)
+      resp.setError(err)
+      res(resp)
+    }, req.getCancel()?.getAfterCloseSendMs())
+  }
+
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
   result.on("metadata", (md: Metadata) => {
     if (md !== undefined) {
@@ -288,16 +293,33 @@ async function serverStream(
   const metadata: Metadata = buildMetadata(req);
 
   const stream = client.serverStream(uReq, metadata);
+  let doCancel = () => {
+    stream.cancel()
+    // Annoyingly, when we cancel the RPC, no other callbacks or events get triggered.
+    // So we have to complete the promise here.
+    let err = new ProtoError()
+    err.setCode(Code.CODE_CANCELED)
+    resp.setError(err)
+    res(resp)
+  }
 
   let res: (result: ClientResponseResult) => void;
   const prom = new Promise<ClientResponseResult>((resolve) => {
     res = resolve;
   });
-
+  if (req.getCancel()?.getCancelTimingCase() == CancelTimingCase.AFTER_CLOSE_SEND_MS) {
+    setTimeout(doCancel, req.getCancel()?.getAfterCloseSendMs())
+  }
+  let numResps = 0;
   stream.on("data", (response: ServerStreamResponse) => {
     const payload = response.getPayload();
     if (payload !== undefined) {
       resp.addPayloads(payload);
+    }
+    numResps++;
+    if (req.getCancel()?.getCancelTimingCase() == CancelTimingCase.AFTER_NUM_RESPONSES &&
+        numResps === req.getCancel()?.getAfterNumResponses()) {
+      doCancel()
     }
   });
   // Response headers (i.e. initial metadata) are sent in the 'metadata' event
