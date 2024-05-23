@@ -17,6 +17,7 @@ package connectconformance
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -72,6 +73,7 @@ func parseConfig(configFileName string, data []byte) ([]configCase, error) {
 	if config.Features == nil {
 		config.Features = &conformancev1.Features{}
 	}
+	checkForDeprecations(&config)
 	features, err := resolveFeatures(config.Features)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", configFileName, err)
@@ -318,6 +320,11 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 						}
 
 						for _, codec := range features.Codecs {
+							//nolint:staticcheck // staticcheck complains because this const is deprecated
+							if codec == conformancev1.Codec_CODEC_TEXT {
+								// Deprecated, ignore
+								continue
+							}
 							for _, compression := range features.Compressions {
 								for _, connectGetCase := range connectGetCases {
 									for _, msgRecvLimitCase := range msgRecvLimitCases {
@@ -413,6 +420,33 @@ func resolveCase(features supportedFeatures, unresolvedCase *conformancev1.Confi
 		msgReceiveLimitCases = []bool{unresolvedCase.GetUseMessageReceiveLimit()}
 	}
 	return computeCasesFromFeatures(impliedFeatures, tlsCases, tlsClientCertCases, msgReceiveLimitCases), nil
+}
+
+func checkForDeprecations(config *conformancev1.Config) {
+	warn := func() {
+		_, _ = fmt.Fprintln(os.Stderr, "WARNING: config includes reference to CODEC_TEXT which is deprecated and will be ignored. Please remove.")
+	}
+	for _, codec := range config.GetFeatures().GetCodecs() {
+		//nolint:staticcheck // staticcheck complains because this const is deprecated
+		if codec == conformancev1.Codec_CODEC_TEXT {
+			warn()
+			return
+		}
+	}
+	for _, include := range config.GetIncludeCases() {
+		//nolint:staticcheck // staticcheck complains because this const is deprecated
+		if include.GetCodec() == conformancev1.Codec_CODEC_TEXT {
+			warn()
+			return
+		}
+	}
+	for _, exclude := range config.GetExcludeCases() {
+		//nolint:staticcheck // staticcheck complains because this const is deprecated
+		if exclude.GetCodec() == conformancev1.Codec_CODEC_TEXT {
+			warn()
+			return
+		}
+	}
 }
 
 func contains[T comparable, S ~[]T](slice S, find T) bool {

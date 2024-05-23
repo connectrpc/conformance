@@ -133,7 +133,7 @@ enum Codec {
   CODEC_UNSPECIFIED = 0;
   CODEC_PROTO = 1;
   CODEC_JSON = 2;
-  CODEC_TEXT = 3;
+  CODEC_TEXT = 3 [deprecated = true]; // not used; will be ignored
 }
 
 enum Compression {

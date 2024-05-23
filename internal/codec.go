@@ -22,7 +22,6 @@ import (
 	"io"
 
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/encoding/prototext"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -165,31 +164,4 @@ func (p *protoEncoder) Encode(msg proto.Message) error {
 		return fmt.Errorf("failed to marshal response to binary: %w", err)
 	}
 	return writeDelimitedMessageRaw(p.out, data)
-}
-
-// TextConnectCodec implements the connect.Codec interface, providing the
-// protobuf text format.
-type TextConnectCodec struct {
-	prototext.MarshalOptions
-	prototext.UnmarshalOptions
-}
-
-func (t *TextConnectCodec) Name() string {
-	return "text"
-}
-
-func (t *TextConnectCodec) Marshal(a any) ([]byte, error) {
-	msg, ok := a.(proto.Message)
-	if !ok {
-		return nil, fmt.Errorf("message type %T does not implement proto.Message", a)
-	}
-	return t.MarshalOptions.Marshal(msg)
-}
-
-func (t *TextConnectCodec) Unmarshal(bytes []byte, a any) error {
-	msg, ok := a.(proto.Message)
-	if !ok {
-		return fmt.Errorf("message type %T does not implement proto.Message", a)
-	}
-	return t.UnmarshalOptions.Unmarshal(bytes, msg)
 }

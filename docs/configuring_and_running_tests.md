@@ -77,9 +77,8 @@ feature of the implementation under test.
   any version of HTTP. If not configured, support is assumed for all three.
 * `codecs`: This configures which codecs, or message formats, that the implementation
   supports. The options are `CODEC_PROTO` (which corresponds to the sub-format "proto",
-  which is the Protobuf binary format), `CODEC_JSON` (sub-format "json"), and
-  `CODEC_TEXT` (sub-format "text", which is the Protobuf text format). If not configured,
-  support is assumed for "proto" and "json".
+  which is the Protobuf binary format) and `CODEC_JSON` (sub-format "json"). If not
+  configured, support is assumed for both.
 * `compressions`: This configures which compression encodings are supported by the
   implementation. `COMPRESSION_IDENTITY`, the "identity" encoding, means no compression.
   `COMPRESSION_GZIP` indicates "gzip" compression. If not configured, support for these
