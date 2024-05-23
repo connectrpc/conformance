@@ -15,9 +15,11 @@
 package connectconformance
 
 import (
+	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+	"unicode"
 
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -411,6 +413,46 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 	testSuiteData, err := testsuites.LoadTestSuites()
 	require.NoError(t, err)
 	allSuites, err := parseTestSuites(testSuiteData)
+
+	// Validate naming conventions:
+	//   File names are "lower_snake_case" with ".yaml" extension
+	//   Suite names are "Title Case" case without punctuation
+	//   Test case names are paths (with "/") in "kebab-case"
+	for filename, testSuite := range allSuites {
+		filename = filepath.Base(filename)
+		ext := filepath.Ext(filename)
+		assert.Equal(t, ".yaml", ext, "filename %q must have '.yaml' extension", filename)
+		if ext != "" {
+			filename = strings.TrimSuffix(filename, ext)
+		}
+		assert.False(t, strings.ContainsFunc(filename, func(r rune) bool {
+			const allowed = "abcdefghijklmnopqrstuvwxyz0123456789_"
+			return strings.IndexRune(allowed, r) == -1
+		}), "filename %q may only have lower-case letters, numbers, and underscores", filename)
+
+		testSuiteName := strings.TrimSpace(testSuite.Name)
+		if assert.NotEmpty(t, testSuiteName, "test suite name for file %q is blank", filename) {
+			// Title case means starting with capital letter, but we allow
+			// lower-case "g" if first word is "gRPC".
+			assert.True(t, strings.HasPrefix(testSuiteName, "gRPC") || unicode.IsUpper(rune(testSuiteName[0])),
+				"test suite name %q should start with capital letter", testSuiteName)
+		}
+		assert.True(t, testSuiteName == testSuite.Name,
+			"test suite name %q should not have leading or trailing spaces", testSuiteName)
+		assert.False(t, strings.ContainsFunc(testSuiteName, func(r rune) bool {
+			const allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- "
+			return strings.IndexRune(allowed, r) == -1
+		}), "test suite name %q may only have letters, numbers, hyphens, and spaces", testSuiteName)
+
+		for _, testCase := range testSuite.TestCases {
+			testCaseName := testCase.Request.TestName
+			assert.False(t, strings.ContainsFunc(testCaseName, func(r rune) bool {
+				const allowed = "abcdefghijklmnopqrstuvwxyz0123456789-/"
+				return strings.IndexRune(allowed, r) == -1
+			}), "test case name %q (in test suite %q) may only have lower-case letters, numbers, hyphens, and slashes", testCaseName, testSuiteName)
+		}
+	}
+
 	require.NoError(t, err)
 	configCases, err := parseConfig("config.yaml", nil)
 	require.NoError(t, err)

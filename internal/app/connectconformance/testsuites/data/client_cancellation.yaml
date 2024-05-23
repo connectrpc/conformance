@@ -98,7 +98,7 @@ testCases:
       code: CODE_CANCELED
 # Bidi Stream Tests -----------------------------------------------------------
 - request:
-    testName: bidi full duplex cancel after zero responses
+    testName: bidi-stream/full-duplex/cancel-after-zero-responses
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
     cancel:
       afterNumResponses: 0
@@ -214,24 +214,6 @@ testCases:
           requests:
             - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
               requestData: "dGVzdCByZXNwb25zZQ=="
-    error:
-      code: CODE_CANCELED
-- request:
-    testName: bidi-stream/half-duplex/cancel-after-zero-responses
-    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
-    cancel:
-      afterNumResponses: 0
-    requestMessages:
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      responseDefinition:
-        responseDelayMs: 200
-        responseData:
-          - "dGVzdCByZXNwb25zZQ=="
-          - "dGVzdCByZXNwb25zZQ=="
-    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
-      requestData: "dGVzdCByZXNwb25zZQ=="
-  # Override
-  expectedResponse:
     error:
       code: CODE_CANCELED
 - request:
