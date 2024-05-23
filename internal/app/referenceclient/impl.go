@@ -145,6 +145,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 	stub func(context.Context, *connect.Request[ReqT]) (*connect.Response[RespT], error),
 	getPayload func(*RespT) *conformancev1.ConformancePayload,
 ) (*conformancev1.ClientResponseResult, error) {
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
 	msg := req.RequestMessages[0]
 	rpcReq := new(ReqT)
 	if err := msg.UnmarshalTo(Req(rpcReq)); err != nil {
@@ -161,6 +166,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 	var trailers []*conformancev1.Header
 	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
+	if timing.AfterCloseSendMs >= 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
+	}
 	ctx = inv.withWireCapture(ctx)
 
 	// Invoke the Unary call
@@ -200,8 +210,10 @@ func (i *invoker) serverStream(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (result *conformancev1.ClientResponseResult, _ error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	timing, err := internal.GetCancelTiming(req.Cancel)
+	if err != nil {
+		return nil, err
+	}
 
 	msg := req.RequestMessages[0]
 	ssr := &conformancev1.ServerStreamRequest{}
@@ -216,8 +228,14 @@ func (i *invoker) serverStream(
 
 	result = &conformancev1.ClientResponseResult{}
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	ctx = i.withWireCapture(ctx)
 
+	if timing.AfterCloseSendMs >= 0 {
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
+	}
 	stream, err := i.client.ServerStream(ctx, request)
 	if err != nil {
 		// If an error was returned, first convert it to a Connect error
@@ -252,10 +270,6 @@ func (i *invoker) serverStream(
 		result.Payloads = make([]*conformancev1.ConformancePayload, 0, len(ssr.ResponseDefinition.ResponseData))
 	}
 
-	timing, err := internal.GetCancelTiming(req.Cancel)
-	if err != nil {
-		return nil, err
-	}
 	// If the cancel timing specifies after 0 responses, then cancel before
 	// receiving anything
 	if timing.AfterNumResponses == 0 {

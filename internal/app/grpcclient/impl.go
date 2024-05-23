@@ -26,6 +26,7 @@ import (
 	"connectrpc.com/conformance/internal/grpcutil"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 )
 
 const clientName = "connectconformance-grpcclient"
@@ -54,6 +55,8 @@ func (i *invoker) Invoke(
 			return nil, err
 		}
 		return resp, nil
+	case "IdempotentUnary":
+		return nil, fmt.Errorf("method name %s of service %s is for use with Connect, not gRPC", req.GetMethod(), req.GetService())
 	case "ServerStream":
 		if len(req.RequestMessages) != 1 {
 			return nil, errors.New("server streaming calls must specify exactly one request message")
@@ -90,52 +93,24 @@ func (i *invoker) unary(
 	ctx context.Context,
 	ccr *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
-	msg := ccr.RequestMessages[0]
-	req := &conformancev1.UnaryRequest{}
-	if err := msg.UnmarshalTo(req); err != nil {
-		return nil, err
-	}
-
-	// Add the specified request headers to the request
-	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
-
-	var protoErr *conformancev1.Error
-	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
-
-	var headerMD, trailerMD metadata.MD
-
-	// Invoke the Unary call
-	resp, err := i.client.Unary(
-		ctx,
-		req,
-		grpc.Header(&headerMD),
-		grpc.Trailer(&trailerMD),
+	return doUnary(ctx, ccr,
+		func(ctx context.Context, req *conformancev1.UnaryRequest, opts ...grpc.CallOption) (*conformancev1.UnaryResponse, error) {
+			return i.client.Unary(ctx, req, opts...)
+		},
+		func(resp *conformancev1.UnaryResponse) *conformancev1.ConformancePayload {
+			return resp.Payload
+		},
 	)
-	headers := grpcutil.ConvertMetadataToProtoHeader(headerMD)
-	trailers := grpcutil.ConvertMetadataToProtoHeader(trailerMD)
-	if err != nil {
-		// If an error was returned, convert it to a gRPC error
-		protoErr = grpcutil.ConvertGrpcToProtoError(err)
-	} else if resp.Payload != nil {
-		// If the call was successful and there's a payload
-		// add that to the response also
-		payloads = append(payloads, resp.Payload)
-	}
-
-	return &conformancev1.ClientResponseResult{
-		ResponseHeaders:  headers,
-		ResponseTrailers: trailers,
-		Payloads:         payloads,
-		Error:            protoErr,
-	}, nil
 }
 
 func (i *invoker) serverStream(
 	ctx context.Context,
 	ccr *conformancev1.ClientCompatRequest,
 ) (result *conformancev1.ClientResponseResult, retErr error) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	timing, err := internal.GetCancelTiming(ccr.Cancel)
+	if err != nil {
+		return nil, err
+	}
 
 	result = &conformancev1.ClientResponseResult{}
 
@@ -147,6 +122,12 @@ func (i *invoker) serverStream(
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	if timing.AfterCloseSendMs >= 0 {
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
+	}
 	stream, err := i.client.ServerStream(ctx, req)
 	if err != nil {
 		return nil, err
@@ -164,10 +145,6 @@ func (i *invoker) serverStream(
 		}
 	}()
 
-	timing, err := internal.GetCancelTiming(ccr.Cancel)
-	if err != nil {
-		return nil, err
-	}
 	// If the cancel timing specifies after 0 responses, then cancel before
 	// receiving anything
 	if timing.AfterNumResponses == 0 {
@@ -400,8 +377,34 @@ func (i *invoker) unimplemented(
 	ctx context.Context,
 	ccr *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
+	return doUnary(ctx, ccr,
+		func(ctx context.Context, req *conformancev1.UnimplementedRequest, opts ...grpc.CallOption) (*conformancev1.UnimplementedResponse, error) {
+			return i.client.Unimplemented(ctx, req, opts...)
+		},
+		func(resp *conformancev1.UnimplementedResponse) *conformancev1.ConformancePayload {
+			return nil
+		},
+	)
+}
+
+type pointerMessage[T any] interface {
+	*T
+	proto.Message
+}
+
+func doUnary[ReqT, RespT any, Req pointerMessage[ReqT], Resp pointerMessage[RespT]](
+	ctx context.Context,
+	ccr *conformancev1.ClientCompatRequest,
+	stub func(context.Context, Req, ...grpc.CallOption) (Resp, error),
+	getPayload func(Resp) *conformancev1.ConformancePayload,
+) (*conformancev1.ClientResponseResult, error) {
+	timing, err := internal.GetCancelTiming(ccr.Cancel)
+	if err != nil {
+		return nil, err
+	}
+
 	msg := ccr.RequestMessages[0]
-	req := &conformancev1.UnimplementedRequest{}
+	req := Req(new(ReqT))
 	if err := msg.UnmarshalTo(req); err != nil {
 		return nil, err
 	}
@@ -409,10 +412,39 @@ func (i *invoker) unimplemented(
 	// Add the specified request headers to the request
 	ctx = grpcutil.AppendToOutgoingContext(ctx, ccr.RequestHeaders)
 
+	var protoErr *conformancev1.Error
+	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
+
+	var headerMD, trailerMD metadata.MD
+
+	if timing.AfterCloseSendMs >= 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		time.AfterFunc(time.Duration(timing.AfterCloseSendMs)*time.Millisecond, cancel)
+	}
 	// Invoke the Unary call
-	_, err := i.client.Unimplemented(ctx, req)
+	resp, err := stub(
+		ctx,
+		req,
+		grpc.Header(&headerMD),
+		grpc.Trailer(&trailerMD),
+	)
+	headers := grpcutil.ConvertMetadataToProtoHeader(headerMD)
+	trailers := grpcutil.ConvertMetadataToProtoHeader(trailerMD)
+	if err != nil {
+		// If an error was returned, convert it to a gRPC error
+		protoErr = grpcutil.ConvertGrpcToProtoError(err)
+	} else if payload := getPayload(resp); payload != nil {
+		// If the call was successful and there's a payload
+		// add that to the response also
+		payloads = append(payloads, payload)
+	}
+
 	return &conformancev1.ClientResponseResult{
-		Error: grpcutil.ConvertGrpcToProtoError(err),
+		ResponseHeaders:  headers,
+		ResponseTrailers: trailers,
+		Payloads:         payloads,
+		Error:            protoErr,
 	}, nil
 }
 
