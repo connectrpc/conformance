@@ -427,7 +427,7 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 		}
 		assert.False(t, strings.ContainsFunc(filename, func(r rune) bool {
 			const allowed = "abcdefghijklmnopqrstuvwxyz0123456789_"
-			return strings.IndexRune(allowed, r) == -1
+			return !strings.ContainsRune(allowed, r)
 		}), "filename %q may only have lower-case letters, numbers, and underscores", filename)
 
 		testSuiteName := strings.TrimSpace(testSuite.Name)
@@ -441,14 +441,14 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 			"test suite name %q should not have leading or trailing spaces", testSuiteName)
 		assert.False(t, strings.ContainsFunc(testSuiteName, func(r rune) bool {
 			const allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- "
-			return strings.IndexRune(allowed, r) == -1
+			return !strings.ContainsRune(allowed, r)
 		}), "test suite name %q may only have letters, numbers, hyphens, and spaces", testSuiteName)
 
 		for _, testCase := range testSuite.TestCases {
 			testCaseName := testCase.Request.TestName
 			assert.False(t, strings.ContainsFunc(testCaseName, func(r rune) bool {
 				const allowed = "abcdefghijklmnopqrstuvwxyz0123456789-/"
-				return strings.IndexRune(allowed, r) == -1
+				return !strings.ContainsRune(allowed, r)
 			}), "test case name %q (in test suite %q) may only have lower-case letters, numbers, hyphens, and slashes", testCaseName, testSuiteName)
 		}
 	}
