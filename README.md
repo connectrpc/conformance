@@ -135,7 +135,7 @@ This will build the necessary binaries and run tests of the following implementa
     confirm interoperability with official gRPC implementations.
 
 Both of the above clients are tested against both the Connect reference server and the gRPC server.
-The servers are tested against the Connect reference client and the gRPC client. And since the gRPC
+Both servers are tested against the Connect reference client and the gRPC client. And since the gRPC
 client does not support gRPC-Web, the servers are also tested against the official gRPC-Web JS client.
 
 ## Status: Stable
@@ -149,7 +149,21 @@ formats, or the Protobuf messages used by clients and servers under test in the
 Note, however, that we reserve the right to rename, remove, or re-organize
 individual test cases, which may impact the "known failing" and "known flaky"
 configurations for an implementation under test. We will document these changes
-in the [release notes](https://github.com/connectrpc/conformance/releases).
+in the [release notes].
+
+We also intend to occasionally add new test cases, and occasionally these
+additions may also necessitate updates to the Protobuf schemas (such as new
+request or response fields). The Protobuf changes will remain compatible, so
+your programs will continue to compile, but actually passing new/updated test
+cases may require updates to your program, to incorporate the new fields into
+the behavior of the client or server under test. These kinds of changes will
+also be documented in the releases notes.
+
+New test cases in a release could also reveal previously undetected conformance
+issues which may require fixes to the implementations you are testing. So while
+we aim for backwards-compatibility and making it easy to upgrade to new releases
+of the conformance suite, it is expected that some releases may incur some effort
+to adopt. (See [the docs][upgrading] for more details.)
 
 ## Ecosystem
 
@@ -197,3 +211,5 @@ Offered under the [Apache 2 license][license].
 [docs]: https://connectrpc.com
 [license]: https://github.com/connectrpc/conformance/blob/main/LICENSE
 [protobuf-es]: https://github.com/bufbuild/protobuf-es
+[release notes]: https://github.com/connectrpc/conformance/releases
+[upgrading]: ./docs/configuring_and_running_tests.md#upgrading
