@@ -33,6 +33,81 @@ started with any of these tasks, you'll want to read one or more of these guides
 * [Testing Client Implementations](./docs/testing_clients.md)
 * [Authoring New Test Cases](./docs/authoring_test_cases.md)
 
+## How it works
+
+The tests are data-driven: all test cases are defined in YAML files in this repo. These files
+get embedded in the test runner so that the single self-contained executable contains all of
+the test case data.
+
+The test runner first processes your configuration and uses that to select which test cases
+are relevant. Even if a test case is known to fail, it will still be executed to make sure it
+is still failing (and report the fact if the test actually passes).
+
+It then groups all of the test cases by the server configuration needed. So test cases that
+will use TLS and the Connect protocol are in a different group from test cases that do _not_
+use TLS and use the gRPC protocol.
+
+It then begins running the tests.
+
+```mermaid
+sequenceDiagram
+  actor user
+    create participant test runner
+    user ->> test runner: run conformance suite
+
+    create participant client
+    test runner -->> client: start process
+
+    rect rgb(255,250,240)
+    loop for each server config
+        create participant server
+        test runner -->> server: start process
+        test runner ->> server: send config via stdin
+        server ->> test runner: send result via stdout
+
+        rect rgb(240,255,240)
+        loop for each test case
+            test runner ->>+ client: send RPC details via stdin
+            client ->>+ server: invoke RPC, send request(s)
+            server ->> server: process RPC
+            server ->>- client: send response(s)
+            client ->>- test runner: send RPC results via stdout
+            test runner ->> test runner: assess RPC results
+        end
+        end
+
+        destroy server
+        test runner --x server: terminate
+    end
+    end
+
+    destroy client
+    test runner --x client: terminate
+
+    destroy test runner
+    test runner ->> user: report results
+```
+
+It first starts a client process (either a client under test, if in client mode, or a
+reference client).
+
+For each server configuration, it starts a server process (either a server under test, if
+in server mode, or a reference server). It sends the server configuration details by writing
+them to the process's _stdin_. When the server is listening on the network and ready to
+accept RPCs, it sends the details to the test runner by writing to its _stdout_.
+
+For each test case that applies to this server configuration, it adds details to the test
+case data with the server's address, so the client will know how to reach it. It then
+sends the test case data to the client by writing them to the process's _stdin_. The
+client then invokes the RPC. It reports the RPC results to the test runner by writing
+them to its _stdout_.
+
+The test runner decides whether the test case was successful or not by comparing the
+RPC results against expected results.
+
+After all tests have been run and all child processes stopped, it reports the
+results.
+
 ## Testing your implementation
 
 ### Setup
