@@ -199,9 +199,9 @@ ignored (and the headers and/or trailers treated as empty).
 ### Cancellation
 
 The `ClientCompatRequest` can contain instructions for the client program to cancel the
-RPC before it has completed. When the RPC is canceled based on these instructions, the
-rest of the invocation logic should proceed as if it had _not_ been canceled. This way,
-the client program exercises the client implementation's cancellation handling, and how
+RPC before it has completed. Ideally, when the RPC is canceled based on these instructions,
+the rest of the invocation logic should proceed as if it had _not_ been canceled. This way,
+the client program can exercise the client implementation's cancellation handling, and how
 it impacts subsequent operations for the call. This allows the conformance suite to verify
 that asynchronous cancellations are handled correctly by the implementation and result in
 proper notification of the cancellation to the code that is consuming the RPC results.
@@ -241,6 +241,7 @@ invoke the method using the given request headers,
    delay the indicated number of milliseconds   
    cancel the RPC (but do not return)
 }
+receive the response
 
 if the operation fails {
    abort, returning a result that describes the error and any
@@ -252,9 +253,9 @@ construct a result using the payload and any available headers
 ```
 
 _*_ Note: some client APIs will provide a blocking operation for unary RPCs,
-    which doesn't return until the RPC is complete. For these cases, you must
-    arrange for the RPC to be canceled asynchronously after the indicated
-    number of milliseconds, and then invoke the unary operation.
+    which doesn't return until the RPC response is received. For these cases,
+    you must arrange for the RPC to be canceled asynchronously after the indicated
+    number of milliseconds, and then invoke the blocking operation.
 
 #### Client stream
 

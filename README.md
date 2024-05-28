@@ -33,6 +33,81 @@ started with any of these tasks, you'll want to read one or more of these guides
 * [Testing Client Implementations](./docs/testing_clients.md)
 * [Authoring New Test Cases](./docs/authoring_test_cases.md)
 
+## How it works
+
+The tests are data-driven: all test cases are defined in YAML files in this repo. These files
+get embedded in the test runner so that the single self-contained executable contains all of
+the test case data.
+
+The test runner first processes your configuration and uses that to select which test cases
+are relevant. Even if a test case is known to fail, it will still be executed to make sure it
+is still failing (and report the fact if the test actually passes).
+
+It then groups all of the test cases by the server configuration needed. So test cases that
+will use TLS and the Connect protocol are in a different group from test cases that do _not_
+use TLS and use the gRPC protocol.
+
+It then begins running the tests.
+
+```mermaid
+sequenceDiagram
+  actor user
+    create participant test runner
+    user ->> test runner: run conformance suite
+
+    create participant client
+    test runner -->> client: start process
+
+    rect rgb(255,250,240)
+    loop for each server config
+        create participant server
+        test runner -->> server: start process
+        test runner ->> server: send config via stdin
+        server ->> test runner: send result via stdout
+
+        rect rgb(240,255,240)
+        loop for each test case
+            test runner ->>+ client: send RPC details via stdin
+            client ->>+ server: invoke RPC, send request(s)
+            server ->> server: process RPC
+            server ->>- client: send response(s)
+            client ->>- test runner: send RPC results via stdout
+            test runner ->> test runner: assess RPC results
+        end
+        end
+
+        destroy server
+        test runner --x server: terminate
+    end
+    end
+
+    destroy client
+    test runner --x client: terminate
+
+    destroy test runner
+    test runner ->> user: report results
+```
+
+It first starts a client process (either a client under test, if in client mode, or a
+reference client).
+
+For each server configuration, it starts a server process (either a server under test, if
+in server mode, or a reference server). It sends the server configuration details by writing
+them to the process's _stdin_. When the server is listening on the network and ready to
+accept RPCs, it sends the details to the test runner by writing to its _stdout_.
+
+For each test case that applies to this server configuration, it adds details to the test
+case data with the server's address, so the client will know how to reach it. It then
+sends the test case data to the client by writing them to the process's _stdin_. The
+client then invokes the RPC. It reports the RPC results to the test runner by writing
+them to its _stdout_.
+
+The test runner decides whether the test case was successful or not by comparing the
+RPC results against expected results.
+
+After all tests have been run and all child processes stopped, it reports the
+results.
+
 ## Testing your implementation
 
 ### Setup
@@ -135,7 +210,7 @@ This will build the necessary binaries and run tests of the following implementa
     confirm interoperability with official gRPC implementations.
 
 Both of the above clients are tested against both the Connect reference server and the gRPC server.
-The servers are tested against the Connect reference client and the gRPC client. And since the gRPC
+Both servers are tested against the Connect reference client and the gRPC client. And since the gRPC
 client does not support gRPC-Web, the servers are also tested against the official gRPC-Web JS client.
 
 ## Status: Stable
@@ -149,7 +224,21 @@ formats, or the Protobuf messages used by clients and servers under test in the
 Note, however, that we reserve the right to rename, remove, or re-organize
 individual test cases, which may impact the "known failing" and "known flaky"
 configurations for an implementation under test. We will document these changes
-in the [release notes](https://github.com/connectrpc/conformance/releases).
+in the [release notes].
+
+We also intend to occasionally add new test cases, and occasionally these
+additions may also necessitate updates to the Protobuf schemas (such as new
+request or response fields). The Protobuf changes will remain compatible, so
+your programs will continue to compile, but actually passing new/updated test
+cases may require updates to your program, to incorporate the new fields into
+the behavior of the client or server under test. These kinds of changes will
+also be documented in the releases notes.
+
+New test cases in a release could also reveal previously undetected conformance
+issues which may require fixes to the implementations you are testing. So while
+we aim for backwards-compatibility and making it easy to upgrade to new releases
+of the conformance suite, it is expected that some releases may incur some effort
+to adopt. (See [the docs][upgrading] for more details.)
 
 ## Ecosystem
 
@@ -197,3 +286,5 @@ Offered under the [Apache 2 license][license].
 [docs]: https://connectrpc.com
 [license]: https://github.com/connectrpc/conformance/blob/main/LICENSE
 [protobuf-es]: https://github.com/bufbuild/protobuf-es
+[release notes]: https://github.com/connectrpc/conformance/releases
+[upgrading]: ./docs/configuring_and_running_tests.md#upgrading

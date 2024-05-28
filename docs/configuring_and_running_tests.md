@@ -153,7 +153,7 @@ A single case is defined by the following properties:
 
 A single set of features is expanded into one or more (usually many more) config cases.
 For example, if the features support HTTP 1.1 and HTTP/2, all three protocols, all
-stream types, identity and gzip encoding, and TLS, that results in 2*3*5*2*2 = 120
+stream types, identity and gzip encoding, and TLS, that results in 2×3×5×2×2 = 120
 combinations. Some of those combinations may not be valid (such as full-duplex
 bidirectional streams over HTTP 1.1, or gRPC over HTTP 1.1), so the total number of
 config cases would be close to 120 but not quite.
@@ -208,9 +208,9 @@ Let's dissect this line-by-line:
   anything that _looks_ like an option, is actually a positional argument.
 * `./path/to/client/program --some-flag-for-client-program`: The positional arguments
   represent the command to invoke in order to run the client under test. The first
-  token must be the path to the executable. Any other arguments are passed to that
-  executable as arguments. So in this case, `--some-flag-for-client-program` is an
-  option that our client under test understands.
+  token must be the path to the executable. Any subsequent arguments are passed as
+  arguments to that executable. So in this case, `--some-flag-for-client-program` is
+  an option that our client under test understands.
 
 Common reasons to pass arguments to the client or server under test are:
 1. To control verbosity of log output. When troubleshooting an implementation, it
@@ -331,9 +331,9 @@ If you provide a `-v` option to the test runner, it will print some other messag
 running:
 ```text
 Computed 44 config case permutations.
-Loaded 1 known failing test cases/patterns.
-Loaded 8 test suites, 97 test case templates.
-Computed 602 test case permutations across 10 server configurations.
+Loaded 8 test suite(s), 97 test case template(s).
+Loaded 1 known failing test case pattern(s) that match 4 test case permutation(s).
+Computed 602 test case permutation(s) across 10 server configuration(s).
 Running 47 tests with reference server for server config {HTTP_VERSION_1, PROTOCOL_CONNECT, TLS:false}...
 Running 47 tests with reference server for server config {HTTP_VERSION_1, PROTOCOL_CONNECT, TLS:true}...
 Running 46 tests with reference server for server config {HTTP_VERSION_1, PROTOCOL_GRPC_WEB, TLS:false}...
@@ -349,11 +349,12 @@ Running 46 tests with reference server (grpc) for server config {HTTP_VERSION_2,
 Running 46 tests with reference server (grpc) for server config {HTTP_VERSION_2, PROTOCOL_GRPC_WEB, TLS:false}...
 ```
 This shows a summary of the config as it is loaded and processed, telling us the total number of
-[config cases](#config-cases) that apply to the current configuration (44) and the number of patterns that
-identify "known failing" cases. It shows us the total number of test suites (8) and the total number of test
-cases across those suites (97). The next line shows us that it has used the 44 relevant config cases and 97
-test case templates to compute a total of 602 [test case permutations](#test-case-permutations). This means
-that the client under test will be invoking 602 RPCs.
+[config cases](#config-cases) that apply to the current configuration (44), the total number of test suites (8),
+and the total number of test cases across those suites (97). It then shows the number of patterns
+provided to identify "known failing" cases (1), and the number of test cases that matched the "known
+failing" patterns (4). The next line shows us that it has used the 44 relevant config cases and 97
+test case templates to compute a total of 602 [test case permutations](#test-case-permutations). This
+means that the client under test will be invoking 602 RPCs.
 
 The remaining lines in the example output above are printed as each test server is started. Each server config
 represents a different RPC server, started with the given configuration (since we are running the tests using
@@ -447,6 +448,11 @@ flaky test cases, use `--known-flaky` (instead of `--skip`). Use of `--run` or `
 configurations is discouraged. It should instead be possibly to correctly filter the set of tests
 to run just based on config YAML files.
 
+One reason one might need to use `--skip` in a CI configuration is if a bug in the implementation
+under test causes the client or server to crash or to deadlock. Since such bugs could prevent the
+conformance suite from ever completing successfully (even if such tests are marked as "known
+failing"), it may be necessary to temporarily skip them in CI until those bugs are fixed.
+
 ## Configuring CI
 
 The easiest way to run conformance tests as part of CI is to do so from a container that has the
@@ -499,6 +505,40 @@ in the command that runs the test.
 If you have multiple test programs, such as both a client and a server, or even a client with
 different sets of arguments, you should name the relevant config YAML and known-failing files so
 it is clear to which invocation they apply.
+
+## Upgrading
+
+When a new version of the conformance suite is released, ideally, you could simply update
+the version number you are using and everything just works. We aim for
+backwards-compatibility between releases to maximize the chances of this ideal outcome. But
+there are a number of things that can happen in a release that make the process a little
+more laborious:
+
+* As a matter of hygiene/maintenance, we may rename and re-organize test suites and test
+  cases. This means that any test case patterns that are part of your configuration (like
+  known-failing files) may need to be updated. We don't expect this to happen often, but
+  when it does, we will include information in the release notes to aid in updating your
+  configuration.
+* The new version may contain new/updated test cases that require some changes in the
+  behavior/logic of your implementations under test. This might be for testing new
+  functionality that requires new fields in the conformance protocol messages. Without
+  changes in your client or server under test, the new test cases will likely fail.
+* The new version may contain new/updated test cases that reveal previously undetected
+  conformance failures.
+
+To minimize disruption when upgrading, we recommend a process that looks like so:
+1. Update to the new release of the conformance suite.
+2. Update test case patterns (like in known-failing configurations) if necessary to match
+   any changes to test case names and organization.
+3. Update/add known-failing configurations for any new failures resulting from new/updated
+   test cases.
+4. **Commit/merge the upgrade.**
+5. File bugs for the new failures.
+6. As the bugs are fixed, update the known-failing configurations as you go.
+
+By simply marking all new failures as "known failing" and filing bugs for them, it should
+allow you to upgrade to a new release quickly. You can then decide on the urgency of fixing
+the new failures and prioritize accordingly.
 
 [config-proto]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.Config
 [configcase-proto]: https://buf.build/connectrpc/conformance/docs/main:connectrpc.conformance.v1#connectrpc.conformance.v1.ConfigCase
