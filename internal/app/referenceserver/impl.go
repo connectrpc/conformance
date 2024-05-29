@@ -541,8 +541,8 @@ func createRequestInfo(
 	}
 
 	var timeoutMs *int64
-	if deadline, ok := ctx.Deadline(); ok {
-		timeoutMs = proto.Int64(time.Until(deadline).Milliseconds())
+	if timeout, ok := timeoutFromContext(ctx); ok {
+		timeoutMs = proto.Int64(timeout.Milliseconds())
 	}
 
 	// Set all observed request headers and requests in the response payload

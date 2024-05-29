@@ -15,13 +15,16 @@
 package referenceserver
 
 import (
+	"context"
 	"errors"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
@@ -39,9 +42,28 @@ const (
 	connectStreamContentTypePrefix = "application/connect+"
 	connectContentTypePrefix       = connectUnaryContentTypePrefix
 
+	connectTimeoutHeader = "connect-timeout-ms"
+	grpcTimeoutHeader    = "grpc-timeout"
+
 	codecProto = "proto"
 	codecJSON  = "json"
 )
+
+type int32Enum interface {
+	~int32
+	protoreflect.Enum
+}
+
+type feedbackPrinter struct {
+	p            internal.Printer
+	testCaseName string
+}
+
+func (p *feedbackPrinter) Printf(format string, args ...any) {
+	p.p.PrefixPrintf(p.testCaseName, format, args...)
+}
+
+type timeoutContextKey struct{}
 
 // TODO - We should add a check for the Connect version header and/or query param to the reference server checks
 // to verify that conformant client implementations always include it (to maximize inter-op, just in case a server is
@@ -71,6 +93,13 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		}
 		if protocol, ok := enumValue("x-expect-protocol", req.Header, conformancev1.Protocol(0), feedback); ok {
 			checkProtocol(protocol, req, feedback)
+			if timeout, ok := extractTimeout(req.Header, protocol, feedback); ok {
+				// In reference mode, we *remove* the timeout in this middleware so that the server
+				// will NOT enforce it. That way, we can test that the client is actually enforcing it.
+				// We record the timeout in a context value, so that we can correctly include it in the
+				// RPC response's request info.
+				req = req.WithContext(contextWithTimeout(req.Context(), timeout))
+			}
 		}
 		if codec, ok := enumValue("x-expect-codec", req.Header, conformancev1.Codec(0), feedback); ok {
 			checkCodec(codec, req, feedback)
@@ -94,11 +123,6 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 			feedback.Printf("request should NOT include any HTTP trailers (%d trailer keys found)", len(req.Trailer))
 		}
 	}
-}
-
-type int32Enum interface {
-	~int32
-	protoreflect.Enum
 }
 
 func enumValue[E int32Enum](headerName string, headers http.Header, zero E, feedback *feedbackPrinter) (E, bool) {
@@ -298,15 +322,6 @@ func getQueryParam(values url.Values, paramName string, feedback *feedbackPrinte
 	return values.Get(paramName), len(paramVals) > 0
 }
 
-type feedbackPrinter struct {
-	p            internal.Printer
-	testCaseName string
-}
-
-func (p *feedbackPrinter) Printf(format string, args ...any) {
-	p.p.PrefixPrintf(p.testCaseName, format, args...)
-}
-
 func getTestCaseName(respWriter http.ResponseWriter, req *http.Request) (string, bool) {
 	testCaseName := req.Header.Get("x-test-case-name")
 	if testCaseName == "" {
@@ -318,4 +333,107 @@ func getTestCaseName(respWriter http.ResponseWriter, req *http.Request) (string,
 		return "", false
 	}
 	return testCaseName, true
+}
+
+// extractTimeout gets the RPC timeout from the headers, removing the header and
+// returning the value, if present.
+func extractTimeout(headers http.Header, protocol conformancev1.Protocol, feedback *feedbackPrinter) (time.Duration, bool) {
+	switch protocol {
+	case conformancev1.Protocol_PROTOCOL_CONNECT:
+		val, ok := getHeader(headers, connectTimeoutHeader, feedback)
+		if !ok {
+			break
+		}
+		headers.Del(connectTimeoutHeader)
+		intVal, err := strconv.ParseInt(val, 10, 64)
+		if err != nil || intVal < 0 {
+			feedback.Printf("invalid numeric value for %q header: %q", connectTimeoutHeader, val)
+			break
+		}
+		if intVal > 9999999999 { // 10 digit max
+			feedback.Printf("invalid numeric value (>10 digits) in %q header: %q", connectTimeoutHeader, val)
+			break
+		}
+		timeout := time.Duration(intVal) * time.Millisecond
+		if timeout.Milliseconds() != intVal {
+			// Overflow. Just use max possible value
+			timeout = time.Duration(math.MaxInt64)
+		}
+		return timeout, true
+	case conformancev1.Protocol_PROTOCOL_GRPC, conformancev1.Protocol_PROTOCOL_GRPC_WEB:
+		val, ok := getHeader(headers, grpcTimeoutHeader, feedback)
+		if !ok {
+			break
+		}
+		headers.Del(grpcTimeoutHeader)
+		if val == "" {
+			feedback.Printf("invalid value for %q header: %q", grpcTimeoutHeader, val)
+			break
+		}
+		timeoutStr, unit := val[:len(val)-1], rune(val[len(val)-1])
+		if !strings.ContainsRune("HMSmun", unit) {
+			feedback.Printf("invalid unit in %q header: %q", grpcTimeoutHeader, val)
+			break
+		}
+		intVal, err := strconv.ParseInt(timeoutStr, 10, 64)
+		if err != nil || intVal < 0 {
+			feedback.Printf("invalid numeric value in %q header: %q", grpcTimeoutHeader, val)
+			break
+		}
+		if intVal > 99999999 { // 8 digit max
+			feedback.Printf("invalid numeric value (>8 digits) in %q header: %q", grpcTimeoutHeader, val)
+			break
+		}
+		var timeout time.Duration
+		var roundTripped int64
+		switch unit {
+		case 'H':
+			timeout = time.Duration(intVal) * time.Hour
+			roundTripped = int64(timeout.Hours())
+		case 'M':
+			timeout = time.Duration(intVal) * time.Minute
+			roundTripped = int64(timeout.Minutes())
+		case 'S':
+			timeout = time.Duration(intVal) * time.Second
+			roundTripped = int64(timeout.Seconds())
+		case 'm':
+			timeout = time.Duration(intVal) * time.Millisecond
+			roundTripped = timeout.Milliseconds()
+		case 'u':
+			timeout = time.Duration(intVal) * time.Microsecond
+			roundTripped = timeout.Microseconds()
+		case 'n':
+			timeout = time.Duration(intVal) * time.Nanosecond
+			roundTripped = timeout.Nanoseconds()
+		}
+		if roundTripped != intVal {
+			// Overflow. Just use max possible value
+			timeout = time.Duration(math.MaxInt64)
+		}
+		return timeout, true
+	}
+	return 0, false
+}
+
+func contextWithTimeout(ctx context.Context, timeout time.Duration) context.Context {
+	return context.WithValue(ctx, timeoutContextKey{}, timeout)
+}
+
+func timeoutFromContext(ctx context.Context) (time.Duration, bool) {
+	timeout, ok := ctx.Value(timeoutContextKey{}).(time.Duration)
+	if ok {
+		return timeout, ok
+	}
+	// We use a special value in the context for the timeout in reference mode,
+	// in order to test the client's enforcement of the timeout. (We don't want
+	// the server enforcing the timeout and client tests passing even if the
+	// client doesn't correctly implement timeouts.)
+	//
+	// But if the value is not there, we may be in non-reference mode, in which
+	// case the Connect library uses a normal context deadline. So check that.
+	deadline, ok := ctx.Deadline()
+	if ok {
+		return time.Until(deadline), ok
+	}
+	return 0, false
 }
