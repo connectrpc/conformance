@@ -261,7 +261,7 @@ func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, referen
 	case conformancev1.Codec_CODEC_PROTO:
 		// this is the default, no option needed
 	case conformancev1.Codec_CODEC_JSON:
-		clientOptions = append(clientOptions, connect.WithProtoJSON())
+		clientOptions = append(clientOptions, connect.WithCodec(internal.StrictJSONCodec{}))
 	case conformancev1.Codec_CODEC_TEXT: //nolint:staticcheck // staticcheck complains because this const is deprecated
 		return nil, fmt.Errorf("%s is deprecated and should not be used", req.Codec)
 	default:

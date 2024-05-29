@@ -15,12 +15,14 @@
 package internal
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 
+	"connectrpc.com/connect"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
@@ -164,4 +166,57 @@ func (p *protoEncoder) Encode(msg proto.Message) error {
 		return fmt.Errorf("failed to marshal response to binary: %w", err)
 	}
 	return writeDelimitedMessageRaw(p.out, data)
+}
+
+// StrictJSONCodec is a codec for connect (and implements the optional methods
+// for stable output and for appending to existing bytes for better performance).
+// It is like Connect's builtin JSON codec, except that it does NOT allow
+// unrecognized field names. (Connect's default JSON codec is lenient and discards
+// unrecognized fields.)
+type StrictJSONCodec struct{}
+
+var _ connect.Codec = StrictJSONCodec{}
+
+func (s StrictJSONCodec) Name() string {
+	return "json"
+}
+
+func (s StrictJSONCodec) Marshal(msg any) ([]byte, error) {
+	return s.MarshalAppend(nil, msg)
+}
+
+func (s StrictJSONCodec) Unmarshal(data []byte, msg any) error {
+	protoMsg, ok := msg.(proto.Message)
+	if !ok {
+		return fmt.Errorf("message type %T is not a proto.Message", msg)
+	}
+	// The default JSON codec for connect has DiscardUnknown set.
+	//    https://github.com/connectrpc/connect-go/blob/main/codec.go#L178-L180
+	// We don't  set it so that we get stricter behavior: an error will occur
+	// if the client sends any unrecognized fields.
+	return protojson.Unmarshal(data, protoMsg)
+}
+
+func (s StrictJSONCodec) MarshalAppend(b []byte, msg any) ([]byte, error) {
+	protoMsg, ok := msg.(proto.Message)
+	if !ok {
+		return nil, fmt.Errorf("message type %T is not a proto.Message", msg)
+	}
+	return protojson.MarshalOptions{}.MarshalAppend(b, protoMsg)
+}
+
+func (s StrictJSONCodec) MarshalStable(msg any) ([]byte, error) {
+	data, err := s.Marshal(msg)
+	if err != nil {
+		return nil, err
+	}
+	var buf bytes.Buffer
+	if err := json.Compact(&buf, data); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+func (s StrictJSONCodec) IsBinary() bool {
+	return false
 }
