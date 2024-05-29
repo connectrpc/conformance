@@ -24,6 +24,7 @@ import (
 
 	"connectrpc.com/connect"
 	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/encoding/protowire"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -219,4 +220,87 @@ func (s StrictJSONCodec) MarshalStable(msg any) ([]byte, error) {
 
 func (s StrictJSONCodec) IsBinary() bool {
 	return false
+}
+
+// StrictProtoCodec is a codec for connect (and implements the optional methods
+// for stable output and for appending to existing bytes for better performance).
+// It is like Connect's builtin Proto codec, except that it does NOT allow
+// unrecognized fields. If the peer sends a message where not all elements are
+// recognized, it will return an error.
+type StrictProtoCodec struct{}
+
+var _ connect.Codec = StrictProtoCodec{}
+
+func (s StrictProtoCodec) Name() string {
+	return "proto"
+}
+
+func (s StrictProtoCodec) Marshal(msg any) ([]byte, error) {
+	return s.MarshalAppend(nil, msg)
+}
+
+func (s StrictProtoCodec) Unmarshal(data []byte, msg any) error {
+	protoMsg, ok := msg.(proto.Message)
+	if !ok {
+		return fmt.Errorf("message type %T is not a proto.Message", msg)
+	}
+	if err := proto.Unmarshal(data, protoMsg); err != nil {
+		return err
+	}
+	// We are being strict and thus disallow any unrecognized fields.
+	unrecognized := protoMsg.ProtoReflect().GetUnknown()
+	if len(unrecognized) == 0 {
+		return nil
+	}
+	num, typ, length := protowire.ConsumeTag(unrecognized)
+	if length <= 0 {
+		// Should not be possible since above call to proto.Unmarshal succeeded.
+		l := len(unrecognized)
+		var suffix string
+		if l > 50 {
+			unrecognized = unrecognized[:50]
+			suffix = "..."
+		}
+		return fmt.Errorf("message data included %d unprocessable bytes: %x%s", l, unrecognized, suffix)
+	}
+	var wireType string
+	switch typ {
+	case protowire.VarintType:
+		wireType = "varint"
+	case protowire.Fixed32Type:
+		wireType = "fixed32"
+	case protowire.Fixed64Type:
+		wireType = "fixed64"
+	case protowire.BytesType:
+		wireType = "bytes"
+	case protowire.StartGroupType:
+		wireType = "start-group"
+	case protowire.EndGroupType:
+		// This and the default case below should not really be possible
+		// since above call to proto.Unmarshal succeeded.
+		return fmt.Errorf("message data included field %d that incorrectly starts with end-group wire type", num)
+	default:
+		return fmt.Errorf("message data included field %d that uses unknown wire type %d", num, typ)
+	}
+	return fmt.Errorf("message data includes unrecognized field %d with %s wire type", num, wireType)
+}
+
+func (s StrictProtoCodec) MarshalAppend(b []byte, msg any) ([]byte, error) {
+	protoMsg, ok := msg.(proto.Message)
+	if !ok {
+		return nil, fmt.Errorf("message type %T is not a proto.Message", msg)
+	}
+	return protojson.MarshalOptions{}.MarshalAppend(b, protoMsg)
+}
+
+func (s StrictProtoCodec) MarshalStable(msg any) ([]byte, error) {
+	protoMsg, ok := msg.(proto.Message)
+	if !ok {
+		return nil, fmt.Errorf("message type %T is not a proto.Message", msg)
+	}
+	return proto.MarshalOptions{Deterministic: true}.Marshal(protoMsg)
+}
+
+func (s StrictProtoCodec) IsBinary() bool {
+	return true
 }
