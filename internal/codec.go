@@ -252,16 +252,16 @@ func (s StrictProtoCodec) Unmarshal(data []byte, msg any) error {
 	if len(unrecognized) == 0 {
 		return nil
 	}
-	num, typ, length := protowire.ConsumeTag(unrecognized)
-	if length <= 0 {
+	num, typ, tagLength := protowire.ConsumeTag(unrecognized)
+	if tagLength <= 0 {
 		// Should not be possible since above call to proto.Unmarshal succeeded.
-		l := len(unrecognized)
+		unrecognizedLen := len(unrecognized)
 		var suffix string
-		if l > 50 {
+		if unrecognizedLen > 50 {
 			unrecognized = unrecognized[:50]
 			suffix = "..."
 		}
-		return fmt.Errorf("message data included %d unprocessable bytes: %x%s", l, unrecognized, suffix)
+		return fmt.Errorf("message data included %d unprocessable bytes: %x%s", unrecognizedLen, unrecognized, suffix)
 	}
 	var wireType string
 	switch typ {

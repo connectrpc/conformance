@@ -8,6 +8,7 @@ import (
 )
 
 func TestStrictJSONCodec(t *testing.T) {
+	t.Parallel()
 	codec := StrictJSONCodec{}
 	err := codec.Unmarshal([]byte(`{
 		"somefield": 123
@@ -16,6 +17,7 @@ func TestStrictJSONCodec(t *testing.T) {
 }
 
 func TestStrictProtoCodec(t *testing.T) {
+	t.Parallel()
 	codec := StrictProtoCodec{}
 	err := codec.Unmarshal([]byte{8, 0}, &emptypb.Empty{})
 	require.ErrorContains(t, err, `message data includes unrecognized field 1 with varint wire type`)
