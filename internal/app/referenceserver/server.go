@@ -178,6 +178,7 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
 		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
 		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
+		connect.WithCodec(internal.StrictJSONCodec{}),
 		connect.WithInterceptors(interceptors...),
 	}
 	if req.MessageReceiveLimit > 0 {
