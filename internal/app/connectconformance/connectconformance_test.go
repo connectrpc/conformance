@@ -45,6 +45,18 @@ func TestRun(t *testing.T) {
 			ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
 		},
 		{
+			Version:                conformancev1.HTTPVersion_HTTP_VERSION_1,
+			Protocol:               conformancev1.Protocol_PROTOCOL_CONNECT,
+			Codec:                  conformancev1.Codec_CODEC_JSON,
+			Compression:            conformancev1.Compression_COMPRESSION_IDENTITY,
+			StreamType:             conformancev1.StreamType_STREAM_TYPE_UNARY,
+			UseTLS:                 false,
+			UseTLSClientCerts:      false,
+			UseConnectGET:          true,
+			UseMessageReceiveLimit: false,
+			ConnectVersionMode:     conformancev1.TestSuite_CONNECT_VERSION_MODE_UNSPECIFIED,
+		},
+		{
 			Version:                conformancev1.HTTPVersion_HTTP_VERSION_2,
 			Protocol:               conformancev1.Protocol_PROTOCOL_GRPC,
 			Codec:                  conformancev1.Codec_CODEC_PROTO,
