@@ -2,14 +2,15 @@ name: Connect with GET
 relevantProtocols:
   - PROTOCOL_CONNECT
 relevantCompressions:
-  # TODO - Clients only use compression for GET requests if the request is
-  # larger than a particular size. So since we aren't sending a request here
-  # that exceeds that, our requests won't use compression even if we specify
-  # it. So, we're limiting this test to identity
+  # TODO: The reference client only uses compression for GET requests if the
+  # request is larger than a particular size. So since we aren't sending a
+  # request here that exceeds that, our requests won't use compression even
+  # if we specify it. So, we're limiting this test to identity.
   - COMPRESSION_IDENTITY
 relevantCodecs:
   - CODEC_JSON
   - CODEC_PROTO
+relies_on_connect_get: true
 testCases:
 - request:
     testName: success
