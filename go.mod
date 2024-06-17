@@ -9,7 +9,7 @@ require (
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.6.0
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/klauspost/compress v1.17.8
+	github.com/klauspost/compress v1.17.9
 	github.com/quic-go/quic-go v0.45.0
 	github.com/rs/cors v1.11.0
 	github.com/spf13/cobra v1.8.0
