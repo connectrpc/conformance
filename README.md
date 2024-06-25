@@ -1,6 +1,7 @@
 # Connect Conformance
 
-[![License](https://img.shields.io/github/license/connectrpc/conformance?color=blue)][license]
+[![License](https://img.shields.io/github/license/connectrpc/conformance?color=blue)][![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fconnectrpc%2Fconformance.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fconnectrpc%2Fconformance?ref=badge_shield)
+[license]
 [![CI](https://github.com/connectrpc/conformance/actions/workflows/ci.yaml/badge.svg?branch=main)][ci]
 
 A test suite for [Connect](https://connectrpc.com) that verifies cross-platform conformance for
@@ -288,3 +289,7 @@ Offered under the [Apache 2 license][license].
 [protobuf-es]: https://github.com/bufbuild/protobuf-es
 [release notes]: https://github.com/connectrpc/conformance/releases
 [upgrading]: ./docs/configuring_and_running_tests.md#upgrading
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fconnectrpc%2Fconformance.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fconnectrpc%2Fconformance?ref=badge_large)
