@@ -30,12 +30,12 @@ export async function run() {
   // limited. It may be more effective for troubleshooting to instead add
   // calls to window.log in browserscript.ts (these messages will show up
   // in the test runner output).
-  const browser = await puppeteer.launch({ headless: "new" });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   await page.exposeFunction("log", (message: string) => {
     process.stderr.write(message + "\n");
-  })
+  });
   await page.addScriptTag({
     type: "application/javascript",
     content: await buildBrowserScript(),
