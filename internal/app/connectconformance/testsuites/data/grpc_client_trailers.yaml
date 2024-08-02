@@ -1,0 +1,132 @@
+name: gRPC Trailers
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_GRPC
+relevantHttpVersions:
+  - HTTP_VERSION_2
+relevantCodecs:
+  - CODEC_PROTO
+# These tests verify that a gRPC client can handle both normal responses
+# with trailers and trailers-only responses (trailers in headers).
+testCases:
+  # Trailers and status are separate from headers (no other response messages)
+  - request:
+      testName: trailers-at-end/expected
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              trailers:
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+                - name: x-custom-trailer
+                  value: [ "bing" ]
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: trailers-at-end/duplicate-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+                - name: x-custom-header
+                  value: [ "foo", "bar", "baz" ]
+              trailers:
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+                - name: x-custom-trailer
+                  value: [ "bing", "quuz" ]
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo", "bar", "baz" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing", "quuz" ]
+
+  # Trailers-only responses, where status and trailers are in HTTP headers
+  - request:
+      testName: trailers-only/expected
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+                - name: x-custom-trailer
+                  value: [ "bing" ]
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+                # a "magic header" is required to get reference server to emit
+                # valid HTTP/2 trailers-only frames (must have end-stream flag
+                # on header frame; no data frame allowed)
+                - name: x-connect-trailers-only
+                  value: ["1"]
+    expectedResponse:
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: trailers-only/duplicate-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc" ]
+                - name: x-custom-trailer
+                  value: [ "bing", "quuz" ]
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+                # a "magic header" is required to get reference server to emit
+                # valid HTTP/2 trailers-only frames (must have end-stream flag
+                # on header frame; no data frame allowed)
+                - name: x-connect-trailers-only
+                  value: ["1"]
+    expectedResponse:
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing", "quuz" ]
