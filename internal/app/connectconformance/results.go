@@ -35,10 +35,17 @@ import (
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
-// CI environments have been observed to have 150ms of delay between the deadline
-// being set and it being serialized in a request header. This adds a little extra
-// headroom to avoid flaky tests.
-const timeoutCheckGracePeriodMillis = 250
+// In tests for deadline propagation, the client sends a request with a timeout
+// and has the server report the timeout in the response. The test runner then
+// compares the reported timeout against the requested timeout.
+// However, servers typically start counting down from the original timeout as
+// soon as request headers arrive, and provide only the _remaining_ time via
+// their API. It is therefore to be expected that the server reports a smaller
+// value than the requested timeout, depending on the time spent processing the
+// request body and preparing the response.
+// CI environments have been observed to have up to 350ms of delay. This adds a
+// little extra headroom to avoid flaky tests.
+const timeoutCheckGracePeriodMillis = 500
 
 // testResults represents the results of running conformance tests. It accumulates
 // the state of passed and failed test cases and also reports failures to a given
