@@ -351,7 +351,7 @@ for each response message {
       cancel the RPC (but do not return)
    }
     
-   § if an error occurs {
+   ‡ if an error occurs {
       abort, returning a result that describes payload
          values accumulated so far, the error, and any
          available headers and trailers
@@ -369,7 +369,7 @@ _*_ Note: some client APIs may provide an "invoke" operation for server stream R
 _†_ Note: an empty response message is possible. In these cases, the client should
     use an empty `ConformancePayload` message value as the payload.
 
-_§_ Note: some client APIs may return an error or throw an exception if an attempt is made
+_‡_ Note: some client APIs may return an error or throw an exception if an attempt is made
     to receive a response message but there are none remaining. Such APIs will typically
     use a sentinel error or exception type that simply means "end-of-stream". In these
     cases, such a sentinel should cause the client to break out of this loop and _not_ treat
