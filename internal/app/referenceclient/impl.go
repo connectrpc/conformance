@@ -184,8 +184,8 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
+		// If the call was successful, get the returned payload
+		// and the headers and trailers.
 		payloads = append(payloads, getPayload(resp.Msg))
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
@@ -342,8 +342,8 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
+		// If the call was successful, get the returned payload
+		// and the headers and trailers.
 		payloads = append(payloads, resp.Msg.Payload)
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
@@ -484,7 +484,7 @@ func (i *invoker) bidiStream(
 			}
 			break
 		}
-		// If the call was successful, save the payloads
+		// On successful receive, get the returned payload.
 		result.Payloads = append(result.Payloads, msg.Payload)
 		totalRcvd++
 		if totalRcvd == timing.AfterNumResponses {
