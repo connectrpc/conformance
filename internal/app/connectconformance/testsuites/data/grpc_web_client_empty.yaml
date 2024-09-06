@@ -1,0 +1,139 @@
+name: gRPC-Web Empty Responses
+# These check handling of empty messages in clients. In Protobuf, a message
+# can be literally empty: zero bytes. This makes sure that clients handle
+# them correctly as empty messages instead of lack of response.
+#
+# We have to use a raw HTTP response because the referenceserver impls
+# otherwise always return a non-empty message that echoes back the
+# details of the request information they observe.
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_GRPC_WEB
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_PROTO
+testCases:
+  # Unary Tests -----------------------------------------------------------
+  - request:
+      testName: unary/empty-response
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web+proto" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - payload:
+                      text: "" # empty response message
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 0\r\nx-custom-trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      payloads:
+        - { }
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  # Client Stream Tests -----------------------------------------------------------
+  - request:
+      testName: client-stream/empty-response
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web+proto" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - payload:
+                      text: "" # empty response message
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 0\r\nx-custom-trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      payloads:
+        - { }
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+
+  # Server Stream Tests -----------------------------------------------------------
+  - request:
+      testName: server-stream/empty-response
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web+proto" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - payload:
+                      text: "" # empty response message
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 0\r\nx-custom-trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      payloads:
+        - { }
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  # Bidi Stream Tests -----------------------------------------------------------
+  - request:
+      # Note there is no 'full-duplex' test since that is logically
+      # equivalent to this test and is therefore covered here.
+      testName: bidi-stream/half-duplex/empty-response
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web+proto" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - payload:
+                      text: "" # empty response message
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 0\r\nx-custom-trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      payloads:
+        - { }
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]

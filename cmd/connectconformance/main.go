@@ -219,8 +219,6 @@ func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:g
 			fatal(`Server command (after the "----") is empty.`)
 		}
 	default:
-		// TODO: support mode "both", which would allow the caller to supply both the
-		//       client and server commands, instead of using a reference impl?
 		fatal(`Invalid mode: expecting "client", "server", or "both"; got %q`, flags.mode)
 	}
 

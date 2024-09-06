@@ -16,6 +16,7 @@ import {ConformanceServiceClient} from "./gen/proto/connectrpc/conformance/v1/Se
 import {ClientCompatRequest, ClientResponseResult,} from "./gen/proto/connectrpc/conformance/v1/client_compat_pb.js";
 import {Code} from "./gen/proto/connectrpc/conformance/v1/config_pb.js";
 import {
+  ConformancePayload,
   Error as ProtoError,
   Header,
   ServerStreamRequest,
@@ -222,9 +223,7 @@ async function unary(
         res(resp);
       } else {
         const payload = response.getPayload();
-        if (payload !== undefined) {
-          resp.addPayloads(payload);
-        }
+        resp.addPayloads(payload ?? new ConformancePayload());
       }
     },
   );
@@ -313,9 +312,7 @@ async function serverStream(
   let numResps = 0;
   stream.on("data", (response: ServerStreamResponse) => {
     const payload = response.getPayload();
-    if (payload !== undefined) {
-      resp.addPayloads(payload);
-    }
+    resp.addPayloads(payload ?? new ConformancePayload());
     numResps++;
     if (req.getCancel()?.getCancelTimingCase() == CancelTimingCase.AFTER_NUM_RESPONSES &&
         numResps === req.getCancel()?.getAfterNumResponses()) {

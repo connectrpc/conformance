@@ -1,0 +1,48 @@
+name: Server Empty Requests
+# These check handling of empty messages in servers. In Protobuf, a message
+# can be literally empty: zero bytes. This makes sure that servers handle
+# them correctly as empty messages instead of lack of request.
+mode: TEST_MODE_SERVER
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_PROTO
+testCases:
+  # Unary Tests -----------------------------------------------------------------
+  - request:
+      testName: unary/empty-request
+      streamType: STREAM_TYPE_UNARY
+      requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest # empty
+  # Client Stream Tests ---------------------------------------------------------
+  - request:
+      testName: client-stream/empty-request
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest # empty
+  # Server Stream Tests ---------------------------------------------------------
+  - request:
+      testName: server-stream/empty-request
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest # empty
+  # Bidi Stream Tests -----------------------------------------------------------
+  - request:
+      # Note there is no 'full-duplex' test since that is logically
+      # equivalent to this test and is therefore covered here.
+      testName: bidi-stream/half-duplex/empty-request
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestHeaders:
+        - name: X-Conformance-Test
+          value: ["Value1","Value2"]
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest # empty
