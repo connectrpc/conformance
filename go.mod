@@ -5,7 +5,7 @@ go 1.21
 require (
 	connectrpc.com/connect v1.16.2
 	github.com/andybalholm/brotli v1.1.0
-	github.com/bufbuild/protoyaml-go v0.1.11
+	github.com/bufbuild/protoyaml-go v0.1.12
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.6.0
 	github.com/improbable-eng/grpc-web v0.15.0
