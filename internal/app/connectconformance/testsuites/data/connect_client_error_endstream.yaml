@@ -84,6 +84,25 @@ testCases:
         code: CODE_UNAVAILABLE
         message: oops
   - request:
+      testName: error/message-omitted
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 401
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  { "code": "unauthenticated" }
+    expectedResponse:
+      error:
+        code: CODE_UNAUTHENTICATED
+  - request:
       testName: error/allow-unrecognized-fields
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
@@ -273,6 +292,30 @@ testCases:
       error:
         code: CODE_UNKNOWN
         message: oops
+  - request:
+      testName: end-stream/message-omitted
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": { "code": "unauthenticated" }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_UNAUTHENTICATED
   - request:
       testName: end-stream/allow-unrecognized-fields
       service: connectrpc.conformance.v1.ConformanceService
