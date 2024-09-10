@@ -559,16 +559,6 @@ func populateExpectedResponse(testCase *conformancev1.TestCase) error {
 		return nil
 	}
 
-	// TODO - This is just a temporary constraint to protect against panics for now.
-	// Eventually, we want to be able to test client and bidi streams where there are no request messages.
-	// The potential plan is for server impls to produce (and the code below to expect) a single response
-	// message in this situation, where the response data value is some fixed string (such as "no response definition")
-	// and whose request info will still be present, but we expect it to indicate zero request messages.
-	if len(testCase.Request.RequestMessages) == 0 {
-		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{}
-		return nil
-	}
-
 	switch testCase.Request.StreamType {
 	case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
 		conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
@@ -627,19 +617,6 @@ func hasRawResponse(reqs []*anypb.Any) bool {
 
 // populates the expected response for a unary test case.
 func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
-	req := testCase.Request.RequestMessages[0]
-
-	// First, find the response definition that the client instructed the server to return
-	concreteReq, err := req.UnmarshalNew()
-	if err != nil {
-		return err
-	}
-
-	definer, ok := concreteReq.(unaryResponseDefiner)
-	if !ok {
-		return fmt.Errorf("%T is not a unary test case", concreteReq)
-	}
-
 	reqInfo := &conformancev1.ConformancePayload_RequestInfo{
 		RequestHeaders: testCase.Request.RequestHeaders,
 		Requests:       testCase.Request.RequestMessages,
@@ -682,8 +659,23 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		}
 	}
 
-	def := definer.GetResponseDefinition()
+	var def *conformancev1.UnaryResponseDefinition
+	if len(testCase.Request.RequestMessages) > 0 {
+		req := testCase.Request.RequestMessages[0]
 
+		// First, find the response definition that the client instructed the server to return
+		concreteReq, err := req.UnmarshalNew()
+		if err != nil {
+			return err
+		}
+
+		definer, ok := concreteReq.(unaryResponseDefiner)
+		if !ok {
+			return fmt.Errorf("%T is not a unary test case", concreteReq)
+		}
+
+		def = definer.GetResponseDefinition()
+	}
 	if def == nil {
 		testCase.ExpectedResponse = &conformancev1.ClientResponseResult{
 			Payloads: []*conformancev1.ConformancePayload{
@@ -734,24 +726,27 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 
 // populates the expected response for a streaming test case.
 func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
-	req := testCase.Request.RequestMessages[0]
-	// First, find the response definition that the client instructed the
-	// server to return
-	concreteReq, err := req.UnmarshalNew()
-	if err != nil {
-		return err
-	}
+	var def *conformancev1.StreamResponseDefinition
+	if len(testCase.Request.RequestMessages) > 0 {
+		req := testCase.Request.RequestMessages[0]
+		// First, find the response definition that the client instructed the
+		// server to return
+		concreteReq, err := req.UnmarshalNew()
+		if err != nil {
+			return err
+		}
 
-	definer, ok := concreteReq.(streamResponseDefiner)
-	if !ok {
-		return fmt.Errorf(
-			"TestCase %s contains a request message of type %T, which is not a streaming request",
-			testCase.Request.TestName,
-			concreteReq,
-		)
-	}
+		definer, ok := concreteReq.(streamResponseDefiner)
+		if !ok {
+			return fmt.Errorf(
+				"TestCase %s contains a request message of type %T, which is not a streaming request",
+				testCase.Request.TestName,
+				concreteReq,
+			)
+		}
 
-	def := definer.GetResponseDefinition()
+		def = definer.GetResponseDefinition()
+	}
 	// Streaming endpoints don't 'return' a response and instead send responses
 	// to a client via sending on a stream. So, if no responses are specified in
 	// the request, the endpoints won't send anything outbound.

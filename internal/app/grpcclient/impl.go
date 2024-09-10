@@ -158,8 +158,7 @@ func (i *invoker) serverStream(
 			}
 			break
 		}
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
+		// On successful receive, get the returned payload.
 		result.Payloads = append(result.Payloads, msg.Payload)
 
 		// If AfterNumResponses is specified, it will be a number > 0 here.
@@ -219,10 +218,10 @@ func (i *invoker) clientStream(
 	}
 	resp, err := stream.CloseAndRecv()
 	if err != nil {
-		// If an error was returned, convert it to a gRPC error
+		// If an error was returned, convert it to a gRPC error.
 		result.Error = grpcutil.ConvertGrpcToProtoError(err)
 	} else {
-		// If the call was successful, get the returned payloads
+		// If the call was successful, get the returned payload.
 		result.Payloads = append(result.Payloads, resp.Payload)
 	}
 
@@ -298,7 +297,7 @@ func (i *invoker) bidiStream(
 				// In either case, break the outer loop
 				break
 			}
-			// If the call was successful, get the returned payloads
+			// On successful receive, get the returned payload.
 			result.Payloads = append(result.Payloads, msg.Payload)
 			totalRcvd++
 			if totalRcvd == timing.AfterNumResponses {
@@ -355,7 +354,7 @@ func (i *invoker) bidiStream(
 			}
 			break
 		}
-		// If the call was successful, save the payloads
+		// On successful receive, get the returned payload.
 		result.Payloads = append(result.Payloads, msg.Payload)
 		totalRcvd++
 		if totalRcvd == timing.AfterNumResponses {
@@ -430,12 +429,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT], Resp pointerMessage[Resp
 	headers := grpcutil.ConvertMetadataToProtoHeader(headerMD)
 	trailers := grpcutil.ConvertMetadataToProtoHeader(trailerMD)
 	if err != nil {
-		// If an error was returned, convert it to a gRPC error
+		// If an error was returned, convert it to a gRPC error.
 		protoErr = grpcutil.ConvertGrpcToProtoError(err)
-	} else if payload := getPayload(resp); payload != nil {
-		// If the call was successful and there's a payload
-		// add that to the response also
-		payloads = append(payloads, payload)
+	} else {
+		// If the call was successful, get the returned payload.
+		payloads = append(payloads, getPayload(resp))
 	}
 
 	return &conformancev1.ClientResponseResult{

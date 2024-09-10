@@ -5,21 +5,21 @@ go 1.21
 require (
 	connectrpc.com/connect v1.16.2
 	github.com/andybalholm/brotli v1.1.0
-	github.com/bufbuild/protoyaml-go v0.1.11
+	github.com/bufbuild/protoyaml-go v0.1.12
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.6.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.17.9
 	github.com/quic-go/quic-go v0.46.0
-	github.com/rs/cors v1.11.0
+	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
-	golang.org/x/net v0.28.0
+	golang.org/x/net v0.29.0
 	golang.org/x/sync v0.8.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240528184218-531527333157
-	google.golang.org/grpc v1.65.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240604185151-ef581f913117
+	google.golang.org/grpc v1.66.0
 	google.golang.org/protobuf v1.34.2
 )
 
@@ -39,12 +39,12 @@ require (
 	github.com/quic-go/qpack v0.4.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	go.uber.org/mock v0.4.0 // indirect
-	golang.org/x/crypto v0.26.0 // indirect
+	golang.org/x/crypto v0.27.0 // indirect
 	golang.org/x/mod v0.17.0 // indirect
-	golang.org/x/sys v0.23.0 // indirect
-	golang.org/x/text v0.17.0 // indirect
+	golang.org/x/sys v0.25.0 // indirect
+	golang.org/x/text v0.18.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240528184218-531527333157 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240604185151-ef581f913117 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )

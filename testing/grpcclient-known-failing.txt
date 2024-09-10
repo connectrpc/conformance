@@ -1,7 +1,3 @@
-# The grpc-go library should return "internal" but instead returns "unimplemented".
-# https://github.com/grpc/grpc-go/issues/6987
-gRPC Unexpected Responses/**/unexpected-compression
-
 # The entries for "cardinality violation" in the following doc indicate that
 # these cases should fail with "unimplemented":
 #   https://grpc.github.io/grpc/core/md_doc_statuscodes.html

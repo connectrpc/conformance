@@ -247,7 +247,7 @@ if the operation fails {
    abort, returning a result that describes the error and any
       available headers and trailers
 }
-extract the payload field from the response
+† extract the payload field from the response
 construct a result using the payload and any available headers
    and trailers
 ```
@@ -256,6 +256,9 @@ _*_ Note: some client APIs will provide a blocking operation for unary RPCs,
     which doesn't return until the RPC response is received. For these cases,
     you must arrange for the RPC to be canceled asynchronously after the indicated
     number of milliseconds, and then invoke the blocking operation.
+
+_†_ Note: an empty response message is possible. In these cases, the client should
+    use an empty `ConformancePayload` message value as the payload.
 
 #### Client stream
 
@@ -300,7 +303,7 @@ if an error occurs {
       available headers and trailers
 }
 
-extract the payload field from the response
+† extract the payload field from the response
 construct a result using the payload and any available headers
    and trailers
 ```
@@ -310,6 +313,9 @@ _*_ Note: some client APIs will provide a single, atomic "close and receive"
     close and then receive, you also can't cancel in between. Instead, you must
     arrange for the RPC to be canceled asynchronously after the indicated number
     of milliseconds, and then "close and receive".
+
+_†_ Note: an empty response message is possible. In these cases, the client should
+    use an empty `ConformancePayload` message value as the payload.
 
 #### Server stream
 
@@ -338,14 +344,14 @@ if we should cancel after close send {
 
 use array to accumulate payload values
 for each response message {
-   extract the payload field from the response and
+   † extract the payload field from the response and
       record it in array of payload values
       
    if we should cancel after N response messages and this is the Nth {
       cancel the RPC (but do not return)
    }
     
-   † if an error occurs {
+   ‡ if an error occurs {
       abort, returning a result that describes payload
          values accumulated so far, the error, and any
          available headers and trailers
@@ -360,7 +366,10 @@ _*_ Note: some client APIs may provide an "invoke" operation for server stream R
     that does not accept the request message. In these cases, it is typically up to the
     caller to explicitly send the request message immediately after the stream is created.
 
-_†_ Note: some client APIs may return an error or throw an exception if an attempt is made
+_†_ Note: an empty response message is possible. In these cases, the client should
+    use an empty `ConformancePayload` message value as the payload.
+
+_‡_ Note: some client APIs may return an error or throw an exception if an attempt is made
     to receive a response message but there are none remaining. Such APIs will typically
     use a sentinel error or exception type that simply means "end-of-stream". In these
     cases, such a sentinel should cause the client to break out of this loop and _not_ treat
@@ -410,14 +419,14 @@ if we should cancel after close send {
 
 use array to accumulate payload values
 for each response message {
-   extract the payload field from the response and
+   * extract the payload field from the response and
       record it in array of payload values
       
    if we should cancel after N response messages and this is the Nth {
       cancel the RPC (but do not return)
    }
     
-   * if an error occurs {
+   † if an error occurs {
       abort, returning a result that describes payload
          values accumulated so far, the error, and any
          available headers and trailers
@@ -427,7 +436,10 @@ for each response message {
 construct a result using the accumulated payloads and any available
    headers and trailers
 ```
-_*_ Note: some client APIs may return an error or throw an exception if an attempt is made
+_*_ Note: an empty response message is possible. In these cases, the client should
+    use an empty `ConformancePayload` message value as the payload.
+
+_†_ Note: some client APIs may return an error or throw an exception if an attempt is made
     to receive a response message but there are none remaining. Such APIs will typically
     use a sentinel error or exception type that simply means "end-of-stream". In these
     cases, such a sentinel should cause the client to break out of this loop and _not_ treat
@@ -474,7 +486,7 @@ for each request message {
          available headers and trailers
    }
 
-   extract the payload field from the response and
+   † extract the payload field from the response and
       record it in array of payload values
 
    if we should cancel after N response messages and this is the Nth {
@@ -493,7 +505,7 @@ if we should cancel after close send {
 }
 
 for each remaining response message {
-   extract the payload field from the response and
+   † extract the payload field from the response and
       record it in array of payload values
       
    if we should cancel after N response messages and this is the Nth {
@@ -516,6 +528,9 @@ _*_ Note: some client APIs may return an error or throw an exception if an attem
     use a sentinel error or exception type that simply means "end-of-stream". In these
     cases, such a sentinel should cause the client to break out of this loop and _not_ treat
     this as an error case.
+
+_†_ Note: an empty response message is possible. In these cases, the client should
+    use an empty `ConformancePayload` message value as the payload.
 
 ## Examples
 

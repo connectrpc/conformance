@@ -281,22 +281,26 @@ func run( //nolint:gocyclo
 		clients = []processInfo{
 			{
 				name: "reference client",
-				start: runInProcess([]string{
-					"reference-client",
-					"-p", strconv.Itoa(int(flags.Parallelism)),
-				}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-					return referenceclient.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
-				}),
+				start: runInProcess(
+					[]string{
+						"reference-client",
+						"-p", strconv.Itoa(int(flags.Parallelism)),
+					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+						return referenceclient.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
+					},
+				),
 				isReferenceImpl: true,
 			},
 			{
 				name: "reference client (grpc)",
-				start: runInProcess([]string{
-					"grpc-reference-client",
-					"-p", strconv.Itoa(int(flags.Parallelism)),
-				}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-					return grpcclient.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
-				}),
+				start: runInProcess(
+					[]string{
+						"grpc-reference-client",
+						"-p", strconv.Itoa(int(flags.Parallelism)),
+					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+						return grpcclient.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
+					},
+				),
 				isGrpcImpl: true,
 			},
 		}
@@ -322,26 +326,30 @@ func run( //nolint:gocyclo
 			servers = []processInfo{
 				{
 					name: "reference server",
-					start: runInProcess([]string{
-						"reference-server",
-						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
-						"-bind", flags.ServerBind,
-						"-cert", flags.TLSCertFile,
-						"-key", flags.TLSKeyFile,
-					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-						return referenceserver.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
-					}),
+					start: runInProcess(
+						[]string{
+							"reference-server",
+							"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
+							"-bind", flags.ServerBind,
+							"-cert", flags.TLSCertFile,
+							"-key", flags.TLSKeyFile,
+						}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+							return referenceserver.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
+						},
+					),
 					isReferenceImpl: true,
 				},
 				{
 					name: "reference server (grpc)",
-					start: runInProcess([]string{
-						"grpc-reference-server",
-						"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
-						"-bind", flags.ServerBind,
-					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
-						return grpcserver.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
-					}),
+					start: runInProcess(
+						[]string{
+							"grpc-reference-server",
+							"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
+							"-bind", flags.ServerBind,
+						}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
+							return grpcserver.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
+						},
+					),
 					isGrpcImpl: true,
 				},
 			}

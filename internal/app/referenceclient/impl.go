@@ -184,14 +184,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
-		// If the call was successful, get the headers and trailers
+		// If the call was successful, get the returned payload
+		// and the headers and trailers.
+		payloads = append(payloads, getPayload(resp.Msg))
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
-		// If there's a payload, add that to the response also
-		payload := getPayload(resp.Msg)
-		if payload != nil {
-			payloads = append(payloads, payload)
-		}
 	}
 
 	statusCode, feedback := inv.examineWireDetails(ctx, headers, trailers)
@@ -275,8 +272,7 @@ func (i *invoker) serverStream(
 	totalRcvd := 0
 	for stream.Receive() {
 		totalRcvd++
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
+		// On successful receive, get the returned payload.
 		result.Payloads = append(result.Payloads, stream.Msg().Payload)
 
 		// If AfterNumResponses is specified, it will be a number > 0 here.
@@ -346,8 +342,8 @@ func (i *invoker) clientStream(
 		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
 		protoErr = internal.ConvertConnectToProtoError(connectErr)
 	} else {
-		// If the call was successful, get the returned payloads
-		// and the headers and trailers
+		// If the call was successful, get the returned payload
+		// and the headers and trailers.
 		payloads = append(payloads, resp.Msg.Payload)
 		headers = internal.ConvertToProtoHeader(resp.Header())
 		trailers = internal.ConvertToProtoHeader(resp.Trailer())
@@ -447,7 +443,7 @@ func (i *invoker) bidiStream(
 				// In either case, break the outer loop
 				break
 			}
-			// If the call was successful, get the returned payloads
+			// On successful receive, get the returned payload.
 			result.Payloads = append(result.Payloads, msg.Payload)
 			totalRcvd++
 			if totalRcvd == timing.AfterNumResponses {
@@ -488,7 +484,7 @@ func (i *invoker) bidiStream(
 			}
 			break
 		}
-		// If the call was successful, save the payloads
+		// On successful receive, get the returned payload.
 		result.Payloads = append(result.Payloads, msg.Payload)
 		totalRcvd++
 		if totalRcvd == timing.AfterNumResponses {
