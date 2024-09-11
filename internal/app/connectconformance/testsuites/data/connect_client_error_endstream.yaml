@@ -84,7 +84,8 @@ testCases:
         code: CODE_UNAVAILABLE
         message: oops
   - request:
-      testName: error/message-omitted
+      # The message property is optional - it can be omitted or be an empty string
+      testName: error/missing-message
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -293,7 +294,8 @@ testCases:
         code: CODE_UNKNOWN
         message: oops
   - request:
-      testName: end-stream/message-omitted
+      # The message property is optional - it can be omitted or be an empty string
+      testName: end-stream/missing-message
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
