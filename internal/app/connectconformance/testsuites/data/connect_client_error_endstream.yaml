@@ -127,6 +127,73 @@ testCases:
       error:
         code: CODE_OUT_OF_RANGE
         message: oops
+  - request:
+      # Clients must not depend on data in the "debug" key when deserializing details.
+      testName: error/invalid-details-debug
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 422
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  {
+                    "code": "out_of_range",
+                    "message": "oops",
+                    "details": [
+                      {
+                        "type": "google.protobuf.FileDescriptorProto",
+                        "value": "Cgp0ZXN0LnByb3Rv",
+                        "debug": "garbage"
+                      }
+                    ]
+                  }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
+  - request:
+      # Clients must not depend on data in the "debug" key when deserializing details.
+      testName: error/missing-details-debug
+      service: connectrpc.conformance.v1.ConformanceService
+      method: Unary
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 422
+              headers:
+                - name: content-type
+                  value: [ "application/json" ]
+              unary:
+                text: |
+                  {
+                    "code": "out_of_range",
+                    "message": "oops",
+                    "details": [
+                      {
+                        "type": "google.protobuf.FileDescriptorProto",
+                        "value": "Cgp0ZXN0LnByb3Rv"
+                      }
+                    ]
+                  }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
 #  # TODO: We can't actually represent an unrecognized detail in the YAML format, because
 #  #       we use google.protobuf.Any, which requires the schema to represent in JSON or YAML 😭
 #  - request:
@@ -347,6 +414,83 @@ testCases:
                                 "value": "Cgp0ZXN0LnByb3Rv",
                                 "frob": "nitz",
                                 "debug": { "name": "test.proto", "foobar": true }
+                              }
+                            ]
+                          }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
+  - request:
+      # Clients must not depend on data in the "debug" key when deserializing details.
+      testName: end-stream/invalid-details-debug
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": {
+                            "code": "out_of_range",
+                            "message": "oops",
+                            "details": [
+                              {
+                                "type": "google.protobuf.FileDescriptorProto",
+                                "value": "Cgp0ZXN0LnByb3Rv",
+                                "debug": "garbage"
+                              }
+                            ]
+                          }
+                        }
+    expectedResponse:
+      error:
+        code: CODE_OUT_OF_RANGE
+        message: oops
+        details:
+          - "@type": type.googleapis.com/google.protobuf.FileDescriptorProto
+            name: "test.proto"
+  - request:
+      # Clients must not depend on data in the "debug" key when deserializing details.
+      testName: end-stream/missing-details-debug
+      service: connectrpc.conformance.v1.ConformanceService
+      method: ServerStream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 2
+                    payload:
+                      text: |
+                        {
+                          "error": {
+                            "code": "out_of_range",
+                            "message": "oops",
+                            "details": [
+                              {
+                                "type": "google.protobuf.FileDescriptorProto",
+                                "value": "Cgp0ZXN0LnByb3Rv"
                               }
                             ]
                           }
