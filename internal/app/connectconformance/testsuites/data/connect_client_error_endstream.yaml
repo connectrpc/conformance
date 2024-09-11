@@ -109,7 +109,7 @@ testCases:
         message: oops
   - request:
       # Clients must not depend on data in the "debug" key when deserializing details.
-      testName: error/disregard-detail-debug
+      testName: error/invalid-details-debug
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -143,7 +143,7 @@ testCases:
             name: "test.proto"
   - request:
       # Clients must not depend on data in the "debug" key when deserializing details.
-      testName: error/missing-detail-debug
+      testName: error/missing-details-debug
       service: connectrpc.conformance.v1.ConformanceService
       method: Unary
       streamType: STREAM_TYPE_UNARY
@@ -382,7 +382,7 @@ testCases:
             name: "test.proto"
   - request:
       # Clients must not depend on data in the "debug" key when deserializing details.
-      testName: end-stream/disregard-detail-debug
+      testName: end-stream/invalid-details-debug
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -421,7 +421,7 @@ testCases:
             name: "test.proto"
   - request:
       # Clients must not depend on data in the "debug" key when deserializing details.
-      testName: end-stream/missing-detail-debug
+      testName: end-stream/missing-details-debug
       service: connectrpc.conformance.v1.ConformanceService
       method: ServerStream
       streamType: STREAM_TYPE_SERVER_STREAM
