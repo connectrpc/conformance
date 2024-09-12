@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"os"
 
+	"buf.build/go/protoyaml"
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"github.com/bufbuild/protoyaml-go"
 )
 
 // configCase is a resolved configuration case. This mirrors the
