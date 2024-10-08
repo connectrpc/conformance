@@ -10,9 +10,9 @@ relevantCodecs:
 # cover unary and servers-streaming RPCs - the two types that are supported in
 # web browsers.
 testCases:
-  # Trailers and status are in body (no other response messages)
+  # Unary: Trailers and status are in body (no other response messages)
   - request:
-      testName: trailers-in-body/expected
+      testName: unary/trailers-in-body/expected
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -40,7 +40,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: trailers-in-body/mixed-case
+      testName: unary/trailers-in-body/mixed-case
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -68,7 +68,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: trailers-in-body/duplicate-metadata
+      testName: unary/trailers-in-body/duplicate-metadata
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -96,9 +96,9 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing", "quuz" ]
 
-  # Trailers-only responses, where status and trailers are in HTTP headers
+  # Unary: Trailers-only responses, where status and trailers are in HTTP headers
   - request:
-      testName: trailers-only/expected
+      testName: unary/trailers-only/expected
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -122,7 +122,7 @@ testCases:
         - name: x-custom-trailer
           value: [ "bing" ]
   - request:
-      testName: trailers-only/duplicate-metadata
+      testName: unary/trailers-only/duplicate-metadata
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
