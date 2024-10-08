@@ -1,6 +1,14 @@
 name: Buf CI
 on:
   push:
+    paths:
+      - '**.proto'
+      - '**/buf.yaml'
+      - '**/buf.lock'
+      - '**/buf.md'
+      - '**/README.md'
+      - '**/LICENSE'
+      - '.github/workflows/buf-ci.yaml'
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled]
   delete:
@@ -12,14 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          path: head
-      - uses: actions/checkout@v4
-        with:
-          path: base
-          ref: ${{ github.event.pull_request.base.sha }}
       - uses: bufbuild/buf-action@v1
         with:
-          input: head/proto
-          breaking_against: base/proto
+          input: proto
+          breaking_against: 'buf.build/connectrpc/conformance'
           token: ${{ secrets.BUF_TOKEN }}
+
