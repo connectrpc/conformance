@@ -6,7 +6,9 @@ relevantCodecs:
   - CODEC_PROTO
 # These tests verify that a gRPC-Web client can handle trailers in the body with
 # no response, trailers-only responses (trailers in headers), and trailers with
-# different cases (in addition to the "standard" all lower-case).
+# different cases (in addition to the "standard" all lower-case). The tests
+# cover unary and servers-streaming RPCs - the two types that are supported in
+# web browsers.
 testCases:
   # Trailers and status are in body (no other response messages)
   - request:
@@ -124,6 +126,142 @@ testCases:
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-trailer
+                  value: [ "bing", "quuz" ]
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+    expectedResponse:
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing", "quuz" ]
+
+  # Server-streaming: Trailers and status are in body (no other response messages)
+  - request:
+      testName: server-stream/trailers-in-body/expected
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 9\r\ngrpc-message: error\r\nx-custom-trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: server-stream/trailers-in-body/mixed-case
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "Grpc-Status: 9\r\ngRPC-Message: error\r\nx-Custom-Trailer: bing\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: server-stream/trailers-in-body/duplicate-metadata
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-header
+                  value: [ "foo", "bar", "baz" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 9\r\ngrpc-message: error\r\nx-custom-trailer: bing\r\nx-custom-trailer: quuz\r\n"
+    expectedResponse:
+      responseHeaders:
+        - name: x-custom-header
+          value: [ "foo", "bar", "baz" ]
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing", "quuz" ]
+
+  # Server-streaming: Trailers-only responses, where status and trailers are in HTTP headers
+  - request:
+      testName: server-stream/trailers-only/expected
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: x-custom-trailer
+                  value: [ "bing" ]
+                - name: grpc-status
+                  value: [ "9" ]
+                - name: grpc-message
+                  value: [ "error" ]
+    expectedResponse:
+      error:
+        code: 9
+        message: error
+      responseTrailers:
+        - name: x-custom-trailer
+          value: [ "bing" ]
+  - request:
+      testName: server-stream/trailers-only/duplicate-metadata
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
           responseDefinition:
             rawResponse:
               status_code: 200
