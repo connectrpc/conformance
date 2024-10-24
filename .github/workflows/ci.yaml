@@ -11,6 +11,7 @@ jobs:
   ci:
     # TODO(sayers) - Need to run on 22.04 for the time being until 
     # https://github.com/puppeteer/puppeteer/pull/13196 is released
+    # See https://github.com/connectrpc/conformance/pull/940 for context
     runs-on: ubuntu-22.04
     strategy:
       matrix:
