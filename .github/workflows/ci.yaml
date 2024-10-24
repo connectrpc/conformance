@@ -9,6 +9,8 @@ permissions:
   contents: read
 jobs:
   ci:
+    # TODO(sayers) - Need to run on 22.04 for the time being until 
+    # https://github.com/puppeteer/puppeteer/pull/13196 is released
     runs-on: ubuntu-22.04
     strategy:
       matrix:
