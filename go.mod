@@ -5,11 +5,11 @@ go 1.21
 require (
 	buf.build/go/protoyaml v0.2.0
 	connectrpc.com/connect v1.17.0
-	github.com/andybalholm/brotli v1.1.0
+	github.com/andybalholm/brotli v1.1.1
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.6.0
 	github.com/improbable-eng/grpc-web v0.15.0
-	github.com/klauspost/compress v1.17.10
+	github.com/klauspost/compress v1.17.11
 	github.com/quic-go/quic-go v0.46.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.8.1
@@ -20,7 +20,7 @@ require (
 	golang.org/x/sync v0.8.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240903143218-8af14fe29dc1
 	google.golang.org/grpc v1.67.1
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.35.1
 )
 
 require (
