@@ -47,8 +47,6 @@ build: generate ## Build all packages
 
 .PHONY: generate
 generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
-	rm -rf internal/gen
-	rm -rf testing/grpcwebclient/gen
 	buf generate proto
 	license-header \
 		--license-type apache \
@@ -138,7 +136,7 @@ $(BIN)/grpcserver: Makefile generate
 
 $(BIN)/buf: Makefile
 	@mkdir -p $(@D)
-	$(GO) install github.com/bufbuild/buf/cmd/buf@v1.26.1
+	$(GO) install github.com/bufbuild/buf/cmd/buf@v1.44.0
 
 $(BIN)/license-header: Makefile
 	@mkdir -p $(@D)

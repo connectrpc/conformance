@@ -1,21 +1,23 @@
-version: v1
+version: v2
 managed:
   enabled: true
-  go_package_prefix:
-    default: connectrpc.com/conformance/internal/gen/proto/go
+  override:
+    - file_option: go_package_prefix
+      value: connectrpc.com/conformance/internal/gen/proto/go
+clean: true
 plugins:
-  - plugin: buf.build/protocolbuffers/go:v1.31.0
+  - remote: buf.build/protocolbuffers/go:v1.31.0
     out: internal/gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/connectrpc/go
+  - remote: buf.build/connectrpc/go
     out: internal/gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc/go:v1.3.0
+  - remote: buf.build/grpc/go:v1.3.0
     out: internal/gen/proto/go
     opt: paths=source_relative
-  - plugin: buf.build/grpc/web:v1.5.0
+  - remote: buf.build/grpc/web:v1.5.0
     out: testing/grpcwebclient/gen/proto
     opt: import_style=typescript,mode=grpcweb
-  - plugin: buf.build/protocolbuffers/js:v3.21.2
+  - remote: buf.build/protocolbuffers/js:v3.21.2
     out: testing/grpcwebclient/gen/proto
     opt: import_style=commonjs,binary
