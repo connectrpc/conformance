@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"math/big"
 	"net"
@@ -40,11 +41,11 @@ const (
 // the TLS handshake, for mutually-authenticated TLS.
 func NewClientTLSConfig(caCert, clientCert, clientKey []byte) (*tls.Config, error) {
 	if len(caCert) == 0 {
-		return nil, fmt.Errorf("caCert is empty")
+		return nil, errors.New("caCert is empty")
 	}
 	caCertPool := x509.NewCertPool()
 	if !caCertPool.AppendCertsFromPEM(caCert) {
-		return nil, fmt.Errorf("failed to parse CA cert from given data")
+		return nil, errors.New("failed to parse CA cert from given data")
 	}
 
 	hasClientCert := len(clientCert) != 0
@@ -58,9 +59,9 @@ func NewClientTLSConfig(caCert, clientCert, clientKey []byte) (*tls.Config, erro
 		}
 		certs = []tls.Certificate{certPair}
 	case hasClientCert:
-		return nil, fmt.Errorf("clientCert is not empty but clientKey is")
+		return nil, errors.New("clientCert is not empty but clientKey is")
 	case hasClientKey:
-		return nil, fmt.Errorf("clientKey is not empty but clientCert is")
+		return nil, errors.New("clientKey is not empty but clientCert is")
 	}
 
 	return &tls.Config{
@@ -75,13 +76,13 @@ func NewClientTLSConfig(caCert, clientCert, clientKey []byte) (*tls.Config, erro
 // The clientCACert parameter is required unless clientCerts is tls.NoClientCert.
 func NewServerTLSConfig(cert tls.Certificate, clientCertMode tls.ClientAuthType, clientCACert []byte) (*tls.Config, error) {
 	if clientCertMode != tls.NoClientCert && len(clientCACert) == 0 {
-		return nil, fmt.Errorf("clientCertMode indicates client certs supported but CACert is empty")
+		return nil, errors.New("clientCertMode indicates client certs supported but CACert is empty")
 	}
 	var caCertPool *x509.CertPool
 	if len(clientCACert) > 0 {
 		caCertPool = x509.NewCertPool()
 		if !caCertPool.AppendCertsFromPEM(clientCACert) {
-			return nil, fmt.Errorf("failed to parse client CA cert from given data")
+			return nil, errors.New("failed to parse client CA cert from given data")
 		}
 	}
 
@@ -96,10 +97,10 @@ func NewServerTLSConfig(cert tls.Certificate, clientCertMode tls.ClientAuthType,
 // ParseServerCert parses the given PEM-encoded cert and key.
 func ParseServerCert(cert, key []byte) (tls.Certificate, error) {
 	if len(cert) == 0 {
-		return tls.Certificate{}, fmt.Errorf("cert is empty")
+		return tls.Certificate{}, errors.New("cert is empty")
 	}
 	if len(key) == 0 {
-		return tls.Certificate{}, fmt.Errorf("key is empty")
+		return tls.Certificate{}, errors.New("key is empty")
 	}
 	certPair, err := tls.X509KeyPair(cert, key)
 	if err != nil {

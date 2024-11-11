@@ -51,7 +51,7 @@ func TracingRoundTripper(transport http.RoundTripper, collector Collector) http.
 // TracingHandler applies tracing middleware to the given handler. The returned
 // handler will record traces of all operations to the given tracer.
 func TracingHandler(handler http.Handler, collector Collector) http.Handler {
-	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) { //nolint:contextcheck // false positive
 		builder, ctx := newBuilder(req, false, collector)
 		defer builder.build() // make sure the trace is complete before returning
 		ctx, cancel := context.WithCancel(ctx)

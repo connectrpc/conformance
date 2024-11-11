@@ -301,10 +301,9 @@ func TestExamineConnectError(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, _ *http.Request) {
 				respWriter.Header().Set("Content-Type", "application/json")
 				if testCase.compressed {
 					respWriter.Header().Set("Content-Encoding", "gzip")
@@ -325,7 +324,7 @@ func TestExamineConnectError(t *testing.T) {
 			)
 			ctx := withWireCapture(context.Background())
 			req := connect.NewRequest(&conformancev1.UnaryRequest{})
-			req.Header().Set("x-test-case-name", "foo") // needed to enable tracing
+			req.Header().Set("X-Test-Case-Name", "foo") // needed to enable tracing
 			_, err := client.Unary(ctx, req)
 			require.Error(t, err)
 			printer := &internal.SimplePrinter{}
@@ -461,10 +460,9 @@ func TestExamineConnectEndStream(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, _ *http.Request) {
 				respWriter.Header().Set("Content-Type", "application/connect+proto")
 				if testCase.compressed {
 					respWriter.Header().Set("Connect-Content-Encoding", "gzip")
@@ -481,7 +479,7 @@ func TestExamineConnectEndStream(t *testing.T) {
 			)
 			ctx := withWireCapture(context.Background())
 			stream := client.ClientStream(ctx)
-			stream.RequestHeader().Set("x-test-case-name", "foo") // needed to enable tracing
+			stream.RequestHeader().Set("X-Test-Case-Name", "foo") // needed to enable tracing
 			_, err := stream.CloseAndReceive()
 			require.Error(t, err)
 			printer := &internal.SimplePrinter{}
@@ -880,7 +878,6 @@ func TestExamineGRPCEndStream(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
@@ -906,7 +903,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			)
 			ctx := withWireCapture(context.Background())
 			req := connect.NewRequest(&conformancev1.UnaryRequest{})
-			req.Header().Set("x-test-case-name", "foo") // needed to enable tracing
+			req.Header().Set("X-Test-Case-Name", "foo") // needed to enable tracing
 			if testCase.expectedCode != 0 {
 				req.Header().Set("Expect-Code", testCase.expectedCode.String())
 			}
@@ -1013,7 +1010,6 @@ func TestCheckNoDuplicateKeys(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := checkNoDuplicateKeys("", json.NewDecoder(strings.NewReader(testCase.input)))

@@ -74,12 +74,13 @@ func ConvertProtoHeaderToMetadata(
 // AppendToOutgoingContext appends the given headers to the outgoing context.
 // Used for sending metadata from the client side.
 func AppendToOutgoingContext(ctx context.Context, src []*conformancev1.Header) context.Context {
+	keysVals := make([]string, 0, len(src)*2)
 	for _, hdr := range src {
 		for _, val := range hdr.Value {
-			ctx = metadata.AppendToOutgoingContext(ctx, hdr.Name, val)
+			keysVals = append(keysVals, hdr.Name, val)
 		}
 	}
-	return ctx
+	return metadata.AppendToOutgoingContext(ctx, keysVals...)
 }
 
 // PercentEncodeMessage percent-encodes the given string per the rules in the
@@ -87,7 +88,7 @@ func AppendToOutgoingContext(ctx context.Context, src []*conformancev1.Header) c
 func PercentEncodeMessage(msg string) string {
 	const upperhex = "0123456789ABCDEF"
 	var hexCount int
-	for i := 0; i < len(msg); i++ {
+	for i := range len(msg) {
 		if ShouldEscapeByteInMessage(msg[i]) {
 			hexCount++
 		}
@@ -98,7 +99,7 @@ func PercentEncodeMessage(msg string) string {
 	// We need to escape some characters, so we'll need to allocate a new string.
 	var out strings.Builder
 	out.Grow(len(msg) + 2*hexCount)
-	for i := 0; i < len(msg); i++ {
+	for i := range len(msg) {
 		switch char := msg[i]; {
 		case ShouldEscapeByteInMessage(char):
 			out.WriteByte('%')

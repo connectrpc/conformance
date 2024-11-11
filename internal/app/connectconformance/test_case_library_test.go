@@ -389,7 +389,6 @@ func TestNewTestCaseLibrary(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			testCaseLib, err := newTestCaseLibrary(testSuites, testCase.config, testCase.mode)
@@ -437,7 +436,7 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 			assert.True(t, strings.HasPrefix(testSuiteName, "gRPC") || unicode.IsUpper(rune(testSuiteName[0])),
 				"test suite name %q should start with capital letter", testSuiteName)
 		}
-		assert.True(t, testSuiteName == testSuite.Name,
+		assert.Equal(t, testSuite.Name, testSuiteName,
 			"test suite name %q should not have leading or trailing spaces", testSuiteName)
 		assert.False(t, strings.ContainsFunc(testSuiteName, func(r rune) bool {
 			const allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789- "
@@ -605,7 +604,6 @@ func TestFilter(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			candidates := make([]*conformancev1.TestCase, len(allTestCaseNames))
@@ -837,7 +835,6 @@ func TestExpandRequestData(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			var testCaseProto conformancev1.TestCase
@@ -1888,7 +1885,6 @@ func TestPopulateExpectedResponse(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.testName, func(t *testing.T) {
 			t.Parallel()
 

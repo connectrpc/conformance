@@ -97,7 +97,6 @@ func TestRunClient(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			start := runInProcess([]string{"testclient"}, testCase.clientFunc)
@@ -122,9 +121,9 @@ func TestRunClient(t *testing.T) {
 
 			err = runner.waitForResponses()
 			if testCase.expectErr != "" {
-				assert.ErrorContains(t, err, testCase.expectErr)
+				require.ErrorContains(t, err, testCase.expectErr)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			assert.Equal(t, testCase.failToSend, actualFailedToSend)

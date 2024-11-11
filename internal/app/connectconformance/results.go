@@ -518,7 +518,7 @@ func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev
 	}
 	actualReqInfo := &conformancev1.ConformancePayload_RequestInfo{}
 	expectedReqInfo := &conformancev1.ConformancePayload_RequestInfo{}
-	for i := 0; i < length; i++ {
+	for i := range length {
 		// TODO: Should this be more lenient? Are we okay with details getting re-ordered?
 		//       An alternative might be to create a map keyed by type, and for each type
 		//       remove expected messages as they are matched against actual ones.

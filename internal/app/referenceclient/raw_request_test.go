@@ -56,7 +56,7 @@ func TestRawRequestSender(t *testing.T) {
 
 	var requests sync.Map // map[string]chan *http.Request
 	svr := httptest.NewServer(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-		testCaseName := req.Header.Get("x-test-case-name")
+		testCaseName := req.Header.Get("X-Test-Case-Name")
 		val, ok := requests.Load(testCaseName)
 		reqChan, isChan := val.(chan *http.Request)
 		if !ok || !isChan {
@@ -298,7 +298,6 @@ func TestRawRequestSender(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -308,7 +307,7 @@ func TestRawRequestSender(t *testing.T) {
 
 			sender := &rawRequestSender{
 				transport: roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-					req.Header.Set("x-test-case-name", testCaseName)
+					req.Header.Set("X-Test-Case-Name", testCaseName)
 					transport := &http.Transport{DisableCompression: true}
 					return transport.RoundTrip(req)
 				}),
@@ -412,8 +411,8 @@ func TestRawRequestSender(t *testing.T) {
 			assert.Equal(t, testCase.req.Verb, req.Method)
 
 			// Then headers
-			req.Header.Del("x-test-case-name") // added by the round tripper above; not in raw request
-			req.Header.Del("user-agent")       // added by http.Transport
+			req.Header.Del("X-Test-Case-Name") // added by the round tripper above; not in raw request
+			req.Header.Del("User-Agent")       // added by http.Transport
 			expectedHeaders := http.Header{}
 			internal.AddHeaders(testCase.req.Headers, expectedHeaders)
 			assert.Equal(t, expectedHeaders, req.Header)

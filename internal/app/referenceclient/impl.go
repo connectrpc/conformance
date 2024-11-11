@@ -503,7 +503,7 @@ func (i *invoker) unimplemented(
 	req *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
 	return doUnary(ctx, req, i, i.client.Unimplemented,
-		func(resp *conformancev1.UnimplementedResponse) *conformancev1.ConformancePayload {
+		func(_ *conformancev1.UnimplementedResponse) *conformancev1.ConformancePayload {
 			return nil
 		})
 }

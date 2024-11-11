@@ -193,7 +193,6 @@ func TestRunTestCasesForServer(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			results := newResults(len(requests), &testTrie{}, &testTrie{}, nil)
@@ -312,7 +311,7 @@ type fakeProcess struct {
 }
 
 func newFakeProcess(stdin io.Writer, stdout, stderr io.Reader) processStarter {
-	return func(ctx context.Context, pipeStderr bool) (*process, error) {
+	return func(_ context.Context, _ bool) (*process, error) {
 		proc := &fakeProcess{}
 		return &process{
 			processController: proc,
@@ -326,7 +325,7 @@ func newFakeProcess(stdin io.Writer, stdout, stderr io.Reader) processStarter {
 }
 
 func newStillbornProcess(stdin io.Writer, stdout, stderr io.Reader) processStarter {
-	return func(ctx context.Context, pipeStderr bool) (*process, error) {
+	return func(_ context.Context, _ bool) (*process, error) {
 		proc := &fakeProcess{}
 		stdout = &hookReader{
 			r:    stdout,
