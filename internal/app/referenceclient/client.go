@@ -224,7 +224,7 @@ func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, referen
 		if tlsConf == nil {
 			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
 		}
-		transport = &contextFixTransport{http3.RoundTripper{
+		transport = &contextFixTransport{http3.Transport{
 			DisableCompression: true,
 			TLSClientConfig:    tlsConf,
 			QUICConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
