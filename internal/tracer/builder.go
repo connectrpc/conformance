@@ -16,17 +16,17 @@ package tracer
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"net/http/httptrace"
 	"net/textproto"
 	"reflect"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 )
 
-const testCaseNameHeader = "x-test-case-name"
+const testCaseNameHeader = "X-Test-Case-Name"
 
 // builder accumulates events to build a trace.
 type builder struct {
@@ -76,7 +76,7 @@ func newBuilder(req *http.Request, client bool, collector Collector) (*builder, 
 		// from a header. So synthesize the header if it's not present.
 		headers := req.Header.Clone()
 		if len(headers.Get("Content-Length")) == 0 && req.ContentLength != -1 {
-			headers.Set("Content-Length", fmt.Sprintf("%d", req.ContentLength))
+			headers.Set("Content-Length", strconv.FormatInt(req.ContentLength, 10))
 		}
 		getHeaders = func() http.Header {
 			return headers

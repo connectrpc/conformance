@@ -259,12 +259,10 @@ func TestRawResponseRecorder(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 
 			for _, invoker := range invokers {
-				invoker := invoker
 				t.Run(invoker.name, func(t *testing.T) {
 					t.Parallel()
 
@@ -273,7 +271,7 @@ func TestRawResponseRecorder(t *testing.T) {
 					var body bytes.Buffer
 					testCaseName := t.Name()
 					transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-						req.Header.Set("x-test-case-name", testCaseName)
+						req.Header.Set("X-Test-Case-Name", testCaseName)
 						resp, err = svr.Client().Transport.RoundTrip(req)
 						if err != nil {
 							return nil, err

@@ -77,7 +77,7 @@ func (w *wireCaptureTransport) RoundTrip(req *http.Request) (*http.Response, err
 	// If this is a unary error with JSON body, replace the body with a reader
 	// that will save off the body bytes as they are read so that we can access
 	// the body contents in the tracer
-	if isUnaryJSONError(resp.Header.Get("content-type"), resp.StatusCode) {
+	if isUnaryJSONError(resp.Header.Get("Content-Type"), resp.StatusCode) {
 		resp.Body = &wireReader{body: resp.Body, wrapper: wrapper}
 	}
 	return resp, nil
@@ -179,12 +179,12 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 	}
 
 	// Check end-stream and/or error JSON data in the response.
-	contentType := trace.Response.Header.Get("content-type")
+	contentType := trace.Response.Header.Get("Content-Type")
 	switch {
 	case isUnaryJSONError(contentType, trace.Response.StatusCode):
 		// If this is a unary request that returned an error, then use the entire
 		// response body as the wire error details.
-		decomp := tracer.GetDecompressor(trace.Response.Header.Get("content-encoding"))
+		decomp := tracer.GetDecompressor(trace.Response.Header.Get("Content-Encoding"))
 		if err := decomp.Reset(wrapper.buf); err == nil {
 			if body, err := io.ReadAll(decomp); err == nil {
 				examineConnectError(body, printer)
@@ -571,7 +571,7 @@ func examineGRPCEndStream(endStream string, printer internal.Printer) http.Heade
 func isValidHTTPFieldValue(s string) bool {
 	// Not using "range s" because that uses UTF8 decoding to iterate
 	// through runes. But spec is in terms of bytes.
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		char := s[i]
 		// Visible range is 32 (SPACE ' ') and up, excluding DEL (127).
 		// Horizontal tab (9, '\t') is allowed but outside the visible range.
@@ -589,7 +589,7 @@ func isValidHTTPFieldValue(s string) bool {
 func isValidHTTPFieldName(s string) bool {
 	// Not using "range s" because that uses UTF8 decoding to iterate
 	// through runes. But spec is in terms of bytes.
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		char := s[i]
 		switch char {
 		case '!', '#', '$', '%', '&', '\'', '*', '+',
@@ -767,7 +767,7 @@ func checkGRPCStatus(headers http.Header, printer internal.Printer) { //nolint:g
 	if len(msgVals) > 0 { //nolint:nestif
 		msgStr := msgVals[0]
 		var expectHex int
-		for i := 0; i < len(msgStr); i++ {
+		for i := range len(msgStr) {
 			char := msgStr[i]
 			if expectHex > 0 {
 				if (char >= 'a' && char <= 'f') || (char >= 'A' && char <= 'F') || (char >= '0' && char <= '9') {

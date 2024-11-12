@@ -118,7 +118,7 @@ func TestRun(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, results.report(logger))
-	require.Equal(t, expectedNumCases, len(results.outcomes))
+	require.Len(t, results.outcomes, expectedNumCases)
 }
 
 type testPrinter struct {

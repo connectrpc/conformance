@@ -378,7 +378,7 @@ func (i *invoker) unimplemented(
 		func(ctx context.Context, req *conformancev1.UnimplementedRequest, opts ...grpc.CallOption) (*conformancev1.UnimplementedResponse, error) {
 			return i.client.Unimplemented(ctx, req, opts...)
 		},
-		func(resp *conformancev1.UnimplementedResponse) *conformancev1.ConformancePayload {
+		func(_ *conformancev1.UnimplementedResponse) *conformancev1.ConformancePayload {
 			return nil
 		},
 	)

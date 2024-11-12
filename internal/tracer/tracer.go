@@ -424,7 +424,7 @@ func printHeaders(prefix string, isHTTP1 bool, headers http.Header, printer inte
 }
 
 func isPrintableASCII(s string) bool {
-	for i := 0; i < len(s); i++ {
+	for i := range len(s) {
 		if s[i] < 0x20 || s[i] > 0x7E {
 			return false
 		}

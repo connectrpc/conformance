@@ -362,7 +362,6 @@ func TestParseConfig_ComputesPermutations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			cases, err := parseConfig("config.yaml", []byte(testCase.config))
@@ -577,7 +576,6 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			_, err := parseConfig("config.yaml", []byte(testCase.config))

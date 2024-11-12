@@ -140,11 +140,11 @@ $(BIN)/buf: Makefile
 
 $(BIN)/license-header: Makefile
 	@mkdir -p $(@D)
-	$(GO) install github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.26.1
+	$(GO) install github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.36.0
 
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.54.2
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0
 
 $(BIN)/goreleaser: Makefile
 	@mkdir -p $(@D)

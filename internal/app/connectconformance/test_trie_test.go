@@ -95,7 +95,6 @@ func TestParsePatterns(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.testName, func(t *testing.T) {
 			t.Parallel()
 			matched := trie.match(strings.Split(testCase.testName, "/"))

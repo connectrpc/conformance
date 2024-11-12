@@ -42,8 +42,8 @@ const (
 	connectStreamContentTypePrefix = "application/connect+"
 	connectContentTypePrefix       = connectUnaryContentTypePrefix
 
-	connectTimeoutHeader = "connect-timeout-ms"
-	grpcTimeoutHeader    = "grpc-timeout"
+	connectTimeoutHeader = "Connect-Timeout-Ms"
+	grpcTimeoutHeader    = "Grpc-Timeout"
 
 	codecProto = "proto"
 	codecJSON  = "json"
@@ -88,10 +88,10 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 			feedback.Printf("client sent another request (#%d) for the same test case", count+1)
 		}
 
-		if httpVersion, ok := enumValue("x-expect-http-version", req.Header, conformancev1.HTTPVersion(0), feedback); ok {
+		if httpVersion, ok := enumValue("X-Expect-Http-Version", req.Header, conformancev1.HTTPVersion(0), feedback); ok {
 			checkHTTPVersion(httpVersion, req, feedback)
 		}
-		if protocol, ok := enumValue("x-expect-protocol", req.Header, conformancev1.Protocol(0), feedback); ok {
+		if protocol, ok := enumValue("X-Expect-Protocol", req.Header, conformancev1.Protocol(0), feedback); ok {
 			checkProtocol(protocol, req, feedback)
 			if timeout, ok := extractTimeout(req.Header, protocol, feedback); ok {
 				// In reference mode, we *remove* the timeout in this middleware so that the server
@@ -101,16 +101,16 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 				req = req.WithContext(contextWithTimeout(req.Context(), timeout))
 			}
 		}
-		if codec, ok := enumValue("x-expect-codec", req.Header, conformancev1.Codec(0), feedback); ok {
+		if codec, ok := enumValue("X-Expect-Codec", req.Header, conformancev1.Codec(0), feedback); ok {
 			checkCodec(codec, req, feedback)
 		}
-		if compress, ok := enumValue("x-expect-compression", req.Header, conformancev1.Compression(0), feedback); ok {
+		if compress, ok := enumValue("X-Expect-Compression", req.Header, conformancev1.Compression(0), feedback); ok {
 			checkCompression(compress, req, feedback)
 		}
 
 		checkTLS(req, feedback)
 
-		if expectedMethod, _ := getHeader(req.Header, "x-expect-http-method", feedback); req.Method != expectedMethod {
+		if expectedMethod, _ := getHeader(req.Header, "X-Expect-Http-Method", feedback); req.Method != expectedMethod {
 			feedback.Printf("expected HTTP method %q, got %q", expectedMethod, req.Method)
 		}
 
@@ -159,7 +159,7 @@ func checkHTTPVersion(expected conformancev1.HTTPVersion, req *http.Request, fee
 
 func checkProtocol(expected conformancev1.Protocol, req *http.Request, feedback *feedbackPrinter) {
 	var actual conformancev1.Protocol
-	contentType := req.Header.Get("content-type")
+	contentType := req.Header.Get("Content-Type")
 	switch {
 	case contentType == grpcContentType || strings.HasPrefix(contentType, grpcContentTypePrefix):
 		actual = conformancev1.Protocol_PROTOCOL_GRPC
@@ -173,7 +173,7 @@ func checkProtocol(expected conformancev1.Protocol, req *http.Request, feedback 
 	}
 	if expected != actual {
 		feedback.Printf("expected protocol %v; instead got %v", expected, actual)
-	} else if expected == conformancev1.Protocol_PROTOCOL_GRPC && req.Header.Get("TE") != "trailers" {
+	} else if expected == conformancev1.Protocol_PROTOCOL_GRPC && req.Header.Get("Te") != "trailers" {
 		feedback.Printf("gRPC protocol client should use 'te: trailers' header to indicate to proxies that it expects trailer")
 	}
 }
@@ -189,7 +189,7 @@ func checkCodec(expected conformancev1.Codec, req *http.Request, feedback *feedb
 		feedback.Printf("invalid expected codec %d", expected)
 		return
 	}
-	contentType, hasContentType := getHeader(req.Header, "content-type", feedback)
+	contentType, hasContentType := getHeader(req.Header, "Content-Type", feedback)
 	var actual string
 	switch {
 	case req.Method == http.MethodGet:
@@ -252,17 +252,17 @@ func checkCompression(expected conformancev1.Compression, req *http.Request, fee
 	if req.Method == http.MethodGet {
 		actual, hasActual = getQueryParam(req.URL.Query(), "compression", feedback)
 	} else {
-		contentType := req.Header.Get("content-type")
+		contentType := req.Header.Get("Content-Type")
 		var encodingHeader string
 		switch {
 		case contentType == grpcContentType || contentType == grpcWebContentType ||
 			strings.HasPrefix(contentType, grpcContentTypePrefix) ||
 			strings.HasPrefix(contentType, grpcWebContentTypePrefix):
-			encodingHeader = "grpc-encoding"
+			encodingHeader = "Grpc-Encoding"
 		case strings.HasPrefix(contentType, connectStreamContentTypePrefix):
-			encodingHeader = "connect-content-encoding"
+			encodingHeader = "Connect-Content-Encoding"
 		case strings.HasPrefix(contentType, connectUnaryContentTypePrefix):
-			encodingHeader = "content-encoding"
+			encodingHeader = "Content-Encoding"
 		default:
 			// We already complained about bad content-type when checking protocol.
 			return
@@ -280,7 +280,7 @@ func checkCompression(expected conformancev1.Compression, req *http.Request, fee
 }
 
 func checkTLS(req *http.Request, feedback *feedbackPrinter) {
-	tlsHeaderVal, _ := getHeader(req.Header, "x-expect-tls", feedback)
+	tlsHeaderVal, _ := getHeader(req.Header, "X-Expect-Tls", feedback)
 	expectTLS, err := strconv.ParseBool(tlsHeaderVal)
 	if err != nil {
 		feedback.Printf("invalid value for %q header: %q: %v", "x-expect-tls", tlsHeaderVal, err)
@@ -296,7 +296,7 @@ func checkTLS(req *http.Request, feedback *feedbackPrinter) {
 	if req.TLS == nil {
 		return
 	}
-	expectedClientCert, _ := getHeader(req.Header, "x-expect-client-cert", feedback)
+	expectedClientCert, _ := getHeader(req.Header, "X-Expect-Client-Cert", feedback)
 	var actualClientCert string
 	if len(req.TLS.PeerCertificates) > 0 {
 		actualClientCert = req.TLS.PeerCertificates[0].Subject.CommonName
@@ -323,7 +323,7 @@ func getQueryParam(values url.Values, paramName string, feedback *feedbackPrinte
 }
 
 func getTestCaseName(respWriter http.ResponseWriter, req *http.Request) (string, bool) {
-	testCaseName := req.Header.Get("x-test-case-name")
+	testCaseName := req.Header.Get("X-Test-Case-Name")
 	if testCaseName == "" {
 		_ = connect.NewErrorWriter().Write(
 			respWriter,

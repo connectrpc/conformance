@@ -98,7 +98,6 @@ func TestTracer(t *testing.T) {
 		},
 	}
 	for _, testCase := range testCases {
-		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
 			var clientTracer, serverTracer Tracer
@@ -425,7 +424,6 @@ func TestTracer(t *testing.T) {
 				},
 			}
 			for _, testCall := range testCalls {
-				testCall := testCall
 				t.Run(testCall.name, func(t *testing.T) {
 					t.Parallel()
 					ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
