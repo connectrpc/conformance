@@ -3,7 +3,7 @@ module connectrpc.com/conformance
 go 1.22.7
 
 require (
-	buf.build/go/protoyaml v0.3.0
+	buf.build/go/protoyaml v0.3.1
 	connectrpc.com/connect v1.17.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/golang/snappy v0.0.4
@@ -20,11 +20,11 @@ require (
 	golang.org/x/sync v0.10.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53
 	google.golang.org/grpc v1.69.0
-	google.golang.org/protobuf v1.35.2
+	google.golang.org/protobuf v1.36.0
 )
 
 require (
-	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.35.2-20241127180247-a33202765966.1 // indirect
+	buf.build/gen/go/bufbuild/protovalidate/protocolbuffers/go v1.36.0-20241127180247-a33202765966.1 // indirect
 	cel.dev/expr v0.18.0 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
 	github.com/bufbuild/protovalidate-go v0.8.0 // indirect
