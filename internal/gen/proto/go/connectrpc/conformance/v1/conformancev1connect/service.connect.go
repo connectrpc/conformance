@@ -67,17 +67,6 @@ const (
 	ConformanceServiceIdempotentUnaryProcedure = "/connectrpc.conformance.v1.ConformanceService/IdempotentUnary"
 )
 
-// These variables are the protoreflect.Descriptor objects for the RPCs defined in this package.
-var (
-	conformanceServiceServiceDescriptor               = v1.File_connectrpc_conformance_v1_service_proto.Services().ByName("ConformanceService")
-	conformanceServiceUnaryMethodDescriptor           = conformanceServiceServiceDescriptor.Methods().ByName("Unary")
-	conformanceServiceServerStreamMethodDescriptor    = conformanceServiceServiceDescriptor.Methods().ByName("ServerStream")
-	conformanceServiceClientStreamMethodDescriptor    = conformanceServiceServiceDescriptor.Methods().ByName("ClientStream")
-	conformanceServiceBidiStreamMethodDescriptor      = conformanceServiceServiceDescriptor.Methods().ByName("BidiStream")
-	conformanceServiceUnimplementedMethodDescriptor   = conformanceServiceServiceDescriptor.Methods().ByName("Unimplemented")
-	conformanceServiceIdempotentUnaryMethodDescriptor = conformanceServiceServiceDescriptor.Methods().ByName("IdempotentUnary")
-)
-
 // ConformanceServiceClient is a client for the connectrpc.conformance.v1.ConformanceService
 // service.
 type ConformanceServiceClient interface {
@@ -203,41 +192,42 @@ type ConformanceServiceClient interface {
 // http://api.acme.com or https://acme.com/grpc).
 func NewConformanceServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConformanceServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
+	conformanceServiceMethods := v1.File_connectrpc_conformance_v1_service_proto.Services().ByName("ConformanceService").Methods()
 	return &conformanceServiceClient{
 		unary: connect.NewClient[v1.UnaryRequest, v1.UnaryResponse](
 			httpClient,
 			baseURL+ConformanceServiceUnaryProcedure,
-			connect.WithSchema(conformanceServiceUnaryMethodDescriptor),
+			connect.WithSchema(conformanceServiceMethods.ByName("Unary")),
 			connect.WithClientOptions(opts...),
 		),
 		serverStream: connect.NewClient[v1.ServerStreamRequest, v1.ServerStreamResponse](
 			httpClient,
 			baseURL+ConformanceServiceServerStreamProcedure,
-			connect.WithSchema(conformanceServiceServerStreamMethodDescriptor),
+			connect.WithSchema(conformanceServiceMethods.ByName("ServerStream")),
 			connect.WithClientOptions(opts...),
 		),
 		clientStream: connect.NewClient[v1.ClientStreamRequest, v1.ClientStreamResponse](
 			httpClient,
 			baseURL+ConformanceServiceClientStreamProcedure,
-			connect.WithSchema(conformanceServiceClientStreamMethodDescriptor),
+			connect.WithSchema(conformanceServiceMethods.ByName("ClientStream")),
 			connect.WithClientOptions(opts...),
 		),
 		bidiStream: connect.NewClient[v1.BidiStreamRequest, v1.BidiStreamResponse](
 			httpClient,
 			baseURL+ConformanceServiceBidiStreamProcedure,
-			connect.WithSchema(conformanceServiceBidiStreamMethodDescriptor),
+			connect.WithSchema(conformanceServiceMethods.ByName("BidiStream")),
 			connect.WithClientOptions(opts...),
 		),
 		unimplemented: connect.NewClient[v1.UnimplementedRequest, v1.UnimplementedResponse](
 			httpClient,
 			baseURL+ConformanceServiceUnimplementedProcedure,
-			connect.WithSchema(conformanceServiceUnimplementedMethodDescriptor),
+			connect.WithSchema(conformanceServiceMethods.ByName("Unimplemented")),
 			connect.WithClientOptions(opts...),
 		),
 		idempotentUnary: connect.NewClient[v1.IdempotentUnaryRequest, v1.IdempotentUnaryResponse](
 			httpClient,
 			baseURL+ConformanceServiceIdempotentUnaryProcedure,
-			connect.WithSchema(conformanceServiceIdempotentUnaryMethodDescriptor),
+			connect.WithSchema(conformanceServiceMethods.ByName("IdempotentUnary")),
 			connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 			connect.WithClientOptions(opts...),
 		),
@@ -405,40 +395,41 @@ type ConformanceServiceHandler interface {
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
 func NewConformanceServiceHandler(svc ConformanceServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	conformanceServiceMethods := v1.File_connectrpc_conformance_v1_service_proto.Services().ByName("ConformanceService").Methods()
 	conformanceServiceUnaryHandler := connect.NewUnaryHandler(
 		ConformanceServiceUnaryProcedure,
 		svc.Unary,
-		connect.WithSchema(conformanceServiceUnaryMethodDescriptor),
+		connect.WithSchema(conformanceServiceMethods.ByName("Unary")),
 		connect.WithHandlerOptions(opts...),
 	)
 	conformanceServiceServerStreamHandler := connect.NewServerStreamHandler(
 		ConformanceServiceServerStreamProcedure,
 		svc.ServerStream,
-		connect.WithSchema(conformanceServiceServerStreamMethodDescriptor),
+		connect.WithSchema(conformanceServiceMethods.ByName("ServerStream")),
 		connect.WithHandlerOptions(opts...),
 	)
 	conformanceServiceClientStreamHandler := connect.NewClientStreamHandler(
 		ConformanceServiceClientStreamProcedure,
 		svc.ClientStream,
-		connect.WithSchema(conformanceServiceClientStreamMethodDescriptor),
+		connect.WithSchema(conformanceServiceMethods.ByName("ClientStream")),
 		connect.WithHandlerOptions(opts...),
 	)
 	conformanceServiceBidiStreamHandler := connect.NewBidiStreamHandler(
 		ConformanceServiceBidiStreamProcedure,
 		svc.BidiStream,
-		connect.WithSchema(conformanceServiceBidiStreamMethodDescriptor),
+		connect.WithSchema(conformanceServiceMethods.ByName("BidiStream")),
 		connect.WithHandlerOptions(opts...),
 	)
 	conformanceServiceUnimplementedHandler := connect.NewUnaryHandler(
 		ConformanceServiceUnimplementedProcedure,
 		svc.Unimplemented,
-		connect.WithSchema(conformanceServiceUnimplementedMethodDescriptor),
+		connect.WithSchema(conformanceServiceMethods.ByName("Unimplemented")),
 		connect.WithHandlerOptions(opts...),
 	)
 	conformanceServiceIdempotentUnaryHandler := connect.NewUnaryHandler(
 		ConformanceServiceIdempotentUnaryProcedure,
 		svc.IdempotentUnary,
-		connect.WithSchema(conformanceServiceIdempotentUnaryMethodDescriptor),
+		connect.WithSchema(conformanceServiceMethods.ByName("IdempotentUnary")),
 		connect.WithIdempotency(connect.IdempotencyNoSideEffects),
 		connect.WithHandlerOptions(opts...),
 	)
