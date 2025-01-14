@@ -4,7 +4,7 @@ go 1.22.7
 
 require (
 	buf.build/go/protoyaml v0.3.1
-	connectrpc.com/connect v1.17.0
+	connectrpc.com/connect v1.18.1
 	github.com/andybalholm/brotli v1.1.1
 	github.com/golang/snappy v0.0.4
 	github.com/google/go-cmp v0.6.0
@@ -20,7 +20,7 @@ require (
 	golang.org/x/sync v0.10.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241015192408-796eee8c2d53
 	google.golang.org/grpc v1.69.2
-	google.golang.org/protobuf v1.36.1
+	google.golang.org/protobuf v1.36.2
 )
 
 require (
