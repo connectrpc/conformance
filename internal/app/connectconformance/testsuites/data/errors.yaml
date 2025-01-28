@@ -150,6 +150,21 @@ testCases:
           code: CODE_UNAUTHENTICATED
           message: "unauthenticated"
 - request:
+    testName: unary/error-with-metadata
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+        responseDefinition:
+          responseHeaders:
+          - name: x-custom-header
+            value: ["foo"]
+          error:
+            code: CODE_UNAUTHENTICATED
+            message: "unauthenticated"
+          responseTrailers:
+          - name: x-custom-trailer
+            value: ["bing"]
+- request:
     testName: unary/unicode-error-message
     streamType: STREAM_TYPE_UNARY
     requestMessages:
@@ -304,6 +319,21 @@ testCases:
           code: CODE_UNAUTHENTICATED
           message: "unauthenticated"
 - request:
+    testName: server-stream/error-with-metadata
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+        responseDefinition:
+          responseHeaders:
+          - name: x-custom-header
+            value: ["foo"]
+          error:
+            code: CODE_UNAUTHENTICATED
+            message: "unauthenticated"
+          responseTrailers:
+          - name: x-custom-trailer
+            value: ["bing"]
+- request:
     testName: server-stream/error-with-responses
     streamType: STREAM_TYPE_SERVER_STREAM
     requestHeaders:
@@ -353,6 +383,21 @@ testCases:
           code: CODE_INTERNAL
           message: "client stream failed"
 - request:
+    testName: client-stream/error-with-metadata
+    streamType: STREAM_TYPE_CLIENT_STREAM
+    requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+        responseDefinition:
+          responseHeaders:
+          - name: x-custom-header
+            value: ["foo"]
+          error:
+            code: CODE_UNAUTHENTICATED
+            message: "unauthenticated"
+          responseTrailers:
+          - name: x-custom-trailer
+            value: ["bing"]
+- request:
     testName: client-stream/error-multiple-requests
     streamType: STREAM_TYPE_CLIENT_STREAM
     requestMessages:
@@ -364,6 +409,24 @@ testCases:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
 # Bidi Stream Tests -----------------------------------------------------------
+- request:
+    testName: bidi-stream/error-with-metadata
+    # Since there is only one request and there are no responses, this is
+    # compatible with both half- and full-duplex implementations. We tag it
+    # as half-duplex so it can potentially run under more configurations.
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestMessages:
+      - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+        responseDefinition:
+          responseHeaders:
+          - name: x-custom-header
+            value: ["foo"]
+          error:
+            code: CODE_UNAUTHENTICATED
+            message: "unauthenticated"
+          responseTrailers:
+          - name: x-custom-trailer
+            value: ["bing"]
 - request:
     testName: bidi-stream/full-duplex/error-with-responses
     streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
