@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -495,7 +496,7 @@ func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev
 	}
 
 	var errs multiErrors
-	if expected.Code != actual.Code && !inSlice(actual.Code, otherCodes) {
+	if expected.Code != actual.Code && !slices.Contains(otherCodes, actual.Code) {
 		expectedCodes := expectedCodeString(expected.Code, otherCodes)
 		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected code %s",
 			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedCodes))
@@ -554,17 +555,6 @@ func indent(s string) string {
 		lines[i] = "\t" + line
 	}
 	return strings.Join(lines, "\n")
-}
-
-func inSlice[T comparable](elem T, slice []T) bool {
-	// TODO: delete this function when this repo is using Go 1.21
-	//	     and update call sites to instead use slices.Contains
-	for _, item := range slice {
-		if item == elem {
-			return true
-		}
-	}
-	return false
 }
 
 func expectedCodeString(expectedCode conformancev1.Code, otherAllowedCodes []conformancev1.Code) string {
