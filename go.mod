@@ -1,6 +1,8 @@
 module connectrpc.com/conformance
 
-go 1.22.7
+go 1.23
+
+toolchain go1.23.6
 
 require (
 	buf.build/go/protoyaml v0.3.1
@@ -10,7 +12,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.18.0
-	github.com/quic-go/quic-go v0.49.0
+	github.com/quic-go/quic-go v0.50.0
 	github.com/rs/cors v1.11.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/pflag v1.0.6
