@@ -8,7 +8,7 @@ require (
 	buf.build/go/protoyaml v0.3.1
 	connectrpc.com/connect v1.18.1
 	github.com/andybalholm/brotli v1.1.1
-	github.com/golang/snappy v0.0.4
+	github.com/golang/snappy v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/improbable-eng/grpc-web v0.15.0
 	github.com/klauspost/compress v1.18.0
