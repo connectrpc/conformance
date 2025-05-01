@@ -2,8 +2,6 @@ module connectrpc.com/conformance
 
 go 1.23.0
 
-toolchain go1.24.1
-
 require (
 	buf.build/go/protoyaml v0.3.1
 	connectrpc.com/connect v1.18.1
