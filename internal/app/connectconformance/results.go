@@ -53,6 +53,7 @@ const timeoutCheckGracePeriodMillis = 500
 // log writer. It can also incorporate data provided out-of-band by a reference
 // server, when testing a client implementation.
 type testResults struct {
+	mode           conformancev1.TestSuite_TestMode
 	totalTestCount int
 	knownFailing   *testTrie
 	knownFlaky     *testTrie
@@ -66,8 +67,9 @@ type testResults struct {
 	serverSideband map[string]string
 }
 
-func newResults(totalTestCount int, knownFailing, knownFlaky *testTrie, tracer *tracer.Tracer) *testResults {
+func newResults(mode conformancev1.TestSuite_TestMode, totalTestCount int, knownFailing, knownFlaky *testTrie, tracer *tracer.Tracer) *testResults {
 	return &testResults{
+		mode:           mode,
 		totalTestCount: totalTestCount,
 		knownFailing:   knownFailing,
 		knownFlaky:     knownFlaky,
@@ -168,7 +170,19 @@ func (r *testResults) assert(
 	expected := definition.ExpectedResponse
 	var errs multiErrors
 
-	errs = append(errs, checkError(expected.Error, actual.Error, definition.OtherAllowedErrorCodes)...)
+	otherErrors := definition.OtherAllowedErrorCodes
+	if definition.Request.TimeoutMs != nil && r.mode == conformancev1.TestSuite_TEST_MODE_SERVER &&
+		expected.Error != nil && expected.Error.Code == conformancev1.Code_CODE_DEADLINE_EXCEEDED &&
+		definition.Request.HttpVersion > conformancev1.HTTPVersion_HTTP_VERSION_1 && len(otherErrors) == 0 {
+		// When testing a server, the reference client does not set an actual timeout, in order to
+		// see if the server enforces the timeout. Typically, a server will return a "deadline exceeded"
+		// error when it notices that time is up. But it is also possible that the server chooses to
+		// simply cancel the stream (only possible with HTTP/2 or HTTP/3) -- why send back an error
+		// response if the client has already "hung up"? So we allow for the reference client to observe
+		// a CANCELED error in these cases, as an alternative to DEADLINE_EXCEEDED.
+		otherErrors = []conformancev1.Code{conformancev1.Code_CODE_CANCELED}
+	}
+	errs = append(errs, checkError(expected.Error, actual.Error, otherErrors)...)
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
 	if len(expected.Payloads) == 0 &&

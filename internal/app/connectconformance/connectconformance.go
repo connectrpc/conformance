@@ -312,7 +312,7 @@ func run( //nolint:gocyclo
 		}
 	}
 
-	results := newResults(filteredTestCount, knownFailing, knownFlaky, trace)
+	results := newResults(mode, filteredTestCount, knownFailing, knownFlaky, trace)
 
 	for _, clientInfo := range clients {
 		clientProcess, err := runClient(ctx, clientInfo.start)
