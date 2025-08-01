@@ -352,12 +352,12 @@ func createTLSConfig(req *conformancev1.ClientCompatRequest) (*tls.Config, error
 // can be implemented in connect-go and/or quic-go.
 // See: https://github.com/quic-go/quic-go/issues/4196
 type contextFixTransport struct {
-	http3.RoundTripper
+	http3.Transport
 }
 
 func (t *contextFixTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	ctx := req.Context()
-	resp, err := t.RoundTripper.RoundTrip(req)
+	resp, err := t.Transport.RoundTrip(req)
 	if err != nil {
 		return nil, maybeWrapContextError(ctx, err)
 	}
