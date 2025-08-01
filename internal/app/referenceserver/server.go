@@ -373,7 +373,7 @@ func newH3Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 
 type http3Server struct {
 	svr *http3.Server
-	lis http3.QUICEarlyListener
+	lis http3.QUICListener
 }
 
 func (s *http3Server) Serve() error {
