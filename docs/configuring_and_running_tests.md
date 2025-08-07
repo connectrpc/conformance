@@ -89,9 +89,9 @@ feature of the implementation under test.
 * `stream_types`: This configures which stream types the implementation supports. If not
   configured, support is assumed for all types. The valid options are
   `STREAM_TYPE_UNARY`, `STREAM_TYPE_CLIENT_STREAM`, `STREAM_TYPE_SERVER_STREAM`,
-  `STREAM_TYPE_HALF_DUPLEX_BIDI`, and `STREAM_TYPE_FULL_DUPLEX_BIDI`. The latter two both
-  use bidirectional streams. The former (half-duplex) is technically compatible with
-  HTTP 1.1, while the other (full-duplex) _requires_ HTTP/2 or HTTP/3.
+  `STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM`, and `STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM`. The
+  latter two both use bidirectional streams. The former (half-duplex) is technically
+  compatible with HTTP 1.1, while the other (full-duplex) _requires_ HTTP/2 or HTTP/3.
 * `supports_h2c`: This is a simple flag that indicates whether or not the implementation
   supports "H2C" or "HTTP/2 over Clear text". This indicates the use of HTTP/2 without
   TLS. Normally, support for HTTP/2 is negotiated between clients and servers during the
