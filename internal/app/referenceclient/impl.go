@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -39,7 +40,7 @@ type invoker struct {
 
 // Creates a new invoker around a ConformanceServiceClient.
 func newInvoker(transport http.RoundTripper, referenceMode bool, url *url.URL, opts []connect.ClientOption) *invoker {
-	opts = append(opts, connect.WithInterceptors(userAgentClientInterceptor{}))
+	opts = append(opts, connect.WithInterceptors(userAgentClientInterceptor{}, checkDeadlineInterceptor{}))
 	client := conformancev1connect.NewConformanceServiceClient(
 		&http.Client{Transport: transport},
 		url.String(),
@@ -561,4 +562,112 @@ func (userAgentClientInterceptor) WrapStreamingClient(next connect.StreamingClie
 
 func (userAgentClientInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
 	return next
+}
+
+// checkDeadlineInterceptor can translate misattributed HTTP/2 stream
+// CANCEL errors from "canceled" into "deadline exceeded". This can happen
+// because when the deadline is reached, there is a race between the client
+// timer function, which cancels the context and sets the "deadline exceeded"
+// error, and the server, which cancels the HTTP/2 stream
+type checkDeadlineInterceptor struct{}
+
+func (c checkDeadlineInterceptor) WrapUnary(unaryFunc connect.UnaryFunc) connect.UnaryFunc {
+	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
+		resp, err := unaryFunc(ctx, req)
+		if req.Spec().IsClient && err != nil {
+			return nil, checkDeadlineError(ctx, err)
+		}
+		return resp, err
+	}
+}
+
+func (c checkDeadlineInterceptor) WrapStreamingClient(clientFunc connect.StreamingClientFunc) connect.StreamingClientFunc {
+	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
+		return &checkDeadlineClientConn{StreamingClientConn: clientFunc(ctx, spec), ctx: ctx}
+	}
+}
+
+func (c checkDeadlineInterceptor) WrapStreamingHandler(handlerFunc connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
+	return handlerFunc
+}
+
+func checkDeadlineError(ctx context.Context, err error) error {
+	if err == nil {
+		return nil
+	}
+	if connect.CodeOf(err) != connect.CodeCanceled || errors.Is(ctx.Err(), context.Canceled) {
+		// No need to change code attribution.
+		return err
+	}
+	if deadline, ok := ctx.Deadline(); !ok || time.Now().Before(deadline) {
+		// No deadline or deadline not reached, so no change to attribution.
+		return err
+	}
+	// If we get here, we've got a "canceled" code, but we've reached the context
+	// deadline, so it likely should be "deadline exceeded" instead. This
+	// misattribution can happen because the timer function that cancels the
+	// context after the deadline is reached hadn't yet run. It's non-deterministic,
+	// and the original attribution of the "canceled" code races with it.
+	//
+	// However, we don't want to unconditionally change the code at this time to
+	// "deadline exceeded". It is possible that the server actually returned a
+	// "canceled" error. So we only want to change the code when we see that the
+	// underlying error was an HTTP/2 stream CANCEL frame.
+	//
+	// This is gnarly, but this is the same way that the connect-go library does
+	// this. This code was largely copied from connect.wrapIfRSTError.
+	const (
+		streamErrPrefix = "stream error: "
+		fromPeerSuffix  = "; received from peer"
+	)
+	if connectErr := (*connect.Error)(nil); errors.As(err, &connectErr) {
+		err = connectErr.Unwrap()
+	}
+	if urlErr := (*url.Error)(nil); errors.As(err, &urlErr) {
+		// If we get an RST_STREAM error from http.Client.Do, it's wrapped in a
+		// *url.Error.
+		err = urlErr.Unwrap()
+	}
+	msg := err.Error()
+	if !strings.HasPrefix(msg, streamErrPrefix) {
+		return err
+	}
+	if !strings.HasSuffix(msg, fromPeerSuffix) {
+		return err
+	}
+	msg = strings.TrimSuffix(msg, fromPeerSuffix)
+	i := strings.LastIndex(msg, ";")
+	if i < 0 || i >= len(msg)-1 {
+		return err
+	}
+	msg = msg[i+1:]
+	msg = strings.TrimSpace(msg)
+	if msg != "CANCEL" {
+		return err
+	}
+	// The underlying error is an HTTP/2 stream cancelation. So now
+	// it's safe to change the error code attribution.
+	return connect.NewError(connect.CodeDeadlineExceeded, err)
+}
+
+// checkDeadlineClientConn is a StreamingClientConn decorator that can
+// translate errors from "canceled" to "deadline exceeded" if they are
+// misattributed.
+type checkDeadlineClientConn struct {
+	connect.StreamingClientConn
+
+	ctx context.Context
+}
+
+func (c *checkDeadlineClientConn) Send(msg any) error {
+	return checkDeadlineError(c.ctx, c.StreamingClientConn.Send(msg))
+}
+func (c *checkDeadlineClientConn) CloseRequest() error {
+	return checkDeadlineError(c.ctx, c.StreamingClientConn.CloseRequest())
+}
+func (c *checkDeadlineClientConn) Receive(msg any) error {
+	return checkDeadlineError(c.ctx, c.StreamingClientConn.Receive(msg))
+}
+func (c *checkDeadlineClientConn) CloseResponse() error {
+	return checkDeadlineError(c.ctx, c.StreamingClientConn.CloseResponse())
 }
