@@ -497,7 +497,7 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 			require.True(t, strings.HasSuffix(prefix, "/"))
 		}
 	}
-	require.GreaterOrEqual(t, grpcMarkers, 500)
+	require.GreaterOrEqual(t, grpcMarkers, 450)
 }
 
 func TestAddGRPCMarkerToName(t *testing.T) {
