@@ -568,7 +568,7 @@ func (userAgentClientInterceptor) WrapStreamingHandler(next connect.StreamingHan
 // CANCEL errors from "canceled" into "deadline exceeded". This can happen
 // because when the deadline is reached, there is a race between the client
 // timer function, which cancels the context and sets the "deadline exceeded"
-// error, and the server, which cancels the HTTP/2 stream
+// error, and the server, which cancels the HTTP/2 stream.
 type checkDeadlineInterceptor struct{}
 
 func (c checkDeadlineInterceptor) WrapUnary(unaryFunc connect.UnaryFunc) connect.UnaryFunc {
@@ -656,7 +656,7 @@ func checkDeadlineError(ctx context.Context, err error) error {
 type checkDeadlineClientConn struct {
 	connect.StreamingClientConn
 
-	ctx context.Context
+	ctx context.Context //nolint:containedctx
 }
 
 func (c *checkDeadlineClientConn) Send(msg any) error {
