@@ -18,6 +18,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/connect+proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
     expectedResponse:
       error:
         code: CODE_UNIMPLEMENTED
@@ -32,6 +34,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/connect+proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
         stream:
           items:
             - flags: 0
@@ -57,6 +61,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
         unary:
           binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"}
     expectedResponse:
@@ -74,6 +80,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
         unary:
           binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"}
     expectedResponse:
@@ -91,6 +99,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/foo" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
         unary:
           binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"}
     expectedResponse:
@@ -109,6 +119,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
           - name: content-encoding
             value: ["foo"]
         unary:
@@ -128,6 +140,8 @@ testCases:
         headers:
           - name: content-type
             value: [ "application/connect+proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
           - name: connect-content-encoding
             value: ["identity"]
         stream:
