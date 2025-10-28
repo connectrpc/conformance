@@ -160,7 +160,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, transports *transports, req *conformancev1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) { //nolint:gocyclo
+func invoke(ctx context.Context, transports *transports, req *conformancev1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) {
 	tlsConf, err := createTLSConfig(req)
 	if err != nil {
 		return nil, err
