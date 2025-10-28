@@ -27,10 +27,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
@@ -38,9 +36,6 @@ import (
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
-	"github.com/quic-go/quic-go"
-	"github.com/quic-go/quic-go/http3"
-	"golang.org/x/net/http2"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -97,6 +92,8 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	defer wg.Wait()
 	sema := semaphore.NewWeighted(int64(*parallel))
 
+	var transports transports
+
 	for {
 		var req conformancev1.ClientCompatRequest
 		err := decoder.DecodeNext(&req)
@@ -121,7 +118,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 			defer wg.Done()
 			defer sema.Release(1)
 
-			result, err := invoke(ctx, &req, referenceMode, trace)
+			result, err := invoke(ctx, &transports, &req, referenceMode, trace)
 
 			// Build the result for the out writer.
 			resp := &conformancev1.ClientCompatResponse{
@@ -163,7 +160,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 // returned from this function indicates a runtime/unexpected internal error and is not indicative of a
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
-func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) { //nolint:gocyclo
+func invoke(ctx context.Context, transports *transports, req *conformancev1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) { //nolint:gocyclo
 	tlsConf, err := createTLSConfig(req)
 	if err != nil {
 		return nil, err
@@ -180,57 +177,9 @@ func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, referen
 		return nil, errors.New("invalid url: %s" + urlString)
 	}
 
-	// TODO - We should cache the transports here so that we're not creating one for each
-	// test case
-	var transport http.RoundTripper
-	switch req.HttpVersion {
-	case conformancev1.HTTPVersion_HTTP_VERSION_1:
-		if tlsConf != nil {
-			tlsConf.NextProtos = []string{"http/1.1"}
-		}
-		tx := &http.Transport{
-			DisableCompression: true,
-			TLSClientConfig:    tlsConf,
-		}
-		transport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			resp, err := tx.RoundTrip(req)
-			if resp != nil &&
-				strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) {
-				// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
-				// we "trick" the client into thinking this is HTTP/2. We have to do this because
-				// otherwise, connect-go refuses to support bidi streams over HTTP 1.1.
-				resp.ProtoMajor, resp.ProtoMinor = 2, 0
-			}
-			return resp, err
-		})
-	case conformancev1.HTTPVersion_HTTP_VERSION_2:
-		if tlsConf != nil {
-			tlsConf.NextProtos = []string{"h2"}
-			transport = &http.Transport{
-				DisableCompression: true,
-				TLSClientConfig:    tlsConf,
-				ForceAttemptHTTP2:  true,
-			}
-		} else {
-			transport = &http2.Transport{
-				DisableCompression: true,
-				AllowHTTP:          true,
-				DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-					return (&net.Dialer{}).DialContext(ctx, network, addr)
-				},
-			}
-		}
-	case conformancev1.HTTPVersion_HTTP_VERSION_3:
-		if tlsConf == nil {
-			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
-		}
-		transport = &contextFixTransport{http3.Transport{
-			DisableCompression: true,
-			TLSClientConfig:    tlsConf,
-			QUICConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
-		}}
-	case conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
-		return nil, errors.New("an HTTP version must be specified")
+	transport, err := transports.get(req)
+	if err != nil {
+		return nil, err
 	}
 
 	if referenceMode {
@@ -345,68 +294,6 @@ func createTLSConfig(req *conformancev1.ClientCompatRequest) (*tls.Config, error
 		return nil, nil //nolint:nilnil
 	}
 	return internal.NewClientTLSConfig(req.ServerTlsCert, req.ClientTlsCreds.GetCert(), req.ClientTlsCreds.GetKey())
-}
-
-// contextFixTransport wraps an HTTP/3 transport so that context errors can be correctly
-// classified by the connect-go framework. This is a work-around until a fix
-// can be implemented in connect-go and/or quic-go.
-// See: https://github.com/quic-go/quic-go/issues/4196
-type contextFixTransport struct {
-	http3.Transport
-}
-
-func (t *contextFixTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	ctx := req.Context()
-	resp, err := t.Transport.RoundTrip(req)
-	if err != nil {
-		return nil, maybeWrapContextError(ctx, err)
-	}
-	resp.Body = &contextFixReader{ctx: ctx, r: resp.Body}
-	return resp, nil
-}
-
-type contextFixReader struct {
-	ctx context.Context //nolint:containedctx
-	r   io.ReadCloser
-}
-
-func (r *contextFixReader) Read(data []byte) (int, error) {
-	n, err := r.r.Read(data)
-	return n, maybeWrapContextError(r.ctx, err)
-}
-
-func (r *contextFixReader) Close() error {
-	return maybeWrapContextError(r.ctx, r.r.Close())
-}
-
-func maybeWrapContextError(ctx context.Context, err error) error {
-	if err == nil {
-		return nil
-	}
-	ctxErr := ctx.Err()
-	if ctxErr == nil {
-		return err
-	}
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
-		return &contextFixError{timeout: true, error: err}
-	}
-	var httpErr *http3.Error
-	if errors.As(err, &httpErr) && httpErr.ErrorCode == http3.ErrCodeRequestCanceled {
-		return &contextFixError{timeout: errors.Is(ctxErr, context.DeadlineExceeded), error: err}
-	}
-	return err
-}
-
-type contextFixError struct {
-	timeout bool
-	error
-}
-
-//nolint:goerr113
-func (e *contextFixError) Is(err error) bool {
-	return (e.timeout && err == context.DeadlineExceeded) ||
-		(!e.timeout && err == context.Canceled)
 }
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
