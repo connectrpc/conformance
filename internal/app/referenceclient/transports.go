@@ -18,18 +18,21 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
-	"golang.org/x/net/http2"
 )
 
 type transportSpec struct {
@@ -43,7 +46,23 @@ type transports struct {
 	cache sync.Map // map[transportSpec]http.RoundTripper
 }
 
-func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTripper, error) {
+func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTripper, *url.URL, error) {
+	tlsConf, err := createTLSConfig(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	var scheme string
+	if tlsConf != nil {
+		scheme = "https://"
+	} else {
+		scheme = "http://"
+	}
+	urlString := scheme + net.JoinHostPort(req.Host, strconv.Itoa(int(req.Port)))
+	serverURL, err := url.ParseRequestURI(urlString)
+	if err != nil {
+		return nil, nil, fmt.Errorf("invalid url: %s", urlString)
+	}
+
 	spec := transportSpec{
 		httpVersion:   req.GetHttpVersion(),
 		serverTLSCert: string(req.GetServerTlsCert()),
@@ -54,13 +73,9 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 	// Optimistically skip logic if it's already cached. We will still do an
 	// atomic store to share the transport in all cases even if this misses.
 	if tr, ok := t.cache.Load(spec); ok {
-		return tr.(http.RoundTripper), nil //nolint:errcheck,forcetypeassert
+		return tr.(http.RoundTripper), serverURL, nil //nolint:errcheck,forcetypeassert
 	}
 
-	tlsConf, err := createTLSConfig(req)
-	if err != nil {
-		return nil, err
-	}
 	var transport http.RoundTripper
 	switch req.HttpVersion {
 	case conformancev1.HTTPVersion_HTTP_VERSION_1:
@@ -83,25 +98,24 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 			return resp, err
 		})
 	case conformancev1.HTTPVersion_HTTP_VERSION_2:
+		var prots *http.Protocols
+		forceAttemptHTTP2 := false
 		if tlsConf != nil {
 			tlsConf.NextProtos = []string{"h2"}
-			transport = &http.Transport{
-				DisableCompression: true,
-				TLSClientConfig:    tlsConf,
-				ForceAttemptHTTP2:  true,
-			}
+			forceAttemptHTTP2 = true
 		} else {
-			transport = &http2.Transport{
-				DisableCompression: true,
-				AllowHTTP:          true,
-				DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-					return (&net.Dialer{}).DialContext(ctx, network, addr)
-				},
-			}
+			prots = &http.Protocols{}
+			prots.SetUnencryptedHTTP2(true)
+		}
+		transport = &http.Transport{
+			DisableCompression: true,
+			TLSClientConfig:    tlsConf,
+			ForceAttemptHTTP2:  forceAttemptHTTP2,
+			Protocols:          prots,
 		}
 	case conformancev1.HTTPVersion_HTTP_VERSION_3:
 		if tlsConf == nil {
-			return nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
+			return nil, nil, errors.New("HTTP/3 indicated in request but no TLS info provided")
 		}
 		transport = &contextFixTransport{http3.Transport{
 			DisableCompression: true,
@@ -109,12 +123,14 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 			QUICConfig:         &quic.Config{MaxIdleTimeout: 20 * time.Second, KeepAlivePeriod: 5 * time.Second},
 		}}
 	case conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
-		return nil, errors.New("an HTTP version must be specified")
+		return nil, nil, errors.New("an HTTP version must be specified")
+	default:
+		return nil, nil, fmt.Errorf("unknown HTTP version specified :%d", req.HttpVersion)
 	}
 
 	// Even if two requests for the same spec make it here, they will use the same connection.
 	actual, _ := t.cache.LoadOrStore(spec, transport)
-	return actual.(http.RoundTripper), nil //nolint:errcheck,forcetypeassert
+	return actual.(http.RoundTripper), serverURL, nil //nolint:errcheck,forcetypeassert
 }
 
 // contextFixTransport wraps an HTTP/3 transport so that context errors can be correctly
@@ -177,4 +193,20 @@ type contextFixError struct {
 func (e *contextFixError) Is(err error) bool {
 	return (e.timeout && err == context.DeadlineExceeded) ||
 		(!e.timeout && err == context.Canceled)
+}
+
+func createTLSConfig(req *conformancev1.ClientCompatRequest) (*tls.Config, error) {
+	if req.ServerTlsCert == nil {
+		if req.ClientTlsCreds != nil {
+			return nil, errors.New("request indicated TLS client credentials but not server TLS cert provided")
+		}
+		return nil, nil //nolint:nilnil
+	}
+	return internal.NewClientTLSConfig(req.ServerTlsCert, req.ClientTlsCreds.GetCert(), req.ClientTlsCreds.GetKey())
+}
+
+type roundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }

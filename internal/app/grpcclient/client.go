@@ -150,6 +150,8 @@ func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, ou
 func invoke(ctx context.Context, req *conformancev1.ClientCompatRequest, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) {
 	transportCredentials := insecure.NewCredentials()
 	var latestConnectError atomic.Pointer[error]
+	// TODO: We should cache the client conns here so that we're not
+	//       creating a new one for each test case
 	dialOpts := []grpc.DialOption{
 		grpc.WithTransportCredentials(transportCredentials),
 		grpc.WithUnaryInterceptor(userAgentUnaryClientInterceptor),

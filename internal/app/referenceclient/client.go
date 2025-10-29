@@ -16,17 +16,12 @@ package referenceclient
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"net"
-	"net/http"
-	"net/url"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -161,23 +156,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 // Connect error returned from calling an RPC. Any error (i.e. a Connect error) that _is_ returned from
 // the actual RPC invocation will be present in the returned ClientResponseResult.
 func invoke(ctx context.Context, transports *transports, req *conformancev1.ClientCompatRequest, referenceMode bool, trace *tracer.Tracer) (*conformancev1.ClientResponseResult, error) {
-	tlsConf, err := createTLSConfig(req)
-	if err != nil {
-		return nil, err
-	}
-	var scheme string
-	if tlsConf != nil {
-		scheme = "https://"
-	} else {
-		scheme = "http://"
-	}
-	urlString := scheme + net.JoinHostPort(req.Host, strconv.Itoa(int(req.Port)))
-	serverURL, err := url.ParseRequestURI(urlString)
-	if err != nil {
-		return nil, errors.New("invalid url: %s" + urlString)
-	}
-
-	transport, err := transports.get(req)
+	transport, serverURL, err := transports.get(req)
 	if err != nil {
 		return nil, err
 	}
@@ -284,20 +263,4 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 	default:
 		return nil, fmt.Errorf("service name %s is not a valid service", req.GetService())
 	}
-}
-
-func createTLSConfig(req *conformancev1.ClientCompatRequest) (*tls.Config, error) {
-	if req.ServerTlsCert == nil {
-		if req.ClientTlsCreds != nil {
-			return nil, errors.New("request indicated TLS client credentials but not server TLS cert provided")
-		}
-		return nil, nil //nolint:nilnil
-	}
-	return internal.NewClientTLSConfig(req.ServerTlsCert, req.ClientTlsCreds.GetCert(), req.ClientTlsCreds.GetKey())
-}
-
-type roundTripperFunc func(*http.Request) (*http.Response, error)
-
-func (f roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req)
 }
