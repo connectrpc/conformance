@@ -43,7 +43,7 @@ testCases:
 - request:
     testName: client-stream/first-request-exceeds-server-limit
     streamType: STREAM_TYPE_CLIENT_STREAM
-    requestDelayMs: 50 # give server enough time to reject message and client to notice
+    requestDelayMs: 100 # give server enough time to reject message and client to notice
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       responseDefinition:
@@ -122,7 +122,7 @@ testCases:
 - request:
     testName: bidi-stream/half-duplex/first-request-exceeds-server-limit
     streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
-    requestDelayMs: 50
+    requestDelayMs: 100
     requestMessages:
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       responseDefinition:
@@ -190,7 +190,7 @@ testCases:
       fullDuplex: true
     - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
       requestData: "dGVzdCByZXNwb25zZQ=="
-    requestDelayMs: 50
+    requestDelayMs: 100
   expandRequests:
     - sizeRelativeToLimit: 10
     - sizeRelativeToLimit: 0
