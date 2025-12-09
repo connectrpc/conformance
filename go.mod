@@ -12,7 +12,7 @@ require (
 	github.com/klauspost/compress v1.18.1
 	github.com/quic-go/quic-go v0.57.1
 	github.com/rs/cors v1.11.1
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
