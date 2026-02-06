@@ -1,0 +1,71 @@
+name: Streaming Delivery
+# This suite verifies that server-streaming and bidi-streaming responses are
+# delivered incrementally rather than buffered into a single batch. The
+# reference client examines wire-level timing of response messages to detect
+# servers that collect all messages before writing them to the response body.
+mode: TEST_MODE_SERVER
+relevantCompressions:
+- COMPRESSION_IDENTITY
+testCases:
+# Server Stream Tests ---------------------------------------------------------
+- request:
+    testName: server-stream/incremental-delivery
+    streamType: STREAM_TYPE_SERVER_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseDelayMs: 100
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+# Bidi Stream Tests -----------------------------------------------------------
+- request:
+    testName: bidi-stream/full-duplex/incremental-delivery
+    streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseDelayMs: 100
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+      fullDuplex: true
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+- request:
+    testName: bidi-stream/half-duplex/incremental-delivery
+    streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      responseDefinition:
+        responseHeaders:
+        - name: x-custom-header
+          value: ["foo"]
+        responseData:
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+          - "dGVzdCByZXNwb25zZQ=="
+        responseDelayMs: 100
+        responseTrailers:
+        - name: x-custom-trailer
+          value: ["bing"]
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      requestData: "dGVzdCByZXNwb25zZQ=="

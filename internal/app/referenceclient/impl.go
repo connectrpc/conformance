@@ -258,6 +258,9 @@ func (i *invoker) serverStream(
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
 			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
+			if ssr.ResponseDefinition != nil && req.Cancel == nil && req.TimeoutMs == nil && result.Error == nil {
+				i.checkStreamDelivery(ctx, ssr.ResponseDefinition.ResponseDelayMs, len(ssr.ResponseDefinition.ResponseData), result)
+			}
 		}
 	}()
 
@@ -374,6 +377,8 @@ func (i *invoker) bidiStream(
 
 	ctx = i.withWireCapture(ctx)
 
+	var bidiResponseDef *conformancev1.StreamResponseDefinition
+
 	stream := i.client.BidiStream(ctx)
 	defer func() {
 		// Always make sure stream is closed on exit.
@@ -389,6 +394,9 @@ func (i *invoker) bidiStream(
 			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
 			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
 			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
+			if bidiResponseDef != nil && req.Cancel == nil && req.TimeoutMs == nil && result.Error == nil {
+				i.checkStreamDelivery(ctx, bidiResponseDef.ResponseDelayMs, len(bidiResponseDef.ResponseData), result)
+			}
 		}
 	}()
 
@@ -411,6 +419,9 @@ func (i *invoker) bidiStream(
 			// Return the error and nil result because this is an
 			// unmarshalling error unrelated to the RPC
 			return nil, err
+		}
+		if i == 0 {
+			bidiResponseDef = bsr.ResponseDefinition
 		}
 
 		// Sleep for any specified delay
@@ -534,6 +545,15 @@ func (i *invoker) examineWireDetails(ctx context.Context, headers, trailers []*c
 		checkBinaryMetadata("metadata", trailers, printer)
 	}
 	return statusCodePtr, printer.Messages
+}
+
+func (i *invoker) checkStreamDelivery(ctx context.Context, delayMs uint32, numMessages int, result *conformancev1.ClientResponseResult) {
+	if !i.referenceMode || delayMs == 0 || numMessages < 2 {
+		return
+	}
+	printer := &internal.SimplePrinter{}
+	examineStreamDelivery(ctx, numMessages, delayMs, printer)
+	result.Feedback = append(result.Feedback, printer.Messages...)
 }
 
 // userAgentClientInterceptor adds to the user-agent header on outgoing requests.

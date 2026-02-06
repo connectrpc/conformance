@@ -226,6 +226,53 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 	return trace.Response.StatusCode, true
 }
 
+// examineStreamDelivery checks whether streaming response messages were
+// delivered incrementally rather than buffered into a single batch. It
+// examines the timing of ResponseBodyData events in the wire trace and
+// reports feedback if all messages arrived too close together relative to
+// the configured response delay.
+func examineStreamDelivery(ctx context.Context, numExpectedMessages int, delayMs uint32, printer internal.Printer) {
+	if delayMs == 0 || numExpectedMessages < 2 {
+		return
+	}
+	wrapper, ok := ctx.Value(wireCtxKey{}).(*wireWrapper)
+	if !ok {
+		return
+	}
+	select {
+	case <-wrapper.traceAvailable:
+	case <-time.After(time.Second):
+		return
+	}
+	trace := &wrapper.trace
+
+	// Collect the offset of each response body data event.
+	var offsets []time.Duration
+	for _, event := range trace.Events {
+		if rbd, ok := event.(*tracer.ResponseBodyData); ok {
+			offsets = append(offsets, rbd.Offset)
+		}
+	}
+	if len(offsets) < 2 {
+		return
+	}
+
+	actualSpan := offsets[len(offsets)-1] - offsets[0]
+	// Use 25% of the expected span as a generous minimum to avoid CI flakiness.
+	expectedSpan := time.Duration(len(offsets)-1) * time.Duration(delayMs) * time.Millisecond
+	minSpan := expectedSpan / 4
+
+	if actualSpan < minSpan {
+		printer.Printf(
+			"response messages were not delivered incrementally: "+
+				"%d messages arrived within %v of each other, "+
+				"but with a %dms response delay between %d messages expected a span of at least %v",
+			len(offsets), actualSpan.Round(time.Millisecond),
+			delayMs, len(offsets), minSpan.Round(time.Millisecond),
+		)
+	}
+}
+
 type wireTracer struct {
 	tracer *tracer.Tracer
 }

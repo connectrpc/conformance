@@ -27,8 +27,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"connectrpc.com/conformance/internal"
+	"connectrpc.com/conformance/internal/tracer"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/connect"
@@ -1017,6 +1019,104 @@ func TestCheckNoDuplicateKeys(t *testing.T) {
 				require.NoError(t, err, "expected input to succeed: %q", testCase.input)
 			} else {
 				require.ErrorContains(t, err, testCase.expectedErr, "expected input to fail with particular error: %q", testCase.input)
+			}
+		})
+	}
+}
+
+func TestExamineStreamDelivery(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name             string
+		numMessages      int
+		delayMs          uint32
+		offsets          []time.Duration // offsets of ResponseBodyData events
+		expectedFeedback bool
+	}{
+		{
+			name:        "incremental delivery",
+			numMessages: 3,
+			delayMs:     100,
+			offsets: []time.Duration{
+				100 * time.Millisecond,
+				200 * time.Millisecond,
+				300 * time.Millisecond,
+			},
+			expectedFeedback: false,
+		},
+		{
+			name:        "buffered delivery",
+			numMessages: 3,
+			delayMs:     100,
+			offsets: []time.Duration{
+				300 * time.Millisecond,
+				301 * time.Millisecond,
+				302 * time.Millisecond,
+			},
+			expectedFeedback: true,
+		},
+		{
+			name:        "single message skipped",
+			numMessages: 1,
+			delayMs:     100,
+			offsets: []time.Duration{
+				100 * time.Millisecond,
+			},
+			expectedFeedback: false,
+		},
+		{
+			name:        "zero delay skipped",
+			numMessages: 3,
+			delayMs:     0,
+			offsets: []time.Duration{
+				0,
+				time.Millisecond,
+				2 * time.Millisecond,
+			},
+			expectedFeedback: false,
+		},
+		{
+			name:        "just above threshold passes",
+			numMessages: 3,
+			delayMs:     100,
+			// Threshold = (3-1)*100*0.25 = 50ms. Span = 60ms > 50ms → passes
+			offsets: []time.Duration{
+				100 * time.Millisecond,
+				130 * time.Millisecond,
+				160 * time.Millisecond,
+			},
+			expectedFeedback: false,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			// Build trace events from offsets.
+			var events []tracer.Event
+			for idx, offset := range testCase.offsets {
+				rbd := &tracer.ResponseBodyData{
+					Envelope:     &tracer.Envelope{Flags: 0, Len: 10},
+					Len:          10,
+					MessageIndex: idx,
+				}
+				rbd.Offset = offset
+				events = append(events, rbd)
+			}
+			// Set up context with wireWrapper containing the trace.
+			wrapper := &wireWrapper{
+				traceAvailable: make(chan struct{}),
+				buf:            &bytes.Buffer{},
+			}
+			wrapper.trace = tracer.Trace{Events: events}
+			close(wrapper.traceAvailable)
+			ctx := context.WithValue(context.Background(), wireCtxKey{}, wrapper)
+
+			printer := &internal.SimplePrinter{}
+			examineStreamDelivery(ctx, testCase.numMessages, testCase.delayMs, printer)
+			if testCase.expectedFeedback {
+				assert.NotEmpty(t, printer.Messages, "expected feedback about non-incremental delivery")
+			} else {
+				assert.Empty(t, printer.Messages, "expected no feedback")
 			}
 		})
 	}
