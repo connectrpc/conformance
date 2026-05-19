@@ -21,6 +21,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -48,6 +49,21 @@ const (
 	codecProto = "proto"
 	codecJSON  = "json"
 )
+
+// connectGetQueryParamRank is the recommended ordering of Connect-defined
+// query parameters in Unary-Get requests, as zero-based ranks. Clients should
+// emit parameters in this order to maximize cache hit rates on shared caches;
+// servers must accept any order. See the Query-Get rule in the Connect
+// protocol spec.
+//
+//nolint:gochecknoglobals // canonical lookup table, not mutable state
+var connectGetQueryParamRank = map[string]int{
+	"connect":     0,
+	"base64":      1,
+	"compression": 2,
+	"encoding":    3,
+	"message":     4,
+}
 
 type int32Enum interface {
 	~int32
@@ -93,6 +109,9 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		}
 		if protocol, ok := enumValue("X-Expect-Protocol", req.Header, conformancev1.Protocol(0), feedback); ok {
 			checkProtocol(protocol, req, feedback)
+			if protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
+				checkConnectGetQueryParamOrder(req, feedback)
+			}
 			if timeout, ok := extractTimeout(req.Header, protocol, feedback); ok {
 				// In reference mode, we *remove* the timeout in this middleware so that the server
 				// will NOT enforce it. That way, we can test that the client is actually enforcing it.
@@ -276,6 +295,36 @@ func checkCompression(expected conformancev1.Compression, req *http.Request, fee
 
 	if expect != actual {
 		feedback.Printf("expected compression %v; instead got %v", expect, actual)
+	}
+}
+
+// checkConnectGetQueryParamOrder verifies that a Connect Unary-Get request
+// orders its Connect-defined query parameters per the protocol recommendation:
+// connect, base64, compression, encoding, message. Unknown parameters and any
+// non-Connect parameters are ignored for ordering purposes. This is a SHOULD
+// rule for clients (servers MUST accept any order), so it only runs for the
+// reference server's expected Connect protocol GET requests.
+func checkConnectGetQueryParamOrder(req *http.Request, feedback *feedbackPrinter) {
+	if req.Method != http.MethodGet {
+		return
+	}
+	var observed []string
+	for pair := range strings.SplitSeq(req.URL.RawQuery, "&") {
+		if pair == "" {
+			continue
+		}
+		name, _, _ := strings.Cut(pair, "=")
+		if _, ok := connectGetQueryParamRank[name]; ok {
+			observed = append(observed, name)
+		}
+	}
+	expected := slices.Clone(observed)
+	slices.SortStableFunc(expected, func(a, b string) int {
+		return connectGetQueryParamRank[a] - connectGetQueryParamRank[b]
+	})
+	if !slices.Equal(observed, expected) {
+		feedback.Printf("connect GET query parameters not in recommended order: got [%s]; expected [%s]",
+			strings.Join(observed, ", "), strings.Join(expected, ", "))
 	}
 }
 
