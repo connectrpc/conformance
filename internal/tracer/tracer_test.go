@@ -17,7 +17,6 @@ package tracer
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -31,8 +30,6 @@ import (
 	"connectrpc.com/conformance/internal/compression"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 func TestTracer(t *testing.T) {
@@ -56,31 +53,32 @@ func TestTracer(t *testing.T) {
 		},
 		{
 			name: "http2-middleware",
-			// Uses H2C to force HTTP/2 w/out dealing with TLS.
+			// Force HTTP/2 w/out dealing with TLS.
 			setupClient: func(collector Collector) http.RoundTripper {
-				h2cTransport := &http2.Transport{
-					AllowHTTP: true,
-					DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
-						return (&net.Dialer{}).DialContext(ctx, network, addr)
-					},
-				}
-				return TracingRoundTripper(h2cTransport, collector)
+				var protocols http.Protocols
+				protocols.SetUnencryptedHTTP2(true)
+				return TracingRoundTripper(&http.Transport{Protocols: &protocols}, collector)
 			},
 			setupServer: func(collector Collector, listener net.Listener, handler http.HandlerFunc) (net.Listener, *http.Server) {
+				var protocols http.Protocols
+				protocols.SetUnencryptedHTTP2(true)
 				return listener, &http.Server{
-					Handler:           h2c.NewHandler(TracingHandler(handler, collector), &http2.Server{}),
+					Handler:           TracingHandler(handler, collector),
 					ReadHeaderTimeout: 5 * time.Second,
+					Protocols:         &protocols,
 				}
 			},
 		},
 		{
 			name: "http2-conn",
 			// Wraps net.Conn instances instead of using net/http middleware.
-			// Like above, uses H2C to force HTTP/2 w/out dealing with TLS.
+			// Like above, forces HTTP/2 w/out dealing with TLS.
 			setupClient: func(collector Collector) http.RoundTripper {
-				return &http2.Transport{
-					AllowHTTP: true,
-					DialTLSContext: func(ctx context.Context, network, addr string, _ *tls.Config) (net.Conn, error) {
+				var protocols http.Protocols
+				protocols.SetUnencryptedHTTP2(true)
+				return &http.Transport{
+					Protocols: &protocols,
+					DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
 						conn, err := (&net.Dialer{}).DialContext(ctx, network, addr)
 						if err != nil {
 							return nil, err
@@ -90,9 +88,12 @@ func TestTracer(t *testing.T) {
 				}
 			},
 			setupServer: func(collector Collector, listener net.Listener, handler http.HandlerFunc) (net.Listener, *http.Server) {
+				var protocols http.Protocols
+				protocols.SetUnencryptedHTTP2(true)
 				return TracingHTTP2Listener(listener, collector), &http.Server{
-					Handler:           h2c.NewHandler(handler, &http2.Server{}),
+					Handler:           handler,
 					ReadHeaderTimeout: 5 * time.Second,
+					Protocols:         &protocols,
 				}
 			},
 		},

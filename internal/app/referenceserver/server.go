@@ -39,8 +39,6 @@ import (
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 )
 
 // Run runs the server according to server config read from the 'in' reader.
@@ -333,19 +331,17 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 
 // newH2Server creates a new HTTP/2 server.
 func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
-	if tlsConf == nil {
-		handler = h2c.NewHandler(handler, &http2.Server{})
-	}
 	h2Server := &http.Server{
 		Addr:              listenAddr,
 		Handler:           handler,
 		TLSConfig:         tlsConf,
 		ReadHeaderTimeout: 5 * time.Second,
 		ErrorLog:          nopLogger(),
-		// There's no way to disable HTTP 1.1 support and *require* HTTP/2. So
-		// if the client says it supports HTTP/2, we rely on it negotiating
-		// that during ALPN of TLS handshake instead of HTTP 1.1. ¯\_(ツ)_/¯
 	}
+	var protocols http.Protocols
+	protocols.SetUnencryptedHTTP2(true)
+	protocols.SetHTTP2(true)
+	h2Server.Protocols = &protocols
 	lis, err := net.Listen("tcp", listenAddr)
 	if err != nil {
 		return nil, err
