@@ -30,8 +30,6 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/tracer"
 	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/encoding/gzip" // enables GZIP compression w/ gRPC
 )
@@ -151,9 +149,14 @@ func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Lis
 		grpcWebServer = tracer.TracingHandler(grpcWebServer, trace)
 	}
 
+	var protocols http.Protocols
+	// This is for the gRPC *Web* protocol, so it supports both HTTP 1 and 2.
+	protocols.SetHTTP1(true)
+	protocols.SetUnencryptedHTTP2(true)
 	httpServer := http.Server{
-		Handler:           h2c.NewHandler(grpcWebServer, &http2.Server{}),
+		Handler:           grpcWebServer,
 		ReadHeaderTimeout: 5 * time.Second,
+		Protocols:         &protocols,
 	}
 
 	var serveError error
