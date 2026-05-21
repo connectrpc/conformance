@@ -21,6 +21,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -48,6 +49,21 @@ const (
 	codecProto = "proto"
 	codecJSON  = "json"
 )
+
+// connectGetQueryParamRank is the recommended ordering of Connect-defined
+// query parameters in Unary-Get requests, as zero-based ranks. Clients should
+// emit parameters in this order to maximize cache hit rates on shared caches;
+// servers must accept any order. See the Query-Get rule in the Connect
+// protocol spec.
+//
+//nolint:gochecknoglobals // canonical lookup table, not mutable state
+var connectGetQueryParamRank = map[string]int{
+	"connect":     0,
+	"base64":      1,
+	"compression": 2,
+	"encoding":    3,
+	"message":     4,
+}
 
 type int32Enum interface {
 	~int32
@@ -93,6 +109,9 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		}
 		if protocol, ok := enumValue("X-Expect-Protocol", req.Header, conformancev1.Protocol(0), feedback); ok {
 			checkProtocol(protocol, req, feedback)
+			if protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
+				checkConnectGetQueryParamOrder(req, feedback)
+			}
 			if timeout, ok := extractTimeout(req.Header, protocol, feedback); ok {
 				// In reference mode, we *remove* the timeout in this middleware so that the server
 				// will NOT enforce it. That way, we can test that the client is actually enforcing it.
@@ -276,6 +295,35 @@ func checkCompression(expected conformancev1.Compression, req *http.Request, fee
 
 	if expect != actual {
 		feedback.Printf("expected compression %v; instead got %v", expect, actual)
+	}
+}
+
+// checkConnectGetQueryParamOrder verifies that a Connect Unary-Get request
+// orders its Connect-defined query parameters per the protocol recommendation.
+// Unknown parameters are ignored for ordering purposes.
+func checkConnectGetQueryParamOrder(req *http.Request, feedback *feedbackPrinter) {
+	if req.Method != http.MethodGet {
+		return
+	}
+	var actual []string
+	for pair := range strings.SplitSeq(req.URL.RawQuery, "&") {
+		if pair == "" {
+			continue
+		}
+		name, _, _ := strings.Cut(pair, "=")
+		// We could only test the ranks are monotically increasing, but we keep
+		// actual as a slice so that we can also print expected as a slice.
+		if _, ok := connectGetQueryParamRank[name]; ok {
+			actual = append(actual, name)
+		}
+	}
+	expected := slices.Clone(actual)
+	slices.SortStableFunc(expected, func(a, b string) int {
+		return connectGetQueryParamRank[a] - connectGetQueryParamRank[b]
+	})
+	if !slices.Equal(actual, expected) {
+		feedback.Printf("connect GET query parameters not in recommended order: got [%s]; expected [%s]",
+			strings.Join(actual, ", "), strings.Join(expected, ", "))
 	}
 }
 
