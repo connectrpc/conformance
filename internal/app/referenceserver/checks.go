@@ -299,32 +299,31 @@ func checkCompression(expected conformancev1.Compression, req *http.Request, fee
 }
 
 // checkConnectGetQueryParamOrder verifies that a Connect Unary-Get request
-// orders its Connect-defined query parameters per the protocol recommendation:
-// connect, base64, compression, encoding, message. Unknown parameters and any
-// non-Connect parameters are ignored for ordering purposes. This is a SHOULD
-// rule for clients (servers MUST accept any order), so it only runs for the
-// reference server's expected Connect protocol GET requests.
+// orders its Connect-defined query parameters per the protocol recommendation.
+// Unknown parameters are ignored for ordering purposes.
 func checkConnectGetQueryParamOrder(req *http.Request, feedback *feedbackPrinter) {
 	if req.Method != http.MethodGet {
 		return
 	}
-	var observed []string
+	var actual []string
 	for pair := range strings.SplitSeq(req.URL.RawQuery, "&") {
 		if pair == "" {
 			continue
 		}
 		name, _, _ := strings.Cut(pair, "=")
+		// We could only test the ranks are monotically increasing, but we keep
+		// actual as a slice so that we can also print expected as a slice.
 		if _, ok := connectGetQueryParamRank[name]; ok {
-			observed = append(observed, name)
+			actual = append(actual, name)
 		}
 	}
-	expected := slices.Clone(observed)
+	expected := slices.Clone(actual)
 	slices.SortStableFunc(expected, func(a, b string) int {
 		return connectGetQueryParamRank[a] - connectGetQueryParamRank[b]
 	})
-	if !slices.Equal(observed, expected) {
+	if !slices.Equal(actual, expected) {
 		feedback.Printf("connect GET query parameters not in recommended order: got [%s]; expected [%s]",
-			strings.Join(observed, ", "), strings.Join(expected, ", "))
+			strings.Join(actual, ", "), strings.Join(expected, ", "))
 	}
 }
 

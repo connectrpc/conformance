@@ -23,6 +23,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// TestCheckConnectGetQueryParamOrder tests the check itself.
 func TestCheckConnectGetQueryParamOrder(t *testing.T) {
 	t.Parallel()
 
