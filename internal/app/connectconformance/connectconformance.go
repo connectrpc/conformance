@@ -36,6 +36,13 @@ import (
 	"golang.org/x/sync/semaphore"
 )
 
+const (
+	referenceServerName     = "reference-server"
+	grpcReferenceServerName = "grpc-reference-server"
+	referenceClientName     = "reference-client"
+	grpcReferenceClientName = "grpc-reference-client"
+)
+
 // Flags are the config values for the test runner that may be provided via
 // command-line flags and arguments.
 type Flags struct {
@@ -280,10 +287,10 @@ func run( //nolint:gocyclo
 	if useReferenceClient {
 		clients = []processInfo{
 			{
-				name: "reference client",
+				name: referenceClientName,
 				start: runInProcess(
 					[]string{
-						"reference-client",
+						referenceClientName,
 						"-p", strconv.Itoa(int(flags.Parallelism)),
 					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
 						return referenceclient.RunInReferenceMode(ctx, args, inReader, outWriter, errWriter, trace)
@@ -292,10 +299,10 @@ func run( //nolint:gocyclo
 				isReferenceImpl: true,
 			},
 			{
-				name: "reference client (grpc)",
+				name: grpcReferenceClientName,
 				start: runInProcess(
 					[]string{
-						"grpc-reference-client",
+						grpcReferenceClientName,
 						"-p", strconv.Itoa(int(flags.Parallelism)),
 					}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
 						return grpcclient.RunWithTrace(ctx, args, inReader, outWriter, errWriter, trace)
@@ -325,10 +332,10 @@ func run( //nolint:gocyclo
 		if useReferenceServer {
 			servers = []processInfo{
 				{
-					name: "reference server",
+					name: referenceServerName,
 					start: runInProcess(
 						[]string{
-							"reference-server",
+							referenceServerName,
 							"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
 							"-bind", flags.ServerBind,
 							"-cert", flags.TLSCertFile,
@@ -340,10 +347,10 @@ func run( //nolint:gocyclo
 					isReferenceImpl: true,
 				},
 				{
-					name: "reference server (grpc)",
+					name: grpcReferenceServerName,
 					start: runInProcess(
 						[]string{
-							"grpc-reference-server",
+							grpcReferenceServerName,
 							"-port", strconv.FormatUint(uint64(flags.ServerPort), 10),
 							"-bind", flags.ServerBind,
 						}, func(ctx context.Context, args []string, inReader io.ReadCloser, outWriter, errWriter io.WriteCloser) error {
@@ -366,6 +373,7 @@ func run( //nolint:gocyclo
 			defer wg.Wait()
 			sema := semaphore.NewWeighted(int64(flags.MaxServers))
 
+			var svrIndex int
 			for _, serverInfo := range servers {
 				for _, svrInstance := range svrInstances {
 					testCases := testCaseLib.casesByServer[svrInstance]
@@ -374,6 +382,7 @@ func run( //nolint:gocyclo
 					if len(testCases) == 0 {
 						continue
 					}
+					svrIndex++
 
 					if err := sema.Acquire(ctx, 1); err != nil {
 						return err
@@ -398,18 +407,24 @@ func run( //nolint:gocyclo
 						case serverInfo.name != "":
 							with = serverInfo.name
 						}
-						logTestCaseInfo(with, svrInstance, len(testCases), logPrinter)
+						logTestCaseInfo(with, svrInstance, svrIndex, len(testCases), logPrinter)
 					}
 
+					var svrName string
+					if serverInfo.name != "" {
+						svrName = fmt.Sprintf("%s#%d", serverInfo.name, svrIndex)
+					}
 					wg.Add(1)
 					go func(ctx context.Context, clientInfo processInfo, serverInfo processInfo, svrInstance serverInstance) {
 						defer wg.Done()
 						defer sema.Release(1)
+
 						runTestCasesForServer(
 							ctx,
 							clientInfo.isReferenceImpl,
 							serverInfo.isReferenceImpl,
 							svrInstance,
+							svrName,
 							testCases,
 							serverCreds,
 							clientCreds,
@@ -463,7 +478,7 @@ func serverInstancesSlice(testCaseLib *testCaseLibrary, sorted bool) []serverIns
 	return svrInstances
 }
 
-func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logPrinter internal.Printer) {
+func logTestCaseInfo(with string, svrInstance serverInstance, svrIndex, numCases int, logPrinter internal.Printer) {
 	var tlsMode string
 	switch {
 	case !svrInstance.useTLS:
@@ -473,8 +488,8 @@ func logTestCaseInfo(with string, svrInstance serverInstance, numCases int, logP
 	default:
 		tlsMode = "true"
 	}
-	logPrinter.Printf("Running %d tests with %s for server config {%s, %s, TLS:%s}...",
-		numCases, with, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
+	logPrinter.Printf("Running %d tests with %s for server config #%d {%s, %s, TLS:%s}...",
+		numCases, with, svrIndex, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
 }
 
 func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev1.TestCase) (int, error) {

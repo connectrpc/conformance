@@ -54,6 +54,7 @@ func runTestCasesForServer(
 	isReferenceClient bool,
 	isReferenceServer bool,
 	meta serverInstance,
+	svrName string,
 	testCases []*conformancev1.TestCase,
 	serverCreds *conformancev1.TLSCreds,
 	clientCreds *conformancev1.TLSCreds,
@@ -103,7 +104,7 @@ func runTestCasesForServer(
 					}
 					if !isSideband {
 						// Was some other message printed to stderr. Propagate to our stderr so user can see it.
-						errPrinter.PrefixPrintf("referenceserver", "%s", origLine)
+						errPrinter.PrefixPrintf(svrName, "%s", origLine)
 					}
 				}
 				if err != nil {
