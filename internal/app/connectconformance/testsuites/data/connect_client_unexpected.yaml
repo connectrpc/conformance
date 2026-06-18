@@ -100,15 +100,70 @@ testCases:
                     payload:
                       binary_message:
                         "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+    # Per the gRPC status-code guidance, "error parsing returned status" maps
+    # to UNKNOWN: the HTTP body completed cleanly but the protocol-level
+    # terminus is missing.
     otherAllowedErrorCodes:
-      # The spec doesn't mandate a code: connect-go reports `internal`
-      # (unexpected EOF); other implementations report `unavailable` (treats
-      # mid-body truncation as a transport-level condition) or `unknown`.
-      - CODE_UNKNOWN
-      - CODE_UNAVAILABLE
+      # TODO: connect-go currently reports INTERNAL via the unexpected-EOF
+      # path; once it returns UNKNOWN this allowance can be removed.
+      - CODE_INTERNAL
     expectedResponse:
       error:
-        code: CODE_INTERNAL
+        code: CODE_UNKNOWN
+  - request:
+      testName: server-stream/no-end-stream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamResponse"
+    otherAllowedErrorCodes:
+      # TODO: see client-stream/no-end-stream above.
+      - CODE_INTERNAL
+    expectedResponse:
+      # The data message is well-formed and is yielded to the application
+      # before the missing-end-stream error fires on the next receive.
+      payloads:
+        - { }
+      error:
+        code: CODE_UNKNOWN
+  - request:
+      # Note there is no 'full-duplex' test since that is logically
+      # equivalent to this test and is therefore covered here.
+      testName: bidi-stream/half-duplex/no-end-stream
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamResponse"
+    otherAllowedErrorCodes:
+      # TODO: see client-stream/no-end-stream above.
+      - CODE_INTERNAL
+    expectedResponse:
+      payloads:
+        - { }
+      error:
+        code: CODE_UNKNOWN
 
   - request:
       testName: unexpected-content-type
