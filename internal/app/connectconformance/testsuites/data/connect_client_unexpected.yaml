@@ -100,16 +100,16 @@ testCases:
                     payload:
                       binary_message:
                         "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
-    # Per the gRPC status-code guidance, "error parsing returned status" maps
-    # to UNKNOWN: the HTTP body completed cleanly but the protocol-level
-    # terminus is missing.
+    # The HTTP body completed cleanly but the protocol-level terminus is
+    # missing. connect-go (and other gRPC implementations) classify this as
+    # a wire-level error and report INTERNAL, alongside cases such as a
+    # failed decompression or an unparseable response message. The spec does
+    # not mandate a code here, so UNKNOWN is also accepted.
     otherAllowedErrorCodes:
-      # TODO: connect-go currently reports INTERNAL via the unexpected-EOF
-      # path; once it returns UNKNOWN this allowance can be removed.
-      - CODE_INTERNAL
+      - CODE_UNKNOWN
     expectedResponse:
       error:
-        code: CODE_UNKNOWN
+        code: CODE_INTERNAL
   - request:
       testName: server-stream/no-end-stream
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -128,15 +128,14 @@ testCases:
                       binary_message:
                         "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamResponse"
     otherAllowedErrorCodes:
-      # TODO: see client-stream/no-end-stream above.
-      - CODE_INTERNAL
+      - CODE_UNKNOWN
     expectedResponse:
       # The data message is well-formed and is yielded to the application
       # before the missing-end-stream error fires on the next receive.
       payloads:
         - { }
       error:
-        code: CODE_UNKNOWN
+        code: CODE_INTERNAL
   - request:
       # Note there is no 'full-duplex' test since that is logically
       # equivalent to this test and is therefore covered here.
@@ -157,13 +156,12 @@ testCases:
                       binary_message:
                         "@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamResponse"
     otherAllowedErrorCodes:
-      # TODO: see client-stream/no-end-stream above.
-      - CODE_INTERNAL
+      - CODE_UNKNOWN
     expectedResponse:
       payloads:
         - { }
       error:
-        code: CODE_UNKNOWN
+        code: CODE_INTERNAL
 
   - request:
       testName: unexpected-content-type
