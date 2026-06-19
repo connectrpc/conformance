@@ -79,6 +79,89 @@ testCases:
     expectedResponse:
       error:
         code: CODE_UNIMPLEMENTED
+  - request:
+      # Streaming responses must end with an EndStreamResponse envelope.
+      # A response that delivers the data message and then closes the body
+      # without one is truncated, not complete, and clients should not report
+      # it as success-with-empty-trailers.
+      testName: client-stream/no-end-stream
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+    # The HTTP body completed cleanly but the protocol-level terminus is
+    # missing. connect-go (and other gRPC implementations) classify this as
+    # a wire-level error and report INTERNAL, alongside cases such as a
+    # failed decompression or an unparseable response message. The spec does
+    # not mandate a code here, so UNKNOWN is also accepted.
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: server-stream/no-end-stream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamResponse"
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      # The data message is well-formed and is yielded to the application
+      # before the missing-end-stream error fires on the next receive.
+      payloads:
+        - { }
+      error:
+        code: CODE_INTERNAL
+  - request:
+      # Note there is no 'full-duplex' test since that is logically
+      # equivalent to this test and is therefore covered here.
+      testName: bidi-stream/half-duplex/no-end-stream
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamResponse"
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      payloads:
+        - { }
+      error:
+        code: CODE_INTERNAL
 
   - request:
       testName: unexpected-content-type
