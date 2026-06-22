@@ -132,13 +132,25 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	case <-serveDone:
 		return serveError
 	case <-ctx.Done():
-		return server.GracefulShutdown(5 * time.Second)
+		ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
+		defer cancel()
+		if err := server.Shutdown(ctx); err != nil {
+			if errors.Is(err, context.DeadlineExceeded) {
+				// If it takes too long to shutdown gracefully, force it.
+				// TODO: Log an error about graceful shutdown taking longer than 5s?
+				_ = server.Close()
+			} else {
+				return fmt.Errorf("failed to gracefully shutdown HTTP server: %w", err)
+			}
+		}
+		return nil
 	}
 }
 
 type httpServer interface {
 	Serve() error
-	GracefulShutdown(time.Duration) error
+	Shutdown(context.Context) error
+	Close() error
 	Addr() string
 }
 
@@ -154,10 +166,12 @@ func (s *stdHTTPServer) Serve() error {
 	return s.svr.Serve(s.lis)
 }
 
-func (s *stdHTTPServer) GracefulShutdown(period time.Duration) error {
-	ctx, cancel := context.WithTimeout(context.Background(), period)
-	defer cancel()
+func (s *stdHTTPServer) Shutdown(ctx context.Context) error {
 	return s.svr.Shutdown(ctx)
+}
+
+func (s *stdHTTPServer) Close() error {
+	return s.svr.Close()
 }
 
 func (s *stdHTTPServer) Addr() string {
@@ -376,10 +390,11 @@ func (s *http3Server) Serve() error {
 	return s.svr.ServeListener(s.lis)
 }
 
-func (s *http3Server) GracefulShutdown(_ time.Duration) error {
-	// Note: http3.Server.CloseGracefully is not actually implemented!
-	// https://github.com/quic-go/quic-go/issues/153
-	// So we must use the non-graceful version :(
+func (s *http3Server) Shutdown(ctx context.Context) error {
+	return s.svr.Shutdown(ctx)
+}
+
+func (s *http3Server) Close() error {
 	return s.svr.Close()
 }
 

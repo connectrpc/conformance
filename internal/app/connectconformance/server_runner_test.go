@@ -266,6 +266,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 				!testCase.isReferenceServer,
 				testCase.isReferenceServer,
 				svrInstance,
+				referenceServerName,
 				testCaseData,
 				nil,
 				nil,
