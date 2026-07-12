@@ -126,6 +126,104 @@ testCases:
         code: CODE_UNIMPLEMENTED
 
   - request:
+      testName: unary/no-terminal-status
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse"
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  - request:
+      testName: server-stream/no-terminal-status
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamResponse"
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      payloads:
+        - { }
+      error:
+        code: CODE_INTERNAL
+
+  - request:
+      testName: client-stream/no-terminal-status
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamResponse"
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  - request:
+      # The raw-response harness drains the request stream before returning
+      # the crafted response, so this uses half-duplex bidi only.
+      testName: bidi-stream/half-duplex/no-terminal-status
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            rawResponse:
+              statusCode: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.BidiStreamResponse"
+    otherAllowedErrorCodes:
+      - CODE_UNKNOWN
+    expectedResponse:
+      payloads:
+        - { }
+      error:
+        code: CODE_INTERNAL
+
+  - request:
       testName: trailers-only/missing-status
       streamType: STREAM_TYPE_UNARY
       requestMessages:
