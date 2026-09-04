@@ -11,4 +11,4 @@ updates:
   - package-ecosystem: "npm"
     directory: "/testing/grpcwebclient"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
