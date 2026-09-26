@@ -430,12 +430,14 @@ func headerValsToString(vals []string) string {
 }
 
 // diffProtos returns a diff of expected and actual, or an empty string if
-// they're equal.
+// they're equal. It compares bytes fields with [bytes.Equal] instead of element
+// by element, which is slow for large payloads, but still reports a byte-level
+// diff of unequal ones.
 func diffProtos(expected, actual proto.Message) string {
 	if proto.Equal(expected, actual) {
 		return ""
 	}
-	return cmp.Diff(expected, actual, protocmp.Transform())
+	return cmp.Diff(expected, actual, protocmp.Transform(), cmp.Comparer(bytes.Equal))
 }
 
 func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_RequestInfo, verifyHeaders bool) multiErrors {
