@@ -27,13 +27,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var connectrpc_conformance_v1_client_compat_pb = require('../../../connectrpc/conformance/v1/client_compat_pb.js');
 goog.object.extend(proto, connectrpc_conformance_v1_client_compat_pb);
@@ -146,19 +140,19 @@ proto.connectrpc.conformance.v1.TestSuite.prototype.toObject = function(opt_incl
  */
 proto.connectrpc.conformance.v1.TestSuite.toObject = function(includeInstance, msg) {
   var f, obj = {
-    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    mode: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    testCasesList: jspb.Message.toObjectList(msg.getTestCasesList(),
+name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+mode: jspb.Message.getFieldWithDefault(msg, 2, 0),
+testCasesList: jspb.Message.toObjectList(msg.getTestCasesList(),
     proto.connectrpc.conformance.v1.TestCase.toObject, includeInstance),
-    relevantProtocolsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
-    relevantHttpVersionsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
-    relevantCodecsList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
-    relevantCompressionsList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
-    connectVersionMode: jspb.Message.getFieldWithDefault(msg, 8, 0),
-    reliesOnTls: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
-    reliesOnTlsClientCerts: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
-    reliesOnConnectGet: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
-    reliesOnMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 12, false)
+relevantProtocolsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
+relevantHttpVersionsList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
+relevantCodecsList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
+relevantCompressionsList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
+connectVersionMode: jspb.Message.getFieldWithDefault(msg, 8, 0),
+reliesOnTls: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
+reliesOnTlsClientCerts: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
+reliesOnConnectGet: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
+reliesOnMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 12, false)
   };
 
   if (includeInstance) {
@@ -171,7 +165,7 @@ proto.connectrpc.conformance.v1.TestSuite.toObject = function(includeInstance, m
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.TestSuite}
  */
 proto.connectrpc.conformance.v1.TestSuite.deserializeBinary = function(bytes) {
@@ -196,7 +190,7 @@ proto.connectrpc.conformance.v1.TestSuite.deserializeBinaryFromReader = function
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -209,28 +203,16 @@ proto.connectrpc.conformance.v1.TestSuite.deserializeBinaryFromReader = function
       msg.addTestCases(value);
       break;
     case 4:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Protocol>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addRelevantProtocols(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getRelevantProtocolsList());
       break;
     case 5:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.HTTPVersion>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addRelevantHttpVersions(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getRelevantHttpVersionsList());
       break;
     case 6:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Codec>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addRelevantCodecs(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getRelevantCodecsList());
       break;
     case 7:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Compression>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addRelevantCompressions(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getRelevantCompressionsList());
       break;
     case 8:
       var value = /** @type {!proto.connectrpc.conformance.v1.TestSuite.ConnectVersionMode} */ (reader.readEnum());
@@ -738,11 +720,11 @@ proto.connectrpc.conformance.v1.TestCase.prototype.toObject = function(opt_inclu
  */
 proto.connectrpc.conformance.v1.TestCase.toObject = function(includeInstance, msg) {
   var f, obj = {
-    request: (f = msg.getRequest()) && connectrpc_conformance_v1_client_compat_pb.ClientCompatRequest.toObject(includeInstance, f),
-    expandRequestsList: jspb.Message.toObjectList(msg.getExpandRequestsList(),
+request: (f = msg.getRequest()) && connectrpc_conformance_v1_client_compat_pb.ClientCompatRequest.toObject(includeInstance, f),
+expandRequestsList: jspb.Message.toObjectList(msg.getExpandRequestsList(),
     proto.connectrpc.conformance.v1.TestCase.ExpandedSize.toObject, includeInstance),
-    expectedResponse: (f = msg.getExpectedResponse()) && connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.toObject(includeInstance, f),
-    otherAllowedErrorCodesList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
+expectedResponse: (f = msg.getExpectedResponse()) && connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.toObject(includeInstance, f),
+otherAllowedErrorCodesList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -755,7 +737,7 @@ proto.connectrpc.conformance.v1.TestCase.toObject = function(includeInstance, ms
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.TestCase}
  */
 proto.connectrpc.conformance.v1.TestCase.deserializeBinary = function(bytes) {
@@ -795,10 +777,7 @@ proto.connectrpc.conformance.v1.TestCase.deserializeBinaryFromReader = function(
       msg.setExpectedResponse(value);
       break;
     case 4:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Code>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addOtherAllowedErrorCodes(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getOtherAllowedErrorCodesList());
       break;
     default:
       reader.skipField();
@@ -895,7 +874,7 @@ proto.connectrpc.conformance.v1.TestCase.ExpandedSize.prototype.toObject = funct
  */
 proto.connectrpc.conformance.v1.TestCase.ExpandedSize.toObject = function(includeInstance, msg) {
   var f, obj = {
-    sizeRelativeToLimit: jspb.Message.getFieldWithDefault(msg, 1, 0)
+sizeRelativeToLimit: (f = jspb.Message.getField(msg, 1)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -908,7 +887,7 @@ proto.connectrpc.conformance.v1.TestCase.ExpandedSize.toObject = function(includ
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.TestCase.ExpandedSize}
  */
 proto.connectrpc.conformance.v1.TestCase.ExpandedSize.deserializeBinary = function(bytes) {
