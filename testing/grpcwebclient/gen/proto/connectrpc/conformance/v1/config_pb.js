@@ -27,13 +27,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 goog.exportSymbol('proto.connectrpc.conformance.v1.Code', null, global);
 goog.exportSymbol('proto.connectrpc.conformance.v1.Codec', null, global);
@@ -168,10 +162,10 @@ proto.connectrpc.conformance.v1.Config.prototype.toObject = function(opt_include
  */
 proto.connectrpc.conformance.v1.Config.toObject = function(includeInstance, msg) {
   var f, obj = {
-    features: (f = msg.getFeatures()) && proto.connectrpc.conformance.v1.Features.toObject(includeInstance, f),
-    includeCasesList: jspb.Message.toObjectList(msg.getIncludeCasesList(),
+features: (f = msg.getFeatures()) && proto.connectrpc.conformance.v1.Features.toObject(includeInstance, f),
+includeCasesList: jspb.Message.toObjectList(msg.getIncludeCasesList(),
     proto.connectrpc.conformance.v1.ConfigCase.toObject, includeInstance),
-    excludeCasesList: jspb.Message.toObjectList(msg.getExcludeCasesList(),
+excludeCasesList: jspb.Message.toObjectList(msg.getExcludeCasesList(),
     proto.connectrpc.conformance.v1.ConfigCase.toObject, includeInstance)
   };
 
@@ -185,7 +179,7 @@ proto.connectrpc.conformance.v1.Config.toObject = function(includeInstance, msg)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.Config}
  */
 proto.connectrpc.conformance.v1.Config.deserializeBinary = function(bytes) {
@@ -432,18 +426,18 @@ proto.connectrpc.conformance.v1.Features.prototype.toObject = function(opt_inclu
  */
 proto.connectrpc.conformance.v1.Features.toObject = function(includeInstance, msg) {
   var f, obj = {
-    versionsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
-    protocolsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
-    codecsList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f,
-    compressionsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
-    streamTypesList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
-    supportsH2c: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-    supportsTls: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
-    supportsTlsClientCerts: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
-    supportsTrailers: jspb.Message.getBooleanFieldWithDefault(msg, 9, false),
-    supportsHalfDuplexBidiOverHttp1: jspb.Message.getBooleanFieldWithDefault(msg, 10, false),
-    supportsConnectGet: jspb.Message.getBooleanFieldWithDefault(msg, 11, false),
-    supportsMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 12, false)
+versionsList: (f = jspb.Message.getRepeatedField(msg, 1)) == null ? undefined : f,
+protocolsList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f,
+codecsList: (f = jspb.Message.getRepeatedField(msg, 3)) == null ? undefined : f,
+compressionsList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
+streamTypesList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f,
+supportsH2c: (f = jspb.Message.getBooleanField(msg, 6)) == null ? undefined : f,
+supportsTls: (f = jspb.Message.getBooleanField(msg, 7)) == null ? undefined : f,
+supportsTlsClientCerts: (f = jspb.Message.getBooleanField(msg, 8)) == null ? undefined : f,
+supportsTrailers: (f = jspb.Message.getBooleanField(msg, 9)) == null ? undefined : f,
+supportsHalfDuplexBidiOverHttp1: (f = jspb.Message.getBooleanField(msg, 10)) == null ? undefined : f,
+supportsConnectGet: (f = jspb.Message.getBooleanField(msg, 11)) == null ? undefined : f,
+supportsMessageReceiveLimit: (f = jspb.Message.getBooleanField(msg, 12)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -456,7 +450,7 @@ proto.connectrpc.conformance.v1.Features.toObject = function(includeInstance, ms
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.Features}
  */
 proto.connectrpc.conformance.v1.Features.deserializeBinary = function(bytes) {
@@ -481,34 +475,19 @@ proto.connectrpc.conformance.v1.Features.deserializeBinaryFromReader = function(
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.HTTPVersion>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addVersions(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getVersionsList());
       break;
     case 2:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Protocol>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addProtocols(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getProtocolsList());
       break;
     case 3:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Codec>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addCodecs(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getCodecsList());
       break;
     case 4:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.Compression>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addCompressions(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getCompressionsList());
       break;
     case 5:
-      var values = /** @type {!Array<!proto.connectrpc.conformance.v1.StreamType>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
-      for (var i = 0; i < values.length; i++) {
-        msg.addStreamTypes(values[i]);
-      }
+      reader.readPackableEnumInto(msg.getStreamTypesList());
       break;
     case 6:
       var value = /** @type {boolean} */ (reader.readBool());
@@ -1123,14 +1102,14 @@ proto.connectrpc.conformance.v1.ConfigCase.prototype.toObject = function(opt_inc
  */
 proto.connectrpc.conformance.v1.ConfigCase.toObject = function(includeInstance, msg) {
   var f, obj = {
-    version: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    protocol: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    codec: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    compression: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    streamType: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    useTls: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-    useTlsClientCerts: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
-    useMessageReceiveLimit: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
+version: jspb.Message.getFieldWithDefault(msg, 1, 0),
+protocol: jspb.Message.getFieldWithDefault(msg, 2, 0),
+codec: jspb.Message.getFieldWithDefault(msg, 3, 0),
+compression: jspb.Message.getFieldWithDefault(msg, 4, 0),
+streamType: jspb.Message.getFieldWithDefault(msg, 5, 0),
+useTls: (f = jspb.Message.getBooleanField(msg, 6)) == null ? undefined : f,
+useTlsClientCerts: (f = jspb.Message.getBooleanField(msg, 7)) == null ? undefined : f,
+useMessageReceiveLimit: (f = jspb.Message.getBooleanField(msg, 8)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1143,7 +1122,7 @@ proto.connectrpc.conformance.v1.ConfigCase.toObject = function(includeInstance, 
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ConfigCase}
  */
 proto.connectrpc.conformance.v1.ConfigCase.deserializeBinary = function(bytes) {
@@ -1517,8 +1496,8 @@ proto.connectrpc.conformance.v1.TLSCreds.prototype.toObject = function(opt_inclu
  */
 proto.connectrpc.conformance.v1.TLSCreds.toObject = function(includeInstance, msg) {
   var f, obj = {
-    cert: msg.getCert_asB64(),
-    key: msg.getKey_asB64()
+cert: msg.getCert_asB64(),
+key: msg.getKey_asB64()
   };
 
   if (includeInstance) {
@@ -1531,7 +1510,7 @@ proto.connectrpc.conformance.v1.TLSCreds.toObject = function(includeInstance, ms
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.TLSCreds}
  */
 proto.connectrpc.conformance.v1.TLSCreds.deserializeBinary = function(bytes) {
