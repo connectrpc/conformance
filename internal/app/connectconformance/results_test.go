@@ -25,7 +25,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/proto"
 )
 
 func TestResults_SetOutcome(t *testing.T) {
@@ -137,7 +136,7 @@ func TestResults_Assert(t *testing.T) {
 	payload2 := &conformancev1.ClientResponseResult{
 		Error: &conformancev1.Error{
 			Code:    conformancev1.Code_CODE_ABORTED,
-			Message: proto.String("oops"),
+			Message: new("oops"),
 		},
 	}
 	testCase2 := &conformancev1.TestCase{

@@ -1,60 +1,79 @@
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-  exhaustruct:
-    include:
-      # No zero values for param structs.
-      - 'github\.com/connectrpc/conformance\..*[pP]arams'
-  forbidigo:
-    forbid:
-      - '^fmt\.Print'
-      - '^log\.'
-      - '^print$'
-      - '^println$'
-      - '^panic$'
-  godox:
-    # TODO, OPT, etc. comments are fine to commit. Use FIXME comments for
-    # temporary hacks, and use godox to prevent committing them.
-    keywords: [FIXME]
-  varnamelen:
-    ignore-decls:
-      - T any
-      - i int
-      - wg sync.WaitGroup
-      - ok bool
-      - in io.Reader
+version: "2"
 linters:
-  enable-all: true
+  default: all
   disable:
     - cyclop            # covered by gocyclo
     - depguard          # unnecessary for small libraries
     - err113            # don't _always_ need to wrap errors
     - exhaustive        # lots of false positives when using default cases
-    - exportloopref     # deprecated in golangci-lint v1.60.2
+    - exhaustruct_v5    # ick, must specify all zero values in every struct literal? no.
+    - exhaustruct       # deprecated version of above check
     - funlen            # rely on code review to limit function length
     - gocognit          # dubious "cognitive overhead" quantification
-    - gofumpt           # prefer standard gofmt
-    - goimports         # rely on gci instead
+    - gomodguard        # deprecated since golangci-lint v2.12.0
     - inamedparam       # parameter type is often all that is needed for readability
     - ireturn           # "accept interfaces, return structs" isn't ironclad
     - lll               # don't want hard limits for line length
     - maintidx          # covered by gocyclo
     - mnd               # some unnamed constants are okay
     - nlreturn          # generous whitespace violates house style
+    - noinlineerr       # limiting scope of err variable is fine as long as assignment is concise
     - nonamedreturns    # named returns are fine; it's *bare* returns that are bad
     - protogetter       # too many false positives
     - testpackage       # internal tests are fine
     - wrapcheck         # don't _always_ need to wrap errors
     - wsl               # generous whitespace violates house style
-issues:
-  exclude-dirs-use-default: false
-  exclude:
-    # Don't ban use of fmt.Errorf to create new errors, but the remaining
-    # checks from err113 are useful.
-    - "do not define dynamic errors.*"
-    # LOTS of false positives for this gosec check
-    - "integer overflow conversion"
-  exclude-rules:
-    - path: cmd/.*/main.go
-      linters:
-        - forbidigo
+    - wsl_v5            # ditto
+  settings:
+    errcheck:
+      check-type-assertions: true
+    exhaustruct:
+      include:
+        # No zero values for param structs.
+        - github\.com/connectrpc/conformance\..*[pP]arams
+    forbidigo:
+      forbid:
+        - pattern: ^fmt\.Print
+        - pattern: ^log\.
+        - pattern: ^print$
+        - pattern: ^println$
+        - pattern: ^panic$
+    godox:
+      # TODO, OPT, etc. comments are fine to commit. Use FIXME comments for
+      # temporary hacks, and use godox to prevent committing them.
+      keywords: [FIXME]
+    varnamelen:
+      ignore-decls:
+        - T any
+        - i int
+        - wg sync.WaitGroup
+        - ok bool
+        - in io.Reader
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - forbidigo
+        path: cmd/.*/main.go
+      - path: (.+)\.go$
+        text: do not define dynamic errors.*
+      - path: (.+)\.go$
+        text: integer overflow conversion
+      - linters:
+          - goconst
+        path: (.+)_test\.go$
+      - linters:
+          - gosec
+        text: "G706:"
+        path: cmd\/(.+)\/main.go$
+formatters:
+  enable:
+    - gci
+    - gofmt
+  exclusions:
+    generated: lax

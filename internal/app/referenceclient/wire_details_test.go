@@ -914,8 +914,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 			examineWireDetails(ctx, printer)
 			// Check binary headers/trailers, too
 			if err != nil {
-				var connErr *connect.Error
-				if errors.As(err, &connErr) {
+				if connErr, ok := errors.AsType[*connect.Error](err); ok {
 					checkBinaryMetadata("metadata", internal.ConvertToProtoHeader(connErr.Meta()), printer)
 				}
 			} else {

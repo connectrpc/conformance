@@ -18,7 +18,7 @@ import (
 	"context"
 	"errors"
 	"io"
-	"math/rand"
+	"math/rand/v2"
 	"testing"
 
 	"connectrpc.com/conformance/internal"
@@ -183,6 +183,7 @@ func testClientProcessRand(_ context.Context, _ []string, in io.ReadCloser, out,
 	originalCases := make([]string, len(allCases))
 	copy(originalCases, allCases)
 	for {
+		//nolint:gosec // false positive; this does not require crypto/rand
 		rand.Shuffle(len(allCases), func(i, j int) {
 			allCases[i], allCases[j] = allCases[j], allCases[i]
 		})

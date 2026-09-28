@@ -104,9 +104,7 @@ func (r *testResults) fetchTrace(testCase string) {
 	if r.tracer == nil {
 		return
 	}
-	r.traceWaitGroup.Add(1)
-	go func() {
-		defer r.traceWaitGroup.Done()
+	r.traceWaitGroup.Go(func() {
 		ctx, cancel := context.WithTimeout(context.Background(), tracer.TraceTimeout)
 		defer cancel()
 		trace, err := r.tracer.Await(ctx, testCase)
@@ -125,7 +123,7 @@ func (r *testResults) fetchTrace(testCase string) {
 			r.traces = map[string]*tracer.Trace{}
 		}
 		r.traces[testCase] = trace
-	}()
+	})
 }
 
 // failedToStart marks all the given test cases with the given setup error.
@@ -269,10 +267,9 @@ func (r *testResults) report(printer internal.Printer) bool {
 		testCaseNames = append(testCaseNames, testCaseName)
 	}
 	var succeeded, failed, expectedFailures int
-	couldNotRun := r.totalTestCount - len(testCaseNames)
-	if couldNotRun < 0 {
-		couldNotRun = 0 // Possible in tests that don't bother configuring actual test count.
-	}
+	couldNotRun := max(r.totalTestCount-len(testCaseNames),
+		// Possible in tests that don't bother configuring actual test count.
+		0)
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
@@ -452,10 +449,7 @@ func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_Request
 				errs = append(errs, fmt.Errorf("server did not echo back a timeout but one was expected (%d ms)", expected.GetTimeoutMs()))
 			} else {
 				maxAllowed := expected.GetTimeoutMs()
-				minAllowed := maxAllowed - timeoutCheckGracePeriodMillis
-				if minAllowed < 0 {
-					minAllowed = 0
-				}
+				minAllowed := max(maxAllowed-timeoutCheckGracePeriodMillis, 0)
 				if actual.GetTimeoutMs() > maxAllowed || actual.GetTimeoutMs() < minAllowed {
 					errs = append(errs, fmt.Errorf("server echoed back a timeout (%d ms) that did not match expected (%d ms)", actual.GetTimeoutMs(), expected.GetTimeoutMs()))
 				}
@@ -538,10 +532,7 @@ func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev
 			len(actual.Details), len(expected.Details)))
 	}
 	// Check as many as we can
-	length := len(expected.Details)
-	if len(actual.Details) < length {
-		length = len(actual.Details)
-	}
+	length := min(len(actual.Details), len(expected.Details))
 	actualReqInfo := &conformancev1.ConformancePayload_RequestInfo{}
 	expectedReqInfo := &conformancev1.ConformancePayload_RequestInfo{}
 	for i := range length {

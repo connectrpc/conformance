@@ -98,7 +98,7 @@ type peekWriter struct {
 func (p *peekWriter) Write(data []byte) (int, error) {
 	n, err := p.w.Write(data)
 	if n > 0 {
-		p.last = data[n-1]
+		p.last = data[n-1] //nolint:gosec // false positive, Write won't return n out of range
 	}
 	return n, err
 }

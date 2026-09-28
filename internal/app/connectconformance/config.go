@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 
 	"buf.build/go/protoyaml"
 	"connectrpc.com/conformance/internal"
@@ -426,12 +427,10 @@ func checkForDeprecations(config *conformancev1.Config) {
 	warn := func() {
 		_, _ = fmt.Fprintln(os.Stderr, "WARNING: config includes reference to CODEC_TEXT which is deprecated and will be ignored. Please remove.")
 	}
-	for _, codec := range config.GetFeatures().GetCodecs() {
-		//nolint:staticcheck // staticcheck complains because this const is deprecated
-		if codec == conformancev1.Codec_CODEC_TEXT {
-			warn()
-			return
-		}
+	//nolint:staticcheck // staticcheck complains because this const is deprecated
+	if slices.Contains(config.GetFeatures().GetCodecs(), conformancev1.Codec_CODEC_TEXT) {
+		warn()
+		return
 	}
 	for _, include := range config.GetIncludeCases() {
 		//nolint:staticcheck // staticcheck complains because this const is deprecated
@@ -450,12 +449,7 @@ func checkForDeprecations(config *conformancev1.Config) {
 }
 
 func contains[T comparable, S ~[]T](slice S, find T) bool {
-	for _, elem := range slice {
-		if elem == find {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(slice, find)
 }
 
 func only[T comparable, S ~[]T](slice S, find T) bool {

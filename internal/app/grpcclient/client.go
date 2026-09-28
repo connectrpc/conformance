@@ -105,9 +105,7 @@ func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, ou
 			return *errPtr
 		}
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			defer sema.Release(1)
 
 			result, err := invoke(ctx, &req, trace)
@@ -139,7 +137,7 @@ func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, ou
 					failure.CompareAndSwap(nil, &err)
 				}
 			}()
-		}()
+		})
 	}
 }
 

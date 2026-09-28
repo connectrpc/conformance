@@ -162,7 +162,7 @@ func (t *tracingResponseWriter) WriteHeader(statusCode int) {
 	trailerHeaders := t.Header().Values("Trailer")
 	t.resp.Trailer = make(http.Header, len(trailerHeaders))
 	for _, trailerNames := range trailerHeaders {
-		for _, trailerName := range strings.Split(trailerNames, ",") {
+		for trailerName := range strings.SplitSeq(trailerNames, ",") {
 			trailerName = strings.TrimSpace(trailerName)
 			if trailerName == "" {
 				continue

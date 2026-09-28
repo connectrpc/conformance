@@ -383,11 +383,8 @@ func createRequestInfo(ctx context.Context, metadata metadata.MD, reqs []*anypb.
 
 	var timeoutMs *int64
 	if deadline, ok := ctx.Deadline(); ok {
-		timeout := time.Until(deadline)
-		if timeout < 0 {
-			timeout = 0
-		}
-		timeoutMs = proto.Int64(timeout.Milliseconds())
+		timeout := max(time.Until(deadline), 0)
+		timeoutMs = new(timeout.Milliseconds())
 	}
 
 	// Set all observed request headers and requests in the response payload

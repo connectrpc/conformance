@@ -85,7 +85,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 			ExpectedResponse: &conformancev1.ClientResponseResult{
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_ABORTED,
-					Message: proto.String("ruh roh"),
+					Message: new("ruh roh"),
 				},
 			},
 		},

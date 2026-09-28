@@ -173,10 +173,10 @@ type Envelope struct {
 // is recorded when the client sends the request or when the server
 // receives it. This is always the first event for an HTTP operation.
 type RequestStart struct {
+	eventOffset
+
 	Request    *http.Request
 	getHeaders func() http.Header
-
-	eventOffset
 }
 
 func (r *RequestStart) print(printer internal.Printer) {
@@ -199,6 +199,8 @@ func (r *RequestStart) print(printer internal.Printer) {
 // represents a full message (or incomplete, partial message if a full
 // message is not written or read).
 type RequestBodyData struct {
+	eventOffset
+
 	// For streaming protocols, each message is
 	// enveloped and this should be non-nil. It may
 	// be nil in a streaming protocol if an envelope
@@ -218,8 +220,6 @@ type RequestBodyData struct {
 	// in the stream should have an index of zero, and
 	// then one, etc.
 	MessageIndex int
-
-	eventOffset
 }
 
 func (r *RequestBodyData) print(printer internal.Printer) {
@@ -232,9 +232,9 @@ func (r *RequestBodyData) print(printer internal.Printer) {
 // io.EOF, Err will be nil. So a non-nil Err means an abnormal conclusion
 // to the operation. No more request events will appear after this.
 type RequestBodyEnd struct {
-	Err error
-
 	eventOffset
+
+	Err error
 }
 
 func (r *RequestBodyEnd) print(printer internal.Printer) {
@@ -249,9 +249,9 @@ func (r *RequestBodyEnd) print(printer internal.Printer) {
 // is recorded when the client receives the response headers or when the
 // server sends them. This will precede all other response events.
 type ResponseStart struct {
-	Response *http.Response
-
 	eventOffset
+
+	Response *http.Response
 }
 
 func (r *ResponseStart) print(printer internal.Printer) {
@@ -267,9 +267,9 @@ func (r *ResponseStart) print(printer internal.Printer) {
 // is recorded when the client receives an error instead of a response, like
 // due to a network error. No more events will appear after this.
 type ResponseError struct {
-	Err error
-
 	eventOffset
+
+	Err error
 }
 
 func (r *ResponseError) print(printer internal.Printer) {
@@ -281,6 +281,8 @@ func (r *ResponseError) print(printer internal.Printer) {
 // represents a full message (or incomplete, partial message if a full
 // message is not written or read).
 type ResponseBodyData struct {
+	eventOffset
+
 	// For streaming protocols, each message is
 	// enveloped and this should be non-nil. It may
 	// be nil in a streaming protocol if an envelope
@@ -300,8 +302,6 @@ type ResponseBodyData struct {
 	// in the stream should have an index of zero, and
 	// then one, etc.
 	MessageIndex int
-
-	eventOffset
 }
 
 func (r *ResponseBodyData) print(printer internal.Printer) {
@@ -313,14 +313,14 @@ func (r *ResponseBodyData) print(printer internal.Printer) {
 // of the operation's status and trailers that is part of the response
 // body.
 type ResponseBodyEndStream struct {
-	Content string
-
 	eventOffset
+
+	Content string
 }
 
 func (r *ResponseBodyEndStream) print(printer internal.Printer) {
-	lines := strings.Split(r.Content, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(r.Content, "\n")
+	for line := range lines {
 		line = strings.Trim(line, "\r")
 		printer.Printf("%s %11s   eos: %s", responsePrefix, "", line)
 	}
@@ -332,9 +332,9 @@ func (r *ResponseBodyEndStream) print(printer internal.Printer) {
 // will be nil. So a non-nil Err means an abnormal conclusion to the
 // operation. No more events will appear after this.
 type ResponseBodyEnd struct {
-	Err error
-
 	eventOffset
+
+	Err error
 }
 
 func (r *ResponseBodyEnd) print(printer internal.Printer) {

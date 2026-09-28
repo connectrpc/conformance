@@ -84,7 +84,8 @@ func RunWithTrace(ctx context.Context, args []string, inReader io.ReadCloser, ou
 
 	// Create a listener for the server so that we are able to obtain
 	// the IP and port for publishing on the out writer
-	listener, err := net.Listen("tcp", net.JoinHostPort(*host, strconv.Itoa(*port)))
+	listenCfg := net.ListenConfig{}
+	listener, err := listenCfg.Listen(ctx, "tcp", net.JoinHostPort(*host, strconv.Itoa(*port)))
 	if err != nil {
 		return err
 	}
