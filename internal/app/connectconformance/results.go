@@ -429,6 +429,18 @@ func headerValsToString(vals []string) string {
 	return buf.String()
 }
 
+// diffProtos returns a diff of expected and actual, or an empty string if
+// they're equal.
+func diffProtos(expected, actual proto.Message) string {
+	if proto.Equal(expected, actual) {
+		return ""
+	}
+	// Add comparer for []byte since otherwise go-cmp uses reflection to compare each element one-by-one
+	// which is incredibly slow and unnecessary.
+	// https://github.com/google/go-cmp/issues/353#issuecomment-1936533521
+	return cmp.Diff(expected, actual, protocmp.Transform(), cmp.Comparer(bytes.Equal))
+}
+
 func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_RequestInfo, verifyHeaders bool) multiErrors {
 	var errs multiErrors
 	// If verifyHeaders is true, then verify headers, timeout, and query params. This is only needed when verifying
@@ -472,8 +484,7 @@ func checkRequestInfo(expected, actual *conformancev1.ConformancePayload_Request
 			errs = append(errs, fmt.Errorf("request #%d: failed to unmarshal expected message: %w", reqNum, err))
 			continue
 		}
-		diff := cmp.Diff(expectedMsg, actualMsg, protocmp.Transform())
-		if diff != "" {
+		if diff := diffProtos(expectedMsg, actualMsg); diff != "" {
 			errs = append(errs, fmt.Errorf("request #%d: did not survive round-trip: - wanted, + got\n%s", reqNum, diff))
 		}
 	}
@@ -553,11 +564,9 @@ func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev
 				continue
 			}
 			errs = append(errs, checkRequestInfo(expectedReqInfo, actualReqInfo, true)...)
-		} else {
-			if diff := cmp.Diff(expectedDetails, actualDetails, protocmp.Transform()); diff != "" {
-				errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",
-					i+1, diff))
-			}
+		} else if diff := diffProtos(expectedDetails, actualDetails); diff != "" {
+			errs = append(errs, fmt.Errorf("actual error detail #%d does not match expected error detail: - wanted, + got\n%s",
+				i+1, diff))
 		}
 	}
 	return errs
