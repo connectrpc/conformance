@@ -27,13 +27,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var connectrpc_conformance_v1_config_pb = require('../../../connectrpc/conformance/v1/config_pb.js');
 goog.object.extend(proto, connectrpc_conformance_v1_config_pb);
@@ -218,28 +212,28 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.toObject = functio
  */
 proto.connectrpc.conformance.v1.ClientCompatRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    testName: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    httpVersion: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    protocol: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    codec: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    compression: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    host: jspb.Message.getFieldWithDefault(msg, 6, ""),
-    port: jspb.Message.getFieldWithDefault(msg, 7, 0),
-    serverTlsCert: msg.getServerTlsCert_asB64(),
-    clientTlsCreds: (f = msg.getClientTlsCreds()) && connectrpc_conformance_v1_config_pb.TLSCreds.toObject(includeInstance, f),
-    messageReceiveLimit: jspb.Message.getFieldWithDefault(msg, 10, 0),
-    service: jspb.Message.getFieldWithDefault(msg, 11, ""),
-    method: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    streamType: jspb.Message.getFieldWithDefault(msg, 13, 0),
-    useGetHttpMethod: jspb.Message.getBooleanFieldWithDefault(msg, 14, false),
-    requestHeadersList: jspb.Message.toObjectList(msg.getRequestHeadersList(),
+testName: jspb.Message.getFieldWithDefault(msg, 1, ""),
+httpVersion: jspb.Message.getFieldWithDefault(msg, 2, 0),
+protocol: jspb.Message.getFieldWithDefault(msg, 3, 0),
+codec: jspb.Message.getFieldWithDefault(msg, 4, 0),
+compression: jspb.Message.getFieldWithDefault(msg, 5, 0),
+host: jspb.Message.getFieldWithDefault(msg, 6, ""),
+port: jspb.Message.getFieldWithDefault(msg, 7, 0),
+serverTlsCert: msg.getServerTlsCert_asB64(),
+clientTlsCreds: (f = msg.getClientTlsCreds()) && connectrpc_conformance_v1_config_pb.TLSCreds.toObject(includeInstance, f),
+messageReceiveLimit: jspb.Message.getFieldWithDefault(msg, 10, 0),
+service: (f = jspb.Message.getField(msg, 11)) == null ? undefined : f,
+method: (f = jspb.Message.getField(msg, 12)) == null ? undefined : f,
+streamType: jspb.Message.getFieldWithDefault(msg, 13, 0),
+useGetHttpMethod: jspb.Message.getBooleanFieldWithDefault(msg, 14, false),
+requestHeadersList: jspb.Message.toObjectList(msg.getRequestHeadersList(),
     connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
-    requestMessagesList: jspb.Message.toObjectList(msg.getRequestMessagesList(),
+requestMessagesList: jspb.Message.toObjectList(msg.getRequestMessagesList(),
     google_protobuf_any_pb.Any.toObject, includeInstance),
-    timeoutMs: jspb.Message.getFieldWithDefault(msg, 17, 0),
-    requestDelayMs: jspb.Message.getFieldWithDefault(msg, 18, 0),
-    cancel: (f = msg.getCancel()) && proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.toObject(includeInstance, f),
-    rawRequest: (f = msg.getRawRequest()) && connectrpc_conformance_v1_service_pb.RawHTTPRequest.toObject(includeInstance, f)
+timeoutMs: (f = jspb.Message.getField(msg, 17)) == null ? undefined : f,
+requestDelayMs: jspb.Message.getFieldWithDefault(msg, 18, 0),
+cancel: (f = msg.getCancel()) && proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.toObject(includeInstance, f),
+rawRequest: (f = msg.getRawRequest()) && connectrpc_conformance_v1_service_pb.RawHTTPRequest.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -252,7 +246,7 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.toObject = function(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest}
  */
 proto.connectrpc.conformance.v1.ClientCompatRequest.deserializeBinary = function(bytes) {
@@ -277,7 +271,7 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.deserializeBinaryFromReader 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTestName(value);
       break;
     case 2:
@@ -297,7 +291,7 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.deserializeBinaryFromReader 
       msg.setCompression(value);
       break;
     case 6:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setHost(value);
       break;
     case 7:
@@ -318,11 +312,11 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.deserializeBinaryFromReader 
       msg.setMessageReceiveLimit(value);
       break;
     case 11:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setService(value);
       break;
     case 12:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMethod(value);
       break;
     case 13:
@@ -597,9 +591,9 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.prototype.toObject = 
  */
 proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.toObject = function(includeInstance, msg) {
   var f, obj = {
-    beforeCloseSend: (f = msg.getBeforeCloseSend()) && google_protobuf_empty_pb.Empty.toObject(includeInstance, f),
-    afterCloseSendMs: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    afterNumResponses: jspb.Message.getFieldWithDefault(msg, 3, 0)
+beforeCloseSend: (f = msg.getBeforeCloseSend()) && google_protobuf_empty_pb.Empty.toObject(includeInstance, f),
+afterCloseSendMs: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
+afterNumResponses: (f = jspb.Message.getField(msg, 3)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -612,7 +606,7 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.toObject = function(i
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel}
  */
 proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.deserializeBinary = function(bytes) {
@@ -1405,9 +1399,9 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.prototype.toObject = functi
  */
 proto.connectrpc.conformance.v1.ClientCompatResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    testName: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    response: (f = msg.getResponse()) && proto.connectrpc.conformance.v1.ClientResponseResult.toObject(includeInstance, f),
-    error: (f = msg.getError()) && proto.connectrpc.conformance.v1.ClientErrorResult.toObject(includeInstance, f)
+testName: jspb.Message.getFieldWithDefault(msg, 1, ""),
+response: (f = msg.getResponse()) && proto.connectrpc.conformance.v1.ClientResponseResult.toObject(includeInstance, f),
+error: (f = msg.getError()) && proto.connectrpc.conformance.v1.ClientErrorResult.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1420,7 +1414,7 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.toObject = function(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientCompatResponse}
  */
 proto.connectrpc.conformance.v1.ClientCompatResponse.deserializeBinary = function(bytes) {
@@ -1445,7 +1439,7 @@ proto.connectrpc.conformance.v1.ClientCompatResponse.deserializeBinaryFromReader
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setTestName(value);
       break;
     case 2:
@@ -1644,16 +1638,16 @@ proto.connectrpc.conformance.v1.ClientResponseResult.prototype.toObject = functi
  */
 proto.connectrpc.conformance.v1.ClientResponseResult.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseHeadersList: jspb.Message.toObjectList(msg.getResponseHeadersList(),
+responseHeadersList: jspb.Message.toObjectList(msg.getResponseHeadersList(),
     connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
-    payloadsList: jspb.Message.toObjectList(msg.getPayloadsList(),
+payloadsList: jspb.Message.toObjectList(msg.getPayloadsList(),
     connectrpc_conformance_v1_service_pb.ConformancePayload.toObject, includeInstance),
-    error: (f = msg.getError()) && connectrpc_conformance_v1_service_pb.Error.toObject(includeInstance, f),
-    responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
+error: (f = msg.getError()) && connectrpc_conformance_v1_service_pb.Error.toObject(includeInstance, f),
+responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
     connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
-    numUnsentRequests: jspb.Message.getFieldWithDefault(msg, 5, 0),
-    httpStatusCode: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    feedbackList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
+numUnsentRequests: jspb.Message.getFieldWithDefault(msg, 5, 0),
+httpStatusCode: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
+feedbackList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1666,7 +1660,7 @@ proto.connectrpc.conformance.v1.ClientResponseResult.toObject = function(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientResponseResult}
  */
 proto.connectrpc.conformance.v1.ClientResponseResult.deserializeBinary = function(bytes) {
@@ -1719,7 +1713,7 @@ proto.connectrpc.conformance.v1.ClientResponseResult.deserializeBinaryFromReader
       msg.setHttpStatusCode(value);
       break;
     case 7:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addFeedback(value);
       break;
     default:
@@ -2081,7 +2075,7 @@ proto.connectrpc.conformance.v1.ClientErrorResult.prototype.toObject = function(
  */
 proto.connectrpc.conformance.v1.ClientErrorResult.toObject = function(includeInstance, msg) {
   var f, obj = {
-    message: jspb.Message.getFieldWithDefault(msg, 1, "")
+message: jspb.Message.getFieldWithDefault(msg, 1, "")
   };
 
   if (includeInstance) {
@@ -2094,7 +2088,7 @@ proto.connectrpc.conformance.v1.ClientErrorResult.toObject = function(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientErrorResult}
  */
 proto.connectrpc.conformance.v1.ClientErrorResult.deserializeBinary = function(bytes) {
@@ -2119,7 +2113,7 @@ proto.connectrpc.conformance.v1.ClientErrorResult.deserializeBinaryFromReader = 
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     default:
@@ -2218,11 +2212,11 @@ proto.connectrpc.conformance.v1.WireDetails.prototype.toObject = function(opt_in
  */
 proto.connectrpc.conformance.v1.WireDetails.toObject = function(includeInstance, msg) {
   var f, obj = {
-    actualStatusCode: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    connectErrorRaw: (f = msg.getConnectErrorRaw()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
-    actualHttpTrailersList: jspb.Message.toObjectList(msg.getActualHttpTrailersList(),
+actualStatusCode: jspb.Message.getFieldWithDefault(msg, 1, 0),
+connectErrorRaw: (f = msg.getConnectErrorRaw()) && google_protobuf_struct_pb.Struct.toObject(includeInstance, f),
+actualHttpTrailersList: jspb.Message.toObjectList(msg.getActualHttpTrailersList(),
     connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
-    actualGrpcwebTrailers: jspb.Message.getFieldWithDefault(msg, 4, "")
+actualGrpcwebTrailers: (f = jspb.Message.getField(msg, 4)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -2235,7 +2229,7 @@ proto.connectrpc.conformance.v1.WireDetails.toObject = function(includeInstance,
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.WireDetails}
  */
 proto.connectrpc.conformance.v1.WireDetails.deserializeBinary = function(bytes) {
@@ -2274,7 +2268,7 @@ proto.connectrpc.conformance.v1.WireDetails.deserializeBinaryFromReader = functi
       msg.addActualHttpTrailers(value);
       break;
     case 4:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setActualGrpcwebTrailers(value);
       break;
     default:

@@ -18,6 +18,6 @@ plugins:
   - remote: buf.build/grpc/web:v1.5.0
     out: testing/grpcwebclient/gen/proto
     opt: import_style=typescript,mode=grpcweb
-  - remote: buf.build/protocolbuffers/js:v3.21.2
+  - remote: buf.build/protocolbuffers/js:v4.0.3
     out: testing/grpcwebclient/gen/proto
     opt: import_style=commonjs,binary

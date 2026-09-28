@@ -27,13 +27,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global =
-    (typeof globalThis !== 'undefined' && globalThis) ||
-    (typeof window !== 'undefined' && window) ||
-    (typeof global !== 'undefined' && global) ||
-    (typeof self !== 'undefined' && self) ||
-    (function () { return this; }).call(null) ||
-    Function('return this')();
+var global = globalThis;
 
 var connectrpc_conformance_v1_config_pb = require('../../../connectrpc/conformance/v1/config_pb.js');
 goog.object.extend(proto, connectrpc_conformance_v1_config_pb);
@@ -658,14 +652,14 @@ proto.connectrpc.conformance.v1.UnaryResponseDefinition.prototype.toObject = fun
  */
 proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseHeadersList: jspb.Message.toObjectList(msg.getResponseHeadersList(),
+responseHeadersList: jspb.Message.toObjectList(msg.getResponseHeadersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    responseData: msg.getResponseData_asB64(),
-    error: (f = msg.getError()) && proto.connectrpc.conformance.v1.Error.toObject(includeInstance, f),
-    responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
+responseData: msg.getResponseData_asB64(),
+error: (f = msg.getError()) && proto.connectrpc.conformance.v1.Error.toObject(includeInstance, f),
+responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    responseDelayMs: jspb.Message.getFieldWithDefault(msg, 6, 0),
-    rawResponse: (f = msg.getRawResponse()) && proto.connectrpc.conformance.v1.RawHTTPResponse.toObject(includeInstance, f)
+responseDelayMs: jspb.Message.getFieldWithDefault(msg, 6, 0),
+rawResponse: (f = msg.getRawResponse()) && proto.connectrpc.conformance.v1.RawHTTPResponse.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -678,7 +672,7 @@ proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject = function(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.UnaryResponseDefinition}
  */
 proto.connectrpc.conformance.v1.UnaryResponseDefinition.deserializeBinary = function(bytes) {
@@ -1075,14 +1069,14 @@ proto.connectrpc.conformance.v1.StreamResponseDefinition.prototype.toObject = fu
  */
 proto.connectrpc.conformance.v1.StreamResponseDefinition.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseHeadersList: jspb.Message.toObjectList(msg.getResponseHeadersList(),
+responseHeadersList: jspb.Message.toObjectList(msg.getResponseHeadersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    responseDataList: msg.getResponseDataList_asB64(),
-    responseDelayMs: jspb.Message.getFieldWithDefault(msg, 3, 0),
-    error: (f = msg.getError()) && proto.connectrpc.conformance.v1.Error.toObject(includeInstance, f),
-    responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
+responseDataList: msg.getResponseDataList_asB64(),
+responseDelayMs: jspb.Message.getFieldWithDefault(msg, 3, 0),
+error: (f = msg.getError()) && proto.connectrpc.conformance.v1.Error.toObject(includeInstance, f),
+responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    rawResponse: (f = msg.getRawResponse()) && proto.connectrpc.conformance.v1.RawHTTPResponse.toObject(includeInstance, f)
+rawResponse: (f = msg.getRawResponse()) && proto.connectrpc.conformance.v1.RawHTTPResponse.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1095,7 +1089,7 @@ proto.connectrpc.conformance.v1.StreamResponseDefinition.toObject = function(inc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.StreamResponseDefinition}
  */
 proto.connectrpc.conformance.v1.StreamResponseDefinition.deserializeBinary = function(bytes) {
@@ -1486,8 +1480,8 @@ proto.connectrpc.conformance.v1.UnaryRequest.prototype.toObject = function(opt_i
  */
 proto.connectrpc.conformance.v1.UnaryRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject(includeInstance, f),
-    requestData: msg.getRequestData_asB64()
+responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject(includeInstance, f),
+requestData: msg.getRequestData_asB64()
   };
 
   if (includeInstance) {
@@ -1500,7 +1494,7 @@ proto.connectrpc.conformance.v1.UnaryRequest.toObject = function(includeInstance
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.UnaryRequest}
  */
 proto.connectrpc.conformance.v1.UnaryRequest.deserializeBinary = function(bytes) {
@@ -1691,7 +1685,7 @@ proto.connectrpc.conformance.v1.UnaryResponse.prototype.toObject = function(opt_
  */
 proto.connectrpc.conformance.v1.UnaryResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
+payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -1704,7 +1698,7 @@ proto.connectrpc.conformance.v1.UnaryResponse.toObject = function(includeInstanc
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.UnaryResponse}
  */
 proto.connectrpc.conformance.v1.UnaryResponse.deserializeBinary = function(bytes) {
@@ -1842,8 +1836,8 @@ proto.connectrpc.conformance.v1.IdempotentUnaryRequest.prototype.toObject = func
  */
 proto.connectrpc.conformance.v1.IdempotentUnaryRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject(includeInstance, f),
-    requestData: msg.getRequestData_asB64()
+responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject(includeInstance, f),
+requestData: msg.getRequestData_asB64()
   };
 
   if (includeInstance) {
@@ -1856,7 +1850,7 @@ proto.connectrpc.conformance.v1.IdempotentUnaryRequest.toObject = function(inclu
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.IdempotentUnaryRequest}
  */
 proto.connectrpc.conformance.v1.IdempotentUnaryRequest.deserializeBinary = function(bytes) {
@@ -2047,7 +2041,7 @@ proto.connectrpc.conformance.v1.IdempotentUnaryResponse.prototype.toObject = fun
  */
 proto.connectrpc.conformance.v1.IdempotentUnaryResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
+payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2060,7 +2054,7 @@ proto.connectrpc.conformance.v1.IdempotentUnaryResponse.toObject = function(incl
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.IdempotentUnaryResponse}
  */
 proto.connectrpc.conformance.v1.IdempotentUnaryResponse.deserializeBinary = function(bytes) {
@@ -2198,8 +2192,8 @@ proto.connectrpc.conformance.v1.ServerStreamRequest.prototype.toObject = functio
  */
 proto.connectrpc.conformance.v1.ServerStreamRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.StreamResponseDefinition.toObject(includeInstance, f),
-    requestData: msg.getRequestData_asB64()
+responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.StreamResponseDefinition.toObject(includeInstance, f),
+requestData: msg.getRequestData_asB64()
   };
 
   if (includeInstance) {
@@ -2212,7 +2206,7 @@ proto.connectrpc.conformance.v1.ServerStreamRequest.toObject = function(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ServerStreamRequest}
  */
 proto.connectrpc.conformance.v1.ServerStreamRequest.deserializeBinary = function(bytes) {
@@ -2403,7 +2397,7 @@ proto.connectrpc.conformance.v1.ServerStreamResponse.prototype.toObject = functi
  */
 proto.connectrpc.conformance.v1.ServerStreamResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
+payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2416,7 +2410,7 @@ proto.connectrpc.conformance.v1.ServerStreamResponse.toObject = function(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ServerStreamResponse}
  */
 proto.connectrpc.conformance.v1.ServerStreamResponse.deserializeBinary = function(bytes) {
@@ -2554,8 +2548,8 @@ proto.connectrpc.conformance.v1.ClientStreamRequest.prototype.toObject = functio
  */
 proto.connectrpc.conformance.v1.ClientStreamRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject(includeInstance, f),
-    requestData: msg.getRequestData_asB64()
+responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.UnaryResponseDefinition.toObject(includeInstance, f),
+requestData: msg.getRequestData_asB64()
   };
 
   if (includeInstance) {
@@ -2568,7 +2562,7 @@ proto.connectrpc.conformance.v1.ClientStreamRequest.toObject = function(includeI
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientStreamRequest}
  */
 proto.connectrpc.conformance.v1.ClientStreamRequest.deserializeBinary = function(bytes) {
@@ -2759,7 +2753,7 @@ proto.connectrpc.conformance.v1.ClientStreamResponse.prototype.toObject = functi
  */
 proto.connectrpc.conformance.v1.ClientStreamResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
+payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -2772,7 +2766,7 @@ proto.connectrpc.conformance.v1.ClientStreamResponse.toObject = function(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ClientStreamResponse}
  */
 proto.connectrpc.conformance.v1.ClientStreamResponse.deserializeBinary = function(bytes) {
@@ -2910,9 +2904,9 @@ proto.connectrpc.conformance.v1.BidiStreamRequest.prototype.toObject = function(
  */
 proto.connectrpc.conformance.v1.BidiStreamRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.StreamResponseDefinition.toObject(includeInstance, f),
-    fullDuplex: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
-    requestData: msg.getRequestData_asB64()
+responseDefinition: (f = msg.getResponseDefinition()) && proto.connectrpc.conformance.v1.StreamResponseDefinition.toObject(includeInstance, f),
+fullDuplex: jspb.Message.getBooleanFieldWithDefault(msg, 2, false),
+requestData: msg.getRequestData_asB64()
   };
 
   if (includeInstance) {
@@ -2925,7 +2919,7 @@ proto.connectrpc.conformance.v1.BidiStreamRequest.toObject = function(includeIns
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.BidiStreamRequest}
  */
 proto.connectrpc.conformance.v1.BidiStreamRequest.deserializeBinary = function(bytes) {
@@ -3145,7 +3139,7 @@ proto.connectrpc.conformance.v1.BidiStreamResponse.prototype.toObject = function
  */
 proto.connectrpc.conformance.v1.BidiStreamResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
+payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.ConformancePayload.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3158,7 +3152,7 @@ proto.connectrpc.conformance.v1.BidiStreamResponse.toObject = function(includeIn
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.BidiStreamResponse}
  */
 proto.connectrpc.conformance.v1.BidiStreamResponse.deserializeBinary = function(bytes) {
@@ -3309,7 +3303,7 @@ proto.connectrpc.conformance.v1.UnimplementedRequest.toObject = function(include
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.UnimplementedRequest}
  */
 proto.connectrpc.conformance.v1.UnimplementedRequest.deserializeBinary = function(bytes) {
@@ -3410,7 +3404,7 @@ proto.connectrpc.conformance.v1.UnimplementedResponse.toObject = function(includ
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.UnimplementedResponse}
  */
 proto.connectrpc.conformance.v1.UnimplementedResponse.deserializeBinary = function(bytes) {
@@ -3498,8 +3492,8 @@ proto.connectrpc.conformance.v1.ConformancePayload.prototype.toObject = function
  */
 proto.connectrpc.conformance.v1.ConformancePayload.toObject = function(includeInstance, msg) {
   var f, obj = {
-    data: msg.getData_asB64(),
-    requestInfo: (f = msg.getRequestInfo()) && proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo.toObject(includeInstance, f)
+data: msg.getData_asB64(),
+requestInfo: (f = msg.getRequestInfo()) && proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3512,7 +3506,7 @@ proto.connectrpc.conformance.v1.ConformancePayload.toObject = function(includeIn
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ConformancePayload}
  */
 proto.connectrpc.conformance.v1.ConformancePayload.deserializeBinary = function(bytes) {
@@ -3631,12 +3625,12 @@ proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo.prototype.toObjec
  */
 proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
-    requestHeadersList: jspb.Message.toObjectList(msg.getRequestHeadersList(),
+requestHeadersList: jspb.Message.toObjectList(msg.getRequestHeadersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    timeoutMs: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    requestsList: jspb.Message.toObjectList(msg.getRequestsList(),
+timeoutMs: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
+requestsList: jspb.Message.toObjectList(msg.getRequestsList(),
     google_protobuf_any_pb.Any.toObject, includeInstance),
-    connectGetInfo: (f = msg.getConnectGetInfo()) && proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo.toObject(includeInstance, f)
+connectGetInfo: (f = msg.getConnectGetInfo()) && proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -3649,7 +3643,7 @@ proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo.toObject = functi
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo}
  */
 proto.connectrpc.conformance.v1.ConformancePayload.RequestInfo.deserializeBinary = function(bytes) {
@@ -3943,7 +3937,7 @@ proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo.prototype.toOb
  */
 proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo.toObject = function(includeInstance, msg) {
   var f, obj = {
-    queryParamsList: jspb.Message.toObjectList(msg.getQueryParamsList(),
+queryParamsList: jspb.Message.toObjectList(msg.getQueryParamsList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance)
   };
 
@@ -3957,7 +3951,7 @@ proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo.toObject = fun
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo}
  */
 proto.connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo.deserializeBinary = function(bytes) {
@@ -4182,9 +4176,9 @@ proto.connectrpc.conformance.v1.Error.prototype.toObject = function(opt_includeI
  */
 proto.connectrpc.conformance.v1.Error.toObject = function(includeInstance, msg) {
   var f, obj = {
-    code: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    message: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    detailsList: jspb.Message.toObjectList(msg.getDetailsList(),
+code: jspb.Message.getFieldWithDefault(msg, 1, 0),
+message: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
+detailsList: jspb.Message.toObjectList(msg.getDetailsList(),
     google_protobuf_any_pb.Any.toObject, includeInstance)
   };
 
@@ -4198,7 +4192,7 @@ proto.connectrpc.conformance.v1.Error.toObject = function(includeInstance, msg) 
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.Error}
  */
 proto.connectrpc.conformance.v1.Error.deserializeBinary = function(bytes) {
@@ -4227,7 +4221,7 @@ proto.connectrpc.conformance.v1.Error.deserializeBinaryFromReader = function(msg
       msg.setCode(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setMessage(value);
       break;
     case 3:
@@ -4420,8 +4414,8 @@ proto.connectrpc.conformance.v1.Header.prototype.toObject = function(opt_include
  */
 proto.connectrpc.conformance.v1.Header.toObject = function(includeInstance, msg) {
   var f, obj = {
-    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    valueList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
+name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+valueList: (f = jspb.Message.getRepeatedField(msg, 2)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -4434,7 +4428,7 @@ proto.connectrpc.conformance.v1.Header.toObject = function(includeInstance, msg)
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.Header}
  */
 proto.connectrpc.conformance.v1.Header.deserializeBinary = function(bytes) {
@@ -4459,11 +4453,11 @@ proto.connectrpc.conformance.v1.Header.deserializeBinaryFromReader = function(ms
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addValue(value);
       break;
     default:
@@ -4632,16 +4626,16 @@ proto.connectrpc.conformance.v1.RawHTTPRequest.prototype.toObject = function(opt
  */
 proto.connectrpc.conformance.v1.RawHTTPRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    verb: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    uri: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    headersList: jspb.Message.toObjectList(msg.getHeadersList(),
+verb: jspb.Message.getFieldWithDefault(msg, 1, ""),
+uri: jspb.Message.getFieldWithDefault(msg, 2, ""),
+headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    rawQueryParamsList: jspb.Message.toObjectList(msg.getRawQueryParamsList(),
+rawQueryParamsList: jspb.Message.toObjectList(msg.getRawQueryParamsList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    encodedQueryParamsList: jspb.Message.toObjectList(msg.getEncodedQueryParamsList(),
+encodedQueryParamsList: jspb.Message.toObjectList(msg.getEncodedQueryParamsList(),
     proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam.toObject, includeInstance),
-    unary: (f = msg.getUnary()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f),
-    stream: (f = msg.getStream()) && proto.connectrpc.conformance.v1.StreamContents.toObject(includeInstance, f)
+unary: (f = msg.getUnary()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f),
+stream: (f = msg.getStream()) && proto.connectrpc.conformance.v1.StreamContents.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -4654,7 +4648,7 @@ proto.connectrpc.conformance.v1.RawHTTPRequest.toObject = function(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.RawHTTPRequest}
  */
 proto.connectrpc.conformance.v1.RawHTTPRequest.deserializeBinary = function(bytes) {
@@ -4679,11 +4673,11 @@ proto.connectrpc.conformance.v1.RawHTTPRequest.deserializeBinaryFromReader = fun
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setVerb(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setUri(value);
       break;
     case 3:
@@ -4829,9 +4823,9 @@ proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam.prototype.toObj
  */
 proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam.toObject = function(includeInstance, msg) {
   var f, obj = {
-    name: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    value: (f = msg.getValue()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f),
-    base64Encode: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
+name: jspb.Message.getFieldWithDefault(msg, 1, ""),
+value: (f = msg.getValue()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f),
+base64Encode: jspb.Message.getBooleanFieldWithDefault(msg, 3, false)
   };
 
   if (includeInstance) {
@@ -4844,7 +4838,7 @@ proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam.toObject = func
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam}
  */
 proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam.deserializeBinary = function(bytes) {
@@ -4869,7 +4863,7 @@ proto.connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam.deserializeBina
     var field = reader.getFieldNumber();
     switch (field) {
     case 1:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setName(value);
       break;
     case 2:
@@ -5291,10 +5285,10 @@ proto.connectrpc.conformance.v1.MessageContents.prototype.toObject = function(op
  */
 proto.connectrpc.conformance.v1.MessageContents.toObject = function(includeInstance, msg) {
   var f, obj = {
-    binary: msg.getBinary_asB64(),
-    text: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    binaryMessage: (f = msg.getBinaryMessage()) && google_protobuf_any_pb.Any.toObject(includeInstance, f),
-    compression: jspb.Message.getFieldWithDefault(msg, 4, 0)
+binary: msg.getBinary_asB64(),
+text: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
+binaryMessage: (f = msg.getBinaryMessage()) && google_protobuf_any_pb.Any.toObject(includeInstance, f),
+compression: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -5307,7 +5301,7 @@ proto.connectrpc.conformance.v1.MessageContents.toObject = function(includeInsta
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.MessageContents}
  */
 proto.connectrpc.conformance.v1.MessageContents.deserializeBinary = function(bytes) {
@@ -5336,7 +5330,7 @@ proto.connectrpc.conformance.v1.MessageContents.deserializeBinaryFromReader = fu
       msg.setBinary(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.setText(value);
       break;
     case 3:
@@ -5599,7 +5593,7 @@ proto.connectrpc.conformance.v1.StreamContents.prototype.toObject = function(opt
  */
 proto.connectrpc.conformance.v1.StreamContents.toObject = function(includeInstance, msg) {
   var f, obj = {
-    itemsList: jspb.Message.toObjectList(msg.getItemsList(),
+itemsList: jspb.Message.toObjectList(msg.getItemsList(),
     proto.connectrpc.conformance.v1.StreamContents.StreamItem.toObject, includeInstance)
   };
 
@@ -5613,7 +5607,7 @@ proto.connectrpc.conformance.v1.StreamContents.toObject = function(includeInstan
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.StreamContents}
  */
 proto.connectrpc.conformance.v1.StreamContents.deserializeBinary = function(bytes) {
@@ -5714,9 +5708,9 @@ proto.connectrpc.conformance.v1.StreamContents.StreamItem.prototype.toObject = f
  */
 proto.connectrpc.conformance.v1.StreamContents.StreamItem.toObject = function(includeInstance, msg) {
   var f, obj = {
-    flags: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    length: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f)
+flags: jspb.Message.getFieldWithDefault(msg, 1, 0),
+length: (f = jspb.Message.getField(msg, 2)) == null ? undefined : f,
+payload: (f = msg.getPayload()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -5729,7 +5723,7 @@ proto.connectrpc.conformance.v1.StreamContents.StreamItem.toObject = function(in
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.StreamContents.StreamItem}
  */
 proto.connectrpc.conformance.v1.StreamContents.StreamItem.deserializeBinary = function(bytes) {
@@ -6014,12 +6008,12 @@ proto.connectrpc.conformance.v1.RawHTTPResponse.prototype.toObject = function(op
  */
 proto.connectrpc.conformance.v1.RawHTTPResponse.toObject = function(includeInstance, msg) {
   var f, obj = {
-    statusCode: jspb.Message.getFieldWithDefault(msg, 1, 0),
-    headersList: jspb.Message.toObjectList(msg.getHeadersList(),
+statusCode: jspb.Message.getFieldWithDefault(msg, 1, 0),
+headersList: jspb.Message.toObjectList(msg.getHeadersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance),
-    unary: (f = msg.getUnary()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f),
-    stream: (f = msg.getStream()) && proto.connectrpc.conformance.v1.StreamContents.toObject(includeInstance, f),
-    trailersList: jspb.Message.toObjectList(msg.getTrailersList(),
+unary: (f = msg.getUnary()) && proto.connectrpc.conformance.v1.MessageContents.toObject(includeInstance, f),
+stream: (f = msg.getStream()) && proto.connectrpc.conformance.v1.StreamContents.toObject(includeInstance, f),
+trailersList: jspb.Message.toObjectList(msg.getTrailersList(),
     proto.connectrpc.conformance.v1.Header.toObject, includeInstance)
   };
 
@@ -6033,7 +6027,7 @@ proto.connectrpc.conformance.v1.RawHTTPResponse.toObject = function(includeInsta
 
 /**
  * Deserializes binary data (in protobuf wire format).
- * @param {jspb.ByteSource} bytes The bytes to deserialize.
+ * @param {jspb.binary.bytesource.ByteSource} bytes The bytes to deserialize.
  * @return {!proto.connectrpc.conformance.v1.RawHTTPResponse}
  */
 proto.connectrpc.conformance.v1.RawHTTPResponse.deserializeBinary = function(bytes) {
