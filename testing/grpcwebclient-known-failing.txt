@@ -20,6 +20,12 @@ gRPC-Web Unexpected Responses/**/unexpected-compression
 gRPC-Web Unexpected Responses/**/multiple-responses
 gRPC-Web Unexpected Responses/**/ok-but-no-response
 
+# When the HTTP body ends without a terminal trailers frame, the official
+# grpc-web client completes both RPCs without an error. The unary call also
+# returns a payload even though the expected result has none.
+gRPC-Web Unexpected Responses/**/unary/no-terminal-status
+gRPC-Web Unexpected Responses/**/server-stream/no-terminal-status
+
 # The gRPC-Web client does not appear to actually implement the HTTP to gRPC status code
 # mapping described in this part of the spec:
 #   https://github.com/grpc/grpc/blob/master/doc/http-grpc-status-mapping.md
