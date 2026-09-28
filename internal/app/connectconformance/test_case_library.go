@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"math"
 	"path"
-	"sort"
+	"slices"
 	"strings"
 
 	"buf.build/go/protoyaml"
@@ -582,16 +582,11 @@ func convertToInt64Ptr(num *uint32) *int64 {
 	if num == nil {
 		return nil
 	}
-	return proto.Int64(int64(*num))
+	return new(int64(*num))
 }
 
 func hasCodec(codecs []conformancev1.Codec, target conformancev1.Codec) bool {
-	for _, c := range codecs {
-		if c == target {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(codecs, target)
 }
 
 func hasRawResponse(reqs []*anypb.Any) bool {
@@ -843,8 +838,6 @@ func allValues[T ~int32](m map[int32]string) []T {
 		}
 		vals = append(vals, T(k))
 	}
-	sort.Slice(vals, func(i, j int) bool {
-		return vals[i] < vals[j]
-	})
+	slices.Sort(vals)
 	return vals
 }

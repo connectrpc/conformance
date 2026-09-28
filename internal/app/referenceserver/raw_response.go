@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"net/http"
 	"sync"
 
@@ -59,6 +60,35 @@ type rawResponseWriter struct {
 	startedResponse bool
 }
 
+func (r *rawResponseWriter) Header() http.Header {
+	return r.respWriter.Header()
+}
+
+func (r *rawResponseWriter) Write(bytes []byte) (int, error) {
+	if r.canSendResponse() {
+		return r.respWriter.Write(bytes)
+	}
+	return len(bytes), nil
+}
+
+func (r *rawResponseWriter) WriteHeader(statusCode int) {
+	if r.canSendResponse() {
+		r.respWriter.WriteHeader(statusCode)
+	}
+}
+
+func (r *rawResponseWriter) Flush() {
+	if r.canSendResponse() {
+		if flusher, ok := r.respWriter.(http.Flusher); ok {
+			flusher.Flush()
+		}
+	}
+}
+
+func (r *rawResponseWriter) Unwrap() http.ResponseWriter {
+	return r.respWriter
+}
+
 // canSendResponse returns true if the server handler can use the
 // http.ResponseWriter methods to send a response. This returns false
 // if we will instead be finishing the call with a raw response.
@@ -94,35 +124,6 @@ func (r *rawResponseWriter) setRawResponse(resp *conformancev1.RawHTTPResponse) 
 	return true
 }
 
-func (r *rawResponseWriter) Header() http.Header {
-	return r.respWriter.Header()
-}
-
-func (r *rawResponseWriter) Write(bytes []byte) (int, error) {
-	if r.canSendResponse() {
-		return r.respWriter.Write(bytes)
-	}
-	return len(bytes), nil
-}
-
-func (r *rawResponseWriter) WriteHeader(statusCode int) {
-	if r.canSendResponse() {
-		r.respWriter.WriteHeader(statusCode)
-	}
-}
-
-func (r *rawResponseWriter) Flush() {
-	if r.canSendResponse() {
-		if flusher, ok := r.respWriter.(http.Flusher); ok {
-			flusher.Flush()
-		}
-	}
-}
-
-func (r *rawResponseWriter) Unwrap() http.ResponseWriter {
-	return r.respWriter
-}
-
 func (r *rawResponseWriter) finish(snapshotHeaders http.Header) {
 	resp := r.rawResponse()
 	if resp == nil {
@@ -135,9 +136,7 @@ func (r *rawResponseWriter) finish(snapshotHeaders http.Header) {
 	for k := range r.respWriter.Header() {
 		delete(r.respWriter.Header(), k)
 	}
-	for k, v := range snapshotHeaders {
-		r.respWriter.Header()[k] = v
-	}
+	maps.Copy(r.respWriter.Header(), snapshotHeaders)
 
 	internal.AddHeaders(resp.Headers, r.respWriter.Header())
 	r.respWriter.Header()["Date"] = nil // suppress automatic date header
@@ -239,6 +238,7 @@ func (r rawResponseRecorder) WrapStreamingHandler(next connect.StreamingHandlerF
 
 type firstReqCachingStream struct {
 	connect.StreamingHandlerConn
+
 	request any
 	recvErr error
 }

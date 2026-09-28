@@ -108,9 +108,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 			return *errPtr
 		}
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+		wg.Go(func() {
 			defer sema.Release(1)
 
 			result, err := invoke(ctx, &transports, &req, referenceMode, trace)
@@ -147,7 +145,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 					failure.CompareAndSwap(nil, &err)
 				}
 			}()
-		}()
+		})
 	}
 }
 

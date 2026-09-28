@@ -217,6 +217,7 @@ func run( //nolint:gocyclo
 	var filteredTestCount int
 	type serverConfig struct {
 		serverInstance
+
 		isGrpcClient, isGrpcServer bool
 	}
 	allServerConfigs, filteredServerConfigs := map[serverConfig]struct{}{}, map[serverConfig]struct{}{}

@@ -185,11 +185,11 @@ func maybeWrapContextError(ctx context.Context, err error) error {
 }
 
 type contextFixError struct {
-	timeout bool
 	error
+
+	timeout bool
 }
 
-//nolint:goerr113
 func (e *contextFixError) Is(err error) bool {
 	return (e.timeout && err == context.DeadlineExceeded) ||
 		(!e.timeout && err == context.Canceled)

@@ -22,8 +22,9 @@ const (
 	// DefaultPort is the default port to use for the server. We choose 0 so that
 	// an ephemeral port is selected by the OS if no port is specified.
 	DefaultPort = 0
-	// The fully-qualified service name for the Conformance Service.
+	// ConformanceServiceName is the fully-qualified service name for the
+	// Conformance Service.
 	ConformanceServiceName = conformancev1connect.ConformanceServiceName
-	// The prefix for type URLs used in Any messages.
+	// DefaultAnyResolverPrefix is the prefix for type URLs used in Any messages.
 	DefaultAnyResolverPrefix = "type.googleapis.com/"
 )

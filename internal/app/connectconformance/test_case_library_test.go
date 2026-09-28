@@ -915,7 +915,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			Response: &conformancev1.UnaryResponseDefinition_Error{
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 				},
 			},
 			ResponseTrailers: responseTrailers,
@@ -963,7 +963,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
 						Requests:       asAnySlice(t, unaryErrorReq),
@@ -982,7 +982,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						Response: &conformancev1.UnaryResponseDefinition_Error{
 							Error: &conformancev1.Error{
 								Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-								Message: proto.String("message"),
+								Message: new("message"),
 								Details: asAnySlice(t, header),
 							},
 						},
@@ -992,14 +992,14 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			expected: &conformancev1.ClientResponseResult{
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, header, &conformancev1.ConformancePayload_RequestInfo{
 						Requests: asAnySlice(t, &conformancev1.UnaryRequest{
 							ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 								Response: &conformancev1.UnaryResponseDefinition_Error{
 									Error: &conformancev1.Error{
 										Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-										Message: proto.String("message"),
+										Message: new("message"),
 										Details: asAnySlice(t, header),
 									},
 								},
@@ -1128,7 +1128,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
 						Requests:       asAnySlice(t, unaryErrorReq),
@@ -1162,7 +1162,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
 						Requests:       asAnySlice(t, unaryErrorReq),
@@ -1236,7 +1236,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						Response: &conformancev1.UnaryResponseDefinition_Error{
 							Error: &conformancev1.Error{
 								Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-								Message: proto.String("message"),
+								Message: new("message"),
 							},
 						},
 						ResponseTrailers: responseTrailers,
@@ -1250,7 +1250,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
 						Requests: asAnySlice(t, &conformancev1.ClientStreamRequest{
@@ -1259,7 +1259,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 								Response: &conformancev1.UnaryResponseDefinition_Error{
 									Error: &conformancev1.Error{
 										Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-										Message: proto.String("message"),
+										Message: new("message"),
 									},
 								},
 								ResponseTrailers: responseTrailers,
@@ -1281,7 +1281,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						Response: &conformancev1.UnaryResponseDefinition_Error{
 							Error: &conformancev1.Error{
 								Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-								Message: proto.String("message"),
+								Message: new("message"),
 								Details: asAnySlice(t, header),
 							},
 						},
@@ -1294,14 +1294,14 @@ func TestPopulateExpectedResponse(t *testing.T) {
 			expected: &conformancev1.ClientResponseResult{
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, header, &conformancev1.ConformancePayload_RequestInfo{
 						Requests: asAnySlice(t, &conformancev1.ClientStreamRequest{
 							ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 								Response: &conformancev1.UnaryResponseDefinition_Error{
 									Error: &conformancev1.Error{
 										Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-										Message: proto.String("message"),
+										Message: new("message"),
 										Details: asAnySlice(t, header),
 									},
 								},
@@ -1413,7 +1413,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ResponseDelayMs: 1000,
 						Error: &conformancev1.Error{
 							Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-							Message: proto.String("message"),
+							Message: new("message"),
 						},
 						ResponseTrailers: responseTrailers,
 					},
@@ -1434,7 +1434,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 									ResponseDelayMs: 1000,
 									Error: &conformancev1.Error{
 										Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-										Message: proto.String("message"),
+										Message: new("message"),
 									},
 									ResponseTrailers: responseTrailers,
 								},
@@ -1447,7 +1447,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				},
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1462,7 +1462,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ResponseDelayMs: 1000,
 						Error: &conformancev1.Error{
 							Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-							Message: proto.String("message"),
+							Message: new("message"),
 						},
 						ResponseTrailers: responseTrailers,
 					},
@@ -1474,7 +1474,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
 						Requests: asAnySlice(t, &conformancev1.ServerStreamRequest{
@@ -1483,7 +1483,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 								ResponseDelayMs: 1000,
 								Error: &conformancev1.Error{
 									Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-									Message: proto.String("message"),
+									Message: new("message"),
 								},
 								ResponseTrailers: responseTrailers,
 							},
@@ -1575,7 +1575,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ResponseDelayMs: 1000,
 						Error: &conformancev1.Error{
 							Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-							Message: proto.String("message"),
+							Message: new("message"),
 						},
 						ResponseTrailers: responseTrailers,
 					},
@@ -1599,7 +1599,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 									ResponseDelayMs: 1000,
 									Error: &conformancev1.Error{
 										Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-										Message: proto.String("message"),
+										Message: new("message"),
 									},
 									ResponseTrailers: responseTrailers,
 								},
@@ -1615,7 +1615,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				},
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1630,7 +1630,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ResponseDelayMs: 1000,
 						Error: &conformancev1.Error{
 							Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-							Message: proto.String("message"),
+							Message: new("message"),
 						},
 						ResponseTrailers: responseTrailers,
 					},
@@ -1645,7 +1645,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						RequestHeaders: requestHeaders,
 						Requests: asAnySlice(t, &conformancev1.BidiStreamRequest{
@@ -1654,7 +1654,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 								ResponseDelayMs: 1000,
 								Error: &conformancev1.Error{
 									Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-									Message: proto.String("message"),
+									Message: new("message"),
 								},
 								ResponseTrailers: responseTrailers,
 							},
@@ -1756,7 +1756,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ResponseDelayMs: 1000,
 						Error: &conformancev1.Error{
 							Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-							Message: proto.String("message"),
+							Message: new("message"),
 						},
 						ResponseTrailers: responseTrailers,
 					},
@@ -1781,7 +1781,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 									ResponseDelayMs: 1000,
 									Error: &conformancev1.Error{
 										Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-										Message: proto.String("message"),
+										Message: new("message"),
 									},
 									ResponseTrailers: responseTrailers,
 								},
@@ -1801,7 +1801,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				},
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 				},
 				ResponseTrailers: responseTrailers,
 			},
@@ -1816,7 +1816,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 						ResponseDelayMs: 1000,
 						Error: &conformancev1.Error{
 							Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-							Message: proto.String("message"),
+							Message: new("message"),
 						},
 						ResponseTrailers: responseTrailers,
 					},
@@ -1830,7 +1830,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 				ResponseHeaders: responseHeaders,
 				Error: &conformancev1.Error{
 					Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-					Message: proto.String("message"),
+					Message: new("message"),
 					Details: asAnySlice(t, &conformancev1.ConformancePayload_RequestInfo{
 						Requests: asAnySlice(t, &conformancev1.BidiStreamRequest{
 							ResponseDefinition: &conformancev1.StreamResponseDefinition{
@@ -1838,7 +1838,7 @@ func TestPopulateExpectedResponse(t *testing.T) {
 								ResponseDelayMs: 1000,
 								Error: &conformancev1.Error{
 									Code:    conformancev1.Code_CODE_RESOURCE_EXHAUSTED,
-									Message: proto.String("message"),
+									Message: new("message"),
 								},
 								ResponseTrailers: responseTrailers,
 							},

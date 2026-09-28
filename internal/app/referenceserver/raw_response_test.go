@@ -312,7 +312,16 @@ func TestRawResponseRecorder(t *testing.T) {
 						err = internal.WriteRawStreamContents(contents.Stream, expectedBody)
 					}
 					require.NoError(t, err)
-					assert.Equal(t, expectedBody.Bytes(), body.Bytes())
+					// testify's assert.Equal treats a nil []byte and an empty,
+					// non-nil []byte as unequal. But this test behaves differently
+					// between go 1.26 and 1.27 in that regard, because of changes
+					// in the http2 impl in net/http. So we formulate the assertion
+					// this way, to work under both versions.
+					assert.True(
+						t,
+						bytes.Equal(expectedBody.Bytes(), body.Bytes()),
+						"expected body %q, got %q", expectedBody.Bytes(), body.Bytes(),
+					)
 				})
 			}
 		})

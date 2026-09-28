@@ -144,7 +144,7 @@ $(BIN)/license-header: Makefile
 
 $(BIN)/golangci-lint: Makefile
 	@mkdir -p $(@D)
-	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.62.0
+	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
 
 $(BIN)/goreleaser: Makefile
 	@mkdir -p $(@D)

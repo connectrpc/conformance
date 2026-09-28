@@ -103,7 +103,8 @@ func TestTracer(t *testing.T) {
 			t.Parallel()
 			var clientTracer, serverTracer Tracer
 			client := testCase.setupClient(&clientTracer)
-			listener, err := net.Listen("tcp", "127.0.0.1:0")
+			listenCfg := net.ListenConfig{}
+			listener, err := listenCfg.Listen(t.Context(), "tcp", "127.0.0.1:0")
 			require.NoError(t, err)
 
 			responseData := []byte(`{"abc": "def","foo": "bar"}`)
@@ -532,6 +533,7 @@ func checkTrace(t *testing.T, expected, actual *Trace) {
 func headers(kv ...string) http.Header {
 	result := make(http.Header, len(kv)/2)
 	for i := 0; i < len(kv); i += 2 {
+		//nolint:gosec // false positive; bad test code can cause test to panic, but that's not a security issue
 		result.Add(kv[i], kv[i+1])
 	}
 	return result

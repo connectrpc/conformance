@@ -86,7 +86,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 
 	// Create an HTTP server based on the request
 	errPrinter := internal.NewPrinter(errWriter)
-	server, certBytes, err := createServer(req, net.JoinHostPort(*host, strconv.Itoa(*port)), *tlsCert, *tlsKey, referenceMode, errPrinter, tracer)
+	server, certBytes, err := createServer(ctx, req, net.JoinHostPort(*host, strconv.Itoa(*port)), *tlsCert, *tlsKey, referenceMode, errPrinter, tracer)
 	if err != nil {
 		return err
 	}
@@ -179,7 +179,7 @@ func (s *stdHTTPServer) Addr() string {
 }
 
 // Creates an HTTP server using the provided ServerCompatRequest.
-func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
+func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	interceptors := []connect.Interceptor{serverNameHandlerInterceptor{}}
 	if referenceMode {
@@ -310,9 +310,9 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 	var err error
 	switch req.HttpVersion {
 	case conformancev1.HTTPVersion_HTTP_VERSION_1:
-		server, err = newH1Server(handler, listenAddr, tlsConf)
+		server, err = newH1Server(ctx, handler, listenAddr, tlsConf)
 	case conformancev1.HTTPVersion_HTTP_VERSION_2:
-		server, err = newH2Server(handler, listenAddr, tlsConf)
+		server, err = newH2Server(ctx, handler, listenAddr, tlsConf)
 	case conformancev1.HTTPVersion_HTTP_VERSION_3:
 		server, err = newH3Server(handler, listenAddr, tlsConf)
 	case conformancev1.HTTPVersion_HTTP_VERSION_UNSPECIFIED:
@@ -326,7 +326,7 @@ func createServer(req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFil
 }
 
 // newH1Server creates a new HTTP/1.1 server.
-func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
+func newH1Server(ctx context.Context, handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
 	h1Server := &http.Server{
 		Addr:              listenAddr,
 		Handler:           handler,
@@ -336,7 +336,8 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 		// We disable automatic HTTP/2 support by setting this to non-nil
 		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){},
 	}
-	lis, err := net.Listen("tcp", listenAddr)
+	listenCfg := net.ListenConfig{}
+	lis, err := listenCfg.Listen(ctx, "tcp", listenAddr)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +345,7 @@ func newH1Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 }
 
 // newH2Server creates a new HTTP/2 server.
-func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
+func newH2Server(ctx context.Context, handler http.Handler, listenAddr string, tlsConf *tls.Config) (httpServer, error) {
 	h2Server := &http.Server{
 		Addr:              listenAddr,
 		Handler:           handler,
@@ -356,7 +357,8 @@ func newH2Server(handler http.Handler, listenAddr string, tlsConf *tls.Config) (
 	protocols.SetUnencryptedHTTP2(true)
 	protocols.SetHTTP2(true)
 	h2Server.Protocols = &protocols
-	lis, err := net.Listen("tcp", listenAddr)
+	listenCfg := net.ListenConfig{}
+	lis, err := listenCfg.Listen(ctx, "tcp", listenAddr)
 	if err != nil {
 		return nil, err
 	}

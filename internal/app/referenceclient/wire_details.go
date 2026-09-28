@@ -16,6 +16,7 @@ package referenceclient
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -24,7 +25,7 @@ import (
 	"net/http"
 	"net/textproto"
 	"net/url"
-	"sort"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -34,8 +35,7 @@ import (
 	"connectrpc.com/conformance/internal/grpcutil"
 	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect"
-	"github.com/google/go-cmp/cmp"
-	"golang.org/x/exp/constraints"
+	gcmp "github.com/google/go-cmp/cmp"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
@@ -416,7 +416,7 @@ func examineConnectErrorDetailDebugData(i int, msgName string, data []byte, debu
 		}
 		msgFromDebug = msgFromAny.ProtoReflect()
 	}
-	diff := cmp.Diff(msgFromValue.Interface(), msgFromDebug.Interface(), protocmp.Transform())
+	diff := gcmp.Diff(msgFromValue.Interface(), msgFromDebug.Interface(), protocmp.Transform())
 	if diff != "" {
 		printer.Printf("connect error JSON: details[%d]: debug data does not match value: - value, + debug\n%s", i, diff)
 	}
@@ -635,14 +635,12 @@ func examineJSON[T any](rawJSON []byte, dest **T, messagePrefix string, printer 
 	return true
 }
 
-func sortedKeys[K constraints.Ordered, V any](m map[K]V) []K {
+func sortedKeys[K cmp.Ordered, V any](m map[K]V) []K {
 	keys := make([]K, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
-	sort.Slice(keys, func(i, j int) bool {
-		return keys[i] < keys[j]
-	})
+	slices.Sort(keys)
 	return keys
 }
 

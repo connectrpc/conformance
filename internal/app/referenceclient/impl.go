@@ -524,7 +524,7 @@ func (i *invoker) examineWireDetails(ctx context.Context, headers, trailers []*c
 	statusCode, ok := examineWireDetails(ctx, printer)
 	var statusCodePtr *int32
 	if ok {
-		statusCodePtr = proto.Int32(int32(statusCode))
+		statusCodePtr = new(int32(statusCode))
 	}
 	if headers != nil {
 		checkBinaryMetadata("headers", headers, printer)

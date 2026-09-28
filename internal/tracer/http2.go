@@ -34,7 +34,8 @@ import (
 
 const (
 	frameHeaderLen = 9
-	clientPreface  = "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+	http2version   = "HTTP/2.0"
+	clientPreface  = "PRI * " + http2version + "\r\n\r\nSM\r\n\r\n"
 
 	// When the server sends a "refused" RST_STREAM frame, we will wait this long to
 	// see if client auto-retries. This should be lenient enough that a client that
@@ -87,6 +88,7 @@ func TracingHTTP2Listener(listener net.Listener, collector Collector) net.Listen
 
 type tracingHTTP2Conn struct {
 	net.Conn
+
 	isServer  bool
 	collector *http2RetryCollector
 
@@ -409,6 +411,7 @@ func (h *http2FrameTracer) emitFrame() bool {
 
 type tracingListener struct {
 	net.Listener
+
 	collector Collector
 }
 
@@ -515,7 +518,7 @@ func makeRequest(frame *http2.MetaHeadersFrame) *http.Request {
 		forceQuery = query == ""
 	}
 	req := &http.Request{
-		Proto:      "HTTP/2.0",
+		Proto:      http2version,
 		ProtoMajor: 2,
 		ProtoMinor: 0,
 		URL: &url.URL{
@@ -544,7 +547,7 @@ func makeResponse(frame *http2.MetaHeadersFrame) *http.Response {
 		}
 	}
 	return &http.Response{
-		Proto:      "HTTP/2.0",
+		Proto:      http2version,
 		ProtoMajor: 2,
 		ProtoMinor: 0,
 		StatusCode: statusInt,
@@ -591,13 +594,11 @@ func isRetryable(err error) bool {
 	if err == nil {
 		return false
 	}
-	var streamErr http2.StreamError
-	if errors.As(err, &streamErr) {
+	if streamErr, ok := errors.AsType[http2.StreamError](err); ok {
 		// Retryable if server refused this individual stream
 		return streamErr.Code == http2.ErrCodeRefusedStream
 	}
-	var connErr http2.ConnectionError
-	if errors.As(err, &connErr) {
+	if connErr, ok := errors.AsType[http2.ConnectionError](err); ok {
 		// Retryable if server is performing graceful shutdown.
 		return http2.ErrCode(connErr) == http2.ErrCodeNo
 	}
