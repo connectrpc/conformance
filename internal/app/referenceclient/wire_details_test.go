@@ -44,9 +44,13 @@ import (
 func TestExamineConnectError(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name             string
-		compressed       bool
-		endStream        string
+		name       string
+		compressed bool
+		endStream  string
+		// expectedFeedback entries starting with "^" are interpreted as
+		// regular expressions -- this happens because different versions of
+		// encoding/json can report different error messages, so the pattern
+		// matches the relevant portion of the message.
 		expectedFeedback []string
 	}{
 		{
@@ -118,14 +122,14 @@ func TestExamineConnectError(t *testing.T) {
 			name:      "incorrect type for code",
 			endStream: `{"code": 1, "message": "abc"}`,
 			expectedFeedback: []string{
-				`connect error JSON: json: cannot unmarshal number into Go struct field connectError.code of type string`,
+				`^connect error JSON: json: cannot unmarshal number into Go struct field .*\.code of type string$`,
 			},
 		},
 		{
 			name:      "incorrect type for message",
 			endStream: `{"code": "unavailable", "message": 12345}`,
 			expectedFeedback: []string{
-				`connect error JSON: json: cannot unmarshal number into Go struct field connectError.message of type string`,
+				`^connect error JSON: json: cannot unmarshal number into Go struct field .*\.message of type string$`,
 			},
 		},
 		{
@@ -139,7 +143,7 @@ func TestExamineConnectError(t *testing.T) {
 					}
 				}`,
 			expectedFeedback: []string{
-				`connect error JSON: json: cannot unmarshal object into Go struct field connectError.details of type []json.RawMessage`,
+				`^connect error JSON: json: cannot unmarshal object into Go struct field .*\.details of type \[\]`,
 			},
 		},
 		{
@@ -343,7 +347,7 @@ func TestExamineConnectError(t *testing.T) {
 						" ",      // regular space
 					)
 				}
-				assert.Empty(t, cmp.Diff(testCase.expectedFeedback, printer.Messages))
+				assertFeedbackEqual(t, testCase.expectedFeedback, printer.Messages)
 			}
 		})
 	}
@@ -352,9 +356,13 @@ func TestExamineConnectError(t *testing.T) {
 func TestExamineConnectEndStream(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
-		name             string
-		compressed       bool
-		endStream        string
+		name       string
+		compressed bool
+		endStream  string
+		// expectedFeedback entries starting with "^" are interpreted as
+		// regular expressions -- this happens because different versions of
+		// encoding/json can report different error messages, so the pattern
+		// matches the relevant portion of the message.
 		expectedFeedback []string
 	}{
 		{
@@ -413,7 +421,7 @@ func TestExamineConnectEndStream(t *testing.T) {
 			endStream: `
 				{"metadata":[{"key": "header", "value": "abc"}, {"key": "header", "value": "abc"}]}`,
 			expectedFeedback: []string{
-				`connect end stream JSON: json: cannot unmarshal array into Go struct field connectEndStream.metadata of type map[string][]string`,
+				`^connect end stream JSON: json: cannot unmarshal array into Go struct field .*\.metadata of type map\[string\]\[\]string$`,
 			},
 		},
 		{
@@ -498,7 +506,7 @@ func TestExamineConnectEndStream(t *testing.T) {
 						" ",      // regular space
 					)
 				}
-				assert.Empty(t, cmp.Diff(testCase.expectedFeedback, printer.Messages))
+				assertFeedbackEqual(t, testCase.expectedFeedback, printer.Messages)
 			}
 		})
 	}
@@ -1033,4 +1041,18 @@ func writeStreamFrame(data []byte, compressed bool, writer io.Writer) {
 	binary.BigEndian.PutUint32(size[:], uint32(len(data)))
 	_, _ = writer.Write(size[:])
 	_, _ = writer.Write(data)
+}
+
+func assertFeedbackEqual(t *testing.T, expected, actual []string) {
+	t.Helper()
+	if !assert.Len(t, actual, len(expected)) {
+		return
+	}
+	for i := range expected {
+		if strings.HasPrefix(expected[i], "^") {
+			assert.Regexp(t, expected[i], actual[i])
+		} else {
+			assert.Equal(t, expected[i], actual[i])
+		}
+	}
 }
