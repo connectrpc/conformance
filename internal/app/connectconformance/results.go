@@ -430,13 +430,14 @@ func headerValsToString(vals []string) string {
 }
 
 // diffProtos returns a diff of expected and actual, or an empty string if
-// they're equal. It compares bytes fields with [bytes.Equal] instead of element
-// by element, which is slow for large payloads, but still reports a byte-level
-// diff of unequal ones.
+// they're equal.
 func diffProtos(expected, actual proto.Message) string {
 	if proto.Equal(expected, actual) {
 		return ""
 	}
+	// Add comparer for []byte since otherwise go-cmp uses reflection to compare each element one-by-one
+	// which is incredibly slow and unnecessary.
+	// https://github.com/google/go-cmp/issues/353#issuecomment-1936533521
 	return cmp.Diff(expected, actual, protocmp.Transform(), cmp.Comparer(bytes.Equal))
 }
 
