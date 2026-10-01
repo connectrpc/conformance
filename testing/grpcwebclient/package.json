@@ -9,7 +9,7 @@
     "@types/node": "^26.6.3",
     "esbuild": "^0.28.2",
     "google-protobuf": "^4.0.3",
-    "grpc-web": "^1.5.0",
+    "grpc-web": "^2.1.1",
     "prettier": "^3.9.9",
     "puppeteer": "^25.12.0",
     "typescript": "^7.0.2"
