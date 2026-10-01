@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "@buf/googleapis_googleapis.protocolbuffers_js": "^4.0.3-20231214202519-a86849a25cc0.1",
-    "@types/node": "^20.10.4",
+    "@types/node": "^26.6.3",
     "esbuild": "^0.28.2",
     "google-protobuf": "^4.0.3",
     "grpc-web": "^1.5.0",
