@@ -169,15 +169,16 @@ func (r *testResults) assert(
 	var errs multiErrors
 
 	otherErrors := definition.OtherAllowedErrorCodes
-	if definition.Request.TimeoutMs != nil && r.mode == conformancev1.TestSuite_TEST_MODE_SERVER &&
+	if definition.Request.TimeoutMs != nil && r.mode != conformancev1.TestSuite_TEST_MODE_CLIENT &&
 		expected.Error != nil && expected.Error.Code == conformancev1.Code_CODE_DEADLINE_EXCEEDED &&
 		definition.Request.HttpVersion > conformancev1.HTTPVersion_HTTP_VERSION_1 && len(otherErrors) == 0 {
-		// When testing a server, the reference client does not set an actual timeout, in order to
-		// see if the server enforces the timeout. Typically, a server will return a "deadline exceeded"
-		// error when it notices that time is up. But it is also possible that the server chooses to
-		// simply cancel the stream (only possible with HTTP/2 or HTTP/3) -- why send back an error
-		// response if the client has already "hung up"? So we allow for the reference client to observe
-		// a CANCELED error in these cases, as an alternative to DEADLINE_EXCEEDED.
+		// When testing a server, the reference client sends the timeout but waits longer than it
+		// before giving up, in order to see if the server enforces the timeout. Typically, a server
+		// will return a "deadline exceeded" error when it notices that time is up. But it is also
+		// possible that the server chooses to simply cancel the stream (only possible with HTTP/2
+		// or HTTP/3) -- why send back an error response if the client has already "hung up"? So we
+		// allow for the reference client to observe a CANCELED error in these cases, as an
+		// alternative to DEADLINE_EXCEEDED.
 		otherErrors = []conformancev1.Code{conformancev1.Code_CODE_CANCELED}
 	}
 	errs = append(errs, checkError(expected.Error, actual.Error, otherErrors)...)
