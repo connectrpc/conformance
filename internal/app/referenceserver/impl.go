@@ -112,7 +112,9 @@ func doUnary[ReqT, RespT any, Req hasUnaryResponseDefinition[ReqT]](
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(msg.GetResponseDefinition().ResponseDelayMs) * time.Millisecond
-		time.Sleep(responseDelay)
+		if err := sleep(ctx, responseDelay); err != nil {
+			return nil, err
+		}
 	}
 
 	return resp, nil
@@ -171,7 +173,9 @@ func (s *conformanceServer) ClientStream(
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
-		time.Sleep(responseDelay)
+		if err := sleep(ctx, responseDelay); err != nil {
+			return nil, err
+		}
 	}
 
 	return resp, nil
@@ -220,7 +224,9 @@ func (s *conformanceServer) ServerStream(
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			time.Sleep(responseDelay)
+			if err := sleep(ctx, responseDelay); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
@@ -303,7 +309,7 @@ func (s *conformanceServer) BidiStream(
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
-		if fullDuplex {
+		if fullDuplex { //nolint:nestif
 			if respNum >= len(responseDefinition.GetResponseData()) {
 				// If there are no responses to send, then break the receive loop
 				// and throw the error specified
@@ -331,7 +337,9 @@ func (s *conformanceServer) BidiStream(
 			resp.Payload.RequestInfo = requestInfo
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			time.Sleep(responseDelay)
+			if err := sleep(ctx, responseDelay); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
@@ -374,7 +382,9 @@ func (s *conformanceServer) BidiStream(
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			time.Sleep(responseDelay)
+			if err := sleep(ctx, responseDelay); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
@@ -681,4 +691,23 @@ func grpcWebStatusEndStream(err *connect.Error, trailers []*conformancev1.Header
 		}
 	}
 	return buf.String()
+}
+
+// sleep waits for the given duration. It returns early with an error if the
+// context is done first, for example because the RPC's deadline has expired.
+func sleep(ctx context.Context, duration time.Duration) error {
+	if duration <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(duration)
+	defer timer.Stop()
+	select {
+	case <-timer.C:
+		return nil
+	case <-ctx.Done():
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return connect.NewError(connect.CodeDeadlineExceeded, ctx.Err())
+		}
+		return connect.NewError(connect.CodeCanceled, ctx.Err())
+	}
 }

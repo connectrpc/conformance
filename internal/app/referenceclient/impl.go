@@ -56,13 +56,33 @@ func (i *invoker) Invoke(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
-	// If a timeout was specified, create a derived context with that deadline
-	if req.TimeoutMs != nil {
-		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
-		ctx = deadlineCtx
-		defer cancel()
+	if req.TimeoutMs == nil {
+		return i.invoke(ctx, req)
 	}
+	timeout := time.Duration(*req.TimeoutMs) * time.Millisecond
+	if !i.referenceMode {
+		ctx, cancel := context.WithTimeout(ctx, timeout)
+		defer cancel()
+		return i.invoke(ctx, req)
+	}
+	// When testing a server, the server must enforce the timeout. If the
+	// client used the same deadline, it would report "deadline exceeded"
+	// itself and the test would pass whether or not the server enforced it.
+	// So we use a longer deadline as a backstop, and serverTimeoutTransport
+	// still sends the requested timeout to the server.
+	ctx, cancel := context.WithTimeoutCause(ctx, timeout+serverTimeoutGracePeriod, errServerIgnoredTimeout)
+	defer cancel()
+	resp, err := i.invoke(ctx, req)
+	if errors.Is(context.Cause(ctx), errServerIgnoredTimeout) {
+		return nil, fmt.Errorf("%w of %v within %v", errServerIgnoredTimeout, timeout, serverTimeoutGracePeriod)
+	}
+	return resp, err
+}
 
+func (i *invoker) invoke(
+	ctx context.Context,
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	switch req.GetMethod() {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {
