@@ -719,6 +719,91 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 	}
 }
 
+func TestResults_Assert_TimeoutCanceled(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name          string
+		mode          conformancev1.TestSuite_TestMode
+		httpVersion   conformancev1.HTTPVersion
+		noTimeout     bool
+		otherAllowed  []conformancev1.Code
+		expectFailure bool
+	}{
+		{
+			name:        "server mode",
+			mode:        conformancev1.TestSuite_TEST_MODE_SERVER,
+			httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_2,
+		},
+		{
+			name:        "server mode http3",
+			mode:        conformancev1.TestSuite_TEST_MODE_SERVER,
+			httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_3,
+		},
+		{
+			name:        "unspecified mode",
+			mode:        conformancev1.TestSuite_TEST_MODE_UNSPECIFIED,
+			httpVersion: conformancev1.HTTPVersion_HTTP_VERSION_2,
+		},
+		{
+			name:          "client mode",
+			mode:          conformancev1.TestSuite_TEST_MODE_CLIENT,
+			httpVersion:   conformancev1.HTTPVersion_HTTP_VERSION_2,
+			expectFailure: true,
+		},
+		{
+			name:          "server mode http1",
+			mode:          conformancev1.TestSuite_TEST_MODE_SERVER,
+			httpVersion:   conformancev1.HTTPVersion_HTTP_VERSION_1,
+			expectFailure: true,
+		},
+		{
+			name:          "server mode no timeout",
+			mode:          conformancev1.TestSuite_TEST_MODE_SERVER,
+			httpVersion:   conformancev1.HTTPVersion_HTTP_VERSION_2,
+			noTimeout:     true,
+			expectFailure: true,
+		},
+		{
+			name:          "server mode other allowed codes",
+			mode:          conformancev1.TestSuite_TEST_MODE_SERVER,
+			httpVersion:   conformancev1.HTTPVersion_HTTP_VERSION_2,
+			otherAllowed:  []conformancev1.Code{conformancev1.Code_CODE_INTERNAL},
+			expectFailure: true,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			results := newResults(testCase.mode, 0, &testTrie{}, &testTrie{}, nil)
+			request := &conformancev1.ClientCompatRequest{
+				StreamType:  conformancev1.StreamType_STREAM_TYPE_UNARY,
+				HttpVersion: testCase.httpVersion,
+			}
+			if !testCase.noTimeout {
+				request.TimeoutMs = new(uint32(200))
+			}
+			definition := &conformancev1.TestCase{
+				Request: request,
+				ExpectedResponse: &conformancev1.ClientResponseResult{
+					Error: &conformancev1.Error{Code: conformancev1.Code_CODE_DEADLINE_EXCEEDED},
+				},
+				OtherAllowedErrorCodes: testCase.otherAllowed,
+			}
+			actual := &conformancev1.ClientResponseResult{
+				Error: &conformancev1.Error{Code: conformancev1.Code_CODE_CANCELED},
+			}
+
+			results.assert(testCase.name, definition, actual)
+			err := results.outcomes[testCase.name].actualFailure
+			if testCase.expectFailure {
+				require.ErrorContains(t, err, "does not match expected code 4 (deadline_exceeded)")
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
 func TestResults_ServerSideband(t *testing.T) {
 	t.Parallel()
 	results := newResults(conformancev1.TestSuite_TEST_MODE_UNSPECIFIED, 0, makeKnownFailing(), makeKnownFlaky(), nil)

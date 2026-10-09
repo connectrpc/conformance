@@ -103,13 +103,22 @@ func TestRun(t *testing.T) {
 	// 194 test cases as of this writing, but we will likely add more
 	require.GreaterOrEqual(t, expectedNumCases, 194)
 
+	// When testing a client, the reference server ignores timeouts to check
+	// that the client enforces them. When testing a server, the reference
+	// client waits for the server to enforce them. So when the reference
+	// client and server are used together, nothing enforces timeouts.
+	skip := parsePatterns([]string{"Timeouts/**"})
+	skipCount, err := tryMatchPatterns("skip patterns", skip, allPermutations)
+	require.NoError(t, err)
+	expectedNumCases -= skipCount
+
 	logger := &testPrinter{t}
 	results, err := run(
 		configCases,
 		&testTrie{},
 		&testTrie{},
 		nil,
-		nil,
+		skip,
 		allSuites,
 		logger,
 		logger,
