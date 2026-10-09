@@ -6,6 +6,8 @@ Maintainers
 * [Steve Ayers](https://github.com/smaye81), [Lab37](https://www.lab37.us)
 * [Josh Humphries](https://github.com/jhump), [Buf](https://buf.build)
 * [Timo Stamm](https://github.com/timostamm), [Buf](https://buf.build)
+* [Anuraag Agrawal](https://github.com/anuraaga)
+* [Stefan VanBuren](https://github.com/stefanvanburen)
 
 ## Former
 * [Akshay Shah](https://github.com/akshayjshah)
