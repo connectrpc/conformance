@@ -7,26 +7,33 @@ manually curating the release notes.
 
 1. Clone the repo, ensuring you have the latest main.
 
-2. On a new branch, open [internal/version.go](internal/version.go) and change the
-   `buildVersion` constant to an appropriate [semantic version](https://semver.org/).
+2. Check that the Go version in [.github/workflows/release.yaml](.github/workflows/release.yaml)
+   is at least the `go` directive in [go.mod](go.mod). This Go version must be in
+   sync with the 'latest' Go version in [.github/workflows/ci.yaml](.github/workflows/ci.yaml).
+   If it needs updating, merge that change first: the release job uses the workflow
+   file of the tagged commit.
+
+3. On a new branch, open [internal/version.go](internal/version.go) and change the
+   `buildVersion` variable to an appropriate [semantic version](https://semver.org/),
+   keeping the `v` prefix.
    To select the correct version, look at the version number of the [latest release]
    and the changes that are included in this new release.
    ```patch
-   -const Version = "1.0.0-rc4-dev"
-   +const Version = "1.0.0-rc4"
+   -	buildVersion       = "v1.1.0-dev"
+   +	buildVersion       = "v1.1.0"
    ```
    This usually entails just removing the "dev" version, but if only a patch release
-   release is warranted, but the "dev" version implied a minor version, then set the
-   minor version back, for example `1.1.0-dev` -> `1.0.1`. If a release candidate is
+   is warranted, but the "dev" version implied a minor version, then set the minor
+   version back, for example `v1.1.0-dev` -> `v1.0.1`. If a release candidate is
    warranted, use an appropriate suffix.
 
-3. Open a PR titled "Prepare for vX.Y.Z" ([Example PR #801](https://github.com/connectrpc/conformance/pull/801))
+4. Open a PR titled "Prepare for vX.Y.Z" ([Example PR #801](https://github.com/connectrpc/conformance/pull/801))
    and a description, tagging at least one current maintainer. Once it's reviewed and
    CI passes, merge it.
 
    *Make sure no new commits are merged until the release is complete.*
 
-4. Using the Github UI, [create a new release](https://github.com/connectrpc/conformance/releases/new)
+5. Using the Github UI, [create a new release](https://github.com/connectrpc/conformance/releases/new)
    like so:
    * Under “Choose a tag”, type in “vX.Y.Z” to create a new tag for the release upon publish.
      Note: The release job does infer the version from the release string and expects versions
@@ -62,27 +69,29 @@ manually curating the release notes.
    * After the notes are approved (after some potential iteration and revision), you can
      finally create the release by clicking "Publish Release".
 
-5. On a new branch, open [internal/version.go](internal/version.go) and change the
+6. On a new branch, open [internal/version.go](internal/version.go) and change the
    `buildVersion` to increment the minor tag and append the `-dev` suffix. Use the
    next minor release - we never anticipate bugs and patch releases.
    ```patch
-   -const Version = "1.0.1"
-   +const Version = "1.1.0-dev"
+   -	buildVersion       = "v1.0.1"
+   +	buildVersion       = "v1.1.0-dev"
    ```
    If you just created a release candidate, you should anticipate another candidate
    before final release. In that case, use the same version number as the release
    and increment the candidate number.
    ```patch
-   -const Version = "1.0.0-rc4"
-   +const Version = "1.0.0-rc5-dev"
+   -	buildVersion       = "v1.0.0-rc4"
+   +	buildVersion       = "v1.0.0-rc5-dev"
    ```
 
-6. Open a PR titled "Back to development" ([Example PR #802](https://github.com/connectrpc/conformance/pull/802)).
+7. Open a PR titled "Back to development" ([Example PR #802](https://github.com/connectrpc/conformance/pull/802)).
    Once it's reviewed and CI passes, merge it.
 
 After the GitHub release has been created, you can verify that the rest of the process
 completes successfully by following the corresponding run of the "release" GitHub
-workflow: https://github.com/connectrpc/conformance/actions/workflows/release.yml
+workflow: https://github.com/connectrpc/conformance/actions/workflows/release.yaml
 
 Once the workflow is complete, the artifacts will be attached to the
 [GitHub release](https://github.com/connectrpc/conformance/releases).
+
+[latest release]: https://github.com/connectrpc/conformance/releases/latest
