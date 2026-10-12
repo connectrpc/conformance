@@ -456,7 +456,7 @@ failing"), it may be necessary to temporarily skip them in CI until those bugs a
 ## Configuring CI
 
 The easiest way to run conformance tests as part of CI is to do so from a container that has the
-Go SDK. The conformance tests currently requires Go 1.20 or higher. The `connectconformance` program
+Go SDK. The conformance tests currently require Go 1.26 or higher. The `connectconformance` program
 that runs the tests can be installed via a simple invocation of the Go tool:
 ```shell
 go install connectrpc.com/conformance/cmd/connectconformance@latest
