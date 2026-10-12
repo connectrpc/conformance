@@ -22,7 +22,8 @@ jobs:
       - uses: actions/checkout@v7
       - uses: bufbuild/buf-action@v1
         with:
-          input: proto
           breaking_against: 'buf.build/connectrpc/conformance'
           token: ${{ secrets.BUF_TOKEN }}
-
+          # Only sync main and release tags to the BSR, not other branches.
+          push: ${{ github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')) && !github.event.repository.fork }}
+          archive: ${{ github.event_name == 'delete' && github.event.ref_type == 'tag' && startsWith(github.event.ref, 'v') && !github.event.repository.fork }}
