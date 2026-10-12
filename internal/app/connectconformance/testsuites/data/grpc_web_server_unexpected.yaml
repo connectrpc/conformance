@@ -200,3 +200,49 @@ testCases:
     expectedResponse:
       error:
         code: CODE_INTERNAL
+  - request:
+      testName: client-stream/incomplete-message
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ClientStream
+        headers:
+          - name: content-type
+            value: [ "application/grpc-web" ]
+        stream:
+          items:
+            # The prefix promises more bytes than the body contains.
+            - flags: 0
+              length: 10
+              payload:
+                binary: "AAAA"
+    otherAllowedErrorCodes:
+      # The gRPC spec does not say which code to use. Some implementations
+      # report invalid_argument, treating the request as malformed.
+      - CODE_INVALID_ARGUMENT
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: client-stream/incomplete-message-prefix
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ClientStream
+        headers:
+          - name: content-type
+            value: [ "application/grpc-web" ]
+        # The body ends after three bytes of the five-byte message prefix.
+        unary:
+          binary: "AAAA"
+    otherAllowedErrorCodes:
+      # The gRPC spec does not say which code to use. Some implementations
+      # report invalid_argument, treating the request as malformed.
+      - CODE_INVALID_ARGUMENT
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
