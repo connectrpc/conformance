@@ -10,14 +10,14 @@ permissions:
 jobs:
   ci:
     name: ci (go:${{ matrix.go-version.name }})
-    # TODO(sayers) - Need to run on 22.04 for the time being until 
+    # TODO(sayers) - Need to run on 22.04 for the time being until
     # https://github.com/puppeteer/puppeteer/pull/13196 is released
     # See https://github.com/connectrpc/conformance/pull/940 for context
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        # When changing this, don't forget to also update
-        # the version of Go used in the release.yaml workflow.
+        # When changing this, also update the Go version in release.yaml to
+        # match 'latest'.
         go-version:
         - name: latest
           version: 1.27.x
@@ -56,5 +56,5 @@ jobs:
       - name: Check Release
         # We'll only be building releases w/ latest Go, so we only need to
         # test that it can be built w/ latest.
-        if: matrix.go-version == '1.23.x'
+        if: matrix.go-version.name == 'latest'
         run: make checkrelease
