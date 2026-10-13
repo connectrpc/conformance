@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"sync"
 	"testing"
+	"time"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
@@ -32,6 +33,8 @@ import (
 )
 
 const (
+	timeoutMs = 50
+
 	ignoreTimeoutHeader = "X-Ignore-Timeout"
 	// Wire capture only sees traces for requests with this header, which the
 	// test runner always sets.
@@ -41,7 +44,6 @@ const (
 type timeoutTestService struct {
 	conformancev1connect.UnimplementedConformanceServiceHandler
 
-	release        chan struct{}
 	timeoutHeaders sync.Map // map[string]string, keyed by test case name
 }
 
@@ -52,7 +54,8 @@ func (s *timeoutTestService) Unary(
 	s.timeoutHeaders.Store(req.Header().Get(testCaseNameHeader),
 		req.Header().Get(connectTimeoutHeader)+req.Header().Get(grpcTimeoutHeader))
 	if req.Header().Get(ignoreTimeoutHeader) != "" {
-		<-s.release
+		// Respond after the timeout has passed instead of enforcing it.
+		time.Sleep(10 * timeoutMs * time.Millisecond)
 		return connect.NewResponse(&conformancev1.UnaryResponse{}), nil
 	}
 	<-ctx.Done()
@@ -62,7 +65,7 @@ func (s *timeoutTestService) Unary(
 func TestInvoke_ServerTimeout(t *testing.T) {
 	t.Parallel()
 
-	service := &timeoutTestService{release: make(chan struct{})}
+	service := &timeoutTestService{}
 	mux := http.NewServeMux()
 	mux.Handle(conformancev1connect.NewConformanceServiceHandler(service))
 	svr := httptest.NewUnstartedServer(mux)
@@ -71,9 +74,6 @@ func TestInvoke_ServerTimeout(t *testing.T) {
 	svr.Config.Protocols.SetUnencryptedHTTP2(true)
 	svr.Start()
 	t.Cleanup(svr.Close)
-	// Runs before svr.Close, which waits for handlers to return.
-	t.Cleanup(func() { close(service.release) })
-
 	host, portStr, err := net.SplitHostPort(svr.Listener.Addr().String())
 	require.NoError(t, err)
 	port, err := strconv.ParseUint(portStr, 10, 32)
@@ -81,7 +81,6 @@ func TestInvoke_ServerTimeout(t *testing.T) {
 	msg, err := anypb.New(&conformancev1.UnaryRequest{})
 	require.NoError(t, err)
 
-	timeoutMs := uint32(50)
 	testCases := []struct {
 		name        string
 		httpVersion conformancev1.HTTPVersion
@@ -120,7 +119,7 @@ func TestInvoke_ServerTimeout(t *testing.T) {
 				Service:         new(conformancev1connect.ConformanceServiceName),
 				Method:          new("Unary"),
 				StreamType:      conformancev1.StreamType_STREAM_TYPE_UNARY,
-				TimeoutMs:       &timeoutMs,
+				TimeoutMs:       new(uint32(timeoutMs)),
 				RequestMessages: []*anypb.Any{msg},
 				RequestHeaders:  []*conformancev1.Header{{Name: testCaseNameHeader, Value: []string{t.Name()}}},
 			}
@@ -148,9 +147,12 @@ func TestInvoke_ServerTimeout(t *testing.T) {
 			})
 			t.Run("ignored", func(t *testing.T) {
 				t.Parallel()
+				// In reference mode, the client does not enforce the timeout, so
+				// a server that ignores it is observed to succeed.
 				var transports transports
-				_, err := invoke(t.Context(), &transports, newRequest(t, true), true, nil)
-				require.ErrorIs(t, err, errServerIgnoredTimeout)
+				result, err := invoke(t.Context(), &transports, newRequest(t, true), true, nil)
+				require.NoError(t, err)
+				assert.Nil(t, result.GetError())
 				assertTimeoutHeader(t, testCase.wantHeader)
 			})
 			t.Run("ignored/not-reference-mode", func(t *testing.T) {

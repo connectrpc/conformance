@@ -166,7 +166,7 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 		// any error traces will simply not be printed. The trace itself will still be built.
 		transport = newWireCaptureTransport(transport, trace)
 		if req.TimeoutMs != nil {
-			transport = &serverTimeoutTransport{transport: transport, timeoutMs: *req.TimeoutMs}
+			transport = &timeoutHeaderTransport{transport: transport, protocol: req.Protocol, timeoutMs: *req.TimeoutMs}
 		}
 		if req.RawRequest != nil {
 			transport = &rawRequestSender{transport: transport, rawRequest: req.RawRequest}

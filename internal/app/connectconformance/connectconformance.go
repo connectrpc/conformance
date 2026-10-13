@@ -379,6 +379,7 @@ func run( //nolint:gocyclo
 				for _, svrInstance := range svrInstances {
 					testCases := testCaseLib.casesByServer[svrInstance]
 					testCases = testCaseLib.filterGRPCImplTestCases(testCases, clientInfo.isGrpcImpl, serverInfo.isGrpcImpl)
+					testCases = filterReferenceImplTestCases(testCases, clientInfo.isReferenceImpl, serverInfo.isReferenceImpl)
 					testCases = filter.apply(testCases)
 					if len(testCases) == 0 {
 						continue

@@ -283,6 +283,11 @@ func (lib *testCaseLibrary) allPermutations(clientIsGRPCImpl, serverIsGRPCImpl b
 		testCaseSlice = append(testCaseSlice, testCase)
 	}
 	results := testCaseSlice
+	if clientIsGRPCImpl && serverIsGRPCImpl {
+		// Both reference impls are in use (only done from a unit test), so the
+		// base cases run the reference client against the reference server.
+		results = filterReferenceImplTestCases(testCaseSlice, true, true)
+	}
 	if clientIsGRPCImpl {
 		// Count the cases where we run grpc-go client against server under test.
 		results = append(results, lib.filterGRPCImplTestCases(testCaseSlice, true, false)...)
@@ -297,6 +302,26 @@ func (lib *testCaseLibrary) allPermutations(clientIsGRPCImpl, serverIsGRPCImpl b
 		results = append(results, lib.filterGRPCImplTestCases(testCaseSlice, true, true)...)
 	}
 	return results
+}
+
+// filterReferenceImplTestCases removes test cases that require the implementation
+// under test to enforce a deadline when both the client and the server are the
+// reference impls. Neither enforces deadlines in reference mode, since the
+// reference impl is never the implementation under test, so these cases could
+// never pass.
+func filterReferenceImplTestCases(testCases []*conformancev1.TestCase, clientIsReferenceImpl, serverIsReferenceImpl bool) []*conformancev1.TestCase {
+	if !clientIsReferenceImpl || !serverIsReferenceImpl {
+		return testCases
+	}
+	filtered := make([]*conformancev1.TestCase, 0, len(testCases))
+	for _, testCase := range testCases {
+		if testCase.Request.TimeoutMs != nil &&
+			testCase.ExpectedResponse.GetError().GetCode() == conformancev1.Code_CODE_DEADLINE_EXCEEDED {
+			continue
+		}
+		filtered = append(filtered, testCase)
+	}
+	return filtered
 }
 
 func (lib *testCaseLibrary) filterGRPCImplTestCases(testCases []*conformancev1.TestCase, clientIsGRPCImpl, serverIsGRPCImpl bool) []*conformancev1.TestCase {

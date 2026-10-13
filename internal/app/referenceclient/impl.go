@@ -56,27 +56,17 @@ func (i *invoker) Invoke(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
-	if req.TimeoutMs == nil {
+	if req.TimeoutMs == nil || i.referenceMode {
+		// In reference mode, the reference client never enforces the test
+		// case's timeout: the implementation under test must. If the client
+		// used a context deadline, it would report "deadline exceeded" itself
+		// and the test would pass whether or not the server enforced it. So
+		// the timeout is only sent to the server, by timeoutHeaderTransport.
 		return i.invoke(ctx, req)
 	}
-	timeout := time.Duration(*req.TimeoutMs) * time.Millisecond
-	if !i.referenceMode {
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
-		return i.invoke(ctx, req)
-	}
-	// When testing a server, the server must enforce the timeout. If the
-	// client used the same deadline, it would report "deadline exceeded"
-	// itself and the test would pass whether or not the server enforced it.
-	// So we use a longer deadline as a backstop, and serverTimeoutTransport
-	// still sends the requested timeout to the server.
-	ctx, cancel := context.WithTimeoutCause(ctx, timeout+serverTimeoutGracePeriod, errServerIgnoredTimeout)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(*req.TimeoutMs)*time.Millisecond)
 	defer cancel()
-	resp, err := i.invoke(ctx, req)
-	if errors.Is(context.Cause(ctx), errServerIgnoredTimeout) {
-		return nil, fmt.Errorf("%w of %v within %v", errServerIgnoredTimeout, timeout, serverTimeoutGracePeriod)
-	}
-	return resp, err
+	return i.invoke(ctx, req)
 }
 
 func (i *invoker) invoke(
