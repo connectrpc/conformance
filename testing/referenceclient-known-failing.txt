@@ -1,1 +1,6 @@
-# There are no known failures in the reference client.
+# connect-go reports a response cut off partway through a message as
+# invalid_argument instead of internal.
+Connect Unexpected Responses/**/server-stream/incomplete-message
+Connect Unexpected Responses/**/server-stream/incomplete-message-prefix
+gRPC Unexpected Responses/**/server-stream/incomplete-message
+gRPC Unexpected Responses/**/server-stream/incomplete-message-prefix

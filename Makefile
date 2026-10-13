@@ -116,8 +116,11 @@ runclienttests: $(BIN)/connectconformance $(BIN)/referenceclient $(BIN)/grpcclie
 		-- ./testing/grpcwebclient/bin/grpcwebclient
 
 .PHONY: grpcwebclient
-grpcwebclient: generate
+grpcwebclient: generate testing/grpcwebclient/node_modules/.package-lock.json
 	cd testing/grpcwebclient && npm run build
+
+testing/grpcwebclient/node_modules/.package-lock.json: testing/grpcwebclient/package-lock.json
+	cd testing/grpcwebclient && npm ci
 
 $(BIN)/connectconformance: Makefile generate
 	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/connectconformance/
