@@ -26,7 +26,7 @@ const (
 	grpcTimeoutHeader    = "Grpc-Timeout"
 
 	// The gRPC protocol limits timeout values to 8 digits.
-	grpcTimeoutMaxValue = 100_000_000
+	grpcTimeoutMaxValue = 99_999_999
 )
 
 // timeoutHeaderTransport sends the test case's timeout to the server in the
@@ -47,7 +47,7 @@ func (t *timeoutHeaderTransport) RoundTrip(req *http.Request) (*http.Response, e
 	switch t.protocol {
 	case conformancev1.Protocol_PROTOCOL_GRPC, conformancev1.Protocol_PROTOCOL_GRPC_WEB:
 		header = grpcTimeoutHeader
-		if t.timeoutMs < grpcTimeoutMaxValue {
+		if t.timeoutMs <= grpcTimeoutMaxValue {
 			value = strconv.FormatUint(uint64(t.timeoutMs), 10) + "m"
 		} else {
 			value = strconv.FormatUint(uint64(t.timeoutMs)/1000, 10) + "S"

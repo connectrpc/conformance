@@ -62,7 +62,7 @@ func (c *conformanceServiceServer) Unary(
 		if err := grpc.SetTrailer(ctx, trailerMD); err != nil {
 			return nil, err
 		}
-		if err := sleep(ctx, time.Duration(req.ResponseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+		if err := internal.SleepContext(ctx, time.Duration(req.ResponseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
 			return nil, err
 		}
 	}
@@ -125,7 +125,7 @@ func (c *conformanceServiceServer) ClientStream(
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
 		stream.SetTrailer(trailerMD)
 
-		if err := sleep(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+		if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
 			return err
 		}
 	}
@@ -180,7 +180,7 @@ func (c *conformanceServiceServer) ServerStream(
 				resp.Payload.RequestInfo = requestInfo
 			}
 
-			if err := sleep(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+			if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
 				return err
 			}
 
@@ -283,7 +283,7 @@ func (c *conformanceServiceServer) BidiStream(
 				}
 			}
 			resp.Payload.RequestInfo = requestInfo
-			if err := sleep(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+			if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
 				return err
 			}
 
@@ -316,7 +316,7 @@ func (c *conformanceServiceServer) BidiStream(
 				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
 				resp.Payload.RequestInfo = createRequestInfo(ctx, requestMetadata, reqs)
 			}
-			if err := sleep(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+			if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
 				return err
 			}
 
@@ -431,20 +431,4 @@ func serverNameStreamInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamSe
 func serverNameMetadata() metadata.MD {
 	server := fmt.Sprintf("%s/%s", serverName, internal.Version)
 	return metadata.Pairs("Server", server)
-}
-
-// sleep waits for the given duration. It returns early with an error if the
-// context is done first, for example because the RPC's deadline has expired.
-func sleep(ctx context.Context, duration time.Duration) error {
-	if duration <= 0 {
-		return nil
-	}
-	timer := time.NewTimer(duration)
-	defer timer.Stop()
-	select {
-	case <-timer.C:
-		return nil
-	case <-ctx.Done():
-		return status.FromContextError(ctx.Err()).Err()
-	}
 }

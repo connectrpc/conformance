@@ -112,7 +112,7 @@ func doUnary[ReqT, RespT any, Req hasUnaryResponseDefinition[ReqT]](
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(msg.GetResponseDefinition().ResponseDelayMs) * time.Millisecond
-		if err := sleep(ctx, responseDelay); err != nil {
+		if err := internal.SleepContext(ctx, responseDelay); err != nil {
 			return nil, err
 		}
 	}
@@ -173,7 +173,7 @@ func (s *conformanceServer) ClientStream(
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
-		if err := sleep(ctx, responseDelay); err != nil {
+		if err := internal.SleepContext(ctx, responseDelay); err != nil {
 			return nil, err
 		}
 	}
@@ -224,7 +224,7 @@ func (s *conformanceServer) ServerStream(
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			if err := sleep(ctx, responseDelay); err != nil {
+			if err := internal.SleepContext(ctx, responseDelay); err != nil {
 				return err
 			}
 
@@ -337,7 +337,7 @@ func (s *conformanceServer) BidiStream(
 			resp.Payload.RequestInfo = requestInfo
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			if err := sleep(ctx, responseDelay); err != nil {
+			if err := internal.SleepContext(ctx, responseDelay); err != nil {
 				return err
 			}
 
@@ -382,7 +382,7 @@ func (s *conformanceServer) BidiStream(
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			if err := sleep(ctx, responseDelay); err != nil {
+			if err := internal.SleepContext(ctx, responseDelay); err != nil {
 				return err
 			}
 
@@ -691,23 +691,4 @@ func grpcWebStatusEndStream(err *connect.Error, trailers []*conformancev1.Header
 		}
 	}
 	return buf.String()
-}
-
-// sleep waits for the given duration. It returns early with an error if the
-// context is done first, for example because the RPC's deadline has expired.
-func sleep(ctx context.Context, duration time.Duration) error {
-	if duration <= 0 {
-		return nil
-	}
-	timer := time.NewTimer(duration)
-	defer timer.Stop()
-	select {
-	case <-timer.C:
-		return nil
-	case <-ctx.Done():
-		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return connect.NewError(connect.CodeDeadlineExceeded, ctx.Err())
-		}
-		return connect.NewError(connect.CodeCanceled, ctx.Err())
-	}
 }
