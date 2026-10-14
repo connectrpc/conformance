@@ -124,7 +124,7 @@ Below are the basic steps needed for setting up the suite to run against your im
 
    If you are using a language that is not supported by the BSR's selection of SDKs, you can generate one yourself
    using the [`buf`](https://buf.build/docs/generate/tutorial) command-line tool.
-   After creating a [`buf.gen.yaml`](https://buf.build/docs/configuration/v1/buf-gen-yaml) file, to configure the
+   After creating a [`buf.gen.yaml`](https://buf.build/docs/configuration/v2/buf-gen-yaml) file, to configure the
    code generation, you'll then run `buf generate buf.build/connectrpc/conformance`.
 
 2. Once you have an SDK, with generated code for the
@@ -146,8 +146,8 @@ Below are the basic steps needed for setting up the suite to run against your im
 5. Finally, integrate the conformance tests into the continuous integration and testing process for your code,
    so every change you make can validate that the implementation remains conformant. You can see an example of
    how this can be done using `make` in the connect-kotlin repo,
-   [here](https://github.com/connectrpc/connect-kotlin/blob/328110c00f791d06798aaa67f142d542bfcf1f27/Makefile#L46) and
-   [here](https://github.com/connectrpc/connect-kotlin/blob/328110c00f791d06798aaa67f142d542bfcf1f27/Makefile#L111-L124).
+   [here](https://github.com/connectrpc/connect-kotlin/blob/279ff3245c3ccefa1a76ced11629e4fa1b03adfe/Makefile#L45-L77) and
+   [here](https://github.com/connectrpc/connect-kotlin/blob/279ff3245c3ccefa1a76ced11629e4fa1b03adfe/Makefile#L107-L120).
 
 
 ### Running the tests
@@ -252,6 +252,12 @@ to adopt. (See [the docs][upgrading] for more details.)
   The Kotlin implementation of Connect
 * [connect-swift](https://github.com/connectrpc/connect-swift):
   The Swift implementation of Connect
+* [connect-dart](https://github.com/connectrpc/connect-dart):
+  The Dart implementation of Connect
+* [connect-py](https://github.com/connectrpc/connect-py):
+  The Python implementation of Connect
+* [connect-rust](https://github.com/connectrpc/connect-rust):
+  The Rust implementation of Connect
 
 ### Examples
 
@@ -281,10 +287,7 @@ Offered under the [Apache 2 license][license].
 [blog]: https://buf.build/blog/connect-a-better-grpc
 [ci]: https://github.com/connectrpc/conformance/actions/workflows/ci.yaml
 [connect-go]: https://github.com/connectrpc/connect-go
-[connect-es]: https://github.com/connectrpc/connect-es
 [demo]: https://github.com/connectrpc/examples-go
 [docs]: https://connectrpc.com
-[license]: https://github.com/connectrpc/conformance/blob/main/LICENSE
-[protobuf-es]: https://github.com/bufbuild/protobuf-es
 [release notes]: https://github.com/connectrpc/conformance/releases
 [upgrading]: ./docs/configuring_and_running_tests.md#upgrading
