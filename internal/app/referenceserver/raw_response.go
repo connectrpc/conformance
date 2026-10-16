@@ -25,7 +25,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -160,32 +160,20 @@ func (r *rawResponseWriter) finish(snapshotHeaders http.Header) {
 	internal.AddTrailers(resp.Trailers, r.respWriter.Header())
 }
 
-type rawResponseRecorder struct{}
-
-func (r rawResponseRecorder) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if msg, ok := req.Any().(*conformancev1.UnaryRequest); ok {
-			rawResponse := msg.GetResponseDefinition().GetRawResponse()
-			if rawResponse != nil {
-				if err := setRawResponse(ctx, rawResponse); err != nil {
-					return nil, err
-				}
-				return nil, connect.NewError(connect.CodeAborted, errors.New("use raw response instead"))
-			}
-		}
-		return next(ctx, req)
-	}
-}
-
-func (r rawResponseRecorder) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return next
-}
-
-func (r rawResponseRecorder) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return func(ctx context.Context, stream connect.StreamingHandlerConn) error {
+// rawResponseRecorder is a server interceptor that checks the first request
+// for a raw response definition and, if present, directs rawResponder to send
+// it instead of the handler's response.
+func rawResponseRecorder(next connect.ServerFunc) connect.ServerFunc {
+	return func(ctx context.Context, spec connect.Spec, stream connect.ServerStream) error {
 		var req proto.Message
 		var rawResponseFunc func() *conformancev1.RawHTTPResponse
-		switch stream.Spec().Procedure {
+		switch spec.Procedure {
+		case conformancev1connect.ConformanceServiceUnaryProcedure:
+			unaryReq := &conformancev1.UnaryRequest{}
+			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
+				return unaryReq.GetResponseDefinition().GetRawResponse()
+			}
+			req = unaryReq
 		case conformancev1connect.ConformanceServiceClientStreamProcedure:
 			streamReq := &conformancev1.ClientStreamRequest{}
 			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
@@ -205,39 +193,38 @@ func (r rawResponseRecorder) WrapStreamingHandler(next connect.StreamingHandlerF
 			}
 			req = streamReq
 		}
-		var reqErr error
 		if req == nil {
-			return next(ctx, stream)
+			return next(ctx, spec, stream)
 		}
-		reqErr = stream.Receive(req)
+		reqErr := stream.Receive(req)
 		if reqErr == nil { //nolint:nestif
 			rawResponse := rawResponseFunc()
 			if rawResponse != nil {
 				if err := setRawResponse(ctx, rawResponse); err != nil {
 					return err
 				}
-				// If we have a raw response, go ahead and drain the request stream
-				// before sending back the raw response.
-				// NOTE: This means that raw responses cannot be used with full-duplex
-				//       request definitions.
-				for {
-					if err := stream.Receive(req); err != nil {
-						break
+				if spec.StreamType != connect.StreamTypeUnary {
+					// Drain the request stream before sending back the raw response.
+					// This means raw responses cannot be used with full-duplex streams.
+					for {
+						if err := stream.Receive(req); err != nil {
+							break
+						}
 					}
 				}
-				return connect.NewError(connect.CodeAborted, errors.New("use raw response instead"))
+				return connect.NewError(connect.CodeAborted, "use raw response instead")
 			}
 		}
-		return next(ctx, &firstReqCachingStream{
-			StreamingHandlerConn: stream,
-			request:              req,
-			recvErr:              reqErr,
+		return next(ctx, spec, &firstReqCachingStream{
+			ServerStream: stream,
+			request:      req,
+			recvErr:      reqErr,
 		})
 	}
 }
 
 type firstReqCachingStream struct {
-	connect.StreamingHandlerConn
+	connect.ServerStream
 
 	request any
 	recvErr error
@@ -265,7 +252,7 @@ func (str *firstReqCachingStream) Receive(dest any) error {
 	}
 	// Otherwise, we've already provided the cached first request.
 	// So all subsequent receives use the underlying stream.
-	return str.StreamingHandlerConn.Receive(dest)
+	return str.ServerStream.Receive(dest)
 }
 
 func setRawResponse(ctx context.Context, resp *conformancev1.RawHTTPResponse) error {

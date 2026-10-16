@@ -18,46 +18,24 @@ import (
 	"compress/zlib"
 	"io"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 )
 
-// deflateDecompressor is a thin wrapper around a zlib Reader. Note that due to
-// an unfortunate misnomer with the RFC 2616 specification, HTTP deflate is
-// actually RFC 1950 with zlib headers, rather than RFC 1951. gRPC uses the same
-// nomenclature.
-type deflateDecompressor struct {
-	reader io.ReadCloser
-}
+// deflateCompressor uses zlib (RFC 1950) rather than raw deflate (RFC 1951),
+// because HTTP and gRPC both use "deflate" to name the zlib format.
+type deflateCompressor struct{}
 
-func (c *deflateDecompressor) Read(bytes []byte) (int, error) {
-	if c.reader == nil {
-		return 0, io.EOF
-	}
-	return c.reader.Read(bytes)
-}
-func (c *deflateDecompressor) Reset(rdr io.Reader) error {
-	reader, err := zlib.NewReader(rdr)
-	if err != nil {
-		c.reader = &errorDecompressor{err: err}
-		return err
-	}
-	c.reader = reader
-	return nil
-}
-func (c *deflateDecompressor) Close() error {
-	if c.reader == nil {
-		return nil
-	}
-	return c.reader.Close()
-}
-
-// NewDeflateDecompressor returns a new deflate Decompressor.
-func NewDeflateDecompressor() connect.Decompressor {
-	return &deflateDecompressor{}
-}
-
-// NewDeflateCompressor returns a new deflate Compressor.
+// NewDeflateCompressor returns a deflate [connect.Compressor].
 func NewDeflateCompressor() connect.Compressor {
-	// Construct a new zlib Writer with default compression level
-	return zlib.NewWriter(nil)
+	return deflateCompressor{}
+}
+
+func (deflateCompressor) Name() string { return Deflate }
+
+func (deflateCompressor) Compress(dst io.Writer) (io.WriteCloser, error) {
+	return zlib.NewWriter(dst), nil
+}
+
+func (deflateCompressor) Decompress(src io.Reader) (io.ReadCloser, error) {
+	return zlib.NewReader(src)
 }

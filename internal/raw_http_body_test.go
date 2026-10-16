@@ -185,11 +185,12 @@ func checkMessageContents(t *testing.T, msg *conformancev1.MessageContents, data
 	t.Helper()
 	decompressor, err := compression.GetDecompressor(msg.Compression)
 	require.NoError(t, err)
-	err = decompressor.Reset(bytes.NewReader(data))
+	decompressReader, err := decompressor.Decompress(bytes.NewReader(data))
 	require.NoError(t, err)
 	var decompressed bytes.Buffer
-	_, err = decompressed.ReadFrom(decompressor)
+	_, err = decompressed.ReadFrom(decompressReader)
 	require.NoError(t, err)
+	require.NoError(t, decompressReader.Close())
 	switch msgData := msg.Data.(type) {
 	case *conformancev1.MessageContents_Binary:
 		assert.Equal(t, msgData.Binary, decompressed.Bytes())

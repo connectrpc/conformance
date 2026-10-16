@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"google.golang.org/grpc/metadata"
 )
 

@@ -34,7 +34,7 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/grpcutil"
 	"connectrpc.com/conformance/internal/tracer"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	gcmp "github.com/google/go-cmp/cmp"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -185,10 +185,11 @@ func examineWireDetails(ctx context.Context, printer internal.Printer) (statusCo
 		// If this is a unary request that returned an error, then use the entire
 		// response body as the wire error details.
 		decomp := tracer.GetDecompressor(trace.Response.Header.Get("Content-Encoding"))
-		if err := decomp.Reset(wrapper.buf); err == nil {
-			if body, err := io.ReadAll(decomp); err == nil {
+		if reader, err := decomp.Decompress(wrapper.buf); err == nil {
+			if body, err := io.ReadAll(reader); err == nil {
 				examineConnectError(body, printer)
 			}
+			_ = reader.Close()
 		}
 	case strings.HasPrefix(contentType, "application/connect+"):
 		// If this is a streaming Connect request, then look through the trace events
