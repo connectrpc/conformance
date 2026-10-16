@@ -19,6 +19,12 @@ various scenarios with a client-server interaction to ensure the results are as 
   The Kotlin implementation of Connect
 * [connect-swift](https://github.com/connectrpc/connect-swift):
   The Swift implementation of Connect
+* [connect-dart](https://github.com/connectrpc/connect-dart):
+  The Dart implementation of Connect
+* [connect-py](https://github.com/connectrpc/connect-py):
+  The Python implementation of Connect
+* [connect-rust](https://github.com/connectrpc/connect-rust):
+  The Rust implementation of Connect
 
 For more on Connect, see the [announcement blog post](https://buf.build/blog/connect-a-better-grpc) and the documentation
 on [connectrpc.com](https://connectrpc.com).
