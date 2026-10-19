@@ -569,11 +569,6 @@ func checkDeadlineError(ctx context.Context, err error) error {
 			return err
 		}
 	}
-	if urlErr, ok := errors.AsType[*url.Error](cause); ok {
-		// If we get an RST_STREAM error from http.Client.Do, it's wrapped in a
-		// *url.Error.
-		cause = urlErr.Unwrap()
-	}
 	msg := cause.Error()
 	if !strings.HasPrefix(msg, streamErrPrefix) {
 		return err

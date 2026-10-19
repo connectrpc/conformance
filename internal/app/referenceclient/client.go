@@ -31,7 +31,6 @@ import (
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
 	"connectrpc.com/connect/v2/connecthttp"
-	"connectrpc.com/connect/v2/connectproto"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -188,10 +187,8 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 	case conformancev1.Codec_CODEC_PROTO:
 		// this is the default, no option needed
 	case conformancev1.Codec_CODEC_JSON:
-		jsonCodec := internal.NewStrictJSONCodec()
 		clientOptions = append(clientOptions,
-			connecthttp.WithCodecs(connectproto.NewBinaryCodec(), jsonCodec),
-			connecthttp.WithSendCodec(jsonCodec.Name()),
+			connecthttp.WithCodecs(internal.NewStrictJSONCodec()),
 		)
 	case conformancev1.Codec_CODEC_TEXT: //nolint:staticcheck // staticcheck complains because this const is deprecated
 		return nil, fmt.Errorf("%s is deprecated and should not be used", req.Codec)
