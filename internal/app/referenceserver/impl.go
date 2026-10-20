@@ -483,13 +483,57 @@ func asAny(msg proto.Message) (*anypb.Any, error) {
 }
 
 // serverNameHandlerInterceptor adds a "server" header on outgoing responses.
+// If a gRPC-Web handler fails without sending or setting any headers, it adds a
+// "server" trailer instead, so that a trailers-only response can still be sent.
+// Trailers-only responses are only meant for immediate errors.
 func serverNameHandlerInterceptor(next connect.ServerFunc) connect.ServerFunc {
 	return func(ctx context.Context, spec connect.Spec, stream connect.ServerStream) error {
-		if info, ok := connect.CallInfoForServerContext(ctx); ok {
-			// decorate server with the program name and version
-			existing := info.ResponseHeader().Get("Server")
-			info.ResponseHeader().Set("Server", strings.TrimSpace(fmt.Sprintf("%s %s/%s", existing, serverName, internal.Version)))
+		info, ok := connect.CallInfoForServerContext(ctx)
+		if !ok {
+			return next(ctx, spec, stream)
 		}
-		return next(ctx, spec, stream)
+		namedStream := &serverNameStream{ServerStream: stream, info: info}
+		err := next(ctx, spec, namedStream)
+		if !namedStream.sentHeaders {
+			if err != nil && info.Protocol == connect.ProtocolNameGRPCWeb && info.ResponseHeader().Len() == 0 {
+				addServerName(info.ResponseTrailer())
+			} else {
+				addServerName(info.ResponseHeader())
+			}
+		}
+		return err
 	}
+}
+
+// serverNameStream adds a "server" response header just before the headers
+// are sent.
+type serverNameStream struct {
+	connect.ServerStream
+
+	info        *connect.CallInfo
+	sentHeaders bool
+}
+
+func (s *serverNameStream) SendHeaders() error {
+	s.addHeader()
+	return s.ServerStream.SendHeaders()
+}
+
+func (s *serverNameStream) Send(msg any) error {
+	s.addHeader()
+	return s.ServerStream.Send(msg)
+}
+
+func (s *serverNameStream) addHeader() {
+	if s.sentHeaders {
+		return
+	}
+	s.sentHeaders = true
+	addServerName(s.info.ResponseHeader())
+}
+
+func addServerName(header *connect.Header) {
+	// decorate server with the program name and version
+	server := strings.TrimSpace(fmt.Sprintf("%s %s/%s", header.Get("Server"), serverName, internal.Version))
+	header.Set("Server", server)
 }
