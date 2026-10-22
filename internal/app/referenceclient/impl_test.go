@@ -17,11 +17,17 @@ package referenceclient
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/anypb"
 )
 
 func TestCheckDeadlineError(t *testing.T) {
@@ -40,4 +46,29 @@ func TestCheckDeadlineError(t *testing.T) {
 	rstErr := connect.NewError(connect.CodeCanceled, "canceled").
 		WithCause(errors.New("stream error: stream ID 3; CANCEL; received from peer"))
 	assert.Equal(t, connect.CodeDeadlineExceeded, connect.CodeOf(checkDeadlineError(ctx, rstErr)))
+}
+
+func TestBidiStreamReturnsErrorForInvalidRequestMessage(t *testing.T) {
+	t.Parallel()
+	svr := httptest.NewServer(http.NotFoundHandler())
+	t.Cleanup(svr.Close)
+	svrURL, err := url.Parse(svr.URL)
+	require.NoError(t, err)
+	invoker := newInvoker(svr.Client().Transport, false, svrURL, nil)
+	wrongType, err := anypb.New(&conformancev1.UnaryRequest{})
+	require.NoError(t, err)
+	for _, streamType := range []conformancev1.StreamType{
+		conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM,
+		conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM,
+	} {
+		t.Run(streamType.String(), func(t *testing.T) {
+			t.Parallel()
+			result, err := invoker.bidiStream(t.Context(), &conformancev1.ClientCompatRequest{
+				StreamType:      streamType,
+				RequestMessages: []*anypb.Any{wrongType},
+			})
+			require.Error(t, err)
+			assert.Nil(t, result)
+		})
+	}
 }

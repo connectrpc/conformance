@@ -228,6 +228,9 @@ func (i *invoker) serverStream(
 	defer func() {
 		// Always make sure stream is closed on exit.
 		closeErr := stream.Close()
+		if result == nil {
+			return
+		}
 		if result.Error == nil && closeErr != nil {
 			result.Error = internal.ConvertErrorToProtoError(closeErr)
 		}
@@ -362,6 +365,9 @@ func (i *invoker) bidiStream(
 	defer func() {
 		// Always make sure stream is closed on exit.
 		closeErr := stream.Close()
+		if result == nil {
+			return
+		}
 		if result.Error == nil && closeErr != nil {
 			result.Error = internal.ConvertErrorToProtoError(closeErr)
 		}
