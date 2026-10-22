@@ -17,12 +17,14 @@ package referenceserver
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/binary"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/textproto"
 	"testing"
+	"time"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
@@ -273,4 +275,62 @@ func readGRPCWebTrailers(t *testing.T, body []byte) textproto.MIMEHeader {
 	}
 	require.Fail(t, "response body has no trailers frame")
 	return nil
+}
+
+func TestHeadersReturnedImmediately(t *testing.T) {
+	t.Parallel()
+	svr := newTestServer(t)
+	const responseDelay = 1 * time.Second
+	testCases := []struct {
+		name        string
+		contentType string
+	}{
+		{
+			name:        "connect_server_stream",
+			contentType: "application/connect+proto",
+		},
+		{
+			name:        "grpc_web_server_stream",
+			contentType: "application/grpc-web+proto",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			data, err := proto.Marshal(&conformancev1.ServerStreamRequest{
+				ResponseDefinition: &conformancev1.StreamResponseDefinition{
+					ResponseHeaders: []*conformancev1.Header{
+						{Name: "x-custom-header", Value: []string{"foo"}},
+					},
+					// SendHeaders is only called when there is response data.
+					ResponseData:    [][]byte{{1, 2, 3}},
+					ResponseDelayMs: uint32(responseDelay.Milliseconds()),
+				},
+			})
+			require.NoError(t, err)
+			var reqBody bytes.Buffer
+			writeGRPCWebFrame(&reqBody, 0, data)
+			ctx, cancel := context.WithTimeout(t.Context(), 2*responseDelay)
+			t.Cleanup(cancel)
+			req, err := http.NewRequestWithContext(
+				ctx,
+				http.MethodPost,
+				svr.URL+conformancev1connect.ConformanceServiceServerStreamProcedure,
+				&reqBody,
+			)
+			require.NoError(t, err)
+			req.Header.Set("Content-Type", testCase.contentType)
+			start := time.Now()
+			// Do returns once the response headers arrive, before the body.
+			resp, err := svr.Client().Do(req)
+			elapsed := time.Since(start)
+			require.NoError(t, err)
+			defer resp.Body.Close()
+			require.Equal(t, http.StatusOK, resp.StatusCode)
+			assert.Equal(t, "foo", resp.Header.Get("X-Custom-Header"))
+			assert.Less(t, elapsed, responseDelay/2, "headers were not sent before the first response message")
+			_, err = io.Copy(io.Discard, resp.Body)
+			require.NoError(t, err)
+		})
+	}
 }
