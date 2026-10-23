@@ -45,10 +45,13 @@ func WriteRawMessageContents(contents *conformancev1.MessageContents, writer io.
 	if err != nil {
 		return err
 	}
-	compressor.Reset(writer)
-	_, err = compressor.Write(msgBytes)
-	if err == nil {
-		err = compressor.Close()
+	compressWriter, err := compressor.Compress(writer)
+	if err != nil {
+		return err
+	}
+	_, err = compressWriter.Write(msgBytes)
+	if closeErr := compressWriter.Close(); err == nil {
+		err = closeErr
 	}
 	return err
 }

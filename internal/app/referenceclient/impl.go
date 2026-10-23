@@ -27,7 +27,8 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -39,17 +40,12 @@ type invoker struct {
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
-func newInvoker(transport http.RoundTripper, referenceMode bool, url *url.URL, opts []connect.ClientOption) *invoker {
-	opts = append(opts, connect.WithInterceptors(userAgentClientInterceptor{}, checkDeadlineInterceptor{}))
+func newInvoker(transport http.RoundTripper, referenceMode bool, url *url.URL, opts []connecthttp.Option) *invoker {
+	httpTransport := connecthttp.NewTransport(&http.Client{Transport: transport}, url.String(), opts...)
 	client := conformancev1connect.NewConformanceServiceClient(
-		&http.Client{Transport: transport},
-		url.String(),
-		opts...,
+		connect.NewClient(httpTransport, userAgentClientInterceptor, checkDeadlineInterceptor),
 	)
-	return &invoker{
-		client:        client,
-		referenceMode: referenceMode,
-	}
+	return &invoker{client: client, referenceMode: referenceMode}
 }
 
 func (i *invoker) Invoke(
@@ -143,7 +139,7 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 	inv *invoker,
-	stub func(context.Context, *connect.Request[ReqT]) (*connect.Response[RespT], error),
+	stub func(context.Context, *ReqT) (*RespT, error),
 	getPayload func(*RespT) *conformancev1.ConformancePayload,
 ) (*conformancev1.ClientResponseResult, error) {
 	timing, err := internal.GetCancelTiming(req.Cancel)
@@ -157,14 +153,11 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 		return nil, err
 	}
 
-	request := connect.NewRequest(rpcReq)
-
-	// Add the specified request headers to the request
-	internal.AddHeaders(req.RequestHeaders, request.Header())
+	// Add the specified request headers to the request.
+	ctx, info := connect.NewClientContext(ctx)
+	internal.AddHeaders(req.RequestHeaders, info.RequestHeader())
 
 	var protoErr *conformancev1.Error
-	var headers []*conformancev1.Header
-	var trailers []*conformancev1.Header
 	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
 	if timing.AfterCloseSendMs >= 0 {
@@ -175,21 +168,15 @@ func doUnary[ReqT, RespT any, Req pointerMessage[ReqT]](
 	ctx = inv.withWireCapture(ctx)
 
 	// Invoke the Unary call
-	resp, err := stub(ctx, request)
+	resp, err := stub(ctx, rpcReq)
 
+	headers := internal.ConvertConnectHeaderToProto(info.ResponseHeader())
+	trailers := internal.ConvertConnectHeaderToProto(info.ResponseTrailer())
 	if err != nil {
-		// If an error was returned, first convert it to a Connect error
-		// so that we can get the trailers from the Meta property. Then,
-		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := internal.ConvertErrorToConnectError(err)
-		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
-		protoErr = internal.ConvertConnectToProtoError(connectErr)
+		protoErr = internal.ConvertErrorToProtoError(err)
 	} else {
-		// If the call was successful, get the returned payload
-		// and the headers and trailers.
-		payloads = append(payloads, getPayload(resp.Msg))
-		headers = internal.ConvertToProtoHeader(resp.Header())
-		trailers = internal.ConvertToProtoHeader(resp.Trailer())
+		// If the call was successful, get the returned payload.
+		payloads = append(payloads, getPayload(resp))
 	}
 
 	statusCode, feedback := inv.examineWireDetails(ctx, headers, trailers)
@@ -219,10 +206,9 @@ func (i *invoker) serverStream(
 		return nil, err
 	}
 
-	request := connect.NewRequest(ssr)
-
-	// Add the specified request headers to the request
-	internal.AddHeaders(req.RequestHeaders, request.Header())
+	// Add the specified request headers to the request.
+	ctx, info := connect.NewClientContext(ctx)
+	internal.AddHeaders(req.RequestHeaders, info.RequestHeader())
 
 	result = &conformancev1.ClientResponseResult{}
 
@@ -231,34 +217,26 @@ func (i *invoker) serverStream(
 
 	ctx = i.withWireCapture(ctx)
 
-	stream, err := i.client.ServerStream(ctx, request)
+	stream, err := i.client.ServerStream(ctx, ssr)
 	if err != nil {
-		// If an error was returned, first convert it to a Connect error
-		// so that we can get the headers from the Meta property. Then,
-		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := internal.ConvertErrorToConnectError(err)
-		headers := internal.ConvertToProtoHeader(connectErr.Meta())
-		protoErr := internal.ConvertConnectToProtoError(connectErr)
 		return &conformancev1.ClientResponseResult{
-			ResponseHeaders: headers,
-			Error:           protoErr,
+			ResponseHeaders:  internal.ConvertConnectHeaderToProto(info.ResponseHeader()),
+			ResponseTrailers: internal.ConvertConnectHeaderToProto(info.ResponseTrailer()),
+			Error:            internal.ConvertErrorToProtoError(err),
 		}, nil
 	}
 	defer func() {
 		// Always make sure stream is closed on exit.
 		closeErr := stream.Close()
-		if err != nil {
+		if result == nil {
 			return
 		}
 		if result.Error == nil && closeErr != nil {
 			result.Error = internal.ConvertErrorToProtoError(closeErr)
 		}
-		if err == nil {
-			// Read headers and trailers from the stream
-			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
-			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
-			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
-		}
+		result.ResponseHeaders = internal.ConvertConnectHeaderToProto(info.ResponseHeader())
+		result.ResponseTrailers = internal.ConvertConnectHeaderToProto(info.ResponseTrailer())
+		result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
 	}()
 
 	if timing.AfterCloseSendMs >= 0 {
@@ -271,10 +249,18 @@ func (i *invoker) serverStream(
 	}
 
 	totalRcvd := 0
-	for stream.Receive() {
+	for {
+		msg, err := stream.Receive()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			result.Error = internal.ConvertErrorToProtoError(err)
+			break
+		}
 		totalRcvd++
 		// On successful receive, get the returned payload.
-		result.Payloads = append(result.Payloads, stream.Msg().Payload)
+		result.Payloads = append(result.Payloads, msg.Payload)
 
 		// If AfterNumResponses is specified, it will be a number > 0 here.
 		// If it wasn't specified, it will be -1, which means the totalRcvd
@@ -282,10 +268,6 @@ func (i *invoker) serverStream(
 		if totalRcvd == timing.AfterNumResponses {
 			cancel()
 		}
-	}
-	if stream.Err() != nil {
-		// If an error was returned, convert it to a proto Error
-		result.Error = internal.ConvertErrorToProtoError(stream.Err())
 	}
 
 	return result, nil
@@ -298,11 +280,17 @@ func (i *invoker) clientStream(
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
+	// Add the specified request headers to the request.
+	ctx, info := connect.NewClientContext(ctx)
+	internal.AddHeaders(req.RequestHeaders, info.RequestHeader())
+
 	ctx = i.withWireCapture(ctx)
-	stream := i.client.ClientStream(ctx)
+
+	stream, err := i.client.ClientStream(ctx)
+	if err != nil {
+		return nil, err
+	}
 	var numUnsent int
-	// Add the specified request headers to the request
-	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
 	for i, msg := range req.RequestMessages {
 		csr := &conformancev1.ClientStreamRequest{}
@@ -320,8 +308,6 @@ func (i *invoker) clientStream(
 	}
 
 	var protoErr *conformancev1.Error
-	var headers []*conformancev1.Header
-	var trailers []*conformancev1.Header
 	payloads := make([]*conformancev1.ConformancePayload, 0, 1)
 
 	// Cancellation timing
@@ -336,20 +322,14 @@ func (i *invoker) clientStream(
 	}
 	resp, err := stream.CloseAndReceive()
 	if err != nil {
-		// If an error was returned, first convert it to a Connect error
-		// so that we can get the trailers from the Meta property. Then,
-		// convert _that_ to a proto Error so we can set it in the response.
-		connectErr := internal.ConvertErrorToConnectError(err)
-		trailers = internal.ConvertToProtoHeader(connectErr.Meta())
-		protoErr = internal.ConvertConnectToProtoError(connectErr)
+		protoErr = internal.ConvertErrorToProtoError(err)
 	} else {
-		// If the call was successful, get the returned payload
-		// and the headers and trailers.
-		payloads = append(payloads, resp.Msg.Payload)
-		headers = internal.ConvertToProtoHeader(resp.Header())
-		trailers = internal.ConvertToProtoHeader(resp.Trailer())
+		// If the call was successful, get the returned payload.
+		payloads = append(payloads, resp.Payload)
 	}
 
+	headers := internal.ConvertConnectHeaderToProto(info.ResponseHeader())
+	trailers := internal.ConvertConnectHeaderToProto(info.ResponseTrailer())
 	statusCode, feedback := i.examineWireDetails(ctx, headers, trailers)
 
 	return &conformancev1.ClientResponseResult{
@@ -372,28 +352,29 @@ func (i *invoker) bidiStream(
 
 	result = &conformancev1.ClientResponseResult{}
 
+	// Add the specified request headers to the request.
+	ctx, info := connect.NewClientContext(ctx)
+	internal.AddHeaders(req.RequestHeaders, info.RequestHeader())
+
 	ctx = i.withWireCapture(ctx)
 
-	stream := i.client.BidiStream(ctx)
+	stream, err := i.client.BidiStream(ctx)
+	if err != nil {
+		return nil, err
+	}
 	defer func() {
 		// Always make sure stream is closed on exit.
-		closeErr := stream.CloseResponse()
-		if err != nil {
+		closeErr := stream.Close()
+		if result == nil {
 			return
 		}
 		if result.Error == nil && closeErr != nil {
 			result.Error = internal.ConvertErrorToProtoError(closeErr)
 		}
-		if err == nil {
-			// Read headers and trailers from the stream
-			result.ResponseHeaders = internal.ConvertToProtoHeader(stream.ResponseHeader())
-			result.ResponseTrailers = internal.ConvertToProtoHeader(stream.ResponseTrailer())
-			result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
-		}
+		result.ResponseHeaders = internal.ConvertConnectHeaderToProto(info.ResponseHeader())
+		result.ResponseTrailers = internal.ConvertConnectHeaderToProto(info.ResponseTrailer())
+		result.HttpStatusCode, result.Feedback = i.examineWireDetails(ctx, result.ResponseHeaders, result.ResponseTrailers)
 	}()
-
-	// Add the specified request headers to the request
-	internal.AddHeaders(req.RequestHeaders, stream.RequestHeader())
 
 	fullDuplex := req.StreamType == conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
 
@@ -458,7 +439,7 @@ func (i *invoker) bidiStream(
 	}
 
 	// Sends are done, close the send side of the stream
-	if err := stream.CloseRequest(); err != nil {
+	if err := stream.CloseSend(); err != nil {
 		return nil, err
 	}
 
@@ -526,42 +507,21 @@ func (i *invoker) examineWireDetails(ctx context.Context, headers, trailers []*c
 	if ok {
 		statusCodePtr = new(int32(statusCode))
 	}
-	if headers != nil {
-		checkBinaryMetadata("headers", headers, printer)
-		checkBinaryMetadata("trailers", trailers, printer)
-	} else {
-		// all metadata together in one, from an error
-		checkBinaryMetadata("metadata", trailers, printer)
-	}
+	checkBinaryMetadata("headers", headers, printer)
+	checkBinaryMetadata("trailers", trailers, printer)
 	return statusCodePtr, printer.Messages
 }
 
 // userAgentClientInterceptor adds to the user-agent header on outgoing requests.
-type userAgentClientInterceptor struct{}
-
-func (userAgentClientInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		if req.Spec().IsClient {
+func userAgentClientInterceptor(next connect.ClientFunc) connect.ClientFunc {
+	return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+		if info, ok := connect.CallInfoForClientContext(ctx); ok {
 			// decorate user-agent with the program name and version
-			userAgent := fmt.Sprintf("%s %s/%s", req.Header().Get("User-Agent"), clientName, internal.Version)
-			req.Header().Set("User-Agent", userAgent)
+			existing := info.RequestHeader().Get("User-Agent")
+			info.RequestHeader().Set("User-Agent", strings.TrimSpace(fmt.Sprintf("%s %s/%s", existing, clientName, internal.Version)))
 		}
-		return next(ctx, req)
+		return next(ctx, spec)
 	}
-}
-
-func (userAgentClientInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
-		conn := next(ctx, spec)
-		// decorate user-agent with the program name and version
-		userAgent := fmt.Sprintf("%s %s/%s", conn.RequestHeader().Get("User-Agent"), clientName, internal.Version)
-		conn.RequestHeader().Set("User-Agent", userAgent)
-		return conn
-	}
-}
-
-func (userAgentClientInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return next
 }
 
 // checkDeadlineInterceptor can translate misattributed HTTP/2 stream
@@ -569,26 +529,14 @@ func (userAgentClientInterceptor) WrapStreamingHandler(next connect.StreamingHan
 // because when the deadline is reached, there is a race between the client
 // timer function, which cancels the context and sets the "deadline exceeded"
 // error, and the server, which cancels the HTTP/2 stream.
-type checkDeadlineInterceptor struct{}
-
-func (c checkDeadlineInterceptor) WrapUnary(unaryFunc connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		resp, err := unaryFunc(ctx, req)
-		if req.Spec().IsClient && err != nil {
-			return nil, checkDeadlineError(ctx, err)
+func checkDeadlineInterceptor(next connect.ClientFunc) connect.ClientFunc {
+	return func(ctx context.Context, spec connect.Spec) (connect.ClientStream, error) {
+		stream, err := next(ctx, spec)
+		if err != nil {
+			return nil, err
 		}
-		return resp, err
+		return &checkDeadlineStream{ClientStream: stream, ctx: ctx}, nil
 	}
-}
-
-func (c checkDeadlineInterceptor) WrapStreamingClient(clientFunc connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return func(ctx context.Context, spec connect.Spec) connect.StreamingClientConn {
-		return &checkDeadlineClientConn{StreamingClientConn: clientFunc(ctx, spec), ctx: ctx}
-	}
-}
-
-func (c checkDeadlineInterceptor) WrapStreamingHandler(handlerFunc connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return handlerFunc
 }
 
 func checkDeadlineError(ctx context.Context, err error) error {
@@ -620,15 +568,14 @@ func checkDeadlineError(ctx context.Context, err error) error {
 		streamErrPrefix = "stream error: "
 		fromPeerSuffix  = "; received from peer"
 	)
-	if connectErr := (*connect.Error)(nil); errors.As(err, &connectErr) {
-		err = connectErr.Unwrap()
+	cause := err
+	if connectErr, ok := errors.AsType[*connect.Error](cause); ok {
+		// Errors from the server have no cause and keep their code.
+		if cause = connectErr.Unwrap(); cause == nil {
+			return err
+		}
 	}
-	if urlErr := (*url.Error)(nil); errors.As(err, &urlErr) {
-		// If we get an RST_STREAM error from http.Client.Do, it's wrapped in a
-		// *url.Error.
-		err = urlErr.Unwrap()
-	}
-	msg := err.Error()
+	msg := cause.Error()
 	if !strings.HasPrefix(msg, streamErrPrefix) {
 		return err
 	}
@@ -647,27 +594,29 @@ func checkDeadlineError(ctx context.Context, err error) error {
 	}
 	// The underlying error is an HTTP/2 stream cancelation. So now
 	// it's safe to change the error code attribution.
-	return connect.NewError(connect.CodeDeadlineExceeded, err)
+	return connect.NewError(connect.CodeDeadlineExceeded, cause.Error()).WithCause(cause)
 }
 
-// checkDeadlineClientConn is a StreamingClientConn decorator that can
-// translate errors from "canceled" to "deadline exceeded" if they are
-// misattributed.
-type checkDeadlineClientConn struct {
-	connect.StreamingClientConn
+// checkDeadlineStream is a ClientStream decorator that can translate errors
+// from "canceled" to "deadline exceeded" if they are misattributed.
+type checkDeadlineStream struct {
+	connect.ClientStream
 
 	ctx context.Context //nolint:containedctx
 }
 
-func (c *checkDeadlineClientConn) Send(msg any) error {
-	return checkDeadlineError(c.ctx, c.StreamingClientConn.Send(msg))
+func (s *checkDeadlineStream) Send(msg any) error {
+	return checkDeadlineError(s.ctx, s.ClientStream.Send(msg))
 }
-func (c *checkDeadlineClientConn) CloseRequest() error {
-	return checkDeadlineError(c.ctx, c.StreamingClientConn.CloseRequest())
+
+func (s *checkDeadlineStream) Receive(msg any) error {
+	return checkDeadlineError(s.ctx, s.ClientStream.Receive(msg))
 }
-func (c *checkDeadlineClientConn) Receive(msg any) error {
-	return checkDeadlineError(c.ctx, c.StreamingClientConn.Receive(msg))
+
+func (s *checkDeadlineStream) CloseSend() error {
+	return checkDeadlineError(s.ctx, s.ClientStream.CloseSend())
 }
-func (c *checkDeadlineClientConn) CloseResponse() error {
-	return checkDeadlineError(c.ctx, c.StreamingClientConn.CloseResponse())
+
+func (s *checkDeadlineStream) Close() error {
+	return checkDeadlineError(s.ctx, s.ClientStream.Close())
 }

@@ -15,6 +15,7 @@
 package internal
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -23,16 +24,9 @@ import (
 
 func TestStrictJSONCodec(t *testing.T) {
 	t.Parallel()
-	codec := StrictJSONCodec{}
-	err := codec.Unmarshal([]byte(`{
+	codec := NewStrictJSONCodec()
+	err := codec.UnmarshalRead(t.Context(), strings.NewReader(`{
 		"somefield": 123
 	}`), &emptypb.Empty{})
 	require.ErrorContains(t, err, `unknown field "somefield"`)
-}
-
-func TestStrictProtoCodec(t *testing.T) {
-	t.Parallel()
-	codec := StrictProtoCodec{}
-	err := codec.Unmarshal([]byte{8, 0}, &emptypb.Empty{})
-	require.ErrorContains(t, err, `message data includes unrecognized field 1 with varint wire type`)
 }

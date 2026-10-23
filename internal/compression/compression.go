@@ -15,12 +15,12 @@
 package compression
 
 import (
-	"compress/gzip"
 	"fmt"
 	"io"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connectgzip"
 )
 
 // The IANA names for supported compression algorithms.
@@ -33,13 +33,25 @@ const (
 	Zstd     = "zstd"
 )
 
+// All returns a compressor for every supported algorithm other than identity.
+// Servers advertise them in this order, which matches earlier releases.
+func All() []connect.Compressor {
+	return []connect.Compressor{
+		NewZstdCompressor(),
+		NewSnappyCompressor(),
+		NewDeflateCompressor(),
+		NewBrotliCompressor(),
+		connectgzip.New(),
+	}
+}
+
 // GetCompressor returns a compressor for the given compression algorithm.
 func GetCompressor(compression conformancev1.Compression) (connect.Compressor, error) {
 	switch compression {
 	case conformancev1.Compression_COMPRESSION_UNSPECIFIED, conformancev1.Compression_COMPRESSION_IDENTITY:
-		return &noOpCompressor{}, nil
+		return noOpCompressor{}, nil
 	case conformancev1.Compression_COMPRESSION_GZIP:
-		return gzip.NewWriter(nil), nil
+		return connectgzip.New(), nil
 	case conformancev1.Compression_COMPRESSION_BR:
 		return NewBrotliCompressor(), nil
 	case conformancev1.Compression_COMPRESSION_ZSTD:
@@ -54,54 +66,26 @@ func GetCompressor(compression conformancev1.Compression) (connect.Compressor, e
 }
 
 // GetDecompressor returns a decompressor for the given compression algorithm.
-func GetDecompressor(compression conformancev1.Compression) (connect.Decompressor, error) {
-	switch compression {
-	case conformancev1.Compression_COMPRESSION_UNSPECIFIED, conformancev1.Compression_COMPRESSION_IDENTITY:
-		return &noOpDecompressor{}, nil
-	case conformancev1.Compression_COMPRESSION_GZIP:
-		return &gzip.Reader{}, nil
-	case conformancev1.Compression_COMPRESSION_BR:
-		return NewBrotliDecompressor(), nil
-	case conformancev1.Compression_COMPRESSION_ZSTD:
-		return NewZstdDecompressor(), nil
-	case conformancev1.Compression_COMPRESSION_DEFLATE:
-		return NewDeflateDecompressor(), nil
-	case conformancev1.Compression_COMPRESSION_SNAPPY:
-		return NewSnappyDecompressor(), nil
-	default:
-		return nil, fmt.Errorf("unsupported compression scheme %v", compression)
-	}
+// A [connect.Compressor] also decompresses, so this is the same as
+// [GetCompressor].
+func GetDecompressor(compression conformancev1.Compression) (connect.Compressor, error) {
+	return GetCompressor(compression)
 }
 
-type noOpCompressor struct {
-	io.WriteCloser
+type noOpCompressor struct{}
+
+func (noOpCompressor) Name() string { return Identity }
+
+func (noOpCompressor) Compress(dst io.Writer) (io.WriteCloser, error) {
+	return nopWriteCloser{dst}, nil
 }
 
-func (c *noOpCompressor) Reset(writer io.Writer) {
-	wc, ok := writer.(io.WriteCloser)
-	if !ok {
-		wc = &noOpCloser{writer}
-	}
-	c.WriteCloser = wc
+func (noOpCompressor) Decompress(src io.Reader) (io.ReadCloser, error) {
+	return io.NopCloser(src), nil
 }
 
-type noOpDecompressor struct {
-	io.ReadCloser
-}
-
-func (c *noOpDecompressor) Reset(reader io.Reader) error {
-	rc, ok := reader.(io.ReadCloser)
-	if !ok {
-		rc = io.NopCloser(reader)
-	}
-	c.ReadCloser = rc
-	return nil
-}
-
-type noOpCloser struct {
+type nopWriteCloser struct {
 	io.Writer
 }
 
-func (n *noOpCloser) Close() error {
-	return nil
-}
+func (nopWriteCloser) Close() error { return nil }

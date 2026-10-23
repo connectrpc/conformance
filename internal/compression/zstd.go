@@ -17,55 +17,27 @@ package compression
 import (
 	"io"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/klauspost/compress/zstd"
 )
 
-// zstdDecompressor is a thin wrapper around a zstd Decoder.
-type zstdDecompressor struct {
-	decoder *zstd.Decoder
-}
+type zstdCompressor struct{}
 
-func (c *zstdDecompressor) Read(bytes []byte) (int, error) {
-	if c.decoder == nil {
-		return 0, io.EOF
-	}
-	return c.decoder.Read(bytes)
-}
-func (c *zstdDecompressor) Reset(rdr io.Reader) error {
-	if c.decoder == nil {
-		var err error
-		c.decoder, err = zstd.NewReader(rdr)
-		return err
-	}
-	return c.decoder.Reset(rdr)
-}
-func (c *zstdDecompressor) Close() error {
-	if c.decoder == nil {
-		return nil
-	}
-	c.decoder.Close()
-	// zstd.Decoder cannot be re-used after close, even via Reset
-	c.decoder = nil
-	return nil
-}
-
-// NewZstdDecompressor returns a new Zstd Decompressor.
-func NewZstdDecompressor() connect.Decompressor {
-	d, err := zstd.NewReader(nil)
-	if err != nil {
-		return &errorDecompressor{err: err}
-	}
-	return &zstdDecompressor{
-		decoder: d,
-	}
-}
-
-// NewZstdCompressor returns a new Zstd Compressor.
+// NewZstdCompressor returns a Zstandard [connect.Compressor].
 func NewZstdCompressor() connect.Compressor {
-	w, err := zstd.NewWriter(nil)
+	return zstdCompressor{}
+}
+
+func (zstdCompressor) Name() string { return Zstd }
+
+func (zstdCompressor) Compress(dst io.Writer) (io.WriteCloser, error) {
+	return zstd.NewWriter(dst)
+}
+
+func (zstdCompressor) Decompress(src io.Reader) (io.ReadCloser, error) {
+	decoder, err := zstd.NewReader(src)
 	if err != nil {
-		return &errorCompressor{err: err}
+		return nil, err
 	}
-	return w
+	return decoder.IOReadCloser(), nil
 }

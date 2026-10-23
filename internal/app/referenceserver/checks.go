@@ -30,7 +30,8 @@ import (
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"google.golang.org/protobuf/reflect/protoreflect"
 )
 
@@ -373,10 +374,10 @@ func getQueryParam(values url.Values, paramName string, feedback *feedbackPrinte
 func getTestCaseName(respWriter http.ResponseWriter, req *http.Request) (string, bool) {
 	testCaseName := req.Header.Get("X-Test-Case-Name")
 	if testCaseName == "" {
-		_ = connect.NewErrorWriter().Write(
+		_ = connecthttp.NewErrorWriter().Write(
 			respWriter,
 			req,
-			connect.NewError(connect.CodeInvalidArgument, errors.New("missing x-test-case-name header")),
+			connect.NewError(connect.CodeInvalidArgument, "missing x-test-case-name header"),
 		)
 		return "", false
 	}
