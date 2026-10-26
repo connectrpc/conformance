@@ -21,7 +21,6 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -31,7 +30,8 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -322,13 +322,15 @@ func TestExamineConnectError(t *testing.T) {
 				}
 			}))
 			t.Cleanup(svr.Close)
-			client := conformancev1connect.NewConformanceServiceClient(
+			client := conformancev1connect.NewConformanceServiceClient(connect.NewClient(connecthttp.NewTransport(
 				&http.Client{Transport: newWireCaptureTransport(svr.Client().Transport, nil)},
 				svr.URL,
-			)
+				connecthttp.WithReadMaxBytes(0),
+			)))
 			ctx := withWireCapture(context.Background())
-			req := connect.NewRequest(&conformancev1.UnaryRequest{})
-			req.Header().Set("X-Test-Case-Name", "foo") // needed to enable tracing
+			req := &conformancev1.UnaryRequest{}
+			ctx, info := connect.NewClientContext(ctx)
+			info.RequestHeader().Set("X-Test-Case-Name", "foo") // needed to enable tracing
 			_, err := client.Unary(ctx, req)
 			require.Error(t, err)
 			printer := &internal.SimplePrinter{}
@@ -481,14 +483,16 @@ func TestExamineConnectEndStream(t *testing.T) {
 				writeStreamFrame([]byte(testCase.endStream), testCase.compressed, respWriter)
 			}))
 			t.Cleanup(svr.Close)
-			client := conformancev1connect.NewConformanceServiceClient(
+			client := conformancev1connect.NewConformanceServiceClient(connect.NewClient(connecthttp.NewTransport(
 				&http.Client{Transport: newWireCaptureTransport(svr.Client().Transport, nil)},
 				svr.URL,
-			)
-			ctx := withWireCapture(context.Background())
-			stream := client.ClientStream(ctx)
-			stream.RequestHeader().Set("X-Test-Case-Name", "foo") // needed to enable tracing
-			_, err := stream.CloseAndReceive()
+				connecthttp.WithReadMaxBytes(0),
+			)))
+			ctx, info := connect.NewClientContext(withWireCapture(context.Background()))
+			info.RequestHeader().Set("X-Test-Case-Name", "foo") // needed to enable tracing
+			stream, err := client.ClientStream(ctx)
+			require.NoError(t, err)
+			_, err = stream.CloseAndReceive()
 			require.Error(t, err)
 			printer := &internal.SimplePrinter{}
 			examineWireDetails(ctx, printer)
@@ -881,7 +885,7 @@ func TestExamineGRPCEndStream(t *testing.T) {
 				"foo-bar-bin: AbCcDdEeFfGg01==\r\n",
 			expectedCode: 3,
 			expectedFeedback: []string{
-				`metadata include 'Foo-Bar-Bin' value with padding but servers should emit unpadded: AbCcDdEeFfGg01==`,
+				`trailers include 'Foo-Bar-Bin' value with padding but servers should emit unpadded: AbCcDdEeFfGg01==`,
 			},
 		},
 	}
@@ -904,31 +908,27 @@ func TestExamineGRPCEndStream(t *testing.T) {
 				writeStreamFrame([]byte(testCase.endStream), testCase.compressed, respWriter)
 			}))
 			t.Cleanup(svr.Close)
-			client := conformancev1connect.NewConformanceServiceClient(
+			client := conformancev1connect.NewConformanceServiceClient(connect.NewClient(connecthttp.NewTransport(
 				&http.Client{Transport: newWireCaptureTransport(svr.Client().Transport, nil)},
 				svr.URL,
-				connect.WithGRPCWeb(),
-			)
+				connecthttp.WithReadMaxBytes(0),
+				connecthttp.WithGRPCWeb(),
+			)))
 			ctx := withWireCapture(context.Background())
-			req := connect.NewRequest(&conformancev1.UnaryRequest{})
-			req.Header().Set("X-Test-Case-Name", "foo") // needed to enable tracing
+			req := &conformancev1.UnaryRequest{}
+			ctx, info := connect.NewClientContext(ctx)
+			info.RequestHeader().Set("X-Test-Case-Name", "foo") // needed to enable tracing
 			if testCase.expectedCode != 0 {
-				req.Header().Set("Expect-Code", testCase.expectedCode.String())
+				info.RequestHeader().Set("Expect-Code", testCase.expectedCode.String())
 			}
-			resp, err := client.Unary(ctx, req)
+			_, err := client.Unary(ctx, req)
 
 			// Now we can check the details and report issues:
 			printer := &internal.SimplePrinter{}
 			examineWireDetails(ctx, printer)
 			// Check binary headers/trailers, too
-			if err != nil {
-				if connErr, ok := errors.AsType[*connect.Error](err); ok {
-					checkBinaryMetadata("metadata", internal.ConvertToProtoHeader(connErr.Meta()), printer)
-				}
-			} else {
-				checkBinaryMetadata("headers", internal.ConvertToProtoHeader(resp.Header()), printer)
-				checkBinaryMetadata("trailers", internal.ConvertToProtoHeader(resp.Trailer()), printer)
-			}
+			checkBinaryMetadata("headers", internal.ConvertConnectHeaderToProto(info.ResponseHeader()), printer)
+			checkBinaryMetadata("trailers", internal.ConvertConnectHeaderToProto(info.ResponseTrailer()), printer)
 
 			if len(testCase.expectedFeedback) == 0 {
 				if testCase.expectedCode == 0 {

@@ -15,13 +15,10 @@
 package referenceserver
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
 	"fmt"
 	"io"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -29,9 +26,8 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/conformance/internal/grpcutil"
-	"connectrpc.com/connect"
-	"google.golang.org/genproto/googleapis/rpc/status"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
@@ -46,15 +42,13 @@ type ConformanceRequest interface {
 
 type conformanceServer struct {
 	conformancev1connect.UnimplementedConformanceServiceHandler
-
-	referenceMode bool
 }
 
 func (s *conformanceServer) Unary(
 	ctx context.Context,
-	req *connect.Request[conformancev1.UnaryRequest],
-) (*connect.Response[conformancev1.UnaryResponse], error) {
-	return doUnary(ctx, req, s.referenceMode, func(payload *conformancev1.ConformancePayload) *conformancev1.UnaryResponse {
+	req *conformancev1.UnaryRequest,
+) (*conformancev1.UnaryResponse, error) {
+	return doUnary(ctx, req, func(payload *conformancev1.ConformancePayload) *conformancev1.UnaryResponse {
 		return &conformancev1.UnaryResponse{
 			Payload: payload,
 		}
@@ -63,9 +57,9 @@ func (s *conformanceServer) Unary(
 
 func (s *conformanceServer) IdempotentUnary(
 	ctx context.Context,
-	req *connect.Request[conformancev1.IdempotentUnaryRequest],
-) (*connect.Response[conformancev1.IdempotentUnaryResponse], error) {
-	return doUnary(ctx, req, s.referenceMode, func(payload *conformancev1.ConformancePayload) *conformancev1.IdempotentUnaryResponse {
+	req *conformancev1.IdempotentUnaryRequest,
+) (*conformancev1.IdempotentUnaryResponse, error) {
+	return doUnary(ctx, req, func(payload *conformancev1.ConformancePayload) *conformancev1.IdempotentUnaryResponse {
 		return &conformancev1.IdempotentUnaryResponse{
 			Payload: payload,
 		}
@@ -80,56 +74,57 @@ type hasUnaryResponseDefinition[T any] interface {
 
 func doUnary[ReqT, RespT any, Req hasUnaryResponseDefinition[ReqT]](
 	ctx context.Context,
-	req *connect.Request[ReqT],
-	referenceMode bool,
+	req *ReqT,
 	makeResp func(payload *conformancev1.ConformancePayload) *RespT,
-) (*connect.Response[RespT], error) {
-	msg := Req(req.Msg)
+) (*RespT, error) {
+	info, _ := connect.CallInfoForServerContext(ctx)
+	msg := Req(req)
 	msgAsAny, err := asAny(msg)
 	if err != nil {
 		return nil, err
 	}
 	payload, connectErr := parseUnaryResponseDefinition(
 		ctx,
-		referenceMode,
 		msg.GetResponseDefinition(),
-		req.Header(),
-		req.Peer().Query,
-		req.Peer().Protocol,
-		req.Header().Get("Content-Type"),
-		nil,
+		info,
+		queryParamsFromContext(ctx),
 		[]*anypb.Any{msgAsAny},
 	)
 	if connectErr != nil {
 		return nil, connectErr
 	}
 
-	resp := connect.NewResponse(makeResp(payload))
-
 	if msg.GetResponseDefinition() != nil {
-		internal.AddHeaders(msg.GetResponseDefinition().ResponseHeaders, resp.Header())
-		internal.AddHeaders(msg.GetResponseDefinition().ResponseTrailers, resp.Trailer())
+		internal.AddHeaders(msg.GetResponseDefinition().ResponseHeaders, info.ResponseHeader())
+		internal.AddHeaders(msg.GetResponseDefinition().ResponseTrailers, info.ResponseTrailer())
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(msg.GetResponseDefinition().ResponseDelayMs) * time.Millisecond
 		time.Sleep(responseDelay)
 	}
 
-	return resp, nil
+	return makeResp(payload), nil
 }
 
 func (s *conformanceServer) ClientStream(
 	ctx context.Context,
-	stream *connect.ClientStream[conformancev1.ClientStreamRequest],
-) (*connect.Response[conformancev1.ClientStreamResponse], error) {
+	stream conformancev1connect.ConformanceServiceClientStreamServerStream,
+) (*conformancev1.ClientStreamResponse, error) {
+	info, _ := connect.CallInfoForServerContext(ctx)
 	var responseDefinition *conformancev1.UnaryResponseDefinition
 	firstRecv := true
 	var reqs []*anypb.Any
-	for stream.Receive() {
+	for {
+		msg, err := stream.Receive()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return nil, err
+		}
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		msg := stream.Msg()
 		// If this is the first message received on the stream, save off the response definition we need to send
 		if firstRecv {
 			responseDefinition = msg.ResponseDefinition
@@ -142,63 +137,53 @@ func (s *conformanceServer) ClientStream(
 		}
 		reqs = append(reqs, msgAsAny)
 	}
-	if err := stream.Err(); err != nil {
-		return nil, err
-	}
 
 	payload, err := parseUnaryResponseDefinition(
 		ctx,
-		s.referenceMode,
 		responseDefinition,
-		stream.RequestHeader(),
-		stream.Peer().Query,
-		stream.Peer().Protocol,
-		stream.RequestHeader().Get("Content-Type"),
-		stream.Conn(),
+		info,
+		queryParamsFromContext(ctx),
 		reqs,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := connect.NewResponse(&conformancev1.ClientStreamResponse{
-		Payload: payload,
-	})
-
 	if responseDefinition != nil {
-		internal.AddHeaders(responseDefinition.ResponseHeaders, resp.Header())
-		internal.AddHeaders(responseDefinition.ResponseTrailers, resp.Trailer())
+		internal.AddHeaders(responseDefinition.ResponseHeaders, info.ResponseHeader())
+		internal.AddHeaders(responseDefinition.ResponseTrailers, info.ResponseTrailer())
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
 		time.Sleep(responseDelay)
 	}
 
-	return resp, nil
+	return &conformancev1.ClientStreamResponse{Payload: payload}, nil
 }
 
 func (s *conformanceServer) ServerStream(
 	ctx context.Context,
-	req *connect.Request[conformancev1.ServerStreamRequest],
-	stream *connect.ServerStream[conformancev1.ServerStreamResponse],
+	req *conformancev1.ServerStreamRequest,
+	stream conformancev1connect.ConformanceServiceServerStreamServerStream,
 ) error {
+	info, _ := connect.CallInfoForServerContext(ctx)
 	// Convert the request to an Any so that it can be recorded in the payload
-	msgAsAny, err := asAny(req.Msg)
+	msgAsAny, err := asAny(req)
 	if err != nil {
 		return err
 	}
 
 	respNum := 0
 
-	responseDefinition := req.Msg.ResponseDefinition
+	responseDefinition := req.ResponseDefinition
 	if responseDefinition != nil { //nolint:nestif
-		internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
-		internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+		internal.AddHeaders(responseDefinition.ResponseHeaders, info.ResponseHeader())
+		internal.AddHeaders(responseDefinition.ResponseTrailers, info.ResponseTrailer())
 
 		if len(responseDefinition.ResponseData) > 0 {
 			// Immediately send the headers/trailers on the stream so that they can be read by the client
-			if err := stream.Send(nil); err != nil {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+			if err := stream.SendHeaders(); err != nil {
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
 			}
 		}
 
@@ -216,14 +201,14 @@ func (s *conformanceServer) ServerStream(
 			// because for server streams, nothing in the request info will change
 			// after the first response.
 			if respNum == 0 {
-				resp.Payload.RequestInfo = createRequestInfo(ctx, req.Header(), req.Peer().Query, []*anypb.Any{msgAsAny})
+				resp.Payload.RequestInfo = createRequestInfo(ctx, info.RequestHeader(), queryParamsFromContext(ctx), []*anypb.Any{msgAsAny})
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
 			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
 			}
 			respNum++
 		}
@@ -232,10 +217,10 @@ func (s *conformanceServer) ServerStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				reqInfo := createRequestInfo(ctx, req.Header(), req.Peer().Query, []*anypb.Any{msgAsAny})
+				reqInfo := createRequestInfo(ctx, info.RequestHeader(), queryParamsFromContext(ctx), []*anypb.Any{msgAsAny})
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
-					return connect.NewError(connect.CodeInternal, err)
+					return connect.NewError(connect.CodeInternal, err.Error())
 				}
 				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
 			}
@@ -248,8 +233,9 @@ func (s *conformanceServer) ServerStream(
 
 func (s *conformanceServer) BidiStream(
 	ctx context.Context,
-	stream *connect.BidiStream[conformancev1.BidiStreamRequest, conformancev1.BidiStreamResponse],
+	stream conformancev1connect.ConformanceServiceBidiStreamServerStream,
 ) error {
+	info, _ := connect.CallInfoForServerContext(ctx)
 	var responseDefinition *conformancev1.StreamResponseDefinition
 	var responseDelay time.Duration
 	fullDuplex := false
@@ -285,15 +271,15 @@ func (s *conformanceServer) BidiStream(
 
 			// If a response definition was provided, add the headers and trailers
 			if responseDefinition != nil {
-				internal.AddHeaders(responseDefinition.ResponseHeaders, stream.ResponseHeader())
-				internal.AddHeaders(responseDefinition.ResponseTrailers, stream.ResponseTrailer())
+				internal.AddHeaders(responseDefinition.ResponseHeaders, info.ResponseHeader())
+				internal.AddHeaders(responseDefinition.ResponseTrailers, info.ResponseTrailer())
 
 				if fullDuplex && len(responseDefinition.ResponseData) > 0 {
 					// Immediately send the headers on the stream so that they can be read by the client.
 					// We can only do this for full-duplex. For half-duplex operation, we must let client
 					// complete its upload before trying to send anything.
-					if err := stream.Send(nil); err != nil {
-						return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+					if err := stream.SendHeaders(); err != nil {
+						return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
 					}
 				}
 
@@ -319,7 +305,7 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				// Only send the full request info (including headers and timeouts)
 				// in the first response
-				requestInfo = createRequestInfo(ctx, stream.RequestHeader(), stream.Peer().Query, reqs)
+				requestInfo = createRequestInfo(ctx, info.RequestHeader(), queryParamsFromContext(ctx), reqs)
 			} else {
 				// All responses after the first should only include the requests
 				// since that is the only thing that will change between responses
@@ -334,7 +320,7 @@ func (s *conformanceServer) BidiStream(
 			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
 			}
 			respNum++
 			reqs = nil
@@ -343,8 +329,8 @@ func (s *conformanceServer) BidiStream(
 
 	if !fullDuplex && len(responseDefinition.GetResponseData()) > 0 {
 		// Now that upload is complete, we can immediately send headers for half-duplex calls.
-		if err := stream.Send(nil); err != nil {
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+		if err := stream.SendHeaders(); err != nil {
+			return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
 		}
 	}
 
@@ -366,18 +352,14 @@ func (s *conformanceServer) BidiStream(
 			// after the first response (this includes the requests since they've all
 			// been received by this point)
 			if respNum == 0 {
-				resp.Payload.RequestInfo = createRequestInfo(
-					ctx, stream.RequestHeader(),
-					stream.Peer().Query,
-					reqs,
-				)
+				resp.Payload.RequestInfo = createRequestInfo(ctx, info.RequestHeader(), queryParamsFromContext(ctx), reqs)
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
 			time.Sleep(responseDelay)
 
 			if err := stream.Send(resp); err != nil {
-				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err))
+				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
 			}
 		}
 
@@ -385,10 +367,10 @@ func (s *conformanceServer) BidiStream(
 			if respNum == 0 {
 				// We've sent no responses and are returning an error, so build a
 				// RequestInfo message and append to the error details
-				reqInfo := createRequestInfo(ctx, stream.RequestHeader(), stream.Peer().Query, reqs)
+				reqInfo := createRequestInfo(ctx, info.RequestHeader(), queryParamsFromContext(ctx), reqs)
 				reqInfoAny, err := anypb.New(reqInfo)
 				if err != nil {
-					return connect.NewError(connect.CodeInternal, err)
+					return connect.NewError(connect.CodeInternal, err.Error())
 				}
 				responseDefinition.Error.Details = append(responseDefinition.Error.Details, reqInfoAny)
 			}
@@ -403,16 +385,12 @@ func (s *conformanceServer) BidiStream(
 // a built payload or a connect error based on the definition.
 func parseUnaryResponseDefinition(
 	ctx context.Context,
-	referenceMode bool,
 	def *conformancev1.UnaryResponseDefinition,
-	hdrs http.Header,
+	info *connect.CallInfo,
 	queryParams url.Values,
-	protocol string,
-	contentType string,
-	conn connect.StreamingHandlerConn,
 	reqs []*anypb.Any,
 ) (*conformancev1.ConformancePayload, *connect.Error) {
-	reqInfo := createRequestInfo(ctx, hdrs, queryParams, reqs)
+	reqInfo := createRequestInfo(ctx, info.RequestHeader(), queryParams, reqs)
 	if def == nil {
 		// If the definition is not set at all, there's nothing to respond with.
 		// Just return a payload with the request info
@@ -427,84 +405,15 @@ func parseUnaryResponseDefinition(
 		// for unary responses that return an error.
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
-			return nil, connect.NewError(connect.CodeInternal, err)
+			return nil, connect.NewError(connect.CodeInternal, err.Error())
 		}
 		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 
 		connectErr := internal.ConvertProtoToConnectError(respType.Error)
 
-		if !referenceMode { //nolint:nestif
-			// The connect-go APIs don't provide a way to set headers and
-			// trailers independently in the face of an error for a unary
-			// response.
-			//
-			// In normal mode, we go with the flow of these APIs and use
-			// connectErr.Meta to provide all metadata.
-			internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
-			internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
-		} else {
-			// In reference mode, however, it is counter-intuitive that an HTTP
-			// trace from the reference server shows headers and trailers all
-			// jumbled together. While that is semantically fine (and handled
-			// by the conformance test runner's assertion of the header and
-			// trailer results), it is confusing to see when someone is
-			// debugging a failing test case.
-			//
-			// So, in reference mode, we will go against the grain of the
-			// connect-go APIs and forcibly set headers and trailers.
-			if conn != nil {
-				// For client stream operations, we can set the headers and
-				// trailers independently via the underlying streaming conn.
-				internal.AddHeaders(def.GetResponseHeaders(), conn.ResponseHeader())
-				internal.AddHeaders(def.GetResponseTrailers(), conn.ResponseTrailer())
-			} else {
-				// Not a stream? It gets trickier. There's just *no way* in the
-				// connect-go API to independently set headers and trailers in the face
-				// of an error. So we have to get a bit more clever.
-				switch protocol {
-				case connect.ProtocolConnect:
-					// For the connect unary protocol, everything will end up in HTTP
-					// headers. So, to distinguish headers from trailers, we can prefix
-					// the trailers with "trailer-" (per the Connect spec for how unary
-					// operations represent trailers).
-					internal.AddHeaders(def.GetResponseHeaders(), connectErr.Meta())
-					for _, hdr := range def.GetResponseTrailers() {
-						hdr.Name = "trailer-" + hdr.Name
-					}
-					internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
-				case connect.ProtocolGRPC:
-					if len(def.GetResponseHeaders()) == 0 {
-						// For gRPC, if there are no custom headers, then we don't have
-						// to do anything special: the connect-go framework will send
-						// the error metadata as trailers.
-						internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
-					} else {
-						// Otherwise, we must resort to hacking in a raw response,
-						// which gives us much greater control over the response.
-						rawResp := makeRawGRPCResponse(connectErr, contentType, def.GetResponseHeaders(), def.GetResponseTrailers())
-						if err := setRawResponse(ctx, rawResp); err != nil {
-							return nil, connect.NewError(connect.CodeUnknown, err)
-						}
-					}
-				case connect.ProtocolGRPCWeb:
-					if len(def.GetResponseHeaders()) == 0 {
-						// For gRPC-web, if there are no custom headers, then we don't have
-						// to do anything special: the connect-go framework will send a
-						// trailers-only response, so any error metadata will be interpreted
-						// as trailers.
-						internal.AddHeaders(def.GetResponseTrailers(), connectErr.Meta())
-					} else {
-						// But otherwise, we have to employ the same tactics as for gRPC above.
-						rawResp := makeRawGRPCWebResponse(connectErr, contentType, def.GetResponseHeaders(), def.GetResponseTrailers())
-						if err := setRawResponse(ctx, rawResp); err != nil {
-							return nil, connect.NewError(connect.CodeUnknown, err)
-						}
-					}
-				default:
-					return nil, connect.NewError(connect.CodeUnknown, fmt.Errorf("unrecognized protocol: %s", protocol))
-				}
-			}
-		}
+		// Set the response headers and trailers on the call info.
+		internal.AddHeaders(def.GetResponseHeaders(), info.ResponseHeader())
+		internal.AddHeaders(def.GetResponseTrailers(), info.ResponseTrailer())
 
 		return nil, connectErr
 
@@ -519,23 +428,22 @@ func parseUnaryResponseDefinition(
 		}
 		return payload, nil
 	default:
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("provided UnaryRequest.Response has an unexpected type %T", respType))
+		return nil, connect.Errorf(connect.CodeInvalidArgument, "provided UnaryRequest.Response has an unexpected type %T", respType)
 	}
 }
 
 // Creates request info for a conformance payload.
 func createRequestInfo(
 	ctx context.Context,
-	headers http.Header,
+	headers *connect.Header,
 	queryParams url.Values,
 	reqs []*anypb.Any,
 ) *conformancev1.ConformancePayload_RequestInfo {
-	headerInfo := internal.ConvertToProtoHeader(headers)
+	headerInfo := internal.ConvertConnectHeaderToProto(headers)
 
 	var connectGetInfo *conformancev1.ConformancePayload_ConnectGetInfo
 	if len(queryParams) > 0 {
 		queryParamInfo := internal.ConvertToProtoHeader(queryParams)
-
 		connectGetInfo = &conformancev1.ConformancePayload_ConnectGetInfo{
 			QueryParams: queryParamInfo,
 		}
@@ -555,130 +463,77 @@ func createRequestInfo(
 	}
 }
 
+// queryParamsFromContext returns the Connect GET query parameters for the
+// in-flight request, or nil when it was not sent as an HTTP GET.
+func queryParamsFromContext(ctx context.Context) url.Values {
+	info, _ := connecthttp.ServerInfoForContext(ctx)
+	return info.HTTPGetQueryParams()
+}
+
 // Converts the given message to an Any.
 func asAny(msg proto.Message) (*anypb.Any, error) {
 	msgAsAny, err := anypb.New(msg)
 	if err != nil {
 		return nil, connect.NewError(
 			connect.CodeInternal,
-			fmt.Errorf("unable to convert message: %w", err),
+			fmt.Errorf("unable to convert message: %w", err).Error(),
 		)
 	}
 	return msgAsAny, nil
 }
 
 // serverNameHandlerInterceptor adds a "server" header on outgoing responses.
-type serverNameHandlerInterceptor struct{}
-
-func (i serverNameHandlerInterceptor) WrapUnary(next connect.UnaryFunc) connect.UnaryFunc {
-	return func(ctx context.Context, req connect.AnyRequest) (connect.AnyResponse, error) {
-		resp, err := next(ctx, req)
-		if req.Spec().IsClient {
-			return resp, err
+// If a gRPC-Web handler fails without sending or setting any headers, it adds a
+// "server" trailer instead, so that a trailers-only response can still be sent.
+// Trailers-only responses are only meant for immediate errors.
+func serverNameHandlerInterceptor(next connect.ServerFunc) connect.ServerFunc {
+	return func(ctx context.Context, spec connect.Spec, stream connect.ServerStream) error {
+		info, ok := connect.CallInfoForServerContext(ctx)
+		if !ok {
+			return next(ctx, spec, stream)
 		}
-
-		var headers http.Header
-		if err != nil {
-			var connErr *connect.Error
-			if !errors.As(err, &connErr) {
-				connErr = connect.NewError(connect.CodeUnknown, err)
-				err = connErr
-			}
-			headers = connErr.Meta()
-		} else {
-			headers = resp.Header()
-		}
-		// decorate server with the program name and version
-		server := strings.TrimSpace(fmt.Sprintf("%s %s/%s", headers.Get("Server"), serverName, internal.Version))
-		headers.Set("Server", server)
-		return resp, err
-	}
-}
-
-func (i serverNameHandlerInterceptor) WrapStreamingClient(next connect.StreamingClientFunc) connect.StreamingClientFunc {
-	return next
-}
-
-func (i serverNameHandlerInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc) connect.StreamingHandlerFunc {
-	return func(ctx context.Context, stream connect.StreamingHandlerConn) error {
-		// decorate server with the program name and version
-		server := strings.TrimSpace(fmt.Sprintf("%s %s/%s", stream.ResponseHeader().Get("Server"), serverName, internal.Version))
-		stream.ResponseHeader().Set("Server", server)
-		return next(ctx, stream)
-	}
-}
-
-func makeRawGRPCResponse(err *connect.Error, contentType string, headers, trailers []*conformancev1.Header) *conformancev1.RawHTTPResponse {
-	return &conformancev1.RawHTTPResponse{
-		Headers:  append(headers, &conformancev1.Header{Name: "Content-Type", Value: []string{contentType}}),
-		Trailers: append(trailers, grpcStatusTrailers(err)...),
-	}
-}
-
-func makeRawGRPCWebResponse(err *connect.Error, contentType string, headers, trailers []*conformancev1.Header) *conformancev1.RawHTTPResponse {
-	return &conformancev1.RawHTTPResponse{
-		Headers: append(
-			headers,
-			&conformancev1.Header{Name: "Content-Type", Value: []string{contentType}},
-		),
-		Body: &conformancev1.RawHTTPResponse_Stream{
-			Stream: &conformancev1.StreamContents{
-				Items: []*conformancev1.StreamContents_StreamItem{
-					{
-						Flags: 128, // indicates end-of-stream message w/ trailers
-						Payload: &conformancev1.MessageContents{
-							Data: &conformancev1.MessageContents_Text{
-								Text: grpcWebStatusEndStream(err, trailers),
-							},
-						},
-					},
-				},
-			},
-		},
-	}
-}
-
-func grpcStatusTrailers(err *connect.Error) []*conformancev1.Header {
-	trailers := []*conformancev1.Header{
-		{
-			Name:  "grpc-status",
-			Value: []string{fmt.Sprintf("%d", err.Code())},
-		},
-		{
-			Name:  "grpc-message",
-			Value: []string{grpcutil.PercentEncodeMessage(err.Message())},
-		},
-	}
-	if len(err.Details()) > 0 {
-		statProto := &status.Status{
-			Code:    int32(err.Code()),
-			Message: err.Message(),
-			Details: make([]*anypb.Any, len(err.Details())),
-		}
-		for i, detail := range err.Details() {
-			statProto.Details[i] = &anypb.Any{
-				TypeUrl: internal.DefaultAnyResolverPrefix + detail.Type(),
-				Value:   detail.Bytes(),
+		namedStream := &serverNameStream{ServerStream: stream, info: info}
+		err := next(ctx, spec, namedStream)
+		if !namedStream.sentHeaders {
+			if err != nil && info.Protocol == connect.ProtocolNameGRPCWeb && info.ResponseHeader().Len() == 0 {
+				addServerName(info.ResponseTrailer())
+			} else {
+				addServerName(info.ResponseHeader())
 			}
 		}
-		data, marshalErr := proto.Marshal(statProto)
-		if marshalErr == nil {
-			trailers = append(trailers, &conformancev1.Header{
-				Name:  "grpc-status-details-bin",
-				Value: []string{base64.RawStdEncoding.EncodeToString(data)},
-			})
-		}
+		return err
 	}
-	return trailers
 }
 
-func grpcWebStatusEndStream(err *connect.Error, trailers []*conformancev1.Header) string {
-	trailers = append(grpcStatusTrailers(err), trailers...)
-	var buf bytes.Buffer
-	for _, trailer := range trailers {
-		for _, val := range trailer.Value {
-			_, _ = fmt.Fprintf(&buf, "%s: %s\r\n", strings.ToLower(trailer.Name), val)
-		}
+// serverNameStream adds a "server" response header just before the headers
+// are sent.
+type serverNameStream struct {
+	connect.ServerStream
+
+	info        *connect.CallInfo
+	sentHeaders bool
+}
+
+func (s *serverNameStream) SendHeaders() error {
+	s.addHeader()
+	return s.ServerStream.SendHeaders()
+}
+
+func (s *serverNameStream) Send(msg any) error {
+	s.addHeader()
+	return s.ServerStream.Send(msg)
+}
+
+func (s *serverNameStream) addHeader() {
+	if s.sentHeaders {
+		return
 	}
-	return buf.String()
+	s.sentHeaders = true
+	addServerName(s.info.ResponseHeader())
+}
+
+func addServerName(header *connect.Header) {
+	// decorate server with the program name and version
+	server := strings.TrimSpace(fmt.Sprintf("%s %s/%s", header.Get("Server"), serverName, internal.Version))
+	header.Set("Server", server)
 }
