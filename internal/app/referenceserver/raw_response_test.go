@@ -17,6 +17,7 @@ package referenceserver
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -25,7 +26,8 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -36,17 +38,17 @@ import (
 func TestRawResponseRecorder(t *testing.T) {
 	t.Parallel()
 
-	_, handler := conformancev1connect.NewConformanceServiceHandler(
-		conformancev1connect.UnimplementedConformanceServiceHandler{},
-		connect.WithInterceptors(rawResponseRecorder{}),
-	)
-	svr := httptest.NewUnstartedServer(rawResponder(handler))
+	server := connect.NewServer(rawResponseRecorder)
+	conformancev1connect.RegisterConformanceServiceHandler(server, conformancev1connect.UnimplementedConformanceServiceHandler{})
+	mux := http.NewServeMux()
+	connecthttp.Mount(mux, server)
+	svr := httptest.NewUnstartedServer(rawResponder(mux))
 	svr.EnableHTTP2 = true // so we can test bidi stream
 	svr.StartTLS()
 	t.Cleanup(svr.Close)
 
 	invokeUnary := func(ctx context.Context, rawResponse *conformancev1.RawHTTPResponse, client conformancev1connect.ConformanceServiceClient) {
-		_, _ = client.Unary(ctx, connect.NewRequest(&conformancev1.UnaryRequest{
+		_, _ = client.Unary(ctx, &conformancev1.UnaryRequest{
 			RequestData: []byte{0, 1, 2, 3, 4},
 			ResponseDefinition: &conformancev1.UnaryResponseDefinition{
 				Response: &conformancev1.UnaryResponseDefinition_ResponseData{
@@ -54,10 +56,13 @@ func TestRawResponseRecorder(t *testing.T) {
 				},
 				RawResponse: rawResponse,
 			},
-		}))
+		})
 	}
 	invokeClientStream := func(ctx context.Context, rawResponse *conformancev1.RawHTTPResponse, client conformancev1connect.ConformanceServiceClient) {
-		stream := client.ClientStream(ctx)
+		stream, err := client.ClientStream(ctx)
+		if err != nil {
+			return
+		}
 		_ = stream.Send(&conformancev1.ClientStreamRequest{
 			RequestData: []byte{0, 1, 2, 3, 4},
 			ResponseDefinition: &conformancev1.UnaryResponseDefinition{
@@ -76,7 +81,7 @@ func TestRawResponseRecorder(t *testing.T) {
 		_, _ = stream.CloseAndReceive()
 	}
 	invokeServerStream := func(ctx context.Context, rawResponse *conformancev1.RawHTTPResponse, client conformancev1connect.ConformanceServiceClient) {
-		stream, err := client.ServerStream(ctx, connect.NewRequest(&conformancev1.ServerStreamRequest{
+		stream, err := client.ServerStream(ctx, &conformancev1.ServerStreamRequest{
 			RequestData: []byte{0, 1, 2, 3, 4},
 			ResponseDefinition: &conformancev1.StreamResponseDefinition{
 				ResponseData: [][]byte{
@@ -86,24 +91,34 @@ func TestRawResponseRecorder(t *testing.T) {
 				},
 				RawResponse: rawResponse,
 			},
-		}))
+		})
 		if err != nil {
 			return
 		}
 		defer func() {
 			_ = stream.Close()
 		}()
-		for stream.Receive() {
+		for {
+			_, err := stream.Receive()
+			if err != nil {
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				return
+			}
 			// exhaust stream
 		}
 	}
 	invokeBidiStream := func(ctx context.Context, rawResponse *conformancev1.RawHTTPResponse, client conformancev1connect.ConformanceServiceClient) {
-		stream := client.BidiStream(ctx)
+		stream, err := client.BidiStream(ctx)
+		if err != nil {
+			return
+		}
 		done := make(chan struct{})
 		go func() {
 			defer close(done)
 			defer func() {
-				_ = stream.CloseResponse()
+				_ = stream.Close()
 			}()
 			for {
 				// exhaust stream
@@ -130,7 +145,7 @@ func TestRawResponseRecorder(t *testing.T) {
 		_ = stream.Send(&conformancev1.BidiStreamRequest{
 			RequestData: []byte{0, 1, 2, 3, 4},
 		})
-		_ = stream.CloseRequest()
+		_ = stream.CloseSend()
 		<-done // make sure we've finished exhausting response stream
 	}
 
@@ -280,7 +295,7 @@ func TestRawResponseRecorder(t *testing.T) {
 						return resp, nil
 					})
 
-					client := conformancev1connect.NewConformanceServiceClient(&http.Client{Transport: transport}, svr.URL)
+					client := conformancev1connect.NewConformanceServiceClient(connect.NewClient(connecthttp.NewTransport(&http.Client{Transport: transport}, svr.URL, connecthttp.WithReadMaxBytes(0))))
 					invoker.invoke(context.Background(), testCase.resp, client)
 
 					require.NoError(t, err)

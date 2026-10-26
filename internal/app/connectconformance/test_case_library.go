@@ -26,7 +26,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/anypb"
@@ -697,7 +697,7 @@ func populateExpectedUnaryResponse(testCase *conformancev1.TestCase) error {
 		// in the error details
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
-			return connect.NewError(connect.CodeInternal, err)
+			return connect.NewError(connect.CodeInternal, err.Error()).WithCause(err)
 		}
 		respType.Error.Details = append(respType.Error.Details, reqInfoAny)
 	case *conformancev1.UnaryResponseDefinition_ResponseData, nil:
@@ -772,7 +772,7 @@ func populateExpectedStreamResponse(testCase *conformancev1.TestCase) error {
 		}
 		reqInfoAny, err := anypb.New(reqInfo)
 		if err != nil {
-			return connect.NewError(connect.CodeInternal, err)
+			return connect.NewError(connect.CodeInternal, err.Error()).WithCause(err)
 		}
 		expected.Error.Details = append(expected.Error.Details, reqInfoAny)
 	}

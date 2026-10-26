@@ -23,6 +23,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -130,6 +131,7 @@ func TestRunTestCasesForServer(t *testing.T) {
 		name              string
 		isReferenceServer bool
 		svrFailsToStart   bool
+		svrNoResponse     bool // server sends no response, then stops some time after abort
 		svrErrorReader    io.Reader
 		clientCloseAfter  int // close client after num responses read
 		svrKillAfter      int // kill server process after num requests sent to client
@@ -171,6 +173,16 @@ func TestRunTestCasesForServer(t *testing.T) {
 			},
 		},
 		{
+			name:          "server sends no response",
+			svrNoResponse: true,
+			expectResults: map[string]bool{
+				"TestSuite1/testcase1": false,
+				"TestSuite1/testcase2": false,
+				"TestSuite2/testcase1": false,
+				"TestSuite2/testcase2": false,
+			},
+		},
+		{
 			name:         "server crashes",
 			svrKillAfter: 1,
 			expectResults: map[string]bool{
@@ -200,9 +212,12 @@ func TestRunTestCasesForServer(t *testing.T) {
 			var procAddr atomic.Pointer[process] // populated when server process created
 			var actualSvrRequest bytes.Buffer
 			var svrProcess processStarter
-			if testCase.svrFailsToStart {
+			switch {
+			case testCase.svrFailsToStart:
 				svrProcess = newStillbornProcess(&actualSvrRequest, strings.NewReader("oops"), strings.NewReader("oops"))
-			} else {
+			case testCase.svrNoResponse:
+				svrProcess = newSlowToStopProcess(&actualSvrRequest, strings.NewReader(""), strings.NewReader(""))
+			default:
 				svrProcess = newFakeProcess(&actualSvrRequest, bytes.NewReader(svrResponseData), testCase.svrErrorReader)
 			}
 			hookedProcess := func(ctx context.Context, pipeStderr bool) (*process, error) {
@@ -279,7 +294,13 @@ func TestRunTestCasesForServer(t *testing.T) {
 				false,
 			)
 
-			if testCase.svrFailsToStart {
+			// The server has stopped by the time the runner returns.
+			proc, ok := procAddr.Load().processController.(interface{ tryResult() (bool, error) })
+			require.True(t, ok)
+			done, _ := proc.tryResult()
+			assert.True(t, done, "server process still running")
+
+			if testCase.svrFailsToStart || testCase.svrNoResponse {
 				assert.Empty(t, client.actualRequests)
 			} else {
 				assert.Empty(t, cmp.Diff(expectedRequests, client.actualRequests, protocmp.Transform()))
@@ -339,6 +360,31 @@ func newStillbornProcess(stdin io.Writer, stdout, stderr io.Reader) processStart
 			stderr:            &procReader{r: stderr, proc: proc},
 		}, nil
 	}
+}
+
+// slowToStopProcess is a fakeProcess that, like a real process sent SIGTERM,
+// stops some time after abort is called rather than during it.
+type slowToStopProcess struct {
+	*fakeProcess
+}
+
+func newSlowToStopProcess(stdin io.Writer, stdout, stderr io.Reader) processStarter {
+	return func(_ context.Context, _ bool) (*process, error) {
+		proc := slowToStopProcess{&fakeProcess{}}
+		return &process{
+			processController: proc,
+			stdin:             &procWriter{w: stdin, proc: proc.fakeProcess},
+			stdout:            &procReader{r: stdout, proc: proc.fakeProcess},
+			stderr:            stderr,
+		}, nil
+	}
+}
+
+func (s slowToStopProcess) abort() {
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		s.fakeProcess.abort()
+	}()
 }
 
 func (f *fakeProcess) stop(err error) {

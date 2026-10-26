@@ -26,7 +26,7 @@ import (
 	"connectrpc.com/conformance/internal"
 	"connectrpc.com/conformance/internal/compression"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 )
 
 const (
@@ -356,7 +356,7 @@ func (r *RequestCanceled) print(printer internal.Printer) {
 }
 
 // GetDecompressor returns a decompressor that can handle the given encoding.
-func GetDecompressor(encoding string) connect.Decompressor {
+func GetDecompressor(encoding string) connect.Compressor {
 	var comp conformancev1.Compression
 	switch strings.ToLower(encoding) {
 	case "", "identity":

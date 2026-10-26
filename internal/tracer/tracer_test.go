@@ -111,9 +111,9 @@ func TestTracer(t *testing.T) {
 			var responseLenPrefix [4]byte
 			binary.BigEndian.PutUint32(responseLenPrefix[:], uint32(len(responseData)))
 
-			comp := compression.NewSnappyCompressor()
 			var compressedResponseBuffer bytes.Buffer
-			comp.Reset(&compressedResponseBuffer)
+			comp, err := compression.NewSnappyCompressor().Compress(&compressedResponseBuffer)
+			require.NoError(t, err)
 			_, _ = comp.Write(responseData)
 			_ = comp.Close()
 			compressedResponseData := compressedResponseBuffer.Bytes()

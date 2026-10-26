@@ -17,36 +17,23 @@ package compression
 import (
 	"io"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/golang/snappy"
 )
 
-// snappyDecompressor is a thin wrapper around a snappy Reader.
-type snappyDecompressor struct {
-	reader *snappy.Reader
-}
+type snappyCompressor struct{}
 
-func (c *snappyDecompressor) Read(bytes []byte) (int, error) {
-	return c.reader.Read(bytes)
-}
-func (c *snappyDecompressor) Reset(rdr io.Reader) error {
-	c.reader.Reset(rdr)
-	// snappy's Reader does not return an error on Reset
-	return nil
-}
-func (c *snappyDecompressor) Close() error {
-	// snappy's Reader does not expose a Close function
-	return nil
-}
-
-// NewSnappyDecompressor returns a new snappy Decompressor.
-func NewSnappyDecompressor() connect.Decompressor {
-	return &snappyDecompressor{
-		reader: snappy.NewReader(nil),
-	}
-}
-
-// NewSnappyCompressor returns a new snappy Compressor.
+// NewSnappyCompressor returns a snappy [connect.Compressor].
 func NewSnappyCompressor() connect.Compressor {
-	return snappy.NewBufferedWriter(nil)
+	return snappyCompressor{}
+}
+
+func (snappyCompressor) Name() string { return Snappy }
+
+func (snappyCompressor) Compress(dst io.Writer) (io.WriteCloser, error) {
+	return snappy.NewBufferedWriter(dst), nil
+}
+
+func (snappyCompressor) Decompress(src io.Reader) (io.ReadCloser, error) {
+	return io.NopCloser(snappy.NewReader(src)), nil
 }

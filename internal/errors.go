@@ -20,7 +20,8 @@ import (
 	"strings"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connectproto"
 	"google.golang.org/protobuf/types/known/anypb"
 )
 
@@ -33,7 +34,7 @@ func ConvertErrorToConnectError(err error) *connect.Error {
 	}
 	connectErr := new(connect.Error)
 	if !errors.As(err, &connectErr) {
-		connectErr = connect.NewError(connect.CodeUnknown, err)
+		connectErr = connect.NewError(connect.CodeUnknown, err.Error()).WithCause(err)
 	}
 	return connectErr
 }
@@ -68,16 +69,9 @@ func ConvertConnectToProtoError(err *connect.Error) *conformancev1.Error {
 	}
 	details := make([]*anypb.Any, 0, len(err.Details()))
 	for _, detail := range err.Details() {
-		details = append(details, &anypb.Any{
-			// Connect Go strips the prefix from the type when calling Type()
-			// but anypb.MarshalFrom adds the prefix explicitly. Since Protoyaml
-			// uses anypb.MarshalFrom when reading an Any type from a yaml file,
-			// it must be explicitly added back here so that we can successfully
-			// compare the expected response from the yaml file into what
-			// Connect Go returns.
-			TypeUrl: DefaultAnyResolverPrefix + detail.Type(),
-			Value:   detail.Bytes(),
-		})
+		// ErrorDetailToAny restores the type URL prefix that protoyaml adds
+		// when reading expected results, so the two compare equal.
+		details = append(details, connectproto.ErrorDetailToAny(detail))
 	}
 	protoErr.Details = details
 	return protoErr
@@ -88,13 +82,13 @@ func ConvertProtoToConnectError(err *conformancev1.Error) *connect.Error {
 	if err == nil {
 		return nil
 	}
-	connectErr := connect.NewError(connect.Code(err.Code), errors.New(err.GetMessage()))
+	connectErr := connect.NewError(connect.Code(err.Code), err.GetMessage())
 	for _, detail := range err.Details {
-		connectDetail, err := connect.NewErrorDetail(detail)
+		connectDetail, err := connectproto.NewErrorDetail(detail)
 		if err != nil {
-			return connect.NewError(connect.CodeInternal, err)
+			return connect.NewError(connect.CodeInternal, err.Error()).WithCause(err)
 		}
-		connectErr.AddDetail(connectDetail)
+		connectErr = connectErr.WithDetail(connectDetail)
 	}
 	return connectErr
 }

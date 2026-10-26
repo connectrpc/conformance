@@ -18,12 +18,18 @@ import (
 	"net/http"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect/v2"
 )
+
+// HeaderAdder is implemented by both [http.Header] and [*connect.Header].
+type HeaderAdder interface {
+	Add(key, value string)
+}
 
 // AddHeaders adds all header values in src to dest.
 func AddHeaders(
 	src []*conformancev1.Header,
-	dest http.Header,
+	dest HeaderAdder,
 ) {
 	for _, header := range src {
 		for _, val := range header.Value {
@@ -55,6 +61,22 @@ func ConvertToProtoHeader(src map[string][]string) []*conformancev1.Header {
 			Value: value,
 		}
 		headerInfo = append(headerInfo, hdr)
+	}
+	return headerInfo
+}
+
+// ConvertConnectHeaderToProto converts connect metadata to a slice of proto
+// Headers. It returns nil if src is nil.
+func ConvertConnectHeaderToProto(src *connect.Header) []*conformancev1.Header {
+	if src == nil {
+		return nil
+	}
+	headerInfo := make([]*conformancev1.Header, 0, src.Len())
+	for key, value := range src.All() {
+		headerInfo = append(headerInfo, &conformancev1.Header{
+			Name:  key,
+			Value: value,
+		})
 	}
 	return headerInfo
 }
