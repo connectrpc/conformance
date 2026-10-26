@@ -78,7 +78,12 @@ func runTestCasesForServer(
 		results.failedToStart(testCases, fmt.Errorf("error starting server: %w", err))
 		return
 	}
-	defer serverProcess.abort()
+	defer func() {
+		// Wait for the server to end on every return, so that one that failed to
+		// start doesn't outlive the runner.
+		serverProcess.abort()
+		_ = serverProcess.result()
+	}()
 	serverProcess.whenDone(func(_ error) {
 		procCancel()
 	})
