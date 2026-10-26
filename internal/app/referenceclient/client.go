@@ -30,7 +30,7 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2/connecthttp"
 	"golang.org/x/sync/semaphore"
 )
 
@@ -171,12 +171,12 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 	}
 
 	// Create client options based on protocol of the implementation
-	clientOptions := []connect.ClientOption{connect.WithHTTPGet()}
+	clientOptions := []connecthttp.Option{connecthttp.WithHTTPGet()}
 	switch req.Protocol {
 	case conformancev1.Protocol_PROTOCOL_GRPC:
-		clientOptions = append(clientOptions, connect.WithGRPC())
+		clientOptions = append(clientOptions, connecthttp.WithGRPC())
 	case conformancev1.Protocol_PROTOCOL_GRPC_WEB:
-		clientOptions = append(clientOptions, connect.WithGRPCWeb())
+		clientOptions = append(clientOptions, connecthttp.WithGRPCWeb())
 	case conformancev1.Protocol_PROTOCOL_CONNECT:
 		// Do nothing
 	case conformancev1.Protocol_PROTOCOL_UNSPECIFIED:
@@ -187,73 +187,33 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 	case conformancev1.Codec_CODEC_PROTO:
 		// this is the default, no option needed
 	case conformancev1.Codec_CODEC_JSON:
-		clientOptions = append(clientOptions, connect.WithCodec(internal.StrictJSONCodec{}))
+		clientOptions = append(clientOptions,
+			connecthttp.WithCodecs(internal.NewStrictJSONCodec()),
+		)
 	case conformancev1.Codec_CODEC_TEXT: //nolint:staticcheck // staticcheck complains because this const is deprecated
 		return nil, fmt.Errorf("%s is deprecated and should not be used", req.Codec)
 	default:
 		return nil, errors.New("a codec must be specified")
 	}
 
-	if req.Compression != conformancev1.Compression_COMPRESSION_GZIP {
-		// Gzip is supported by default. So if we're not using it, disable it.
-		clientOptions = append(clientOptions,
-			connect.WithAcceptCompression(compression.Gzip, nil, nil),
-		)
-	}
-
+	// Advertise and send only the requested compression, so that a client
+	// configured for identity does not advertise gzip.
 	switch req.Compression {
-	case conformancev1.Compression_COMPRESSION_BR:
-		clientOptions = append(
-			clientOptions,
-			connect.WithAcceptCompression(
-				compression.Brotli,
-				compression.NewBrotliDecompressor,
-				compression.NewBrotliCompressor,
-			),
-			connect.WithSendCompression(compression.Brotli),
-		)
-	case conformancev1.Compression_COMPRESSION_DEFLATE:
-		clientOptions = append(
-			clientOptions,
-			connect.WithAcceptCompression(
-				compression.Deflate,
-				compression.NewDeflateDecompressor,
-				compression.NewDeflateCompressor,
-			),
-			connect.WithSendCompression(compression.Deflate),
-		)
-	case conformancev1.Compression_COMPRESSION_GZIP:
-		// Connect clients send uncompressed requests and ask for gzipped responses by default
-		// As a result, specifying a compression of gzip for a client indicates it should also
-		// send gzipped requests
-		clientOptions = append(clientOptions, connect.WithSendGzip())
-	case conformancev1.Compression_COMPRESSION_SNAPPY:
-		clientOptions = append(
-			clientOptions,
-			connect.WithAcceptCompression(
-				compression.Snappy,
-				compression.NewSnappyDecompressor,
-				compression.NewSnappyCompressor,
-			),
-			connect.WithSendCompression(compression.Snappy),
-		)
-	case conformancev1.Compression_COMPRESSION_ZSTD:
-		clientOptions = append(
-			clientOptions,
-			connect.WithAcceptCompression(
-				compression.Zstd,
-				compression.NewZstdDecompressor,
-				compression.NewZstdCompressor,
-			),
-			connect.WithSendCompression(compression.Zstd),
-		)
 	case conformancev1.Compression_COMPRESSION_IDENTITY, conformancev1.Compression_COMPRESSION_UNSPECIFIED:
-		// No compression; do nothing
+		clientOptions = append(clientOptions, connecthttp.WithCompressors())
+	default:
+		compressor, err := compression.GetCompressor(req.Compression)
+		if err != nil {
+			return nil, err
+		}
+		clientOptions = append(clientOptions,
+			connecthttp.WithCompressors(compressor),
+			connecthttp.WithSendCompression(compressor.Name()),
+		)
 	}
 
-	if req.MessageReceiveLimit > 0 {
-		clientOptions = append(clientOptions, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
-	}
+	// Zero means no limit, which the conformance suite expects when none is set.
+	clientOptions = append(clientOptions, connecthttp.WithReadMaxBytes(int(req.MessageReceiveLimit)))
 
 	switch req.GetService() {
 	case conformancev1connect.ConformanceServiceName:

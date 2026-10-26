@@ -17,34 +17,23 @@ package compression
 import (
 	"io"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 	"github.com/andybalholm/brotli"
 )
 
-// brotliDecompressor is a thin wrapper around a brotli Reader.
-type brotliDecompressor struct {
-	reader *brotli.Reader
-}
+type brotliCompressor struct{}
 
-func (c *brotliDecompressor) Read(bytes []byte) (int, error) {
-	return c.reader.Read(bytes)
-}
-func (c *brotliDecompressor) Reset(rdr io.Reader) error {
-	return c.reader.Reset(rdr)
-}
-func (c *brotliDecompressor) Close() error {
-	// brotli's Reader does not expose a Close function
-	return nil
-}
-
-// NewBrotliDecompressor returns a new Brotli Decompressor.
-func NewBrotliDecompressor() connect.Decompressor {
-	return &brotliDecompressor{
-		reader: brotli.NewReader(nil),
-	}
-}
-
-// NewBrotliCompressor returns a new Brotli Compressor.
+// NewBrotliCompressor returns a Brotli [connect.Compressor].
 func NewBrotliCompressor() connect.Compressor {
-	return brotli.NewWriter(nil)
+	return brotliCompressor{}
+}
+
+func (brotliCompressor) Name() string { return Brotli }
+
+func (brotliCompressor) Compress(dst io.Writer) (io.WriteCloser, error) {
+	return brotli.NewWriter(dst), nil
+}
+
+func (brotliCompressor) Decompress(src io.Reader) (io.ReadCloser, error) {
+	return io.NopCloser(brotli.NewReader(src)), nil
 }

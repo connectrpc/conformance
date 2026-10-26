@@ -35,7 +35,9 @@ import (
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1/conformancev1connect"
 	"connectrpc.com/conformance/internal/tracer"
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
+	"connectrpc.com/connect/v2/connecthttp"
+	"connectrpc.com/connect/v2/connectproto"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"
 	"github.com/rs/cors"
@@ -181,26 +183,21 @@ func (s *stdHTTPServer) Addr() string {
 // Creates an HTTP server using the provided ServerCompatRequest.
 func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
-	interceptors := []connect.Interceptor{serverNameHandlerInterceptor{}}
+	interceptors := []connect.ServerInterceptor{serverNameHandlerInterceptor}
 	if referenceMode {
-		interceptors = append(interceptors, rawResponseRecorder{})
+		interceptors = append(interceptors, rawResponseRecorder)
 	}
-	opts := []connect.HandlerOption{
-		connect.WithCompression(compression.Brotli, compression.NewBrotliDecompressor, compression.NewBrotliCompressor),
-		connect.WithCompression(compression.Deflate, compression.NewDeflateDecompressor, compression.NewDeflateCompressor),
-		connect.WithCompression(compression.Snappy, compression.NewSnappyDecompressor, compression.NewSnappyCompressor),
-		connect.WithCompression(compression.Zstd, compression.NewZstdDecompressor, compression.NewZstdCompressor),
-		connect.WithCodec(internal.StrictJSONCodec{}),
-		connect.WithInterceptors(interceptors...),
+	opts := []connecthttp.Option{
+		connecthttp.WithCompressors(compression.All()...),
+		connecthttp.WithCodecs(connectproto.NewBinaryCodec(), internal.NewStrictJSONCodec()),
+		// Zero means no limit, which the conformance suite expects when none is set.
+		connecthttp.WithReadMaxBytes(int(req.MessageReceiveLimit)),
 	}
-	if req.MessageReceiveLimit > 0 {
-		opts = append(opts, connect.WithReadMaxBytes(int(req.MessageReceiveLimit)))
-	}
+	srv := connect.NewServer(interceptors...)
 
-	mux.Handle(conformancev1connect.NewConformanceServiceHandler(
-		&conformanceServer{referenceMode: referenceMode},
-		opts...,
-	))
+	conformancev1connect.RegisterConformanceServiceHandler(srv, &conformanceServer{})
+	connecthttp.Mount(mux, srv, opts...)
+
 	handler := http.Handler(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) &&
 			req.ProtoMajor == 1 {
@@ -229,9 +226,9 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 			contentType := req.Header.Get("Content-Type")
 			if (contentType == grpcContentType || strings.HasPrefix(contentType, grpcContentTypePrefix)) &&
 				req.Header.Get("TE") != "trailers" {
-				errWriter := connect.NewErrorWriter()
+				errWriter := connecthttp.NewErrorWriter()
 				_ = errWriter.Write(respWriter, req,
-					connect.NewError(connect.CodeUnknown, errors.New("missing 'TE: trailers' header")))
+					connect.NewError(connect.CodeUnknown, "missing 'TE: trailers' header"))
 				return
 			}
 			orig.ServeHTTP(respWriter, req)

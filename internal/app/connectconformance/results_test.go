@@ -323,6 +323,27 @@ func TestResults_Assert_ReportsAllErrors(t *testing.T) {
 			}`,
 		},
 		{
+			name: "response meta all in headers allowed for error",
+			expected: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]}
+				],
+				"response_trailers": [
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+			actual: `{
+				"error": {"code": 5},
+				"response_headers": [
+					{"name": "abc", "value": ["xyz", "123"]},
+					{"name": "xyz", "value": ["value1"]},
+					{"name": "Case-Does-Not-Matter-For-Name", "value": ["value2"]}
+				]
+			}`,
+		},
+		{
 			name: "error code mismatch",
 			expected: `{
 				"error": {
