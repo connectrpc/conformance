@@ -25,7 +25,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"connectrpc.com/connect"
+	"connectrpc.com/connect/v2"
 )
 
 const prefixLen = 5
@@ -104,7 +104,7 @@ func (t *tracingReader) tryFinish(err error) {
 type dataTracer struct {
 	isRequest        bool
 	isStreamProtocol bool
-	decompressor     connect.Decompressor
+	decompressor     connect.Compressor
 	builder          *builder
 
 	mu        sync.Mutex
@@ -214,11 +214,11 @@ func (d *dataTracer) traceMessageLocked(data []byte) (int, bool) {
 			content = d.endStream.String()
 		} else {
 			var uncompressed bytes.Buffer
-			if err := d.decompressor.Reset(d.endStream); err == nil {
-				_, err := uncompressed.ReadFrom(d.decompressor)
-				if err == nil {
+			if reader, err := d.decompressor.Decompress(d.endStream); err == nil {
+				if _, err := uncompressed.ReadFrom(reader); err == nil {
 					content = uncompressed.String()
 				}
+				_ = reader.Close()
 			}
 		}
 		if content != "" {
@@ -266,23 +266,25 @@ func (d *dataTracer) emitUnfinished() {
 	d.prefix = d.prefix[:0]
 }
 
-// brokenDecompressor is a no-op implementation that treats all compressed
-// messages as if they were empty.
+var errUnsupportedEncoding = errors.New("unsupported encoding")
+
+// brokenDecompressor stands in for an unknown or unsupported encoding. It
+// always fails, so the tracer omits content it would have to decode.
 type brokenDecompressor struct{}
 
-func (brokenDecompressor) Read([]byte) (n int, err error) {
-	return 0, io.EOF
+func (brokenDecompressor) Name() string {
+	return "broken"
 }
 
-func (brokenDecompressor) Close() error {
-	return nil
+func (brokenDecompressor) Compress(io.Writer) (io.WriteCloser, error) {
+	return nil, errUnsupportedEncoding
 }
 
-func (brokenDecompressor) Reset(io.Reader) error {
-	return nil
+func (brokenDecompressor) Decompress(io.Reader) (io.ReadCloser, error) {
+	return nil, errUnsupportedEncoding
 }
 
-func propertiesFromHeaders(headers http.Header) (isStream bool, decomp connect.Decompressor) {
+func propertiesFromHeaders(headers http.Header) (isStream bool, decomp connect.Compressor) {
 	contentType := strings.ToLower(headers.Get("Content-Type"))
 	if headers.Get("Content-Encoding") != "" {
 		// full body is encoded, so don't bother trying to parse stream

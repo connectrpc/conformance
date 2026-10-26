@@ -11,7 +11,7 @@
     "google-protobuf": "^4.0.3",
     "grpc-web": "^2.1.1",
     "prettier": "^3.9.9",
-    "puppeteer": "^25.12.0",
+    "puppeteer": "^25.16.0",
     "typescript": "^7.0.2"
   }
 }
