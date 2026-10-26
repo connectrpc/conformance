@@ -138,7 +138,7 @@ func runGRPCServer(ctx context.Context, server *grpc.Server, listener net.Listen
 	}
 }
 
-func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Listener, trace *tracer.Tracer) error {
+func newGRPCWebHandler(server *grpc.Server, trace *tracer.Tracer) http.Handler {
 	grpcWebServer := http.Handler(grpcweb.WrapServer(server,
 		// The server needs a lenient cors setup so that it can handle testing
 		// browser clients.
@@ -149,6 +149,11 @@ func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Lis
 	if trace != nil {
 		grpcWebServer = tracer.TracingHandler(grpcWebServer, trace)
 	}
+	return grpcWebServer
+}
+
+func runGRPCWebServer(ctx context.Context, server *grpc.Server, listener net.Listener, trace *tracer.Tracer) error {
+	grpcWebServer := newGRPCWebHandler(server, trace)
 
 	var protocols http.Protocols
 	// This is for the gRPC *Web* protocol, so it supports both HTTP 1 and 2.
