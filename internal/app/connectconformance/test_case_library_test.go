@@ -500,6 +500,62 @@ func TestParseTestSuites_EmbeddedTestSuites(t *testing.T) {
 	require.GreaterOrEqual(t, grpcMarkers, 450)
 }
 
+func TestParseTestSuites_OtherAllowedErrorMessages(t *testing.T) {
+	t.Parallel()
+	const suitePrefix = `
+                    name: Other Allowed Error Messages
+                    testCases:
+                      - request:
+                            testName: test
+                            streamType: STREAM_TYPE_UNARY
+                        otherAllowedErrorMessages: [ "?zz" ]`
+	testCases := []struct {
+		name        string
+		suite       string
+		expectedErr string
+	}{
+		{
+			name: "with-expected-message",
+			suite: suitePrefix + `
+                        expectedResponse:
+                            error:
+                                code: CODE_UNAUTHENTICATED
+                                message: "%zz"`,
+		},
+		{
+			name: "without-expected-message",
+			suite: suitePrefix + `
+                        expectedResponse:
+                            error:
+                                code: CODE_UNAUTHENTICATED`,
+			expectedErr: `test.yaml: test case "test" has other allowed error messages, but does not specify an expected error message`,
+		},
+		{
+			name: "without-expected-error",
+			suite: suitePrefix + `
+                        expectedResponse:
+                            payloads: [ {} ]`,
+			expectedErr: `test.yaml: test case "test" has other allowed error messages, but does not specify an expected error message`,
+		},
+		{
+			name:        "without-expected-response",
+			suite:       suitePrefix,
+			expectedErr: `test.yaml: test case "test" has other allowed error messages, but does not specify an expected error message`,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			_, err := parseTestSuites(map[string][]byte{"test.yaml": []byte(testCase.suite)})
+			if testCase.expectedErr == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, testCase.expectedErr)
+			}
+		})
+	}
+}
+
 func TestAddGRPCMarkerToName(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
