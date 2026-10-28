@@ -908,6 +908,137 @@ func TestExpectedCodeString(t *testing.T) {
 	}
 }
 
+func TestExpectedMessageString(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		expectedMessage string
+		otherMessages   []string
+		expectedString  string
+	}{
+		{
+			expectedMessage: "100%",
+			expectedString:  `"100%"`,
+		},
+		{
+			expectedMessage: "%zz",
+			otherMessages:   []string{"?zz"},
+			expectedString:  `"%zz" or "?zz"`,
+		},
+		{
+			expectedMessage: "%zz",
+			otherMessages:   []string{"?zz", "\uFFFDzz"},
+			expectedString:  "\"%zz\", \"?zz\", or \"\uFFFDzz\"",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(fmt.Sprintf("%d_other_messages", len(testCase.otherMessages)), func(t *testing.T) {
+			t.Parallel()
+			require.Equal(t, testCase.expectedString, expectedMessageString(testCase.expectedMessage, testCase.otherMessages))
+		})
+	}
+}
+
+func TestResults_Assert_OtherAllowedErrorMessages(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name            string
+		expectedMessage *string
+		otherMessages   []string
+		otherCodes      []conformancev1.Code
+		actualCode      conformancev1.Code // defaults to CODE_UNAUTHENTICATED
+		actualMessage   string
+		expectedError   string
+	}{
+		{
+			name:            "matches-expected-message",
+			expectedMessage: new("%zz"),
+			otherMessages:   []string{"?zz", "\uFFFDzz"},
+			actualMessage:   "%zz",
+		},
+		{
+			name:            "matches-other-message",
+			expectedMessage: new("%zz"),
+			otherMessages:   []string{"?zz", "\uFFFDzz"},
+			actualMessage:   "\uFFFDzz",
+		},
+		{
+			name:            "matches-no-message",
+			expectedMessage: new("%zz"),
+			otherMessages:   []string{"?zz", "\uFFFDzz"},
+			actualMessage:   "zz",
+			expectedError: `actual error {code: 16 (unauthenticated), message: "zz"} ` +
+				"does not match expected message \"%zz\", \"?zz\", or \"\uFFFDzz\"",
+		},
+		{
+			name:            "no-other-messages",
+			expectedMessage: new("100%"),
+			actualMessage:   "100%25",
+			expectedError: `actual error {code: 16 (unauthenticated), message: "100%25"} ` +
+				`does not match expected message "100%"`,
+		},
+		{
+			name:          "no-expected-message",
+			actualMessage: "anything",
+		},
+		{
+			name:          "other-messages-without-expected-message",
+			otherMessages: []string{"?zz"},
+			actualMessage: "anything",
+		},
+		{
+			name:            "code-mismatch-with-other-message",
+			expectedMessage: new("%zz"),
+			otherMessages:   []string{"?zz"},
+			actualCode:      conformancev1.Code_CODE_INTERNAL,
+			actualMessage:   "?zz",
+			expectedError: `actual error {code: 13 (internal), message: "?zz"} ` +
+				`does not match expected code 16 (unauthenticated)`,
+		},
+		{
+			name:            "other-code-with-other-message",
+			expectedMessage: new("%zz"),
+			otherMessages:   []string{"?zz"},
+			otherCodes:      []conformancev1.Code{conformancev1.Code_CODE_INTERNAL},
+			actualCode:      conformancev1.Code_CODE_INTERNAL,
+			actualMessage:   "?zz",
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			actualCode := testCase.actualCode
+			if actualCode == conformancev1.Code_CODE_UNSPECIFIED {
+				actualCode = conformancev1.Code_CODE_UNAUTHENTICATED
+			}
+			results := newResults(conformancev1.TestSuite_TEST_MODE_CLIENT, 0, &testTrie{}, &testTrie{}, nil)
+			definition := &conformancev1.TestCase{
+				Request: &conformancev1.ClientCompatRequest{StreamType: conformancev1.StreamType_STREAM_TYPE_UNARY},
+				ExpectedResponse: &conformancev1.ClientResponseResult{
+					Error: &conformancev1.Error{
+						Code:    conformancev1.Code_CODE_UNAUTHENTICATED,
+						Message: testCase.expectedMessage,
+					},
+				},
+				OtherAllowedErrorCodes:    testCase.otherCodes,
+				OtherAllowedErrorMessages: testCase.otherMessages,
+			}
+			actual := &conformancev1.ClientResponseResult{
+				Error: &conformancev1.Error{
+					Code:    actualCode,
+					Message: new(testCase.actualMessage),
+				},
+			}
+			results.assert(testCase.name, definition, actual)
+			err := results.outcomes[testCase.name].actualFailure
+			if testCase.expectedError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, testCase.expectedError)
+			}
+		})
+	}
+}
+
 func makeKnownFailing() *testTrie {
 	return parsePatterns([]string{"known-to-fail/**"})
 }

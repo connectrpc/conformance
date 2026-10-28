@@ -135,6 +135,15 @@ _any_ error code since many error codes will obviously not apply, and some error
 by a client or server implementation library but are reserved for use by actual application logic (see the
 table at the bottom of the [gRPC status codes documentation](https://grpc.github.io/grpc/core/md_doc_statuscodes.html)).
 
+#### Lenience in Expected Error Messages
+
+Similarly, a specification sometimes allows more than one error message for the same response. For these cases,
+the test author should put the most sensible error message as the expected error message in the
+`expectedResponse` field of the test case, and add the other acceptable error messages in the
+`otherAllowedErrorMessages` field. The actual message must equal the expected message or one of the other allowed
+messages exactly. This field may only be used when the `expectedResponse` of the test case has an error with a
+message.
+
 ### Raw Payloads
 
 There are two message types in the test case schema worth noting here - [`RawHTTPRequest`][raw-http-request] and 
