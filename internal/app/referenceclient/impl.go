@@ -52,13 +52,23 @@ func (i *invoker) Invoke(
 	ctx context.Context,
 	req *conformancev1.ClientCompatRequest,
 ) (*conformancev1.ClientResponseResult, error) {
-	// If a timeout was specified, create a derived context with that deadline
-	if req.TimeoutMs != nil {
-		deadlineCtx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Duration(*req.TimeoutMs)*time.Millisecond))
-		ctx = deadlineCtx
-		defer cancel()
+	if req.TimeoutMs == nil || i.referenceMode {
+		// In reference mode, the reference client never enforces the test
+		// case's timeout: the implementation under test must. If the client
+		// used a context deadline, it would report "deadline exceeded" itself
+		// and the test would pass whether or not the server enforced it. So
+		// the timeout is only sent to the server, by timeoutHeaderTransport.
+		return i.invoke(ctx, req)
 	}
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(*req.TimeoutMs)*time.Millisecond)
+	defer cancel()
+	return i.invoke(ctx, req)
+}
 
+func (i *invoker) invoke(
+	ctx context.Context,
+	req *conformancev1.ClientCompatRequest,
+) (*conformancev1.ClientResponseResult, error) {
 	switch req.GetMethod() {
 	case "Unary":
 		if len(req.RequestMessages) != 1 {

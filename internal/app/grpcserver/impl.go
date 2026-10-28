@@ -62,7 +62,9 @@ func (c *conformanceServiceServer) Unary(
 		if err := grpc.SetTrailer(ctx, trailerMD); err != nil {
 			return nil, err
 		}
-		time.Sleep(time.Duration(req.ResponseDefinition.ResponseDelayMs) * time.Millisecond)
+		if err := internal.SleepContext(ctx, time.Duration(req.ResponseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+			return nil, err
+		}
 	}
 
 	md, _ := metadata.FromIncomingContext(ctx)
@@ -123,7 +125,9 @@ func (c *conformanceServiceServer) ClientStream(
 		trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
 		stream.SetTrailer(trailerMD)
 
-		time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
+		if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+			return err
+		}
 	}
 
 	md, _ := metadata.FromIncomingContext(stream.Context())
@@ -176,7 +180,9 @@ func (c *conformanceServiceServer) ServerStream(
 				resp.Payload.RequestInfo = requestInfo
 			}
 
-			time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
+			if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
@@ -246,7 +252,7 @@ func (c *conformanceServiceServer) BidiStream(
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
-		if fullDuplex {
+		if fullDuplex { //nolint:nestif
 			if responseDefinition == nil || respNum >= len(responseDefinition.ResponseData) {
 				// If there are no responses to send, then break the receive loop
 				// and throw the error specified
@@ -272,7 +278,9 @@ func (c *conformanceServiceServer) BidiStream(
 				}
 			}
 			resp.Payload.RequestInfo = requestInfo
-			time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
+			if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
@@ -303,7 +311,9 @@ func (c *conformanceServiceServer) BidiStream(
 				requestMetadata, _ := metadata.FromIncomingContext(stream.Context())
 				resp.Payload.RequestInfo = createRequestInfo(ctx, requestMetadata, reqs)
 			}
-			time.Sleep(time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond)
+			if err := internal.SleepContext(ctx, time.Duration(responseDefinition.ResponseDelayMs)*time.Millisecond); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return status.Errorf(codes.Internal, "error sending on stream: %s", err.Error())
