@@ -148,4 +148,13 @@ message TestCase {
   // expected_response. As long as the actual error's code matches any of these, the
   // error is considered conformant, and the test case can pass.
   repeated Code other_allowed_error_codes = 4;
+
+  // When expected_response indicates that an error with a message is expected, in
+  // some cases, the actual error message returned may be flexible. In that case,
+  // this field provides other acceptable error messages, in addition to the one
+  // indicated in the expected_response. As long as the actual error's message
+  // equals any of these, the error is considered conformant, and the test case
+  // can pass. This field may only be used when expected_response has an error
+  // with a message.
+  repeated string other_allowed_error_messages = 5;
 }

@@ -41,3 +41,11 @@ HTTP to RPC Code Mapping/**/too-many-requests
 # instead maps them to "aborted" and "failed_precondition" respectively.
 HTTP to RPC Code Mapping/**/conflict
 HTTP to RPC Code Mapping/**/precondition-failed
+
+# The gRPC spec says that a client must not error or throw away a grpc-message
+# that is not validly percent-encoded:
+#   https://github.com/grpc/grpc/blob/v1.84.0/doc/PROTOCOL-HTTP2.md#responses
+# But the gRPC-Web client passes it to decodeURIComponent, which throws a
+# URIError that is never caught, so the RPC never completes.
+gRPC-Web Status Message/**/invalid-escape
+gRPC-Web Status Message/**/unescaped-percent
