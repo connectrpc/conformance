@@ -687,7 +687,7 @@ proto.connectrpc.conformance.v1.TestSuite.prototype.setReliesOnMessageReceiveLim
  * @private {!Array<number>}
  * @const
  */
-proto.connectrpc.conformance.v1.TestCase.repeatedFields_ = [2,4];
+proto.connectrpc.conformance.v1.TestCase.repeatedFields_ = [2,4,5];
 
 
 
@@ -724,7 +724,8 @@ request: (f = msg.getRequest()) && connectrpc_conformance_v1_client_compat_pb.Cl
 expandRequestsList: jspb.Message.toObjectList(msg.getExpandRequestsList(),
     proto.connectrpc.conformance.v1.TestCase.ExpandedSize.toObject, includeInstance),
 expectedResponse: (f = msg.getExpectedResponse()) && connectrpc_conformance_v1_client_compat_pb.ClientResponseResult.toObject(includeInstance, f),
-otherAllowedErrorCodesList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f
+otherAllowedErrorCodesList: (f = jspb.Message.getRepeatedField(msg, 4)) == null ? undefined : f,
+otherAllowedErrorMessagesList: (f = jspb.Message.getRepeatedField(msg, 5)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -778,6 +779,10 @@ proto.connectrpc.conformance.v1.TestCase.deserializeBinaryFromReader = function(
       break;
     case 4:
       reader.readPackableEnumInto(msg.getOtherAllowedErrorCodesList());
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.addOtherAllowedErrorMessages(value);
       break;
     default:
       reader.skipField();
@@ -836,6 +841,13 @@ proto.connectrpc.conformance.v1.TestCase.serializeBinaryToWriter = function(mess
   if (f.length > 0) {
     writer.writePackedEnum(
       4,
+      f
+    );
+  }
+  f = message.getOtherAllowedErrorMessagesList();
+  if (f.length > 0) {
+    writer.writeRepeatedString(
+      5,
       f
     );
   }
@@ -1136,6 +1148,43 @@ proto.connectrpc.conformance.v1.TestCase.prototype.addOtherAllowedErrorCodes = f
  */
 proto.connectrpc.conformance.v1.TestCase.prototype.clearOtherAllowedErrorCodesList = function() {
   return this.setOtherAllowedErrorCodesList([]);
+};
+
+
+/**
+ * repeated string other_allowed_error_messages = 5;
+ * @return {!Array<string>}
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.getOtherAllowedErrorMessagesList = function() {
+  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 5));
+};
+
+
+/**
+ * @param {!Array<string>} value
+ * @return {!proto.connectrpc.conformance.v1.TestCase} returns this
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.setOtherAllowedErrorMessagesList = function(value) {
+  return jspb.Message.setField(this, 5, value || []);
+};
+
+
+/**
+ * @param {string} value
+ * @param {number=} opt_index
+ * @return {!proto.connectrpc.conformance.v1.TestCase} returns this
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.addOtherAllowedErrorMessages = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 5, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.connectrpc.conformance.v1.TestCase} returns this
+ */
+proto.connectrpc.conformance.v1.TestCase.prototype.clearOtherAllowedErrorMessagesList = function() {
+  return this.setOtherAllowedErrorMessagesList([]);
 };
 
 

@@ -1,0 +1,165 @@
+name: gRPC-Web Status Message
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_GRPC_WEB
+relevantCodecs:
+  - CODEC_PROTO
+# These tests verify that a gRPC-Web client decodes the percent-encoded
+# grpc-message, and that it does not error or throw away a grpc-message that
+# is not validly percent-encoded. From the gRPC spec:
+# https://github.com/grpc/grpc/blob/v1.84.0/doc/PROTOCOL-HTTP2.md?plain=1#L130-L140
+#
+#   When decoding invalid values, implementations MUST NOT error or throw
+#   away the message. At worst, the implementation can abort decoding the
+#   status message altogether such that the user would received the raw
+#   percent-encoded form. Alternatively, the implementation can decode valid
+#   portions while leaving broken %-encodings as-is or replacing them with a
+#   replacement character (e.g., '?' or the Unicode replacement character).
+#
+# So for an invalid value, the expected message is the raw value, and the
+# other allowed messages are the readings where a broken escape (the "%" and
+# the two characters after it) is replaced by "?" or U+FFFD, either as a whole
+# or only its "%". The spec gives "?" and U+FFFD only as examples, so another
+# replacement character would also conform, but these two are the only ones
+# these tests accept.
+testCases:
+  # Trailers and status are in body (no response messages)
+  - request:
+      testName: trailers-in-body/valid-escape
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 16\r\ngrpc-message: 100%25\r\n"
+    expectedResponse:
+      error:
+        code: 16
+        message: "100%"
+  - request:
+      testName: trailers-in-body/invalid-escape
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 16\r\ngrpc-message: %zz\r\n"
+    expectedResponse:
+      error:
+        code: 16
+        message: "%zz"
+    otherAllowedErrorMessages:
+      - "?zz"
+      - "\uFFFDzz"
+      - "?"
+      - "\uFFFD"
+  - request:
+      testName: trailers-in-body/unescaped-percent
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+              stream:
+                items:
+                  - flags: 128
+                    payload:
+                      text: "grpc-status: 16\r\ngrpc-message: quota 100% used\r\n"
+    expectedResponse:
+      error:
+        code: 16
+        message: "quota 100% used"
+    otherAllowedErrorMessages:
+      - "quota 100? used"
+      - "quota 100\uFFFD used"
+      - "quota 100?sed"
+      - "quota 100\uFFFDsed"
+
+  # Trailers-only responses, where status is in HTTP headers
+  - request:
+      testName: trailers-only/valid-escape
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: grpc-status
+                  value: [ "16" ]
+                - name: grpc-message
+                  value: [ "100%25" ]
+    expectedResponse:
+      error:
+        code: 16
+        message: "100%"
+  - request:
+      testName: trailers-only/invalid-escape
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: grpc-status
+                  value: [ "16" ]
+                - name: grpc-message
+                  value: [ "%zz" ]
+    expectedResponse:
+      error:
+        code: 16
+        message: "%zz"
+    otherAllowedErrorMessages:
+      - "?zz"
+      - "\uFFFDzz"
+      - "?"
+      - "\uFFFD"
+  - request:
+      testName: trailers-only/unescaped-percent
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/grpc-web" ]
+                - name: grpc-status
+                  value: [ "16" ]
+                - name: grpc-message
+                  value: [ "quota 100% used" ]
+    expectedResponse:
+      error:
+        code: 16
+        message: "quota 100% used"
+    otherAllowedErrorMessages:
+      - "quota 100? used"
+      - "quota 100\uFFFD used"
+      - "quota 100?sed"
+      - "quota 100\uFFFDsed"
