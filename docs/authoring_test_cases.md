@@ -121,25 +121,22 @@ this will override the auto-generated expected response in the test runner.
 
 To see tests denoting an explicit response, search the [test suites][test-suite-dir] directory for the word `expectedResponse`.
 
-#### Lenience in Expected Error Codes
+#### Lenience in Expected Errors
 
 There are some cases where a condition is obviously an error, based on the protocol specification, but that
 specification does not actually indicate how a client or server should behave in the face of that error. One
 example is if a gRPC server receives an HTTP/2 request that has an unexpected content-type or an HTTP method
-other than POST.
+other than POST. In other cases, the specification allows more than one error message for the same response.
 
-For these cases, the test author should put the most sensible error code as the expected error code in the
+For error codes, the test author should put the most sensible error code as the expected error code in the
 `expectedResponse` field of the test case, but then can also add other acceptable error codes in the
 `otherAllowedErrorCodes` field. Even when the error code is not specified, it is not good practice to allow
 _any_ error code since many error codes will obviously not apply, and some error codes should never be used
 by a client or server implementation library but are reserved for use by actual application logic (see the
 table at the bottom of the [gRPC status codes documentation](https://grpc.github.io/grpc/core/md_doc_statuscodes.html)).
 
-#### Lenience in Expected Error Messages
-
-Similarly, a specification sometimes allows more than one error message for the same response. For these cases,
-the test author should put the most sensible error message as the expected error message in the
-`expectedResponse` field of the test case, and add the other acceptable error messages in the
+For error messages, the test author should put the most sensible error message as the expected error message in
+the `expectedResponse` field of the test case, and add the other acceptable error messages in the
 `otherAllowedErrorMessages` field. The actual message must equal the expected message or one of the other allowed
 messages exactly. This field may only be used when the `expectedResponse` of the test case has an error with a
 message.
