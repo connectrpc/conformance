@@ -63,6 +63,7 @@ type Flags struct {
 	ServerPort           uint
 	ServerBind           string
 	HTTPTrace            bool
+	ReportFile           string
 }
 
 func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer) (bool, error) {
@@ -123,12 +124,19 @@ func Run(flags *Flags, logPrinter internal.Printer, errPrinter internal.Printer)
 
 	results, err := run(configCases, knownFailing, knownFlaky, runPatterns, skipPatterns, allSuites, logPrinter, errPrinter, flags)
 	if results == nil {
+		if reportErr := writeReport(flags.ReportFile, nil, err); reportErr != nil {
+			return false, errors.Join(err, reportErr)
+		}
 		return false, err
 	}
 	if err != nil {
 		errPrinter.Printf("%v", err)
 	}
-	return results.report(logPrinter) && err == nil, nil
+	succeeded := results.report(logPrinter)
+	if reportErr := writeReport(flags.ReportFile, results, err); reportErr != nil {
+		return false, reportErr
+	}
+	return succeeded && err == nil, nil
 }
 
 func run( //nolint:gocyclo
@@ -169,7 +177,7 @@ func run( //nolint:gocyclo
 	// make sure they match actual test names (to prevent accidental typos
 	// and inadvertently ignored entries)
 	if knownFailing.length() > 0 {
-		matched, err := tryMatchPatterns("known failing", knownFailing, allPermutations)
+		matched, err := tryMatchPatterns("known failing", patternKindKnownFailing, knownFailing, allPermutations)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +187,7 @@ func run( //nolint:gocyclo
 		}
 	}
 	if knownFlaky.length() > 0 {
-		matched, err := tryMatchPatterns("known flaky", knownFlaky, allPermutations)
+		matched, err := tryMatchPatterns("known flaky", patternKindKnownFlaky, knownFlaky, allPermutations)
 		if err != nil {
 			return nil, err
 		}
@@ -189,12 +197,12 @@ func run( //nolint:gocyclo
 		}
 	}
 	if run != nil {
-		if _, err := tryMatchPatterns("run patterns", run, allPermutations); err != nil {
+		if _, err := tryMatchPatterns("run patterns", patternKindRun, run, allPermutations); err != nil {
 			return nil, err
 		}
 	}
 	if skip != nil {
-		if _, err := tryMatchPatterns("no-run patterns", skip, allPermutations); err != nil {
+		if _, err := tryMatchPatterns("no-run patterns", patternKindSkip, skip, allPermutations); err != nil {
 			return nil, err
 		}
 	}
@@ -493,7 +501,7 @@ func logTestCaseInfo(with string, svrInstance serverInstance, svrIndex, numCases
 		numCases, with, svrIndex, svrInstance.httpVersion, svrInstance.protocol, tlsMode)
 }
 
-func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev1.TestCase) (int, error) {
+func tryMatchPatterns(what string, kind string, patterns *testTrie, testCases []*conformancev1.TestCase) (int, error) {
 	var matchCount int
 	for _, tc := range testCases {
 		if patterns.matchPattern(tc.Request.TestName) {
@@ -509,5 +517,17 @@ func tryMatchPatterns(what string, patterns *testTrie, testCases []*conformancev
 		unmatchedSlice = append(unmatchedSlice, name)
 	}
 	sort.Strings(unmatchedSlice)
-	return matchCount, fmt.Errorf("%s: unmatched and possibly invalid patterns:\n%v", what, strings.Join(unmatchedSlice, "\n"))
+	return matchCount, &unmatchedPatternsError{what: what, kind: kind, patterns: unmatchedSlice}
+}
+
+// unmatchedPatternsError reports patterns that match no test case permutation.
+type unmatchedPatternsError struct {
+	what string
+	// kind identifies the flag the patterns came from in the JSON report.
+	kind     string
+	patterns []string
+}
+
+func (e *unmatchedPatternsError) Error() string {
+	return fmt.Sprintf("%s: unmatched and possibly invalid patterns:\n%v", e.what, strings.Join(e.patterns, "\n"))
 }
