@@ -148,7 +148,7 @@ def comment:
   | ([$implementations[] | select(.name == $reference and .newFailures > 0)] | length > 0) as $referenceFails
   | (([$implementations[].problems[]] | length) + ($failedJobs | length)) as $problems
   | (if $changes == null then "Couldn't determine which suites changed."
-      elif $referenceFails then "\($reference), the reference implementation, has newly failing tests. They block merging."
+      elif $referenceFails then "\($reference), the reference implementation, has newly failing tests. They predict failures in its own CI."
       elif $failingImplementations > 0 then "\($failingImplementations | plural("implementation")) \(if $failingImplementations == 1 then "has" else "have" end) newly failing tests."
       elif ($results | length) == 0 and ($skipped | length) > 0 then "Every implementation was skipped by label."
       elif ($results | length) == 0 then "No added or modified suites to run."

@@ -21,7 +21,8 @@ set -euo pipefail
 SCRIPT_DIR="$(CDPATH= cd "$(dirname "${0}")" && pwd)"
 CHECK_NAME="Implementation conformance results"
 COMMENT_MARKER="<!-- impl-conformance-report -->"
-# Under the release process, its new failures block merging.
+# It builds the reference programs from this repository, so its new failures
+# predict failures in its own CI.
 REFERENCE_IMPLEMENTATION="connect-go"
 
 find_comment() {
