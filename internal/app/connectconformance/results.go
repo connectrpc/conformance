@@ -273,16 +273,10 @@ func (r *testResults) report(printer internal.Printer) bool {
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
-		var expectError bool
-		if !outcome.setupError {
-			expectError = outcome.knownFailing ||
-				(outcome.knownFlaky && outcome.actualFailure != nil)
-		}
-		var noRun *couldNotRunError
-		switch {
-		case errors.As(outcome.actualFailure, &noRun):
+		switch outcome.kind() {
+		case outcomeKindNotRun:
 			couldNotRun++
-		case !expectError && outcome.actualFailure != nil:
+		case outcomeKindFailed:
 			printer.Printf("FAILED: %s:\n%s", name, indent(outcome.actualFailure.Error()))
 			trace := r.traces[name]
 			if trace != nil {
@@ -291,10 +285,10 @@ func (r *testResults) report(printer internal.Printer) bool {
 				printer.Printf("--------------------")
 			}
 			failed++
-		case expectError && outcome.actualFailure == nil:
+		case outcomeKindPassedUnexpectedly:
 			printer.Printf("FAILED: %s was expected to fail but did not", name)
 			failed++
-		case expectError && outcome.actualFailure != nil:
+		case outcomeKindFailedAsExpected:
 			printer.Printf("INFO: %s failed (as expected):\n%s", name, indent(outcome.actualFailure.Error()))
 			expectedFailures++
 		default:
@@ -316,6 +310,21 @@ func (r *testResults) report(printer internal.Printer) bool {
 	return failed == 0
 }
 
+// jsonTestResults returns the outcome of every test case, sorted by name. It
+// must be called after report, which merges in reference server feedback.
+func (r *testResults) jsonTestResults() []jsonTestResult {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	testResults := make([]jsonTestResult, 0, len(r.outcomes))
+	for name, outcome := range r.outcomes {
+		testResults = append(testResults, jsonTestResult{Name: name, Outcome: outcome.kind()})
+	}
+	sort.Slice(testResults, func(i, j int) bool {
+		return testResults[i].Name < testResults[j].Name
+	})
+	return testResults
+}
+
 type testOutcome struct {
 	// nil if the test case executed successfully, otherwise an error that
 	// represents why the test case failed, such as an error returned by the
@@ -329,6 +338,26 @@ type testOutcome struct {
 	knownFailing bool
 	// true if this test case is known to be flaky
 	knownFlaky bool
+}
+
+func (o *testOutcome) kind() outcomeKind {
+	var expectError bool
+	if !o.setupError {
+		expectError = o.knownFailing || (o.knownFlaky && o.actualFailure != nil)
+	}
+	var noRun *couldNotRunError
+	switch {
+	case errors.As(o.actualFailure, &noRun):
+		return outcomeKindNotRun
+	case !expectError && o.actualFailure != nil:
+		return outcomeKindFailed
+	case expectError && o.actualFailure == nil:
+		return outcomeKindPassedUnexpectedly
+	case expectError && o.actualFailure != nil:
+		return outcomeKindFailedAsExpected
+	default:
+		return outcomeKindPassed
+	}
 }
 
 type multiErrors []error
