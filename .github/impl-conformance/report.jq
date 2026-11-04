@@ -38,7 +38,7 @@ def note_text:
 
 def retry_text:
   {
-    "too-many": "too many test cases changed to retry them",
+    "too-many": "too many permutations changed to retry them",
     "failed": "retrying the changed test cases failed"
   }[tostring] // empty;
 
@@ -88,7 +88,7 @@ def summary:
     else empty end),
   ((.retry | retry_text) as $text | "", "Flaky test cases couldn't be found: \($text)."),
   (if (.flakyCount | count) > 0
-    then "", "Possibly flaky: \(.flakyCount | count | plural("test case")) had a result that didn't repeat when retried."
+    then "", "Possibly flaky: \(.flakyCount | count | plural("test case")) newly failed or passed, but the difference didn't repeat when retried."
     else empty end),
   (if (.notRunCount | count) > 0
     then "", "**\(.notRunCount | count | plural("test case")) couldn't run, because the program under test timed out or exited.**"
@@ -99,24 +99,28 @@ def summary:
   summary_table("Test cases that couldn't run:"; "notRun"; ""),
   "";
 
+# Counts the distinct test cases in the results' $key lists that match f, since
+# a test case that changes on several targets is still one test case.
+def distinct_cases($key; f): [.[] | .[$key] | list | .[] | select(f) | .case | tostring] | unique | length;
+
 def implementations($results):
   $results | group_by(.implementation | tostring) | map({
     name: (.[0].implementation | tostring),
     commits: (map(.commit | tostring) | unique),
     targets: length,
-    newFailures: (map(.newFailureCount | count) | add),
+    newFailures: distinct_cases("newFailures"; true),
     failingTargets: (map(select((.newFailureCount | count) > 0)) | length),
-    newPasses: (map(.newPassCount | count) | add),
-    flaky: (map(.flakyCount | count) | add),
-    notRun: (map(.notRunCount | count) | add),
+    newPasses: distinct_cases("newPasses"; true),
+    flaky: distinct_cases("flaky"; true),
+    notRun: distinct_cases("notRun"; true),
     hasList: any(.[]; .knownFailingList == true),
-    toAdd: (map(.newFailureUnlistedCount | count) | add),
-    toRemove: (map(.newPassListedCount | count) | add),
+    toAdd: distinct_cases("newFailures"; (.listed | count) < (.permutations | count)),
+    toRemove: distinct_cases("newPasses"; (.listed | count) > 0),
     problems: [.[] | (select(has_problem) | "\(.target | code): \(.status | status_text)\(.statusSide | side_text)"),
       (select((.notRunCount | count) > 0) | "\(.target | code): \(.notRunCount | count | plural("test case")) couldn't run")],
     notes: ([.[] | .notes | list | .[] | note_text] | unique)
       + [.[] | (.retry | retry_text) as $text | "\(.target | code): \($text)"]
-      + (map(.flakyCount | count) | add | if . > 0 then [plural("possibly flaky test case")] else [] end),
+      + (distinct_cases("flaky"; true) | if . > 0 then [plural("possibly flaky test case")] else [] end),
     results: .
   });
 
@@ -188,8 +192,13 @@ def comment:
         "Deleted suites: \($changes.deleted | .[:20] | map(code) | join(", ")). Implementations must remove known-failing and known-flaky entries for their tests when they update.",
         ""
         else empty end),
+      ([$changes.suites? | list | .[] | select(.baseName != "" and .baseName != .name)] as $renamed
+        | if ($renamed | length) == 0 then empty else
+            "Renamed suites: \($renamed | .[:20] | map("\(.baseName | code) to \(.name | code)") | join(", ")). Implementations must rename known-failing and known-flaky entries that use the old names when they update.",
+            ""
+          end),
       (if ($results | length) > 0
-        then "Each implementation ran the suites with and without this pull request's changes, without known-failing lists, at the commit shown. Test cases whose results differed ran once more on each side, and those whose results didn't repeat are listed as possibly flaky instead of newly failing or passing. The new failures and passes were then checked against the known-failing list each target passes to the runner. "
+        then "Each implementation ran the suites with and without this pull request's changes, without known-failing lists, at the commit shown. Test cases whose results differed, or that couldn't run, ran once more with and without the changes (only with them for added suites), and those whose differences didn't repeat are listed as possibly flaky instead of newly failing or passing. The new failures and passes were then checked against the known-failing list each target passes to the runner. "
         else "" end)
       + "Results for \($sha[0:12] | code) from [this workflow run](\($runUrl)).",
       ""
@@ -200,7 +209,7 @@ def comment:
       details($implementations; "newPasses"; "listed"; "Newly passing test cases";
         "The runner fails known-failing test cases that pass, so the list has to stop matching the ones it lists."; 20),
       details($implementations; "flaky"; "change"; "Possibly flaky test cases";
-        "These test cases newly failed or passed once, but not when they ran again."; 20),
+        "These test cases newly failed or passed, but the difference between the runs with and without the changes didn't repeat when they ran again."; 20),
       details($implementations; "notRun"; ""; "Test cases that couldn't run";
         "The program under test timed out or exited before these test cases ran."; 20)
     ] as $details
