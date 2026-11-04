@@ -207,8 +207,8 @@ save_known_failing() {
   done
 }
 
-# Starts the program under test with no input when a client-mode call runs no
-# tests, because some harnesses, like connect-dart's, wait for it to connect.
+# Starts the program under test with no input when a client-mode call didn't
+# start it, because some harnesses, like connect-dart's, wait for it to connect.
 start_idle_client() {
   local mode="${1}"
   shift
@@ -285,7 +285,6 @@ exec_runner() {
   for attempt in 1 2; do
     if [ ! -s "${patterns_file}" ]; then
       echo '{"tests": []}' >"${report_file}"
-      start_idle_client "${mode}" "${@}"
       break
     fi
     "${runner_binary}" --run "@${patterns_file}" --report-json "${report_file}" "${args[@]}" "${@}" || true
@@ -298,6 +297,11 @@ exec_runner() {
     grep -vxF -f "${unmatched_file}" "${patterns_file}" >"${patterns_file}.remaining" || true
     mv "${patterns_file}.remaining" "${patterns_file}"
   done
+  # A runner that started the client reports its tests, even ones that couldn't
+  # run, so a report without tests means the client never started.
+  if ! jq -e '(.tests | length) > 0' "${report_file}" >/dev/null 2>&1; then
+    start_idle_client "${mode}" "${@}"
+  fi
   # Results come from the reports. A failing exit status would stop
   # implementations that call the runner several times after the first failure.
   exit 0
@@ -436,6 +440,15 @@ retry_changed() {
   esac
 }
 
+# Succeeds if the base runner has --report-json. A base branch from before the
+# flag existed can't report results, so there's nothing to compare with.
+base_writes_reports() {
+  local help_text
+  # Captured, not piped to grep -q, whose early exit would fail the pipe.
+  help_text="$("${CONFORMANCE_DIR}/base/connectconformance" --help 2>&1 || true)"
+  [[ "${help_text}" == *--report-json* ]]
+}
+
 skipped_implementations() {
   local labels="${1}"
   shift
@@ -454,7 +467,7 @@ run_target() {
   local scope
   local status
   local status_side=""
-  local has_known_failing
+  local has_known_failing="false"
   local notes="[]"
   work_dir="$(mktemp -d)"
   commit="$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
@@ -463,6 +476,8 @@ run_target() {
     notes='["pinned-protos"]'
   fi
   mkdir -p "${RESULTS_DIR}"
+  echo "[]" >"${work_dir}/head-tests.json"
+  : >"${work_dir}/head-not-applicable.txt"
   echo "[]" >"${work_dir}/base-tests.json"
   echo "[]" >"${work_dir}/head-retry-tests.json"
   echo "[]" >"${work_dir}/base-retry-tests.json"
@@ -473,12 +488,17 @@ run_target() {
   else
     jq -r '.suites[].name + "/**"' "${CHANGES_FILE}" >"${PATTERNS_FILE}"
   fi
-  run_side head head "${work_dir}" "${label}" "${@}"
-  status="${SIDE_STATUS}"
-  has_known_failing="${SIDE_HAS_KNOWN_FAILING}"
-  if [ "${status}" != "ok" ]; then
-    status_side="head"
+  if ! base_writes_reports; then
+    status="base-without-report-json"
   else
+    run_side head head "${work_dir}" "${label}" "${@}"
+    status="${SIDE_STATUS}"
+    has_known_failing="${SIDE_HAS_KNOWN_FAILING}"
+    if [ "${status}" != "ok" ]; then
+      status_side="head"
+    fi
+  fi
+  if [ "${status}" = "ok" ]; then
     # Only suites that apply at head run at base, under their base names.
     if [ "${scope}" = "all" ]; then
       echo "**" >"${PATTERNS_FILE}"
@@ -490,7 +510,7 @@ run_target() {
     fi
     if [ -s "${PATTERNS_FILE}" ]; then
       run_side base base "${work_dir}" "${label}" "${@}"
-      # A base without the suites, or without --report-json, has no results.
+      # A base without the suites has no results.
       case "${SIDE_STATUS}" in
         ok | not-applicable) ;;
         *)

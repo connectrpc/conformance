@@ -25,6 +25,7 @@ def status_text:
   {
     "runner-not-called": "didn't call the runner",
     "invalid-list": "known-flaky or skip list matches no test",
+    "base-without-report-json": "the base branch's runner predates `--report-json`, so there's nothing to compare with",
     "error": "runner error"
   }[tostring] // "unknown status";
 
