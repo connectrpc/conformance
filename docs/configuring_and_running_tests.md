@@ -243,19 +243,6 @@ summary.
 
 ### Test Output
 
-For tools that need per-test results, the `--report-json <path>` option writes the outcome of
-each test case permutation that has one to a JSON file. Test cases left out by `--run` or `--skip`
-aren't listed, and neither are test cases that never got an outcome, which the summary counts as
-"could not run". Each entry in `tests` has the test case's full name and an `outcome` of `passed`,
-`failed`, `failed-as-expected` (a known-failing or flaky test case that failed),
-`passed-unexpectedly` (a known-failing test case that passed), or `not-run`.
-
-If the run stops before running tests, for example because a pattern matches no test case or the
-client under test fails to start, the file has an `error` and no tests. When the cause is a pattern
-that matches no test case, `unmatchedPatterns` also gives the flag it came from (`known-failing`,
-`known-flaky`, `run` or `skip`) and the unmatched patterns. If the configuration or the test suites
-can't be loaded, the runner exits with an error without writing the file.
-
 When test cases fail, the test runner prints a `FAILED` banner with the _full name_ of the
 test case permutation and the errors that were observed with the RPC. If the `--trace` option
 is provided to the test runner, then it may also show a full diagnostic trace of the HTTP
@@ -375,6 +362,9 @@ represents a different RPC server, started with the given configuration (since w
 to the Connect protocol; 46 apply to the gRPC and gRPC-Web protocols. If you add up all of those numbers
 (47+47+46+46+...), the result is 602: the total number of test case permutations being run.
 
+To process results with other tools, use the [JSON report](#json-report) instead of parsing
+this output.
+
 ### Test Case Permutations
 
 As mentioned above, a single test case can turn into multiple permutations, where the same RPC is used
@@ -465,6 +455,21 @@ One reason one might need to use `--skip` in a CI configuration is if a bug in t
 under test causes the client or server to crash or to deadlock. Since such bugs could prevent the
 conformance suite from ever completing successfully (even if such tests are marked as "known
 failing"), it may be necessary to temporarily skip them in CI until those bugs are fixed.
+
+### JSON Report
+
+For tools that need per-test results, the `--report-json <path>` option writes the outcome of
+each test case permutation that has one to a JSON file. Test cases left out by `--run` or `--skip`
+aren't listed, and neither are test cases that never got an outcome, which the summary counts as
+"could not run". Each entry in `tests` has the test case's full name and an `outcome` of `passed`,
+`failed`, `failed-as-expected` (a known-failing or flaky test case that failed),
+`passed-unexpectedly` (a known-failing test case that passed), or `not-run`.
+
+If the run stops before running tests, for example because a pattern matches no test case or the
+client under test fails to start, the file has an `error` and no tests. When the cause is a pattern
+that matches no test case, `unmatchedPatterns` also gives the flag it came from (`known-failing`,
+`known-flaky`, `run` or `skip`) and the unmatched patterns. If the configuration or the test suites
+can't be loaded, the runner exits with an error without writing the file.
 
 ## Configuring CI
 
