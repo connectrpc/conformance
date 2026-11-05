@@ -3,18 +3,19 @@
 # changed: <count>}, with base names for the base run; tests in suites added at
 # head aren't run there. changed counts the tests that newly failed or passed.
 #
-# Inputs: $head and $base (slurped arrays of runner report tests) and $changes
-# (slurped changes.json).
+# Inputs: $head and $base (slurped arrays of runner report tests), $changes
+# (slurped changes.json), and $calls (the number of runner calls in each run).
 
 include "outcomes";
 
 base_renames($changes) as $renames
 | ($renames | to_entries | map({key: .value, value: .key}) | from_entries) as $baseNames
 | ($changes[0].suites | map(select(.baseName == "") | .name)) as $added
-| ($head[0] | outcomes) as $headOutcomes
-| ($base[0] | map(.name |= rename($renames)) | outcomes) as $baseOutcomes
-| [$headOutcomes | to_entries[] | select(compare(.value; $baseOutcomes[.key] // []) != null) | .key] as $changed
-| [$headOutcomes | to_entries[] | select(.value | includes("not-run")) | .key] as $notRun
+| aligned($calls) as $perCall
+| ($head[0] | outcomes($perCall)) as $headOutcomes
+| ($base[0] | map(.name |= rename($renames)) | outcomes($perCall)) as $baseOutcomes
+| ([$headOutcomes | to_entries[] | select(compare(.value; $baseOutcomes[.key] // []) != null) | .key | key_name] | unique) as $changed
+| [$headOutcomes | to_entries[] | select(.value | includes("not-run")) | .key | key_name] as $notRun
 | ($changed + $notRun | unique) as $names
 | {
     changed: ($changed | length),
