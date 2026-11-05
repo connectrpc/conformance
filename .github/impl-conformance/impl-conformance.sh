@@ -362,9 +362,10 @@ classify_reports() {
 
 # Runs the command with one side's runner. Sets SIDE_STATUS and
 # SIDE_HAS_KNOWN_FAILING, and writes the side's test results, marked with
-# whether its known-failing list matches them, and the run patterns that
-# applied to none of its runner calls to the work directory, in files starting
-# with <name>.
+# whether its known-failing list matches them and the index of the runner call
+# that ran them, its number of runner calls, and the run patterns that applied
+# to none of its runner calls to the work directory, in files starting with
+# <name>.
 run_side() {
   local side="${1}"
   local name="${2}"
@@ -373,6 +374,7 @@ run_side() {
   shift 4
   local report_file
   local known_failing_file
+  local index
   local report_files=()
   echo "[]" >"${work_dir}/${name}-tests.json"
   echo "${side}" >"${SIDE_FILE}"
@@ -384,16 +386,21 @@ run_side() {
   "${@}" </dev/null || true
   echo "::endgroup::"
   classify_reports "${work_dir}/${name}-not-applicable.txt"
-  if [ "${SIDE_STATUS}" = "ok" ]; then
+  if [ -s "${CALLS_FILE}" ]; then
     mapfile -t report_files <"${CALLS_FILE}"
-    for report_file in "${report_files[@]}"; do
+  fi
+  echo "${#report_files[@]}" >"${work_dir}/${name}-calls.txt"
+  if [ "${SIDE_STATUS}" = "ok" ]; then
+    for index in "${!report_files[@]}"; do
+      report_file="${report_files[${index}]}"
       known_failing_file="${report_file}.known-failing"
       if [ -e "${known_failing_file}" ]; then
         SIDE_HAS_KNOWN_FAILING="true"
       else
         known_failing_file="/dev/null"
       fi
-      jq --rawfile patterns "${known_failing_file}" -f "${SCRIPT_DIR}/known-failing.jq" "${report_file}"
+      jq --rawfile patterns "${known_failing_file}" -f "${SCRIPT_DIR}/known-failing.jq" "${report_file}" |
+        jq --argjson call "${index}" 'map(. + {call: $call})'
     done >"${work_dir}/${name}-marked-tests.json"
     jq -s 'add // []' "${work_dir}/${name}-marked-tests.json" >"${work_dir}/${name}-tests.json"
   fi
@@ -411,6 +418,7 @@ retry_changed() {
     --slurpfile head "${work_dir}/head-tests.json" \
     --slurpfile base "${work_dir}/base-tests.json" \
     --slurpfile changes "${CHANGES_FILE}" \
+    --argjson calls "$(call_counts "${work_dir}")" \
     -f "${SCRIPT_DIR}/retry.jq" >"${work_dir}/retry.json"
   count="$(jq '.head | length' "${work_dir}/retry.json")"
   if [ "${count}" -eq 0 ]; then
@@ -436,6 +444,8 @@ retry_changed() {
       RETRY_STATUS="failed"
       echo "[]" >"${work_dir}/head-retry-tests.json"
       echo "[]" >"${work_dir}/base-retry-tests.json"
+      echo 0 >"${work_dir}/head-retry-calls.txt"
+      echo 0 >"${work_dir}/base-retry-calls.txt"
       ;;
   esac
 }
@@ -447,6 +457,15 @@ base_writes_reports() {
   # Captured, not piped to grep -q, whose early exit would fail the pipe.
   help_text="$("${CONFORMANCE_DIR}/base/connectconformance" --help 2>&1 || true)"
   [[ "${help_text}" == *--report-json* ]]
+}
+
+# Prints the number of runner calls each run made as JSON, with 0 for runs that
+# didn't happen.
+call_counts() {
+  local work_dir="${1}"
+  printf '{"head": %d, "base": %d, "headRetry": %d, "baseRetry": %d}' \
+    "$(cat "${work_dir}/head-calls.txt")" "$(cat "${work_dir}/base-calls.txt")" \
+    "$(cat "${work_dir}/head-retry-calls.txt")" "$(cat "${work_dir}/base-retry-calls.txt")"
 }
 
 skipped_implementations() {
@@ -463,6 +482,7 @@ run_target() {
   shift 2
   local label="${implementation} ${target}"
   local work_dir
+  local name
   local commit
   local scope
   local status
@@ -481,6 +501,9 @@ run_target() {
   echo "[]" >"${work_dir}/base-tests.json"
   echo "[]" >"${work_dir}/head-retry-tests.json"
   echo "[]" >"${work_dir}/base-retry-tests.json"
+  for name in head base head-retry base-retry; do
+    echo 0 >"${work_dir}/${name}-calls.txt"
+  done
   RETRY_STATUS="none"
 
   if [ "${scope}" = "all" ]; then
@@ -538,6 +561,7 @@ run_target() {
     --slurpfile base "${work_dir}/base-tests.json" \
     --slurpfile headRetry "${work_dir}/head-retry-tests.json" \
     --slurpfile baseRetry "${work_dir}/base-retry-tests.json" \
+    --argjson calls "$(call_counts "${work_dir}")" \
     --slurpfile changes "${CHANGES_FILE}" \
     -f "${SCRIPT_DIR}/new-failures.jq" >"${RESULTS_DIR}/result.json"
   "${SCRIPT_DIR}/report.sh" summary "${RESULTS_DIR}/result.json" >>"${GITHUB_STEP_SUMMARY}"

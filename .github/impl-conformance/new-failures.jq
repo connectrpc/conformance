@@ -5,10 +5,11 @@
 #
 # Inputs: $head, $base, $headRetry, and $baseRetry (slurped arrays of runner
 # report tests, with head tests marked by known-failing.jq), $changes (slurped
-# changes.json), $retry (none, done, too-many, or failed), $notApplicable (run
-# patterns that applied to none of the head run's runner calls),
-# $knownFailingList (whether the target passed a known-failing list), and the
-# target's $implementation, $target, $commit, $status, $statusSide, and $notes.
+# changes.json), $calls (the number of runner calls in each run), $retry (none,
+# done, too-many, or failed), $notApplicable (run patterns that applied to none
+# of the head run's runner calls), $knownFailingList (whether the target passed
+# a known-failing list), and the target's $implementation, $target, $commit,
+# $status, $statusSide, and $notes.
 
 include "outcomes";
 
@@ -41,14 +42,18 @@ def classify($headOutcomes; $baseOutcomes; $headRetryOutcomes; $baseRetryOutcome
     else empty
     end;
 
-base_renames($changes) as $renames
+aligned($calls) as $perCall
+| base_renames($changes) as $renames
 | ($head[0] + $headRetry[0]) as $headTests
-| ($head[0] | outcomes) as $headOutcomes
-| ($headRetry[0] | outcomes) as $headRetryOutcomes
-| ($base[0] | map(.name |= rename($renames)) | outcomes) as $baseOutcomes
-| ($baseRetry[0] | map(.name |= rename($renames)) | outcomes) as $baseRetryOutcomes
-| ($headOutcomes | keys | map({name: ., kind: classify($headOutcomes; $baseOutcomes; $headRetryOutcomes; $baseRetryOutcomes)})
-  | group_by(.kind) | map({key: .[0].kind, value: map(.name)}) | from_entries) as $kinds
+| ($head[0] | outcomes($perCall)) as $headOutcomes
+| ($headRetry[0] | outcomes($perCall)) as $headRetryOutcomes
+| ($base[0] | map(.name |= rename($renames)) | outcomes($perCall)) as $baseOutcomes
+| ($baseRetry[0] | map(.name |= rename($renames)) | outcomes($perCall)) as $baseRetryOutcomes
+| ($headOutcomes | keys | map({name: key_name, kind: classify($headOutcomes; $baseOutcomes; $headRetryOutcomes; $baseRetryOutcomes)})
+  | group_by(.kind) | map({key: .[0].kind, value: map(.name) | unique}) | from_entries
+  # Tests that changed in one call count as changed, even if flaky in another.
+  | .["flaky-failure"] = ((.["flaky-failure"] // []) - (.failure // []))
+  | .["flaky-pass"] = ((.["flaky-pass"] // []) - (.pass // []))) as $kinds
 # A failure is covered only if every run that failed it has it in its list. The
 # runner fails a listed test that passes, so one listing run is enough there.
 | ($headTests | map(select(.outcome == "failed")) | group_by(.name)
@@ -65,7 +70,7 @@ base_renames($changes) as $renames
     commit: $commit,
     status: $status,
     statusSide: $statusSide,
-    notes: $notes,
+    notes: ($notes + if $perCall then [] else ["calls-misaligned"] end),
     notApplicable: ($notApplicable | split("\n") | map(select(. != "") | sub("/\\*\\*$"; ""))),
     knownFailingList: $knownFailingList,
     retry: $retry,

@@ -10,16 +10,23 @@ def rename($renames):
 
 def base_renames($changes): $changes[0].suites | map(select(.baseName != "") | {key: .baseName, value: .name}) | from_entries;
 
-# Maps each test name in an array of runner report tests to its outcomes. A
-# target can call the runner more than once, so a test can have several.
-def outcomes: reduce .[] as $test ({}; .[$test.name] += [$test.outcome]);
+# Whether the runs that called the runner made the same number of calls, so
+# call N of one lines up with call N of another. $calls maps runs to counts.
+def aligned($calls): [$calls[] | select(. > 0)] | unique | length <= 1;
+
+# Maps each test in an array of runner report tests to its outcomes, keyed by
+# its call index and name as JSON. Unless $perCall, every call shares index 0.
+def outcomes($perCall):
+  reduce .[] as $test ({}; .[[if $perCall then $test.call else 0 end, $test.name] | tojson] += [$test.outcome]);
+
+def key_name: fromjson[1];
 
 def includes($outcome): any(.[]; . == $outcome);
 
 def tally($outcome): map(select(. == $outcome)) | length;
 
 # Prints "failure" or "pass" if a test's outcomes changed from $base to $head.
-# Counts matter because calls like connect-kotlin's call styles share names.
+# Counts matter when calls that don't line up, like call styles, share names.
 def compare($head; $base):
   if ($head | tally("failed")) > ($base | tally("failed")) then "failure"
   elif ($base | tally("failed")) > ($head | tally("failed")) and ($head | tally("passed")) > ($base | tally("passed")) then "pass"

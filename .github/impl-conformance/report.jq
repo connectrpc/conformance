@@ -33,7 +33,8 @@ def side_text: {"base": " in the base run"}[tostring] // "";
 
 def note_text:
   {
-    "pinned-protos": "its generated code is from its pinned conformance release, but this pull request changes `proto/`"
+    "pinned-protos": "its generated code is from its pinned conformance release, but this pull request changes `proto/`",
+    "calls-misaligned": "its runner calls didn't match between runs, so a test's results from all calls were compared together"
   }[tostring] // empty;
 
 def retry_text:
