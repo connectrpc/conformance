@@ -10,10 +10,7 @@ permissions:
 jobs:
   ci:
     name: ci (go:${{ matrix.go-version.name }})
-    # TODO(sayers) - Need to run on 22.04 for the time being until
-    # https://github.com/puppeteer/puppeteer/pull/13196 is released
-    # See https://github.com/connectrpc/conformance/pull/940 for context
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # When changing this, also update the Go version in release.yaml to
@@ -26,18 +23,14 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v7
-        with:
-          fetch-depth: 1
       - name: Install Go
         uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version.version }}
-      - name: Cache
-        uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-conformance-ci-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-conformance-ci-
+          # The Makefile pins the lint and release tool versions.
+          cache-dependency-path: |
+            go.sum
+            Makefile
       - name: Test
         run: make test
       - name: Run Conformance Tests
