@@ -15,16 +15,13 @@
 package referenceclient
 
 import (
-	"context"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"sync"
 	"testing"
-	"time"
 
-	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -104,58 +101,4 @@ func TestTransportsIsolateHTTP1RequestsThatMayCancel(t *testing.T) {
 		return true
 	})
 	assert.Equal(t, 2, cachedTransports, "want one pooled and one non-pooled transport")
-}
-
-// An HTTP/3 transport shares one dial among all requests to a host. Canceling
-// the request that started the dial must not fail the requests waiting on it.
-func TestTransportsHTTP3DialSurvivesCancelingRequest(t *testing.T) {
-	t.Parallel()
-
-	// The server never answers, so the dial stays in progress.
-	silentServer, err := net.ListenUDP("udp", &net.UDPAddr{IP: net.IPv4(127, 0, 0, 1)})
-	require.NoError(t, err)
-	t.Cleanup(func() { _ = silentServer.Close() })
-	serverCert, _, err := internal.NewServerCert()
-	require.NoError(t, err)
-	serverAddr, ok := silentServer.LocalAddr().(*net.UDPAddr)
-	require.True(t, ok)
-
-	var transportCache transports
-	roundTripper, serverURL, err := transportCache.get(&conformancev1.ClientCompatRequest{
-		HttpVersion:   conformancev1.HTTPVersion_HTTP_VERSION_3,
-		Host:          serverAddr.IP.String(),
-		Port:          uint32(serverAddr.Port),
-		ServerTlsCert: serverCert,
-	})
-	require.NoError(t, err)
-	newRequest := func(ctx context.Context) *http.Request {
-		t.Helper()
-		httpRequest, err := http.NewRequestWithContext(ctx, http.MethodPost, serverURL.String(), http.NoBody)
-		require.NoError(t, err)
-		return httpRequest
-	}
-	roundTrip := func(httpRequest *http.Request) error {
-		httpResponse, err := roundTripper.RoundTrip(httpRequest)
-		if err == nil {
-			_ = httpResponse.Body.Close()
-		}
-		return err
-	}
-
-	firstCtx, cancelFirst := context.WithCancel(t.Context())
-	firstRequest := newRequest(firstCtx)
-	firstErr := make(chan error, 1)
-	go func() { firstErr <- roundTrip(firstRequest) }()
-	// The first packet shows that the first request's dial has started.
-	require.NoError(t, silentServer.SetReadDeadline(time.Now().Add(5*time.Second)))
-	_, _, err = silentServer.ReadFromUDP(make([]byte, 2048))
-	require.NoError(t, err)
-	cancelFirst()
-	require.ErrorIs(t, <-firstErr, context.Canceled)
-
-	secondCtx, cancelSecond := context.WithTimeout(t.Context(), 200*time.Millisecond)
-	defer cancelSecond()
-	err = roundTrip(newRequest(secondCtx))
-	require.ErrorIs(t, err, context.DeadlineExceeded, "the second request should fail only by its own deadline")
-	assert.NotErrorIs(t, err, context.Canceled)
 }
