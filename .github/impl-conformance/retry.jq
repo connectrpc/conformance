@@ -13,13 +13,7 @@ base_renames($changes) as $renames
 | ($changes[0].suites | map(select(.baseName == "") | .name)) as $added
 | ($head[0] | outcomes) as $headOutcomes
 | ($base[0] | map(.name |= rename($renames)) | outcomes) as $baseOutcomes
-| [$headOutcomes | to_entries[]
-    | ($baseOutcomes[.key] // []) as $baseResults
-    | select(
-        (.value | includes("failed")) and ($baseResults | includes("failed") | not)
-        or (.value | includes("passed")) and ($baseResults | includes("failed"))
-      )
-    | .key] as $changed
+| [$headOutcomes | to_entries[] | select(compare(.value; $baseOutcomes[.key] // []) != null) | .key] as $changed
 | [$headOutcomes | to_entries[] | select(.value | includes("not-run")) | .key] as $notRun
 | ($changed + $notRun | unique) as $names
 | {

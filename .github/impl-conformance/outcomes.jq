@@ -15,3 +15,13 @@ def base_renames($changes): $changes[0].suites | map(select(.baseName != "") | {
 def outcomes: reduce .[] as $test ({}; .[$test.name] += [$test.outcome]);
 
 def includes($outcome): any(.[]; . == $outcome);
+
+def tally($outcome): map(select(. == $outcome)) | length;
+
+# Prints "failure" or "pass" if a test's outcomes changed from $base to $head.
+# Counts matter because calls like connect-kotlin's call styles share names.
+def compare($head; $base):
+  if ($head | tally("failed")) > ($base | tally("failed")) then "failure"
+  elif ($base | tally("failed")) > ($head | tally("failed")) and ($head | tally("passed")) > ($base | tally("passed")) then "pass"
+  else empty
+  end;

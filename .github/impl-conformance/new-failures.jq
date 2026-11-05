@@ -26,27 +26,28 @@ def group_cases($listed):
 
 def name_set: map({key: ., value: true}) | from_entries;
 
-# A test that failed at head but passed at base is a new failure, unless it
-# also passed at head or failed at base when retried, which makes it flaky.
-# New passes are the reverse.
-def classify($headOutcomes; $baseOutcomes; $baseRetryOutcomes):
-  ($headOutcomes[.]) as $h
-  | ($baseOutcomes[.] // []) as $b
-  | ($baseRetryOutcomes[.] // []) as $retried
-  | if ($h | includes("failed")) and ($b | includes("failed") | not) then
-      if ($h | includes("passed")) or ($retried | includes("failed")) then "flaky-failure" else "failure" end
-    elif ($b | includes("failed")) and ($h | includes("passed")) and ($h | includes("failed") | not) then
-      if $b + $retried | includes("passed") then "flaky-pass" else "pass" end
+# A change is flaky if a retry in which every call ran the test doesn't repeat
+# it. Tests that couldn't run at head compare by their retry instead.
+def classify($headOutcomes; $baseOutcomes; $headRetryOutcomes; $baseRetryOutcomes):
+  ($headRetryOutcomes[.] // []) as $headRetry
+  | ($baseRetryOutcomes[.] // []) as $baseRetry
+  | ($headOutcomes[.] | if includes("not-run") and ($headRetry | length) > 0 then $headRetry else . end) as $h
+  | (compare($h; $baseOutcomes[.] // []) // "") as $change
+  | if $change != "" then
+      if ($headRetry | length) == 0 or ($headRetry + $baseRetry | includes("not-run"))
+        or (compare($headRetry; $baseRetry) // "") == $change
+      then $change else "flaky-\($change)" end
     elif $h | all(. == "not-run") then "not-run"
     else empty
     end;
 
 base_renames($changes) as $renames
 | ($head[0] + $headRetry[0]) as $headTests
-| ($headTests | outcomes) as $headOutcomes
+| ($head[0] | outcomes) as $headOutcomes
+| ($headRetry[0] | outcomes) as $headRetryOutcomes
 | ($base[0] | map(.name |= rename($renames)) | outcomes) as $baseOutcomes
 | ($baseRetry[0] | map(.name |= rename($renames)) | outcomes) as $baseRetryOutcomes
-| ($head[0] | outcomes | keys | map({name: ., kind: classify($headOutcomes; $baseOutcomes; $baseRetryOutcomes)})
+| ($headOutcomes | keys | map({name: ., kind: classify($headOutcomes; $baseOutcomes; $headRetryOutcomes; $baseRetryOutcomes)})
   | group_by(.kind) | map({key: .[0].kind, value: map(.name)}) | from_entries) as $kinds
 # A failure is covered only if every run that failed it has it in its list. The
 # runner fails a listed test that passes, so one listing run is enough there.

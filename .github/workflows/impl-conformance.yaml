@@ -14,7 +14,8 @@ name: Implementation Conformance
 # browser targets other than Chrome. The "impl-conformance: skip" label skips
 # every implementation, and "impl-conformance: skip <implementation>" skips
 # one. impl-conformance-report.yaml posts the results. They never fail the
-# pull request; a job fails only if an implementation didn't call the runner.
+# pull request; a job fails only if the scripts' tests fail or an
+# implementation didn't call the runner.
 on:
   pull_request:
     # Label changes rerun the workflow, because a rerun keeps the labels of the
@@ -69,6 +70,8 @@ jobs:
         with:
           name: impl-conformance-pr
           path: ${{ runner.temp }}/pr
+      - name: Test the scripts
+        run: .github/impl-conformance/test.sh
       - uses: actions/setup-go@v7
         with:
           # Keep in sync with the 'latest' Go version in ci.yaml.
