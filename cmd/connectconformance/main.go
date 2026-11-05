@@ -49,6 +49,7 @@ const (
 	portFlagName          = "port"
 	bindFlagName          = "bind"
 	traceFlagName         = "trace"
+	reportJSONFlagName    = "report-json"
 )
 
 type flags struct {
@@ -69,6 +70,7 @@ type flags struct {
 	port                 uint
 	bind                 string
 	trace                bool
+	reportJSON           string
 }
 
 func main() {
@@ -168,6 +170,8 @@ func bind(cmd *cobra.Command, flags *flags) {
 		"in client mode, the bind address on which the reference server should listen (0.0.0.0 means listen on all interfaces)")
 	cmd.Flags().BoolVar(&flags.trace, traceFlagName, false,
 		"if true, full HTTP traces will be captured and shown alongside failing test cases")
+	cmd.Flags().StringVar(&flags.reportJSON, reportJSONFlagName, "",
+		"a path to write the outcome of each test case to, in JSON format; also written when a pattern matches no test case")
 }
 
 func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:gocyclo
@@ -309,6 +313,7 @@ func run(flags *flags, cobraFlags *pflag.FlagSet, command []string) { //nolint:g
 			ServerPort:           flags.port,
 			ServerBind:           flags.bind,
 			HTTPTrace:            flags.trace,
+			ReportFile:           flags.reportJSON,
 		},
 		internal.NewPrinter(os.Stdout),
 		internal.NewPrinter(os.Stderr),
