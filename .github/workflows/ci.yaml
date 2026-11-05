@@ -13,8 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # When changing this, also update the Go version in release.yaml to
-        # match 'latest'.
+        # When changing this, also update the Go version in the lint and
+        # checkrelease jobs below and in release.yaml to match 'latest'.
         go-version:
         - name: latest
           version: 1.27.x
@@ -27,7 +27,7 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version.version }}
-          # The Makefile pins the lint and release tool versions.
+          # Each job keys its own cache on the files that pin its tools.
           cache-dependency-path: |
             go.sum
             Makefile
@@ -35,15 +35,45 @@ jobs:
         run: make test
       - name: Run Conformance Tests
         run: make runconformance
+  lint:
+    # Often, lint & gofmt guidelines depend on the Go version. To prevent
+    # conflicting guidance, run only on the most recent supported version.
+    # For the same reason, only check generated code on the most recent
+    # supported version.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+      - name: Install Go
+        uses: actions/setup-go@v7
+        with:
+          # Keep in sync with the 'latest' Go version above.
+          go-version: 1.27.x
+          # Each job keys its own cache on the files that pin its tools.
+          cache-dependency-path: |
+            go.sum
+            Makefile
+            .golangci.yml
+      - name: Check Generated Code
+        run: make generate && make checkgenerate
       - name: Lint
-        # Often, lint & gofmt guidelines depend on the Go version. To prevent
-        # conflicting guidance, run only on the most recent supported version.
-        # For the same reason, only check generated code on the most recent
-        # supported version.
-        if: matrix.go-version.name == 'latest'
-        run: make checkgenerate && make lint
+        run: make lint
+  checkrelease:
+    # Releases are built with the most recent supported Go version, so that's
+    # all we need to check.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+      - name: Install Go
+        uses: actions/setup-go@v7
+        with:
+          # Keep in sync with the 'latest' Go version above.
+          go-version: 1.27.x
+          # Each job keys its own cache on the files that pin its tools.
+          cache-dependency-path: |
+            go.sum
+            Makefile
+            .goreleaser.yml
       - name: Check Release
-        # We'll only be building releases w/ latest Go, so we only need to
-        # test that it can be built w/ latest.
-        if: matrix.go-version.name == 'latest'
         run: make checkrelease
