@@ -243,6 +243,19 @@ summary.
 
 ### Test Output
 
+For tools that need per-test results, the `--report-json <path>` option writes the outcome of
+each test case permutation that has one to a JSON file. Test cases left out by `--run` or `--skip`
+aren't listed, and neither are test cases that never got an outcome, which the summary counts as
+"could not run". Each entry in `tests` has the test case's full name and an `outcome` of `passed`,
+`failed`, `failed-as-expected` (a known-failing or flaky test case that failed),
+`passed-unexpectedly` (a known-failing test case that passed), or `not-run`.
+
+If the run stops before running tests, for example because a pattern matches no test case or the
+client under test fails to start, the file has an `error` and no tests. When the cause is a pattern
+that matches no test case, `unmatchedPatterns` also gives the flag it came from (`known-failing`,
+`known-flaky`, `run` or `skip`) and the unmatched patterns. If the configuration or the test suites
+can't be loaded, the runner exits with an error without writing the file.
+
 When test cases fail, the test runner prints a `FAILED` banner with the _full name_ of the
 test case permutation and the errors that were observed with the RPC. If the `--trace` option
 is provided to the test runner, then it may also show a full diagnostic trace of the HTTP
