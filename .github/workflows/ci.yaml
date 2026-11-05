@@ -7,6 +7,10 @@ on:
   workflow_dispatch: {} # support manual runs
 permissions:
   contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only cancel superseded PR runs; let every push to main finish.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   ci:
     name: ci (go:${{ matrix.go-version.name }})
