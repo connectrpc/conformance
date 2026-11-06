@@ -1,3 +1,4 @@
+version: 2
 project_name: connectconformance
 builds:
   - id: connectconformance
@@ -13,11 +14,10 @@ builds:
     ldflags:
       - -s -w -X connectrpc.com/conformance/internal.buildVersion=v{{.Version}}
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     format_overrides:
       - goos: windows
-        format: zip
-    rlcp: true
+        formats: [zip]
     # Follows same naming conventions as release artifacts for bufbuild/buf
     name_template: 'connectconformance-{{ .Tag }}-{{ title .Os }}-{{ if and (eq .Os "linux") (eq .Arch "arm64")}}aarch64{{ else if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}'
     files:
@@ -31,3 +31,8 @@ release:
   # A GitHub action will then act when the tag is created and run goreleaser to
   # generate the release artifacts and upload them and attach them to the release.
   mode: keep-existing
+changelog:
+  # Release notes are curated by hand in the GitHub UI, so there is nothing to
+  # generate. Skipping it also avoids walking history that the release
+  # workflow's shallow checkout doesn't have.
+  disable: true

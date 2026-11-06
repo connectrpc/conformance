@@ -7,13 +7,15 @@ on:
   workflow_dispatch: {} # support manual runs
 permissions:
   contents: read
+concurrency:
+  # A new push to a PR cancels that PR's previous run. Every other run gets
+  # its own group, so runs on main never queue behind or cancel each other.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 jobs:
   ci:
     name: ci (go:${{ matrix.go-version.name }})
-    # TODO(sayers) - Need to run on 22.04 for the time being until
-    # https://github.com/puppeteer/puppeteer/pull/13196 is released
-    # See https://github.com/connectrpc/conformance/pull/940 for context
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         # When changing this, also update the Go version in release.yaml to
@@ -32,12 +34,6 @@ jobs:
         uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version.version }}
-      - name: Cache
-        uses: actions/cache@v6
-        with:
-          path: ~/go/pkg/mod
-          key: ${{ runner.os }}-conformance-ci-${{ hashFiles('**/go.sum') }}
-          restore-keys: ${{ runner.os }}-conformance-ci-
       - name: Test
         run: make test
       - name: Run Conformance Tests

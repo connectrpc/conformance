@@ -30,7 +30,15 @@ export async function run() {
   // limited. It may be more effective for troubleshooting to instead add
   // calls to window.log in browserscript.ts (these messages will show up
   // in the test runner output).
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({
+    headless: true,
+    // Chrome's sandbox needs unprivileged user namespaces, which Ubuntu
+    // 23.10+ restricts through AppArmor, so Chrome refuses to start there
+    // ("No usable sandbox!"). The sandbox guards against untrusted web
+    // content; this page only runs our own bundled browserscript.ts against
+    // the local test server, so running without it is safe.
+    args: ["--no-sandbox"],
+  });
   const page = await browser.newPage();
 
   await page.exposeFunction("log", (message: string) => {
