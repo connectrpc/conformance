@@ -10,6 +10,21 @@ BIN := .tmp/bin
 export PATH := $(BIN):$(PATH)
 export GOBIN := $(abspath $(BIN))
 COPYRIGHT_YEARS := 2023-2024
+BUF_VERSION := v1.44.0
+LICENSE_HEADER_VERSION := v1.36.0
+GOLANGCI_LINT_VERSION := v2.14.0
+GORELEASER_VERSION := v2.18.0
+# Each tool is installed under a path that includes its version, so it's
+# fetched again only when its version changes.
+TOOLS := .tmp/tools
+BUF := $(TOOLS)/buf/$(BUF_VERSION)/buf
+LICENSE_HEADER := $(TOOLS)/license-header/$(LICENSE_HEADER_VERSION)/license-header
+GOLANGCI_LINT := $(TOOLS)/golangci-lint/$(GOLANGCI_LINT_VERSION)/golangci-lint
+GORELEASER := $(TOOLS)/goreleaser/$(GORELEASER_VERSION)/goreleaser
+UNAME_OS := $(shell uname -s)
+UNAME_ARCH := $(shell uname -m)
+GOLANGCI_LINT_OS := $(shell echo $(UNAME_OS) | tr A-Z a-z)
+GOLANGCI_LINT_ARCH := $(subst aarch64,arm64,$(subst x86_64,amd64,$(UNAME_ARCH)))
 # Set to use a different compiler. For example, `GO=go1.18rc1 make test`.
 GO ?= go
 LATEST_VERSION = $(shell git describe --tags --abbrev=0 2>/dev/null)
@@ -46,24 +61,24 @@ build: generate ## Build all packages
 	$(GO) build ./...
 
 .PHONY: generate
-generate: $(BIN)/buf $(BIN)/license-header ## Regenerate code and licenses
-	buf generate proto
-	license-header \
+generate: $(BUF) $(LICENSE_HEADER) ## Regenerate code and licenses
+	$(BUF) generate proto
+	$(LICENSE_HEADER) \
 		--license-type apache \
 		--copyright-holder "The Connect Authors" \
 		--year-range "$(COPYRIGHT_YEARS)"
 
 .PHONY: lint
-lint: $(BIN)/golangci-lint $(BIN)/buf ## Lint Go and protobuf
-	test -z "$$($(BIN)/buf format -d . | tee /dev/stderr)"
+lint: $(GOLANGCI_LINT) $(BUF) ## Lint Go and protobuf
+	test -z "$$($(BUF) format -d . | tee /dev/stderr)"
 	$(GO) vet ./...
-	golangci-lint run
-	buf lint proto
+	$(GOLANGCI_LINT) run
+	$(BUF) lint proto
 
 .PHONY: lintfix
-lintfix: $(BIN)/golangci-lint $(BIN)/buf ## Automatically fix some lint errors
-	golangci-lint run --fix
-	buf format -w proto
+lintfix: $(GOLANGCI_LINT) $(BUF) ## Automatically fix some lint errors
+	$(GOLANGCI_LINT) run --fix
+	$(BUF) format -w proto
 
 .PHONY: install
 install: ## Install all binaries
@@ -79,14 +94,14 @@ checkgenerate:
 	test -z "$$(git status --porcelain | tee /dev/stderr)"
 
 .PHONY: release
-release: $(BIN)/goreleaser
-	goreleaser release
+release: $(GORELEASER)
+	$(GORELEASER) release
 
 .PHONY: checkrelease
-checkrelease: $(BIN)/goreleaser
+checkrelease: $(GORELEASER)
 	# skips some validation and doesn't actually publish a release, just to test
 	# that building a release works
-	goreleaser release --clean --snapshot
+	$(GORELEASER) release --clean --snapshot
 
 .PHONY: runconformance
 runconformance: runservertests runclienttests
@@ -137,18 +152,22 @@ $(BIN)/grpcclient: Makefile generate
 $(BIN)/grpcserver: Makefile generate
 	$(GO) build $(DEV_BUILD_VERSION_FLAG) -o $(@) ./cmd/grpcserver/
 
-$(BIN)/buf: Makefile
+$(BUF):
 	@mkdir -p $(@D)
-	$(GO) install github.com/bufbuild/buf/cmd/buf@v1.44.0
+	curl -fsSL -o $@ https://github.com/bufbuild/buf/releases/download/$(BUF_VERSION)/buf-$(UNAME_OS)-$(UNAME_ARCH)
+	chmod +x $@
 
-$(BIN)/license-header: Makefile
+# license-header has no release binaries.
+$(LICENSE_HEADER):
 	@mkdir -p $(@D)
-	$(GO) install github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@v1.36.0
+	GOBIN=$(abspath $(@D)) $(GO) install github.com/bufbuild/buf/private/pkg/licenseheader/cmd/license-header@$(LICENSE_HEADER_VERSION)
 
-$(BIN)/golangci-lint: Makefile
+$(GOLANGCI_LINT):
 	@mkdir -p $(@D)
-	$(GO) install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.14.0
+	curl -fsSL https://github.com/golangci/golangci-lint/releases/download/$(GOLANGCI_LINT_VERSION)/golangci-lint-$(GOLANGCI_LINT_VERSION:v%=%)-$(GOLANGCI_LINT_OS)-$(GOLANGCI_LINT_ARCH).tar.gz \
+		| tar -xzf - -C $(@D) --strip-components 1 golangci-lint-$(GOLANGCI_LINT_VERSION:v%=%)-$(GOLANGCI_LINT_OS)-$(GOLANGCI_LINT_ARCH)/golangci-lint
 
-$(BIN)/goreleaser: Makefile
+$(GORELEASER):
 	@mkdir -p $(@D)
-	$(GO) install github.com/goreleaser/goreleaser/v2@v2.18.0
+	curl -fsSL https://github.com/goreleaser/goreleaser/releases/download/$(GORELEASER_VERSION)/goreleaser_$(UNAME_OS)_$(subst aarch64,arm64,$(UNAME_ARCH)).tar.gz \
+		| tar -xzf - -C $(@D) goreleaser
