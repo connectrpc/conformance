@@ -8,9 +8,10 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  # Only cancel superseded PR runs; let every push to main finish.
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  # A new push to a PR cancels that PR's previous run. Every other run gets
+  # its own group, so runs on main never queue behind or cancel each other.
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
 jobs:
   ci:
     name: ci (go:${{ matrix.go-version.name }})
@@ -28,17 +29,30 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
       - name: Install Go
+        id: go
         uses: actions/setup-go@v7
         with:
           go-version: ${{ matrix.go-version.version }}
-          # Each job keys its own cache on the files that pin its tools.
-          cache-dependency-path: |
-            go.sum
-            Makefile
+          cache: false
+      # Each job caches its own module and build caches. Makefile is in the
+      # key so that a tool version bump saves a fresh cache, and restore-keys
+      # falls back to the previous one rather than starting cold.
+      - name: Cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ steps.go.outputs.go-version }}-${{ github.job }}-${{ hashFiles('go.sum', 'Makefile') }}
+          restore-keys: ${{ runner.os }}-go-${{ steps.go.outputs.go-version }}-${{ github.job }}-
       - name: Test
         run: make test
       - name: Run Conformance Tests
         run: make runconformance
+      - name: Check Generated Code
+        # Catches tracked files modified by the test and conformance runs.
+        if: matrix.go-version.name == 'latest'
+        run: make checkgenerate
   lint:
     # Often, lint & gofmt guidelines depend on the Go version. To prevent
     # conflicting guidance, run only on the most recent supported version.
@@ -49,15 +63,20 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
       - name: Install Go
+        id: go
         uses: actions/setup-go@v7
         with:
           # Keep in sync with the 'latest' Go version above.
           go-version: 1.27.x
-          # Each job keys its own cache on the files that pin its tools.
-          cache-dependency-path: |
-            go.sum
-            Makefile
-            .golangci.yml
+          cache: false
+      - name: Cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ steps.go.outputs.go-version }}-${{ github.job }}-${{ hashFiles('go.sum', 'Makefile') }}
+          restore-keys: ${{ runner.os }}-go-${{ steps.go.outputs.go-version }}-${{ github.job }}-
       - name: Check Generated Code
         run: make generate && make checkgenerate
       - name: Lint
@@ -70,14 +89,19 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v7
       - name: Install Go
+        id: go
         uses: actions/setup-go@v7
         with:
           # Keep in sync with the 'latest' Go version above.
           go-version: 1.27.x
-          # Each job keys its own cache on the files that pin its tools.
-          cache-dependency-path: |
-            go.sum
-            Makefile
-            .goreleaser.yml
+          cache: false
+      - name: Cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/go/pkg/mod
+            ~/.cache/go-build
+          key: ${{ runner.os }}-go-${{ steps.go.outputs.go-version }}-${{ github.job }}-${{ hashFiles('go.sum', 'Makefile') }}
+          restore-keys: ${{ runner.os }}-go-${{ steps.go.outputs.go-version }}-${{ github.job }}-
       - name: Check Release
         run: make checkrelease
