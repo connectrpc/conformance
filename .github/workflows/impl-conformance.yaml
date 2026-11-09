@@ -1,0 +1,551 @@
+name: Implementation Conformance
+# Runs the test suites added or changed in a pull request against Connect
+# implementations at their default branch, once with the pull request's runner,
+# suites, and reference programs, and once with the base branch's, to find the
+# tests the pull request makes fail. If the pull request changes code or protos,
+# every suite runs. Known-failing lists aren't passed to the runner, so they
+# can't hide new failures, but the results are checked against them to show
+# which entries each implementation has to add or remove. connect-go builds
+# the reference programs from this repository, so its results predict which
+# tests its CI will newly fail once it pins a release with these changes.
+# The other implementations use code generated from the conformance release
+# they pin, so their results are only an estimate when protos change. Each
+# job mirrors the conformance tests in the implementation's own CI, minus
+# browser targets other than Chrome. The "impl-conformance: skip" label skips
+# every implementation, and "impl-conformance: skip <implementation>" skips
+# one. impl-conformance-report.yaml posts the results. They never fail the
+# pull request; a job fails only if the scripts' tests fail or an
+# implementation didn't call the runner.
+on:
+  pull_request:
+    # Label changes rerun the workflow, because a rerun keeps the labels of the
+    # event that started the run.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    paths:
+      - 'cmd/**'
+      - 'internal/**'
+      - 'proto/**'
+      - '.github/impl-conformance/**'
+      - '.github/workflows/impl-conformance.yaml'
+permissions:
+  contents: read
+# A new push or skip label makes the results of a run in progress irrelevant.
+# Other labels don't, so their events get a group of their own.
+concurrency:
+  group: >-
+    impl-conformance-${{ github.event.pull_request.number }}${{
+    (github.event.action == 'labeled' || github.event.action == 'unlabeled')
+    && !startsWith(github.event.label.name, 'impl-conformance: skip')
+    && format('-{0}', github.run_id) || '' }}
+  cancel-in-progress: true
+defaults:
+  run:
+    # Unlike the default shell, this also sets pipefail.
+    shell: bash
+jobs:
+  prepare:
+    # Other labels don't change the results, so nothing runs for them.
+    if: >-
+      (github.event.action != 'labeled' && github.event.action != 'unlabeled')
+      || startsWith(github.event.label.name, 'impl-conformance: skip')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      run-tests: ${{ steps.changes.outputs.run-tests }}
+      skipped: ${{ steps.changes.outputs.skipped }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # The merge commit and its first parent, the base branch.
+          fetch-depth: 2
+      # Uploaded first so impl-conformance-report.yaml can find the pull
+      # request even if a later step fails.
+      - name: Save pull request number
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/pr"
+          echo "${PR_NUMBER}" > "${RUNNER_TEMP}/pr/pr-number"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: impl-conformance-pr
+          path: ${{ runner.temp }}/pr
+      - name: Test the scripts
+        run: .github/impl-conformance/test.sh
+      - uses: actions/setup-go@v7
+        with:
+          # Keep in sync with the 'latest' Go version in ci.yaml.
+          go-version: 1.27.x
+      - name: Find changes
+        id: changes
+        env:
+          # One for each implementation job below.
+          IMPLEMENTATIONS: connect-go connect-es connect-kotlin connect-swift connect-dart connect-py connect-rust
+          LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+        run: |
+          mkdir -p .tmp/conformance
+          .github/impl-conformance/impl-conformance.sh changes HEAD^1 .tmp/conformance/changes.json
+          read -r -a implementations <<< "${IMPLEMENTATIONS}"
+          skipped="$(.github/impl-conformance/impl-conformance.sh skipped "${LABELS}" "${implementations[@]}")"
+          echo "skipped=${skipped}" >> "${GITHUB_OUTPUT}"
+          jq --argjson skipped "${skipped}" '.skipped = $skipped' .tmp/conformance/changes.json > .tmp/changes.json
+          mv .tmp/changes.json .tmp/conformance/changes.json
+          if jq -e --argjson count "${#implementations[@]}" \
+            '(.scope == "all" or (.suites | length) > 0) and (.skipped | length) < $count' \
+            .tmp/conformance/changes.json > /dev/null; then
+            echo "run-tests=true" >> "${GITHUB_OUTPUT}"
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: impl-conformance-changes
+          path: .tmp/conformance/changes.json
+      - name: Build connectconformance
+        if: steps.changes.outputs.run-tests == 'true'
+        run: |
+          go build -o .tmp/conformance/head/connectconformance ./cmd/connectconformance
+          git worktree add --detach "${RUNNER_TEMP}/base" HEAD^1
+          cd "${RUNNER_TEMP}/base"
+          go build -o "${GITHUB_WORKSPACE}/.tmp/conformance/base/connectconformance" ./cmd/connectconformance
+      # For connect-swift, which runs on macOS.
+      - name: Build connectconformance for macOS
+        if: steps.changes.outputs.run-tests == 'true'
+        env:
+          GOOS: darwin
+          GOARCH: arm64
+        run: |
+          go build -o .tmp/conformance-darwin-arm64/head/connectconformance ./cmd/connectconformance
+          cd "${RUNNER_TEMP}/base"
+          go build -o "${GITHUB_WORKSPACE}/.tmp/conformance-darwin-arm64/base/connectconformance" ./cmd/connectconformance
+      - uses: actions/upload-artifact@v7
+        if: steps.changes.outputs.run-tests == 'true'
+        with:
+          name: conformance
+          path: .tmp/conformance
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        if: steps.changes.outputs.run-tests == 'true'
+        with:
+          name: conformance-darwin-arm64
+          path: .tmp/conformance-darwin-arm64
+          if-no-files-found: error
+  connect-go:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-go')
+    name: connect-go (${{ matrix.side }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        side: [client, server]
+    env:
+      SIDE: ${{ matrix.side }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-go
+          path: .tmp/connect-go
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.27.x
+          cache-dependency-path: .tmp/connect-go/internal/conformance/go.sum
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      - name: Install conformance runner
+        run: .github/impl-conformance/impl-conformance.sh install "${RUNNER_TEMP}/bin/connectconformance"
+      # Like connect-go's runconformance.sh, which builds the reference programs
+      # of its pinned conformance release against connect-go, but with the
+      # programs from the base commit and from the pull request.
+      - name: Build reference ${{ matrix.side }}
+        working-directory: .tmp/connect-go/internal/conformance
+        run: |
+          git -C "${GITHUB_WORKSPACE}" worktree add --detach "${RUNNER_TEMP}/conformance-base" HEAD^1
+          for build in base head; do
+            source_dir="${GITHUB_WORKSPACE}"
+            if [ "${build}" = "base" ]; then
+              source_dir="${RUNNER_TEMP}/conformance-base"
+            fi
+            cp go.mod "${RUNNER_TEMP}/go-${build}.mod"
+            cp go.sum "${RUNNER_TEMP}/go-${build}.sum"
+            go mod edit -modfile="${RUNNER_TEMP}/go-${build}.mod" -replace "connectrpc.com/conformance=${source_dir}"
+            go build -modfile="${RUNNER_TEMP}/go-${build}.mod" -mod=mod \
+              -o "${RUNNER_TEMP}/bin/${build}/reference${SIDE}" "connectrpc.com/conformance/cmd/reference${SIDE}"
+          done
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" install-program \
+            "${RUNNER_TEMP}/bin/reference${SIDE}" \
+            "${RUNNER_TEMP}/bin/base/reference${SIDE}" "${RUNNER_TEMP}/bin/head/reference${SIDE}"
+      - name: Run changed suites
+        working-directory: .tmp/connect-go/internal/conformance
+        run: |
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-go "${SIDE}" \
+            "${RUNNER_TEMP}/bin/connectconformance" --mode "${SIDE}" --conf config.yaml -v --trace \
+            -- "${RUNNER_TEMP}/bin/reference${SIDE}"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-go-${{ matrix.side }}
+          path: ${{ runner.temp }}/results
+  connect-es:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-es')
+    name: connect-es (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # Mirrors the conformance-*.yaml workflows in connect-es, minus the
+        # browser and Cloudflare targets.
+        include:
+          - name: node client
+            package: '@connectrpc/connect-node'
+            task: conformance:client
+          - name: node server
+            package: '@connectrpc/connect-node'
+            task: conformance:server
+          - name: fastify
+            package: '@connectrpc/connect-fastify'
+            task: conformance
+          - name: express
+            package: '@connectrpc/connect-express'
+            task: conformance
+          - name: web promise
+            package: '@connectrpc/connect-web'
+            task: conformance:node:promise
+          - name: web callback
+            package: '@connectrpc/connect-web'
+            task: conformance:node:callback
+    env:
+      TARGET: ${{ matrix.name }}
+      PACKAGE: ${{ matrix.package }}
+      TASK: ${{ matrix.task }}
+      # https://consoledonottrack.com/
+      DO_NOT_TRACK: 1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-es
+          path: connect-es
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: connect-es/.nvmrc
+          cache: npm
+          cache-dependency-path: connect-es/package-lock.json
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      - name: Install conformance runner
+        working-directory: connect-es
+        # connect-es runs the binary cached at $TEMP/conformance-<version>
+        # when present, instead of downloading the release named in its
+        # generate script.
+        run: |
+          version="$(jq -r '.scripts.generate' packages/connect-conformance/package.json \
+            | grep -oE 'conformance:v[0-9]+\.[0-9]+\.[0-9]+' | cut -d: -f2)"
+          temp_dir="$(node -p 'process.env.TEMP ?? require("os").tmpdir()')"
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" install \
+            "${temp_dir}/conformance-${version}/connectconformance"
+      - name: Install dependencies
+        working-directory: connect-es
+        run: npm ci
+      - name: Run changed suites
+        working-directory: connect-es
+        env:
+          # connect-es generates its conformance code from its pinned release.
+          PROTOS_PINNED: true
+        # Loose env mode keeps TMPDIR, so connect-es finds the installed runner.
+        run: |
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-es "${TARGET}" \
+            npx turbo run "${TASK}" --filter "${PACKAGE}" --env-mode=loose \
+            --output-logs new-only --log-order stream
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-es-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/results
+  connect-kotlin:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-kotlin')
+    name: connect-kotlin (client)
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-kotlin
+          path: connect-kotlin
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+          cache-dependency-path: |
+            connect-kotlin/**/*.gradle*
+            connect-kotlin/**/gradle-wrapper.properties
+      - uses: bufbuild/buf-action@v1
+        with:
+          setup_only: true
+      # connect-kotlin's generate target installs a Go tool.
+      - uses: actions/setup-go@v7
+        with:
+          go-version: 1.27.x
+          cache: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      - name: Install conformance runner
+        run: .github/impl-conformance/impl-conformance.sh install "${GITHUB_WORKSPACE}/connect-kotlin/.tmp/bin/connectconformance"
+      - name: Run changed suites
+        working-directory: connect-kotlin
+        env:
+          # connect-kotlin generates its conformance code from its pinned release.
+          PROTOS_PINNED: true
+        # -o keeps make from replacing the runner with the pinned release.
+        run: |
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-kotlin client \
+            make -o .tmp/bin/connectconformance runconformance
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-kotlin-client
+          path: ${{ runner.temp }}/results
+  connect-swift:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-swift')
+    name: connect-swift (client)
+    # The client uses URLSession, so it runs on macOS like connect-swift's CI.
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-swift
+          path: connect-swift
+      # impl-conformance.sh needs bash 4 or later, but macOS only has 3.2.
+      # Homebrew's bin directory comes before /bin on the runner's PATH.
+      - name: Install bash
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+        run: brew install bash
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance-darwin-arm64
+          path: ${{ runner.temp }}/conformance
+      - name: Select Xcode
+        run: |
+          developer_dir="$(yq '.env.DEVELOPER_DIR // ""' connect-swift/.github/workflows/ci.yml)"
+          if [ -n "${developer_dir}" ]; then
+            echo "DEVELOPER_DIR=${developer_dir}" >> "${GITHUB_ENV}"
+          fi
+      # connect-swift's testconformance target finds the runner on PATH in
+      # .tmp/bin, where its installconformancerunner target would put it.
+      - name: Install conformance runner
+        run: .github/impl-conformance/impl-conformance.sh install "${GITHUB_WORKSPACE}/connect-swift/.tmp/bin/connectconformance"
+      - name: Run changed suites
+        working-directory: connect-swift
+        env:
+          # connect-swift's generated code is from a pinned conformance commit.
+          PROTOS_PINNED: true
+        run: |
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-swift client \
+            make testconformance
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-swift-client
+          path: ${{ runner.temp }}/results
+  connect-dart:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-dart')
+    name: connect-dart (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # The conformance tests that connect-dart's CI runs with "dart test".
+        include:
+          - target: io
+            platform: vm
+            test: test/conformance/io_test.dart
+          - target: web
+            platform: chrome
+            test: test/conformance/web_test.dart
+    env:
+      TARGET: ${{ matrix.target }}
+      PLATFORM: ${{ matrix.platform }}
+      TEST_FILE: ${{ matrix.test }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-dart
+          path: connect-dart
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      # connect-dart runs the runner cached in $CONFORMANCE_CACHE when its
+      # --version output ends with the version it pins.
+      - name: Install conformance runner
+        run: |
+          version="$(grep -oE "defaultVersion = 'v[0-9]+\.[0-9]+\.[0-9]+'" connect-dart/packages/conformance/lib/src/runner.dart \
+            | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+')"
+          .github/impl-conformance/impl-conformance.sh install "${RUNNER_TEMP}/dart-runner/connectconformance" "${version}"
+      - name: Install dependencies
+        working-directory: connect-dart/packages/connect
+        run: dart pub upgrade
+      - name: Run changed suites
+        working-directory: connect-dart/packages/connect
+        env:
+          CONFORMANCE_CACHE: ${{ runner.temp }}/dart-runner
+          # connect-dart's generated code is from its pinned conformance release.
+          PROTOS_PINNED: true
+        run: |
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-dart "${TARGET}" \
+            dart test -p "${PLATFORM}" "${TEST_FILE}"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-dart-${{ matrix.target }}
+          path: ${{ runner.temp }}/results
+  connect-py:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-py')
+    name: connect-py (${{ matrix.target }})
+    # Matches connect-py's CI.
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [client, server]
+    env:
+      TARGET: ${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-py
+          path: connect-py
+      - uses: astral-sh/setup-uv@v10.3.3
+        with:
+          python-version: '3.14'
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      # connect-py's tests run the runner with "go run", so a go command
+      # earlier on PATH runs the wrapper instead.
+      - name: Install conformance runner
+        run: |
+          .github/impl-conformance/impl-conformance.sh install "${RUNNER_TEMP}/bin/connectconformance"
+          .github/impl-conformance/impl-conformance.sh install-go "${RUNNER_TEMP}/go-shim/go" "${RUNNER_TEMP}/bin/connectconformance"
+      - name: Install dependencies
+        working-directory: connect-py
+        run: uv sync --frozen
+      - name: Run changed suites
+        working-directory: connect-py/conformance
+        env:
+          # connect-py's generated code is from a pinned conformance release.
+          PROTOS_PINNED: true
+        run: |
+          PATH="${RUNNER_TEMP}/go-shim:${PATH}" \
+            "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-py "${TARGET}" \
+            uv run pytest "test/test_${TARGET}.py"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-py-${{ matrix.target }}
+          path: ${{ runner.temp }}/results
+  connect-rust:
+    needs: prepare
+    if: needs.prepare.outputs.run-tests == 'true' && !contains(fromJSON(needs.prepare.outputs.skipped), 'connect-rust')
+    name: connect-rust (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        # Mirrors the conformance job in connect-rust's CI.
+        include:
+          - mode: server
+            config: conformance/config/connect-only.yaml
+            bin: conformance-server
+          - mode: client
+            config: conformance/config/client-connect-only.yaml
+            bin: conformance-client
+    env:
+      MODE: ${{ matrix.mode }}
+      CONFIG: ${{ matrix.config }}
+      BIN: ${{ matrix.bin }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - uses: actions/checkout@v7
+        with:
+          repository: connectrpc/connect-rust
+          path: connect-rust
+      - name: Install Rust
+        run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
+      - uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry/index
+            ~/.cargo/registry/cache
+            ~/.cargo/git/db
+            connect-rust/target
+          key: ${{ runner.os }}-connect-rust-${{ matrix.bin }}-${{ hashFiles('connect-rust/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-connect-rust-${{ matrix.bin }}-
+      - uses: actions/download-artifact@v8
+        with:
+          name: conformance
+          path: ${{ runner.temp }}/conformance
+      # Where connect-rust's download script puts the runner.
+      - name: Install conformance runner
+        run: .github/impl-conformance/impl-conformance.sh install "${GITHUB_WORKSPACE}/connect-rust/conformance/bin/connectconformance"
+      - name: Build ${{ matrix.bin }}
+        working-directory: connect-rust
+        run: cargo build --locked --release -p connectrpc-conformance --bin "${BIN}"
+      - name: Run changed suites
+        working-directory: connect-rust
+        env:
+          # connect-rust's generated code is committed, from an unpinned
+          # conformance module.
+          PROTOS_PINNED: true
+        run: |
+          "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-rust "${MODE}" \
+            ./conformance/bin/connectconformance --mode "${MODE}" --conf "${CONFIG}" -- "./target/release/${BIN}"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: impl-conformance-results-connect-rust-${{ matrix.mode }}
+          path: ${{ runner.temp }}/results
