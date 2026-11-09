@@ -33,4 +33,5 @@ release:
   mode: keep-existing
 changelog:
   # Release notes are curated by hand in the GitHub UI, so there is nothing to
-  # generate. 
+  # generate.
+  disable: true
