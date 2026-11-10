@@ -1,15 +1,10 @@
 # connect-go accepts a timeout with a leading "+".
 Connect Timeout Format Requests/**/leading-plus
+Connect GET Timeout Format Requests/**/leading-plus
 # connect-go does not enforce deadlines on the server, so a zero timeout
 # succeeds instead of failing with deadline_exceeded.
 Connect Timeout Format Requests/**/zero
-# For streaming RPCs, connect-go reports an invalid timeout in the end-of-stream
-# message with HTTP 200 instead of responding with HTTP 400.
-Connect Timeout Format Requests/**/server-stream/leading-minus
-Connect Timeout Format Requests/**/server-stream/decimal-point
-Connect Timeout Format Requests/**/server-stream/exponent
-Connect Timeout Format Requests/**/server-stream/hex
-Connect Timeout Format Requests/**/server-stream/digit-separator
-Connect Timeout Format Requests/**/server-stream/unit-suffix
-Connect Timeout Format Requests/**/server-stream/eleven-digits
-Connect Timeout Format Requests/**/server-stream/too-large
+Connect GET Timeout Format Requests/**/zero
+# connect-go treats an empty timeout header as if it were absent.
+Connect Timeout Format Requests/**/empty
+Connect GET Timeout Format Requests/**/empty

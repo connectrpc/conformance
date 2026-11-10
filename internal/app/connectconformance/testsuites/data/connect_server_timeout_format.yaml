@@ -1,5 +1,5 @@
 # When present, a Connect timeout must be 1 to 10 ASCII decimal digits. Servers
-# must reject any other value with HTTP 400.
+# must reject any other value; the spec doesn't define the error or HTTP status.
 name: Connect Timeout Format Requests
 mode: TEST_MODE_SERVER
 relevantProtocols:
@@ -89,6 +89,35 @@ testCases:
     expectedResponse:
       error:
         code: CODE_DEADLINE_EXCEEDED
+  # Present but empty is not the same as absent.
+  - request:
+      testName: unary/empty
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+          - name: connect-timeout-ms
+            value: [ "" ]
+        unary:
+          binary_message:
+            "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest"
+            responseDefinition:
+              responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
   - request:
       testName: unary/leading-plus
       streamType: STREAM_TYPE_UNARY
@@ -112,10 +141,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -141,10 +169,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -170,10 +197,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -199,10 +225,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -228,10 +253,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -257,10 +281,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   # The gRPC timeout format is not valid for Connect.
@@ -287,10 +310,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   # Too long even though the value is small.
@@ -317,10 +339,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -346,10 +367,9 @@ testCases:
             responseDefinition:
               responseData: "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -448,6 +468,40 @@ testCases:
     expectedResponse:
       error:
         code: CODE_DEADLINE_EXCEEDED
+  # Present but empty is not the same as absent.
+  - request:
+      testName: server-stream/empty
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+proto" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+          - name: connect-timeout-ms
+            value: [ "" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                binary_message:
+                  "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest"
+                  responseDefinition:
+                    responseData:
+                      - "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
   - request:
       testName: server-stream/leading-plus
       streamType: STREAM_TYPE_SERVER_STREAM
@@ -476,10 +530,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -510,10 +563,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -544,10 +596,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -578,10 +629,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -612,10 +662,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -646,10 +695,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   # The gRPC timeout format is not valid for Connect.
@@ -681,10 +729,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   # Too long even though the value is small.
@@ -716,10 +763,9 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
   - request:
@@ -750,9 +796,8 @@ testCases:
                     responseData:
                       - "dGVzdCByZXNwb25zZQ=="
     otherAllowedErrorCodes:
-      # A 400 without a Connect error body maps to internal.
+      # gRPC servers reject a malformed grpc-timeout with internal.
       - CODE_INTERNAL
     expectedResponse:
-      httpStatusCode: 400
       error:
         code: CODE_INVALID_ARGUMENT
