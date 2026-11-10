@@ -6,7 +6,3 @@
 **/unary/no-request
 **/server-stream/multiple-requests
 **/server-stream/no-request
-
-# grpc-go accepts content-type parameters but echoes them in the
-# response, which the connect-go client in the test runner rejects.
-gRPC Proto Content-Type Parameter Requests/**/unknown-parameter
