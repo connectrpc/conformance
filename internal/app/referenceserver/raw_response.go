@@ -44,6 +44,11 @@ type rawResponseKey struct{}
 // raw response can be sent.)
 func rawResponder(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+		if isWebSocketUpgrade(req) {
+			writer := &wsRawWriter{ResponseWriter: respWriter}
+			handler.ServeHTTP(writer, req.WithContext(context.WithValue(req.Context(), wsRawResponseKey{}, writer)))
+			return
+		}
 		snapshotHeaders := respWriter.Header().Clone()
 		rawResponder := &rawResponseWriter{respWriter: respWriter}
 		ctx := context.WithValue(req.Context(), rawResponseKey{}, rawResponder)
@@ -166,31 +171,23 @@ func (r *rawResponseWriter) finish(snapshotHeaders http.Header) {
 func rawResponseRecorder(next connect.ServerFunc) connect.ServerFunc {
 	return func(ctx context.Context, spec connect.Spec, stream connect.ServerStream) error {
 		var req proto.Message
-		var rawResponseFunc func() *conformancev1.RawHTTPResponse
+		var definition func() rawResponseDefiner
 		switch spec.Procedure {
 		case conformancev1connect.ConformanceServiceUnaryProcedure:
 			unaryReq := &conformancev1.UnaryRequest{}
-			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
-				return unaryReq.GetResponseDefinition().GetRawResponse()
-			}
+			definition = func() rawResponseDefiner { return unaryReq.GetResponseDefinition() }
 			req = unaryReq
 		case conformancev1connect.ConformanceServiceClientStreamProcedure:
 			streamReq := &conformancev1.ClientStreamRequest{}
-			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
-				return streamReq.GetResponseDefinition().GetRawResponse()
-			}
+			definition = func() rawResponseDefiner { return streamReq.GetResponseDefinition() }
 			req = streamReq
 		case conformancev1connect.ConformanceServiceServerStreamProcedure:
 			streamReq := &conformancev1.ServerStreamRequest{}
-			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
-				return streamReq.GetResponseDefinition().GetRawResponse()
-			}
+			definition = func() rawResponseDefiner { return streamReq.GetResponseDefinition() }
 			req = streamReq
 		case conformancev1connect.ConformanceServiceBidiStreamProcedure:
 			streamReq := &conformancev1.BidiStreamRequest{}
-			rawResponseFunc = func() *conformancev1.RawHTTPResponse {
-				return streamReq.GetResponseDefinition().GetRawResponse()
-			}
+			definition = func() rawResponseDefiner { return streamReq.GetResponseDefinition() }
 			req = streamReq
 		}
 		if req == nil {
@@ -198,11 +195,18 @@ func rawResponseRecorder(next connect.ServerFunc) connect.ServerFunc {
 		}
 		reqErr := stream.Receive(req)
 		if reqErr == nil { //nolint:nestif
-			rawResponse := rawResponseFunc()
-			if rawResponse != nil {
-				if err := setRawResponse(ctx, rawResponse); err != nil {
-					return err
-				}
+			def := definition()
+			var setErr error
+			var useRaw, useRawWebSocket bool
+			if rawResponse := def.GetRawResponse(); rawResponse != nil {
+				setErr, useRaw = setRawResponse(ctx, rawResponse), true
+			} else if rawResponse := def.GetRawWebsocketResponse(); rawResponse != nil {
+				setErr, useRaw, useRawWebSocket = setRawWebSocketResponse(ctx, rawResponse), true, true
+			}
+			if setErr != nil {
+				return setErr
+			}
+			if useRaw {
 				if spec.StreamType != connect.StreamTypeUnary {
 					// Drain the request stream before sending back the raw response.
 					// This means raw responses cannot be used with full-duplex streams.
@@ -211,6 +215,9 @@ func rawResponseRecorder(next connect.ServerFunc) connect.ServerFunc {
 							break
 						}
 					}
+				}
+				if useRawWebSocket {
+					writeRawWebSocketResponse(ctx)
 				}
 				return connect.NewError(connect.CodeAborted, "use raw response instead")
 			}
@@ -221,6 +228,13 @@ func rawResponseRecorder(next connect.ServerFunc) connect.ServerFunc {
 			recvErr:      reqErr,
 		})
 	}
+}
+
+// rawResponseDefiner is implemented by both UnaryResponseDefinition and
+// StreamResponseDefinition.
+type rawResponseDefiner interface {
+	GetRawResponse() *conformancev1.RawHTTPResponse
+	GetRawWebsocketResponse() *conformancev1.RawWebSocketResponse
 }
 
 type firstReqCachingStream struct {

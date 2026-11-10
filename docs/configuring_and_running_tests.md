@@ -75,6 +75,10 @@ feature of the implementation under test.
   The options are `PROTOCOL_CONNECT`, `PROTOCOL_GRPC`, and `PROTOCOL_GRPC_WEB`. Note
   that gRPC _requires_ HTTP/2. The other two (Connect and gRPC-Web) can work with
   any version of HTTP. If not configured, support is assumed for all three.
+  `PROTOCOL_CONNECT_WEBSOCKET` (Connect over WebSocket) is opt-in: it is tested only when
+  listed here. It _requires_ HTTP 1.1, because the WebSocket handshake is an HTTP 1.1
+  upgrade, and it is tested only with `COMPRESSION_IDENTITY`. It carries half-duplex and
+  full-duplex bidi streams over HTTP 1.1.
 * `codecs`: This configures which codecs, or message formats, that the implementation
   supports. The options are `CODEC_PROTO` (which corresponds to the sub-format "proto",
   which is the Protobuf binary format) and `CODEC_JSON` (sub-format "json"). If not

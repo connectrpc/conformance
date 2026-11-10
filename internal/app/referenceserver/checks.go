@@ -24,7 +24,6 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"connectrpc.com/conformance/internal"
@@ -85,10 +84,14 @@ type timeoutContextKey struct{}
 // TODO - We should add a check for the Connect version header and/or query param to the reference server checks
 // to verify that conformant client implementations always include it (to maximize inter-op, just in case a server is
 // configured to require it).
-func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) http.HandlerFunc {
-	var callsMu sync.Mutex
-	calls := map[string]int{}
+func referenceServerChecks(handler http.Handler, errPrinter internal.Printer, calls *callCounter) http.HandlerFunc {
 	return func(respWriter http.ResponseWriter, req *http.Request) {
+		if isWebSocketUpgrade(req) {
+			// The client's headers arrive in its M message; webSocketChecks
+			// checks them once connect-go has read it.
+			handler.ServeHTTP(respWriter, withWebSocketHandshake(req))
+			return
+		}
 		testCaseName, ok := getTestCaseName(respWriter, req)
 		if !ok {
 			// This is the only hard failure. Without the test case name, we cannot provide feedback.
@@ -97,12 +100,8 @@ func referenceServerChecks(handler http.Handler, errPrinter internal.Printer) ht
 		}
 		feedback := &feedbackPrinter{p: errPrinter, testCaseName: testCaseName}
 
-		callsMu.Lock()
-		count := calls[testCaseName]
-		calls[testCaseName] = count + 1
-		callsMu.Unlock()
-		if count > 0 {
-			feedback.Printf("client sent another request (#%d) for the same test case", count+1)
+		if count := calls.add(testCaseName); count > 1 {
+			feedback.Printf("client sent another request (#%d) for the same test case", count)
 		}
 
 		if httpVersion, ok := enumValue("X-Expect-Http-Version", req.Header, conformancev1.HTTPVersion(0), feedback); ok {

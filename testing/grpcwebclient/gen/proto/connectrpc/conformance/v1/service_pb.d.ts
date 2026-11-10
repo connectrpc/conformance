@@ -47,6 +47,11 @@ export class UnaryResponseDefinition extends jspb.Message {
   hasRawResponse(): boolean;
   clearRawResponse(): UnaryResponseDefinition;
 
+  getRawWebsocketResponse(): RawWebSocketResponse | undefined;
+  setRawWebsocketResponse(value?: RawWebSocketResponse): UnaryResponseDefinition;
+  hasRawWebsocketResponse(): boolean;
+  clearRawWebsocketResponse(): UnaryResponseDefinition;
+
   getResponseCase(): UnaryResponseDefinition.ResponseCase;
 
   serializeBinary(): Uint8Array;
@@ -65,6 +70,7 @@ export namespace UnaryResponseDefinition {
     responseTrailersList: Array<Header.AsObject>,
     responseDelayMs: number,
     rawResponse?: RawHTTPResponse.AsObject,
+    rawWebsocketResponse?: RawWebSocketResponse.AsObject,
   }
 
   export enum ResponseCase { 
@@ -103,6 +109,11 @@ export class StreamResponseDefinition extends jspb.Message {
   hasRawResponse(): boolean;
   clearRawResponse(): StreamResponseDefinition;
 
+  getRawWebsocketResponse(): RawWebSocketResponse | undefined;
+  setRawWebsocketResponse(value?: RawWebSocketResponse): StreamResponseDefinition;
+  hasRawWebsocketResponse(): boolean;
+  clearRawWebsocketResponse(): StreamResponseDefinition;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StreamResponseDefinition.AsObject;
   static toObject(includeInstance: boolean, msg: StreamResponseDefinition): StreamResponseDefinition.AsObject;
@@ -119,6 +130,7 @@ export namespace StreamResponseDefinition {
     error?: Error.AsObject,
     responseTrailersList: Array<Header.AsObject>,
     rawResponse?: RawHTTPResponse.AsObject,
+    rawWebsocketResponse?: RawWebSocketResponse.AsObject,
   }
 }
 
@@ -772,3 +784,116 @@ export namespace RawHTTPResponse {
   }
 }
 
+export class RawWebSocketRequest extends jspb.Message {
+  getPath(): string;
+  setPath(value: string): RawWebSocketRequest;
+
+  getQueryParamsList(): Array<Header>;
+  setQueryParamsList(value: Array<Header>): RawWebSocketRequest;
+  clearQueryParamsList(): RawWebSocketRequest;
+  addQueryParams(value?: Header, index?: number): Header;
+
+  getHeadersList(): Array<Header>;
+  setHeadersList(value: Array<Header>): RawWebSocketRequest;
+  clearHeadersList(): RawWebSocketRequest;
+  addHeaders(value?: Header, index?: number): Header;
+
+  getSubprotocolsList(): Array<string>;
+  setSubprotocolsList(value: Array<string>): RawWebSocketRequest;
+  clearSubprotocolsList(): RawWebSocketRequest;
+  addSubprotocols(value: string, index?: number): RawWebSocketRequest;
+
+  getOfferContextTakeover(): boolean;
+  setOfferContextTakeover(value: boolean): RawWebSocketRequest;
+
+  getMessagesList(): Array<WebSocketMessage>;
+  setMessagesList(value: Array<WebSocketMessage>): RawWebSocketRequest;
+  clearMessagesList(): RawWebSocketRequest;
+  addMessages(value?: WebSocketMessage, index?: number): WebSocketMessage;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RawWebSocketRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RawWebSocketRequest): RawWebSocketRequest.AsObject;
+  static serializeBinaryToWriter(message: RawWebSocketRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RawWebSocketRequest;
+  static deserializeBinaryFromReader(message: RawWebSocketRequest, reader: jspb.BinaryReader): RawWebSocketRequest;
+}
+
+export namespace RawWebSocketRequest {
+  export type AsObject = {
+    path: string,
+    queryParamsList: Array<Header.AsObject>,
+    headersList: Array<Header.AsObject>,
+    subprotocolsList: Array<string>,
+    offerContextTakeover: boolean,
+    messagesList: Array<WebSocketMessage.AsObject>,
+  }
+}
+
+export class RawWebSocketResponse extends jspb.Message {
+  getMessagesList(): Array<WebSocketMessage>;
+  setMessagesList(value: Array<WebSocketMessage>): RawWebSocketResponse;
+  clearMessagesList(): RawWebSocketResponse;
+  addMessages(value?: WebSocketMessage, index?: number): WebSocketMessage;
+
+  getCloseCode(): number;
+  setCloseCode(value: number): RawWebSocketResponse;
+
+  getOmitClose(): boolean;
+  setOmitClose(value: boolean): RawWebSocketResponse;
+
+  getExpectedClientCloseCodesList(): Array<number>;
+  setExpectedClientCloseCodesList(value: Array<number>): RawWebSocketResponse;
+  clearExpectedClientCloseCodesList(): RawWebSocketResponse;
+  addExpectedClientCloseCodes(value: number, index?: number): RawWebSocketResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RawWebSocketResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RawWebSocketResponse): RawWebSocketResponse.AsObject;
+  static serializeBinaryToWriter(message: RawWebSocketResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RawWebSocketResponse;
+  static deserializeBinaryFromReader(message: RawWebSocketResponse, reader: jspb.BinaryReader): RawWebSocketResponse;
+}
+
+export namespace RawWebSocketResponse {
+  export type AsObject = {
+    messagesList: Array<WebSocketMessage.AsObject>,
+    closeCode: number,
+    omitClose: boolean,
+    expectedClientCloseCodesList: Array<number>,
+  }
+}
+
+export class WebSocketMessage extends jspb.Message {
+  getType(): WebSocketMessageType;
+  setType(value: WebSocketMessageType): WebSocketMessage;
+
+  getMarker(): string;
+  setMarker(value: string): WebSocketMessage;
+
+  getContents(): MessageContents | undefined;
+  setContents(value?: MessageContents): WebSocketMessage;
+  hasContents(): boolean;
+  clearContents(): WebSocketMessage;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): WebSocketMessage.AsObject;
+  static toObject(includeInstance: boolean, msg: WebSocketMessage): WebSocketMessage.AsObject;
+  static serializeBinaryToWriter(message: WebSocketMessage, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): WebSocketMessage;
+  static deserializeBinaryFromReader(message: WebSocketMessage, reader: jspb.BinaryReader): WebSocketMessage;
+}
+
+export namespace WebSocketMessage {
+  export type AsObject = {
+    type: WebSocketMessageType,
+    marker: string,
+    contents?: MessageContents.AsObject,
+  }
+}
+
+export enum WebSocketMessageType { 
+  WEB_SOCKET_MESSAGE_TYPE_UNSPECIFIED = 0,
+  WEB_SOCKET_MESSAGE_TYPE_TEXT = 1,
+  WEB_SOCKET_MESSAGE_TYPE_BINARY = 2,
+}

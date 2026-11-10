@@ -1,0 +1,199 @@
+# Tests of how a Connect-over-WebSocket server handles the handshake and the
+# handshake URI. Section numbers refer to the Connect-over-WebSocket protocol
+# specification.
+name: WebSocket Server Handshake
+mode: TEST_MODE_SERVER
+relevantProtocols:
+  - PROTOCOL_CONNECT_WEBSOCKET
+relevantCodecs:
+  - CODEC_JSON
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+testCases:
+  # §4.3, §4.5: a token that is not a Connect-over-WebSocket token fails the
+  # handshake with 400, and the upgrade is not completed.
+  - request:
+      testName: subprotocol/unrecognized-token
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        subprotocols: [ "connectrpc.2+json" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 400
+      error:
+        # mapped from the 400 status code
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNAVAILABLE, CODE_UNKNOWN ]
+
+  # §4.4: a cross-origin handshake is refused with 403, before the upgrade.
+  - request:
+      testName: origin/cross-origin
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        headers:
+          - name: origin
+            value: [ "https://attacker.example" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 403
+      error:
+        # mapped from the 403 status code
+        code: CODE_PERMISSION_DENIED
+    otherAllowedErrorCodes: [ CODE_UNAVAILABLE ]
+
+  # §4.4: an opaque origin is not the server's host, so it is cross-origin.
+  - request:
+      testName: origin/null
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        headers:
+          - name: origin
+            value: [ "null" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 403
+      error:
+        code: CODE_PERMISSION_DENIED
+    otherAllowedErrorCodes: [ CODE_UNAVAILABLE ]
+
+  # §10: a server must impose no_context_takeover in both directions, or leave
+  # compression off. The reference client fails the RPC if it does neither.
+  - request:
+      testName: compression/context-takeover-offered
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        offerContextTakeover: true
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §4.5, §11: an invalid deadline is an RPC failure, so it is reported in band
+  # as invalid_argument after a completed upgrade, and the RPC is not run.
+  - request:
+      testName: deadline/not-a-number
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        queryParams:
+          - name: connect-timeout-ms
+            value: [ "soon" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: deadline/negative
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        queryParams:
+          - name: connect-timeout-ms
+            value: [ "-1000" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: deadline/more-than-ten-digits
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        queryParams:
+          - name: connect-timeout-ms
+            value: [ "12345678901" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # §11: the query parameter bounds the whole RPC, and the server enforces it.
+  # The reference client sends no deadline of its own here.
+  - request:
+      testName: deadline/enforced
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        queryParams:
+          - name: connect-timeout-ms
+            value: [ "200" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - type: WEB_SOCKET_MESSAGE_TYPE_TEXT
+            marker: "B"
+            contents: { text: '{"responseDefinition": {"responseDelayMs": 1500}}' }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_DEADLINE_EXCEEDED
+
+  # §3.1 (6), §7.1: a deadline travels only as a query parameter. A header
+  # named like it is removed and does not bound the RPC.
+  - request:
+      testName: deadline/header-ignored
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        headers:
+          - name: connect-timeout-ms
+            value: [ "1" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - type: WEB_SOCKET_MESSAGE_TYPE_TEXT
+            marker: "B"
+            contents: { text: '{"responseDefinition": {"responseDelayMs": 200}}' }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+                responseDefinition:
+                  responseDelayMs: 200

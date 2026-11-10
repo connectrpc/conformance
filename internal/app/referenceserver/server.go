@@ -184,14 +184,19 @@ func (s *stdHTTPServer) Addr() string {
 func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, listenAddr, tlsCertFile, tlsKeyFile string, referenceMode bool, errPrinter internal.Printer, trace *tracer.Tracer) (httpServer, []byte, error) {
 	mux := http.NewServeMux()
 	interceptors := []connect.ServerInterceptor{serverNameHandlerInterceptor}
+	calls := newCallCounter()
 	if referenceMode {
-		interceptors = append(interceptors, rawResponseRecorder)
+		interceptors = append(interceptors, webSocketChecks(errPrinter, calls), rawResponseRecorder)
 	}
 	opts := []connecthttp.Option{
 		connecthttp.WithCompressors(compression.All()...),
 		connecthttp.WithCodecs(connectproto.NewBinaryCodec(), internal.NewStrictJSONCodec()),
 		// Zero means no limit, which the conformance suite expects when none is set.
 		connecthttp.WithReadMaxBytes(int(req.MessageReceiveLimit)),
+	}
+	if referenceMode {
+		// Clients under test include browsers, whose origin is the test page's.
+		opts = append(opts, connecthttp.WithWebSocketCheckOrigin(func(*http.Request) bool { return true }))
 	}
 	srv := connect.NewServer(interceptors...)
 
@@ -200,7 +205,7 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 
 	handler := http.Handler(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) &&
-			req.ProtoMajor == 1 {
+			req.ProtoMajor == 1 && !isWebSocketUpgrade(req) {
 			// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
 			// we "trick" the handler into thinking this is HTTP/2. We have to do this because
 			// otherwise, connect-go refuses to handle bidi streams over HTTP 1.1.
@@ -209,7 +214,7 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 		mux.ServeHTTP(respWriter, req)
 	}))
 	if referenceMode {
-		handler = referenceServerChecks(handler, errPrinter)
+		handler = referenceServerChecks(handler, errPrinter, calls)
 		handler = rawResponder(handler)
 	} else {
 		// When in reference mode, checking requests from a client-under-test, we make sure that the
@@ -235,7 +240,16 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 		})
 	}
 	if trace != nil {
-		handler = tracer.TracingHandler(handler, trace)
+		// The tracer's response writer cannot be hijacked, so WebSocket
+		// handshakes bypass it.
+		untraced, traced := handler, tracer.TracingHandler(handler, trace)
+		handler = http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
+			if isWebSocketUpgrade(req) {
+				untraced.ServeHTTP(respWriter, req)
+				return
+			}
+			traced.ServeHTTP(respWriter, req)
+		})
 	}
 	// The server needs a lenient cors setup so that it can handle testing
 	// browser clients.

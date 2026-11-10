@@ -186,10 +186,13 @@ func runTestCasesForServer(
 		if req.RawRequest != nil {
 			req.RawRequest.Headers = append(req.RawRequest.Headers, testCaseHeader)
 		}
+		if req.RawWebsocketRequest != nil {
+			req.RawWebsocketRequest.Headers = append(req.RawWebsocketRequest.Headers, testCaseHeader)
+		}
 		if isReferenceServer {
 			// The reference server wants more metadata in headers, to perform add'l validations.
 			httpMethod := http.MethodPost
-			if req.UseGetHttpMethod {
+			if req.UseGetHttpMethod || req.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET {
 				httpMethod = http.MethodGet
 			}
 			extraHeaders := []*conformancev1.Header{
