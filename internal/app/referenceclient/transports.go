@@ -40,6 +40,9 @@ type transportSpec struct {
 	serverTLSCert string
 	clientTLSCert string
 	clientTLSKey  string
+	// Works around a net/http race where canceling an HTTP/1 request can close
+	// a pooled connection already reused by another request, failing it too.
+	disableKeepAlives bool
 }
 
 type transports struct {
@@ -68,6 +71,8 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 		serverTLSCert: string(req.GetServerTlsCert()),
 		clientTLSCert: string(req.GetClientTlsCreds().GetCert()),
 		clientTLSKey:  string(req.GetClientTlsCreds().GetKey()),
+		disableKeepAlives: req.GetHttpVersion() == conformancev1.HTTPVersion_HTTP_VERSION_1 &&
+			mayCancel(req),
 	}
 
 	// Optimistically skip logic if it's already cached. We will still do an
@@ -79,24 +84,7 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 	var transport http.RoundTripper
 	switch req.HttpVersion {
 	case conformancev1.HTTPVersion_HTTP_VERSION_1:
-		if tlsConf != nil {
-			tlsConf.NextProtos = []string{"http/1.1"}
-		}
-		tx := &http.Transport{
-			DisableCompression: true,
-			TLSClientConfig:    tlsConf,
-		}
-		transport = roundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			resp, err := tx.RoundTrip(req)
-			if resp != nil &&
-				strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) {
-				// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
-				// we "trick" the client into thinking this is HTTP/2. We have to do this because
-				// otherwise, connect-go refuses to support bidi streams over HTTP 1.1.
-				resp.ProtoMajor, resp.ProtoMinor = 2, 0
-			}
-			return resp, err
-		})
+		transport = newHTTP1Transport(tlsConf, spec.disableKeepAlives)
 	case conformancev1.HTTPVersion_HTTP_VERSION_2:
 		var prots *http.Protocols
 		forceAttemptHTTP2 := false
@@ -131,6 +119,34 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 	// Even if two requests for the same spec make it here, they will use the same connection.
 	actual, _ := t.cache.LoadOrStore(spec, transport)
 	return actual.(http.RoundTripper), serverURL, nil //nolint:errcheck,forcetypeassert
+}
+
+func newHTTP1Transport(tlsConf *tls.Config, disableKeepAlives bool) http.RoundTripper {
+	if tlsConf != nil {
+		tlsConf.NextProtos = []string{"http/1.1"}
+	}
+	httpTransport := &http.Transport{
+		DisableCompression: true,
+		DisableKeepAlives:  disableKeepAlives,
+		TLSClientConfig:    tlsConf,
+	}
+	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		resp, err := httpTransport.RoundTrip(req)
+		if resp != nil &&
+			strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) {
+			// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
+			// we "trick" the client into thinking this is HTTP/2. We have to do this because
+			// otherwise, connect-go refuses to support bidi streams over HTTP 1.1.
+			resp.ProtoMajor, resp.ProtoMinor = 2, 0
+		}
+		return resp, err
+	})
+}
+
+// mayCancel reports whether the request's context can end before its
+// response is fully handled.
+func mayCancel(req *conformancev1.ClientCompatRequest) bool {
+	return req.Cancel != nil || req.TimeoutMs != nil
 }
 
 // contextFixTransport wraps an HTTP/3 transport so that context errors can be correctly

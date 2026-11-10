@@ -151,4 +151,4 @@ $(BIN)/golangci-lint: Makefile
 
 $(BIN)/goreleaser: Makefile
 	@mkdir -p $(@D)
-	$(GO) install github.com/goreleaser/goreleaser@v1.16.2
+	$(GO) install github.com/goreleaser/goreleaser/v2@v2.18.0

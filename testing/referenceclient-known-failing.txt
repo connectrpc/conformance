@@ -1,1 +1,9 @@
-# There are no known failures in the reference client.
+# The gRPC spec says that a client must not error or throw away a grpc-message
+# that is not validly percent-encoded:
+#   https://github.com/grpc/grpc/blob/v1.84.0/doc/PROTOCOL-HTTP2.md#responses
+# connect-go fails the RPC with "internal" and discards the message.
+# Fixed by https://github.com/connectrpc/connect-go/pull/1043
+gRPC Status Message/**/invalid-escape
+gRPC Status Message/**/unescaped-percent
+gRPC-Web Status Message/**/invalid-escape
+gRPC-Web Status Message/**/unescaped-percent
