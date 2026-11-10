@@ -318,3 +318,47 @@ testCases:
         - { }
       error:
         code: CODE_INTERNAL
+  - request:
+      testName: unary/malformed-response-message
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/proto" ]
+              unary:
+                binary: "////"
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+  - request:
+      testName: server-stream/malformed-response-message
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              status_code: 200
+              headers:
+                - name: content-type
+                  value: [ "application/connect+proto" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      binary_message:
+                        "@type": "type.googleapis.com/connectrpc.conformance.v1.ServerStreamResponse"
+                  - flags: 0
+                    payload:
+                      binary: "////"
+                  - flags: 2
+                    payload:
+                      text: "{}"
+    expectedResponse:
+      payloads:
+        - { }
+      error:
+        code: CODE_INTERNAL
