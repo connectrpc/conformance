@@ -180,7 +180,7 @@ func (r *testResults) assert(
 		// a CANCELED error in these cases, as an alternative to DEADLINE_EXCEEDED.
 		otherErrors = []conformancev1.Code{conformancev1.Code_CODE_CANCELED}
 	}
-	errs = append(errs, checkError(expected.Error, actual.Error, otherErrors)...)
+	errs = append(errs, checkError(expected.Error, actual.Error, otherErrors, definition.OtherAllowedErrorMessages)...)
 	errs = append(errs, checkPayloads(expected.Payloads, actual.Payloads)...)
 
 	if len(expected.Payloads) == 0 &&
@@ -273,16 +273,10 @@ func (r *testResults) report(printer internal.Printer) bool {
 	sort.Strings(testCaseNames)
 	for _, name := range testCaseNames {
 		outcome := r.outcomes[name]
-		var expectError bool
-		if !outcome.setupError {
-			expectError = outcome.knownFailing ||
-				(outcome.knownFlaky && outcome.actualFailure != nil)
-		}
-		var noRun *couldNotRunError
-		switch {
-		case errors.As(outcome.actualFailure, &noRun):
+		switch outcome.kind() {
+		case outcomeKindNotRun:
 			couldNotRun++
-		case !expectError && outcome.actualFailure != nil:
+		case outcomeKindFailed:
 			printer.Printf("FAILED: %s:\n%s", name, indent(outcome.actualFailure.Error()))
 			trace := r.traces[name]
 			if trace != nil {
@@ -291,10 +285,10 @@ func (r *testResults) report(printer internal.Printer) bool {
 				printer.Printf("--------------------")
 			}
 			failed++
-		case expectError && outcome.actualFailure == nil:
+		case outcomeKindPassedUnexpectedly:
 			printer.Printf("FAILED: %s was expected to fail but did not", name)
 			failed++
-		case expectError && outcome.actualFailure != nil:
+		case outcomeKindFailedAsExpected:
 			printer.Printf("INFO: %s failed (as expected):\n%s", name, indent(outcome.actualFailure.Error()))
 			expectedFailures++
 		default:
@@ -316,6 +310,21 @@ func (r *testResults) report(printer internal.Printer) bool {
 	return failed == 0
 }
 
+// jsonTestResults returns the outcome of every test case, sorted by name. It
+// must be called after report, which merges in reference server feedback.
+func (r *testResults) jsonTestResults() []jsonTestResult {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	testResults := make([]jsonTestResult, 0, len(r.outcomes))
+	for name, outcome := range r.outcomes {
+		testResults = append(testResults, jsonTestResult{Name: name, Outcome: outcome.kind()})
+	}
+	sort.Slice(testResults, func(i, j int) bool {
+		return testResults[i].Name < testResults[j].Name
+	})
+	return testResults
+}
+
 type testOutcome struct {
 	// nil if the test case executed successfully, otherwise an error that
 	// represents why the test case failed, such as an error returned by the
@@ -329,6 +338,26 @@ type testOutcome struct {
 	knownFailing bool
 	// true if this test case is known to be flaky
 	knownFlaky bool
+}
+
+func (o *testOutcome) kind() outcomeKind {
+	var expectError bool
+	if !o.setupError {
+		expectError = o.knownFailing || (o.knownFlaky && o.actualFailure != nil)
+	}
+	var noRun *couldNotRunError
+	switch {
+	case errors.As(o.actualFailure, &noRun):
+		return outcomeKindNotRun
+	case !expectError && o.actualFailure != nil:
+		return outcomeKindFailed
+	case expectError && o.actualFailure == nil:
+		return outcomeKindPassedUnexpectedly
+	case expectError && o.actualFailure != nil:
+		return outcomeKindFailedAsExpected
+	default:
+		return outcomeKindPassed
+	}
 }
 
 type multiErrors []error
@@ -503,7 +532,11 @@ func checkPayloads(expected, actual []*conformancev1.ConformancePayload) multiEr
 	return errs
 }
 
-func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev1.Code) multiErrors {
+func checkError(
+	expected, actual *conformancev1.Error,
+	otherCodes []conformancev1.Code,
+	otherMessages []string,
+) multiErrors {
 	switch {
 	case expected == nil && actual == nil:
 		// nothing to do
@@ -520,9 +553,13 @@ func checkError(expected, actual *conformancev1.Error, otherCodes []conformancev
 		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected code %s",
 			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedCodes))
 	}
-	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() {
-		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected message %q",
-			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expected.GetMessage()))
+	// Skip if no message is expected. Otherwise, accept an exact match with the
+	// expected message or one of TestCase.other_allowed_error_messages.
+	if expected.Message != nil && expected.GetMessage() != actual.GetMessage() &&
+		!slices.Contains(otherMessages, actual.GetMessage()) {
+		expectedMessages := expectedMessageString(expected.GetMessage(), otherMessages)
+		errs = append(errs, fmt.Errorf("actual error {code: %d (%s), message: %q} does not match expected message %s",
+			actual.Code, connect.Code(actual.Code).String(), actual.GetMessage(), expectedMessages))
 	}
 	if len(expected.Details) != len(actual.Details) {
 		// TODO: Should this be more lenient? Are we okay with a Connect implementation adding extra
@@ -575,12 +612,27 @@ func expectedCodeString(expectedCode conformancev1.Code, otherAllowedCodes []con
 	allowedCodes := make([]string, len(otherAllowedCodes)+1)
 	for i, code := range append([]conformancev1.Code{expectedCode}, otherAllowedCodes...) {
 		allowedCodes[i] = fmt.Sprintf("%d (%s)", code, connect.Code(code).String())
-		if i == len(allowedCodes)-1 && i != 0 {
-			allowedCodes[i] = "or " + allowedCodes[i]
-		}
 	}
-	if len(allowedCodes) < 3 {
-		return strings.Join(allowedCodes, " ")
+	return joinAlternatives(allowedCodes)
+}
+
+func expectedMessageString(expectedMessage string, otherAllowedMessages []string) string {
+	allowedMessages := make([]string, len(otherAllowedMessages)+1)
+	for i, message := range append([]string{expectedMessage}, otherAllowedMessages...) {
+		allowedMessages[i] = fmt.Sprintf("%q", message)
 	}
-	return strings.Join(allowedCodes, ", ")
+	return joinAlternatives(allowedMessages)
+}
+
+// joinAlternatives joins the given values into a list of alternatives,
+// like "a", "a or b", or "a, b, or c".
+func joinAlternatives(values []string) string {
+	if len(values) > 1 {
+		values = slices.Clone(values)
+		values[len(values)-1] = "or " + values[len(values)-1]
+	}
+	if len(values) < 3 {
+		return strings.Join(values, " ")
+	}
+	return strings.Join(values, ", ")
 }

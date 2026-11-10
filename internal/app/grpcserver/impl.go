@@ -239,14 +239,9 @@ func (c *conformanceServiceServer) BidiStream(
 			firstRecv = false
 
 			if responseDefinition != nil {
-				headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
-				// Immediately send the headers on the stream so that metadata can be read by the client
-				if err := stream.SendHeader(headerMD); err != nil {
+				if err := setBidiResponseMetadata(stream, responseDefinition, fullDuplex); err != nil {
 					return err
 				}
-
-				trailerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers)
-				stream.SetTrailer(trailerMD)
 			}
 		}
 
@@ -330,6 +325,26 @@ func (c *conformanceServiceServer) BidiStream(
 			return grpcutil.ConvertProtoToGrpcError(responseDefinition.Error)
 		}
 	}
+	return nil
+}
+
+func setBidiResponseMetadata(
+	stream conformancev1.ConformanceService_BidiStreamServer,
+	responseDefinition *conformancev1.StreamResponseDefinition,
+	fullDuplex bool,
+) error {
+	headerMD := grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseHeaders)
+	if fullDuplex {
+		// Immediately send the headers on the stream so that metadata can be read by the client
+		if err := stream.SendHeader(headerMD); err != nil {
+			return err
+		}
+	} else if err := stream.SetHeader(headerMD); err != nil {
+		// Half-duplex must not write until the upload is complete, since an
+		// HTTP/1.1 server may stop reading the request once a response starts.
+		return err
+	}
+	stream.SetTrailer(grpcutil.ConvertProtoHeaderToMetadata(responseDefinition.ResponseTrailers))
 	return nil
 }
 
