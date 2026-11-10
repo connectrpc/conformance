@@ -7,3 +7,12 @@ gRPC Status Message/**/invalid-escape
 gRPC Status Message/**/unescaped-percent
 gRPC-Web Status Message/**/invalid-escape
 gRPC-Web Status Message/**/unescaped-percent
+
+# connect-go compares the response content type as a string, so it rejects
+# parameters it should ignore.
+Connect JSON Content-Type Parameter Responses/**/server-stream/charset-utf-8
+Connect JSON Content-Type Parameter Responses/**/charset-utf-8-quoted
+Connect JSON Content-Type Parameter Responses/**/charset-utf-8-uppercase
+Connect JSON Content-Type Parameter Responses/**/charset-utf-8-with-unknown-parameter
+Connect JSON Content-Type Parameter Responses/**/unknown-parameter
+Connect Proto Content-Type Parameter Responses/**/unknown-parameter

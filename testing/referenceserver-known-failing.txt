@@ -1,1 +1,6 @@
-# There are no known failures in the reference server.
+# connect-go rejects content types with unknown parameters, or with a charset
+# on proto, with a 415 instead of ignoring the parameters.
+Connect JSON Content-Type Parameter Requests/**/unknown-parameter
+Connect JSON Content-Type Parameter Requests/**/charset-utf-8-with-unknown-parameter
+Connect Proto Content-Type Parameter Requests/**/unknown-parameter
+Connect Proto Content-Type Parameter Requests/**/charset-ignored
