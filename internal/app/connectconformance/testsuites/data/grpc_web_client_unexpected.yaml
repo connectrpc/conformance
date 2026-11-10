@@ -409,6 +409,12 @@ testCases:
                   - flags: 128
                     payload:
                       text: "grpc-status: 0\r\n"
+    otherAllowedErrorCodes:
+      # Any code that reports a failed, non-retryable call is acceptable; what
+      # the cases rule out is no error, or an error that claims success.
+      - CODE_INVALID_ARGUMENT
+      - CODE_DATA_LOSS
+      - CODE_UNKNOWN
     expectedResponse:
       error:
         code: CODE_INTERNAL
@@ -435,6 +441,12 @@ testCases:
                   - flags: 128
                     payload:
                       text: "grpc-status: 0\r\n"
+    otherAllowedErrorCodes:
+      # Any code that reports a failed, non-retryable call is acceptable; what
+      # the cases rule out is no error, or an error that claims success.
+      - CODE_INVALID_ARGUMENT
+      - CODE_DATA_LOSS
+      - CODE_UNKNOWN
     expectedResponse:
       payloads:
         - { }

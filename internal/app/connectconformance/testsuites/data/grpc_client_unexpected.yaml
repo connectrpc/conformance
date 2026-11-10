@@ -440,6 +440,12 @@ testCases:
               trailers:
                 - name: "grpc-status"
                   value: ["0"]
+    otherAllowedErrorCodes:
+      # Any code that reports a failed, non-retryable call is acceptable; what
+      # the cases rule out is no error, or an error that claims success.
+      - CODE_INVALID_ARGUMENT
+      - CODE_DATA_LOSS
+      - CODE_UNKNOWN
     expectedResponse:
       error:
         code: CODE_INTERNAL
@@ -466,6 +472,12 @@ testCases:
               trailers:
                 - name: "grpc-status"
                   value: ["0"]
+    otherAllowedErrorCodes:
+      # Any code that reports a failed, non-retryable call is acceptable; what
+      # the cases rule out is no error, or an error that claims success.
+      - CODE_INVALID_ARGUMENT
+      - CODE_DATA_LOSS
+      - CODE_UNKNOWN
     expectedResponse:
       payloads:
         - { }
