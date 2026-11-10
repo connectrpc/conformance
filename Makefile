@@ -10,10 +10,10 @@ BIN := .tmp/bin
 export PATH := $(BIN):$(PATH)
 export GOBIN := $(abspath $(BIN))
 COPYRIGHT_YEARS := 2023-2024
-BUF_VERSION := v1.44.0
-LICENSE_HEADER_VERSION := v1.36.0
-GOLANGCI_LINT_VERSION := v2.14.0
-GORELEASER_VERSION := v2.18.0
+BUF_VERSION := v1.75.0
+LICENSE_HEADER_VERSION := $(BUF_VERSION)
+GOLANGCI_LINT_VERSION := v2.15.0
+GORELEASER_VERSION := v2.20.0
 # Each tool is installed under a path that includes its version, so it's
 # fetched again only when its version changes.
 TOOLS := .tmp/tools
@@ -66,7 +66,8 @@ generate: $(BUF) $(LICENSE_HEADER) ## Regenerate code and licenses
 	$(LICENSE_HEADER) \
 		--license-type apache \
 		--copyright-holder "The Connect Authors" \
-		--year-range "$(COPYRIGHT_YEARS)"
+		--year-range "$(COPYRIGHT_YEARS)" \
+		--ignore '.*\.ya?ml'
 
 .PHONY: lint
 lint: $(GOLANGCI_LINT) $(BUF) ## Lint Go and protobuf
