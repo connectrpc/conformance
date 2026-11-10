@@ -14,5 +14,6 @@ Connect JSON Content-Type Parameter Responses/**/server-stream/charset-utf-8
 Connect JSON Content-Type Parameter Responses/**/charset-utf-8-quoted
 Connect JSON Content-Type Parameter Responses/**/charset-utf-8-uppercase
 Connect JSON Content-Type Parameter Responses/**/charset-utf-8-with-unknown-parameter
+Connect JSON Content-Type Parameter Responses/**/unknown-parameter-then-charset-utf-8
 Connect JSON Content-Type Parameter Responses/**/unknown-parameter
 Connect Proto Content-Type Parameter Responses/**/unknown-parameter

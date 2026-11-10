@@ -101,6 +101,37 @@ testCases:
         # the response codec does not match the request codec
         code: CODE_INTERNAL
   - request:
+      testName: unary/unknown-parameter-then-charset-utf-8
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/json; foo=bar; charset=utf-8" ]
+              unary:
+                text: '{"payload": {"data": "dGVzdCByZXNwb25zZQ=="}}'
+    expectedResponse:
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: unary/unknown-parameter-then-unsupported-charset
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/json; foo=bar; charset=iso-8859-1" ]
+              unary:
+                text: '{"payload": {"data": "dGVzdCByZXNwb25zZQ=="}}'
+    expectedResponse:
+      error:
+        # the response codec does not match the request codec
+        code: CODE_INTERNAL
+  - request:
       testName: server-stream/charset-utf-8
       streamType: STREAM_TYPE_SERVER_STREAM
       requestMessages:
@@ -215,6 +246,49 @@ testCases:
               headers:
                 - name: content-type
                   value: [ "application/connect+json; charset=iso-8859-1" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      text: '{"payload": {"data": "dGVzdCByZXNwb25zZQ=="}}'
+                  - flags: 2
+                    payload:
+                      text: "{}"
+    expectedResponse:
+      error:
+        # the response codec does not match the request codec
+        code: CODE_INTERNAL
+  - request:
+      testName: server-stream/unknown-parameter-then-charset-utf-8
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/connect+json; foo=bar; charset=utf-8" ]
+              stream:
+                items:
+                  - flags: 0
+                    payload:
+                      text: '{"payload": {"data": "dGVzdCByZXNwb25zZQ=="}}'
+                  - flags: 2
+                    payload:
+                      text: "{}"
+    expectedResponse:
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+  - request:
+      testName: server-stream/unknown-parameter-then-unsupported-charset
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawResponse:
+              headers:
+                - name: content-type
+                  value: [ "application/connect+json; foo=bar; charset=iso-8859-1" ]
               stream:
                 items:
                   - flags: 0
