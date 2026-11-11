@@ -60,6 +60,35 @@ defaults:
     # Unlike the default shell, this also sets pipefail.
     shell: bash
 jobs:
+  # Comment runs don't show in the pull request's checks, so this comments that
+  # one started, and impl-conformance-report.yaml replaces the comment with the
+  # results. It only runs the default branch's scripts, never pull request
+  # code, so it can have a token that writes comments.
+  rerun-started:
+    # Keep in sync with prepare's condition for comment runs.
+    if: >-
+      github.event_name == 'issue_comment'
+      && github.event.issue.pull_request
+      && startsWith(github.event.comment.body, '/rerun')
+      && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      # For comments, this checks out the default branch.
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github
+      - name: Comment that the run started
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: .github/impl-conformance/report.sh started
   prepare:
     # Other labels don't change the results, so nothing runs for them. Every
     # comment starts a run, but only maintainers' /rerun comments on pull

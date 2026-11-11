@@ -8,7 +8,9 @@
 # $changes (changes.json, or empty if unavailable), $failedJobs, $sha, $runUrl,
 # $reference (the reference implementation), and, for a run started by a
 # /rerun comment, $rerun (see rerun_command in report.sh), and the output is an
-# object with the comment body, check title, and check conclusion.
+# object with the comment body, check title, and check conclusion. With $mode
+# "started", the inputs are $rerun and $runUrl, and the output is the body of
+# the comment shown while a /rerun comment's run is in progress.
 
 def code:
   tostring | gsub("[\\p{Cc}\\p{Cf}]"; "") | .[0:120]
@@ -151,6 +153,19 @@ def rerun_text:
     end
   + (if $url != "" then ", requested in [this comment](\($url))." else "." end);
 
+def started:
+  $ARGS.named.rerun as $rerun
+  | [
+      "### Implementation conformance",
+      "",
+      ($rerun | rerun_text),
+      "",
+      (if $rerun.error? != null
+        then "**The command is invalid.** Use `/rerun <implementation> [<pull request URL>]`, with a pull request in the implementation's repository."
+        else "**Running in [this workflow run](\($ARGS.named.runUrl)).** The results will replace this comment when it finishes."
+        end)
+    ] | join("\n");
+
 def comment:
   $ARGS.named as $args
   | ($args.rerun // null) as $rerun
@@ -238,4 +253,6 @@ def comment:
         else $header + ["The details are too long for a comment. The job summaries in the workflow run list them."] | join("\n") end)
     };
 
-if $ARGS.named.mode == "summary" then summary else comment end
+if $ARGS.named.mode == "summary" then summary
+elif $ARGS.named.mode == "started" then started
+else comment end

@@ -111,14 +111,14 @@ for test_case in "${COMMAND_CASES[@]}"; do
       'include "rerun"; $body | parse_command(["connect-go", "connect-py"])')" \
     "${expected}"
 done
-for mode in summary comment; do
+for mode in summary comment started; do
   if ! jq -n --arg mode "${mode}" --argjson results '[]' --argjson changes '[]' --argjson failedJobs '[]' \
     --arg sha "" --arg runUrl "" --arg reference "" -f report.jq >/dev/null; then
     echo "FAIL: report.jq in ${mode} mode" >&2
     failures=$((failures + 1))
   fi
 done
-total=$((${#CASES[@]} + ${#COMMAND_CASES[@]} + 2))
+total=$((${#CASES[@]} + ${#COMMAND_CASES[@]} + 3))
 if [ "${failures}" -gt 0 ]; then
   exit 1
 fi
