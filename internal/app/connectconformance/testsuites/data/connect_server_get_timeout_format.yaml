@@ -1,0 +1,500 @@
+# When present, a Connect timeout must be 1 to 10 ASCII decimal digits. This
+# applies to GET requests too, where the timeout is still sent as a header.
+# Servers must reject any other value; the spec doesn't define the error or
+# HTTP status.
+name: Connect GET Timeout Format Requests
+mode: TEST_MODE_SERVER
+relevantProtocols:
+  - PROTOCOL_CONNECT
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_PROTO
+relies_on_connect_get: true
+testCases:
+  - request:
+      testName: ten-digits
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "9999999999" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      payloads:
+        - data: "dGVzdCByZXNwb25zZQ=="
+          requestInfo:
+            timeoutMs: 9999999999
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+            connectGetInfo:
+              queryParams:
+                - name: encoding
+                  value: [ "proto" ]
+                - name: connect
+                  value: [ "v1" ]
+  - request:
+      testName: leading-zeros
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      timeoutMs: 5000
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "0000005000" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+  # Zero is a valid timeout, but the deadline has already passed.
+  - request:
+      testName: zero
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "0" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    expectedResponse:
+      error:
+        code: CODE_DEADLINE_EXCEEDED
+  # Present but empty is not the same as absent.
+  - request:
+      testName: empty
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: leading-plus
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "+5000" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: leading-minus
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "-5000" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: decimal-point
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "5000.0" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: exponent
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "5e3" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: hex
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "0x1388" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: digit-separator
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "5_000" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  # The gRPC timeout format is not valid for Connect.
+  - request:
+      testName: unit-suffix
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "5000m" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  # Too long even though the value is small.
+  - request:
+      testName: eleven-digits
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "00000005000" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+  - request:
+      testName: too-large
+      service: connectrpc.conformance.v1.ConformanceService
+      method: IdempotentUnary
+      streamType: STREAM_TYPE_UNARY
+      useGetHttpMethod: true
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: GET
+        uri: /connectrpc.conformance.v1.ConformanceService/IdempotentUnary
+        headers:
+          - name: connect-timeout-ms
+            value: [ "10000000000" ]
+        rawQueryParams:
+          - name: encoding
+            value: [ "proto" ]
+          - name: base64
+            value: [ "1" ]
+          - name: connect
+            value: [ "v1" ]
+        encodedQueryParams:
+          - name: message
+            base64Encode: true
+            value:
+              binary_message:
+                "@type": "type.googleapis.com/connectrpc.conformance.v1.IdempotentUnaryRequest"
+                responseDefinition:
+                  responseData: "dGVzdCByZXNwb25zZQ=="
+    otherAllowedErrorCodes:
+      # gRPC servers reject a malformed grpc-timeout with internal.
+      - CODE_INTERNAL
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT

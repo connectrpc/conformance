@@ -355,6 +355,18 @@ func checkTLS(req *http.Request, feedback *feedbackPrinter) {
 	}
 }
 
+func isValidConnectTimeout(val string) bool {
+	if len(val) == 0 || len(val) > 10 {
+		return false
+	}
+	for _, char := range val {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
+}
+
 func getHeader(headers http.Header, headerName string, feedback *feedbackPrinter) (string, bool) {
 	headerVals := headers.Values(headerName)
 	if len(headerVals) > 1 {
@@ -394,21 +406,13 @@ func extractTimeout(headers http.Header, protocol conformancev1.Protocol, feedba
 			break
 		}
 		headers.Del(connectTimeoutHeader)
-		intVal, err := strconv.ParseInt(val, 10, 64)
-		if err != nil || intVal < 0 {
-			feedback.Printf("invalid numeric value for %q header: %q", connectTimeoutHeader, val)
+		if !isValidConnectTimeout(val) {
+			feedback.Printf("invalid value for %q header: %q; must be 1 to 10 decimal digits", connectTimeoutHeader, val)
 			break
 		}
-		if intVal > 9999999999 { // 10 digit max
-			feedback.Printf("invalid numeric value (>10 digits) in %q header: %q", connectTimeoutHeader, val)
-			break
-		}
-		timeout := time.Duration(intVal) * time.Millisecond
-		if timeout.Milliseconds() != intVal {
-			// Overflow. Just use max possible value
-			timeout = time.Duration(math.MaxInt64)
-		}
-		return timeout, true
+		// Ten digits of milliseconds always fit in an int64 duration.
+		intVal, _ := strconv.ParseInt(val, 10, 64)
+		return time.Duration(intVal) * time.Millisecond, true
 	case conformancev1.Protocol_PROTOCOL_GRPC, conformancev1.Protocol_PROTOCOL_GRPC_WEB:
 		val, ok := getHeader(headers, grpcTimeoutHeader, feedback)
 		if !ok {

@@ -5,3 +5,14 @@ Connect JSON Content-Type Parameter Requests/**/charset-utf-8-with-unknown-param
 Connect JSON Content-Type Parameter Requests/**/unknown-parameter-then-charset-utf-8
 Connect Proto Content-Type Parameter Requests/**/unknown-parameter
 Connect Proto Content-Type Parameter Requests/**/charset-ignored
+
+# connect-go accepts a timeout with a leading "+".
+Connect Timeout Format Requests/**/leading-plus
+Connect GET Timeout Format Requests/**/leading-plus
+# connect-go does not enforce deadlines on the server, so a zero timeout
+# succeeds instead of failing with deadline_exceeded.
+Connect Timeout Format Requests/**/zero
+Connect GET Timeout Format Requests/**/zero
+# connect-go treats an empty timeout header as if it were absent.
+Connect Timeout Format Requests/**/empty
+Connect GET Timeout Format Requests/**/empty
