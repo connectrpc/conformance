@@ -87,7 +87,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 	defer wg.Wait()
 	sema := semaphore.NewWeighted(int64(*parallel))
 
-	var transports transports
+	transports := transports{maxConnsPerHost: int(*parallel)}
 
 	for {
 		var req conformancev1.ClientCompatRequest

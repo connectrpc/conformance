@@ -95,6 +95,24 @@ testCases:
     error:
       code: CODE_UNKNOWN
 - request:
+    # Proxies often send a plain-text body that the client can't parse as an
+    # RPC error, so the code must still come from the HTTP status.
+    testName: unsupported-media-type-with-text-body
+    streamType: STREAM_TYPE_UNARY
+    requestMessages:
+    - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      responseDefinition:
+        rawResponse:
+          statusCode: 415
+          headers:
+          - name: content-type
+            value: [ "text/plain; charset=utf-8" ]
+          unary:
+            text: "Unsupported Media Type"
+  expectedResponse:
+    error:
+      code: CODE_UNKNOWN
+- request:
     testName: too-many-requests
     streamType: STREAM_TYPE_UNARY
     requestMessages:

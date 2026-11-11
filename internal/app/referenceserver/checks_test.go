@@ -18,8 +18,10 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 
 	"connectrpc.com/conformance/internal"
+	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -105,6 +107,54 @@ func TestCheckConnectGetQueryParamOrder(t *testing.T) {
 			if assert.Len(t, printer.Messages, 1) {
 				assert.Contains(t, printer.Messages[0], testCase.expectedError)
 			}
+		})
+	}
+}
+
+func TestExtractConnectTimeout(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name            string
+		value           *string
+		expectedTimeout time.Duration
+		expectedError   string
+	}{
+		{name: "absent"},
+		{name: "one digit", value: new("1"), expectedTimeout: time.Millisecond},
+		{name: "ten digits", value: new("9999999999"), expectedTimeout: 9999999999 * time.Millisecond},
+		{name: "leading zeros", value: new("0000005000"), expectedTimeout: 5 * time.Second},
+		{name: "empty", value: new(""), expectedError: `""`},
+		{name: "zero", value: new("0"), expectedTimeout: 0},
+		{name: "all zeros", value: new("0000000000"), expectedTimeout: 0},
+		{name: "leading plus", value: new("+5000"), expectedError: `"+5000"`},
+		{name: "leading minus", value: new("-5000"), expectedError: `"-5000"`},
+		{name: "decimal point", value: new("5000.0"), expectedError: `"5000.0"`},
+		{name: "eleven digits", value: new("00000005000"), expectedError: `"00000005000"`},
+		{name: "unit suffix", value: new("5000m"), expectedError: `"5000m"`},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			printer := &internal.SimplePrinter{}
+			feedback := &feedbackPrinter{p: printer, testCaseName: testCase.name}
+			headers := http.Header{}
+			if testCase.value != nil {
+				headers.Set(connectTimeoutHeader, *testCase.value)
+			}
+			timeout, ok := extractTimeout(headers, conformancev1.Protocol_PROTOCOL_CONNECT, feedback)
+			assert.Empty(t, headers.Values(connectTimeoutHeader))
+			if testCase.expectedError != "" {
+				assert.False(t, ok)
+				if assert.Len(t, printer.Messages, 1) {
+					assert.Contains(t, printer.Messages[0], testCase.expectedError)
+				}
+				return
+			}
+			assert.Empty(t, printer.Messages)
+			assert.Equal(t, testCase.value != nil, ok)
+			assert.Equal(t, testCase.expectedTimeout, timeout)
 		})
 	}
 }

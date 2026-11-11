@@ -1,7 +1,9 @@
 name: Implementation Conformance Report
-# Posts impl-conformance.yaml results on the pull request. That workflow can't
-# do it itself because pull requests from forks get a read-only token. This
-# one always runs from the default branch, never checks out pull request code,
+# Posts impl-conformance.yaml results on the pull request, those of runs
+# started by /rerun comments in a comment of their own. That workflow can't do
+# it itself because its token is read-only for pull requests from forks and for
+# comment runs. This one always runs from the default branch, never checks out
+# pull request code,
 # and treats the downloaded results as untrusted (see report.sh).
 on:
   workflow_run:
@@ -14,11 +16,22 @@ permissions:
   pull-requests: write
 jobs:
   report:
-    # A cancelled run was superseded by a newer commit, which gets its own report.
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled'
+    # A cancelled pull_request run was superseded by a newer commit, which gets
+    # its own report. Nothing supersedes a comment run, so its comment says it
+    # was cancelled. Runs for comments that aren't /rerun commands skip every
+    # job.
+    if: >-
+      ((github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled')
+      || github.event.workflow_run.event == 'issue_comment')
+      && github.event.workflow_run.conclusion != 'skipped'
     # At job level, so skipped reports can't replace a pending one.
     concurrency:
-      group: impl-conformance-report-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+      # Comment runs are each reported in a new comment, so they don't need to
+      # wait for each other.
+      group: >-
+        impl-conformance-report-${{ github.event.workflow_run.event == 'issue_comment'
+        && format('comment-{0}', github.event.workflow_run.id)
+        || format('{0}-{1}', github.event.workflow_run.head_repository.full_name, github.event.workflow_run.head_branch) }}
       cancel-in-progress: false
     timeout-minutes: 10
     runs-on: ubuntu-latest
@@ -27,6 +40,9 @@ jobs:
         with:
           sparse-checkout: .github
       - uses: actions/download-artifact@v8
+        # A comment run that was cancelled or failed early may have no
+        # artifacts, and report.sh still updates its comment.
+        continue-on-error: ${{ github.event.workflow_run.event == 'issue_comment' }}
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
@@ -39,4 +55,7 @@ jobs:
           HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
           RUN_ID: ${{ github.event.workflow_run.id }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
+          EVENT: ${{ github.event.workflow_run.event }}
+          RUN_NAME: ${{ github.event.workflow_run.display_title }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: .github/impl-conformance/report.sh post "${RUNNER_TEMP}/artifacts"

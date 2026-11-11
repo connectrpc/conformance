@@ -32,6 +32,12 @@
 #   impl-conformance.sh skipped <labels> <implementation...>
 #     Prints the given implementations that the pull request's labels skip, as
 #     a JSON array. <labels> is a JSON array of the label names.
+#   impl-conformance.sh command <comment body> <implementation...>
+#     Parses a /rerun comment (see rerun.jq) naming one of the given
+#     implementations and prints "implementation=<name>",
+#     "pull-request=<number>", and "ref=<head commit>" lines for GITHUB_OUTPUT,
+#     with an empty pull request and ref for the default branch. Fails for
+#     anything else. Requires GH_TOKEN for a pull request.
 #   impl-conformance.sh exec <runner args...>
 #     Called by the wrapper. Runs the current runner limited to the selected
 #     suites that apply to the call, without --known-failing, and writes a JSON
@@ -476,6 +482,41 @@ skipped_implementations() {
     --args "${@}"
 }
 
+parse_command() {
+  local body="${1}"
+  shift
+  local command
+  local implementation
+  local number
+  local sha=""
+  command="$(jq -nc -L "${SCRIPT_DIR}" --arg body "${body}" \
+    'include "rerun"; $body | parse_command($ARGS.positional)' --args "${@}")"
+  # The comment is untrusted, so errors don't quote it.
+  case "$(jq -r 'if . == null then "not-a-command" else .error // "" end' <<<"${command}")" in
+    "") ;;
+    unknown-implementation)
+      echo "::error title=Invalid /rerun command::The implementation must be one of: ${*}" >&2
+      return 1
+      ;;
+    invalid-pull-request)
+      echo "::error title=Invalid /rerun command::The pull request must be a URL in the implementation's repository, like https://github.com/connectrpc/connect-go/pull/123" >&2
+      return 1
+      ;;
+    *)
+      echo "::error title=Invalid /rerun command::Usage: /rerun <implementation> [<pull request URL>]" >&2
+      return 1
+      ;;
+  esac
+  implementation="$(jq -r '.implementation' <<<"${command}")"
+  number="$(jq -r '.pullRequest // ""' <<<"${command}")"
+  if [ -n "${number}" ]; then
+    sha="$(gh api "repos/connectrpc/${implementation}/pulls/${number}" --jq '.head.sha')"
+  fi
+  echo "implementation=${implementation}"
+  echo "pull-request=${number}"
+  echo "ref=${sha}"
+}
+
 run_target() {
   local implementation="${1}"
   local target="${2}"
@@ -596,12 +637,16 @@ case "${1:-}" in
     shift
     skipped_implementations "${@}"
     ;;
+  command)
+    shift
+    parse_command "${@}"
+    ;;
   exec)
     shift
     exec_runner "${@}"
     ;;
   *)
-    echo "usage: ${0} changes <base commit> <output file> | install <path> [<version>] | install-go <path> <wrapper> | install-program <path> <base> <head> | run <implementation> <target> <command...> | skipped <labels> <implementation...> | exec <args...>" >&2
+    echo "usage: ${0} changes <base commit> <output file> | install <path> [<version>] | install-go <path> <wrapper> | install-program <path> <base> <head> | run <implementation> <target> <command...> | skipped <labels> <implementation...> | command <comment body> <implementation...> | exec <args...>" >&2
     exit 2
     ;;
 esac

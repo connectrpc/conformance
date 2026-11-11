@@ -47,6 +47,8 @@ type transportSpec struct {
 
 type transports struct {
 	cache sync.Map // map[transportSpec]http.RoundTripper
+	// maxConnsPerHost caps open and dialing HTTP/1 connections per host.
+	maxConnsPerHost int
 }
 
 func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTripper, *url.URL, error) {
@@ -84,7 +86,7 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 	var transport http.RoundTripper
 	switch req.HttpVersion {
 	case conformancev1.HTTPVersion_HTTP_VERSION_1:
-		transport = newHTTP1Transport(tlsConf, spec.disableKeepAlives)
+		transport = newHTTP1Transport(tlsConf, spec.disableKeepAlives, t.maxConnsPerHost)
 	case conformancev1.HTTPVersion_HTTP_VERSION_2:
 		var prots *http.Protocols
 		forceAttemptHTTP2 := false
@@ -121,7 +123,7 @@ func (t *transports) get(req *conformancev1.ClientCompatRequest) (http.RoundTrip
 	return actual.(http.RoundTripper), serverURL, nil //nolint:errcheck,forcetypeassert
 }
 
-func newHTTP1Transport(tlsConf *tls.Config, disableKeepAlives bool) http.RoundTripper {
+func newHTTP1Transport(tlsConf *tls.Config, disableKeepAlives bool, maxConnsPerHost int) http.RoundTripper {
 	if tlsConf != nil {
 		tlsConf.NextProtos = []string{"http/1.1"}
 	}
@@ -129,6 +131,7 @@ func newHTTP1Transport(tlsConf *tls.Config, disableKeepAlives bool) http.RoundTr
 		DisableCompression: true,
 		DisableKeepAlives:  disableKeepAlives,
 		TLSClientConfig:    tlsConf,
+		MaxConnsPerHost:    maxConnsPerHost,
 	}
 	return roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		resp, err := httpTransport.RoundTrip(req)
