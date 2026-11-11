@@ -13,14 +13,20 @@
 #     Prints one target's result as Markdown, for the job summary.
 #   report.sh post <artifacts dir>
 #     Creates or updates the results comment on the pull request and creates
-#     a check run on the tested commit. Requires GH_TOKEN, GITHUB_REPOSITORY,
-#     HEAD_SHA (the tested commit), RUN_ID, and RUN_URL.
+#     a check run on the tested commit. For a run started by a /rerun comment
+#     (EVENT is issue_comment), posts a new comment instead. Requires GH_TOKEN,
+#     GITHUB_REPOSITORY, HEAD_SHA (the tested commit, or the default branch's
+#     for a comment run), RUN_ID, RUN_URL, and, for a comment run, EVENT and
+#     RUN_NAME (the run's display title).
 
 set -euo pipefail
 
 SCRIPT_DIR="$(CDPATH= cd "$(dirname "${0}")" && pwd)"
 CHECK_NAME="Implementation conformance results"
 COMMENT_MARKER="<!-- impl-conformance-report -->"
+RERUN_MARKER="<!-- impl-conformance-rerun -->"
+# Keep in sync with IMPLEMENTATIONS in impl-conformance.yaml.
+IMPLEMENTATIONS=(connect-go connect-es connect-kotlin connect-swift connect-dart connect-py connect-rust)
 # It builds the reference programs from this repository, so its new failures
 # predict failures in its own CI.
 REFERENCE_IMPLEMENTATION="connect-go"
@@ -54,6 +60,29 @@ verified_pr_number() {
     return 1
   fi
   echo "${pr_number}"
+}
+
+# Prints the /rerun command of a comment run as JSON, with its pull request
+# number, comment URL, and the implementation and pull request it names. The
+# pull request and comment come from the run's name, which impl-conformance.yaml
+# sets from the event, so pull request code can't change them, and the command
+# comes from the comment itself. Returns 1 if the name doesn't match.
+rerun_command() {
+  local pattern='^Implementation conformance for #([0-9]{1,9}) \(/rerun comment ([0-9]{1,20})\)$'
+  local pr_number
+  local comment_id
+  local comment
+  if ! [[ "${RUN_NAME:-}" =~ ${pattern} ]]; then
+    echo "::error::Run name of comment run doesn't match." >&2
+    return 1
+  fi
+  pr_number="${BASH_REMATCH[1]}"
+  comment_id="${BASH_REMATCH[2]}"
+  comment="$(gh api "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --jq '{body, url: .html_url}' ||
+    echo '{"body": "", "url": ""}')"
+  jq -c -L "${SCRIPT_DIR}" --argjson prNumber "${pr_number}" \
+    'include "rerun"; {prNumber: $prNumber, commentUrl: .url} + (.body | parse_command($ARGS.positional) // {})' \
+    --args "${IMPLEMENTATIONS[@]}" <<<"${comment}"
 }
 
 # Creates the results comment, or updates it if one exists. With "update-only",
@@ -95,13 +124,32 @@ post_report() {
   local result_files=()
   local data_dir
   local body_file
+  local rerun="null"
+  local sha="${HEAD_SHA}"
 
-  pr_number="$(verified_pr_number "${artifacts_dir}/impl-conformance-pr/pr-number")" || pr_status="${?}"
-  case "${pr_status}" in
-    0) ;;
-    1) return ;;
-    *) exit 1 ;;
-  esac
+  if [ "${EVENT:-}" = "issue_comment" ]; then
+    # Only runs for maintainers' /rerun comments get past the prepare job's
+    # condition, and it uploads this first.
+    if [ ! -f "${artifacts_dir}/impl-conformance-pr/pr-number" ]; then
+      echo "::notice::The comment wasn't a /rerun command; nothing to report." >&2
+      return
+    fi
+    rerun="$(rerun_command)"
+    pr_number="$(jq -r '.prNumber' <<<"${rerun}")"
+    # The tested commit is the pull request's head when the run started. It
+    # comes from the run's artifacts, so it's only used if it looks like one.
+    sha="$(head -c 100 "${artifacts_dir}/impl-conformance-pr/head-sha" 2>/dev/null | tr -d '[:space:]' || true)"
+    if ! [[ "${sha}" =~ ^[0-9a-f]{40}$ ]]; then
+      sha="unknown"
+    fi
+  else
+    pr_number="$(verified_pr_number "${artifacts_dir}/impl-conformance-pr/pr-number")" || pr_status="${?}"
+    case "${pr_status}" in
+      0) ;;
+      1) return ;;
+      *) exit 1 ;;
+    esac
+  fi
 
   mapfile -t result_files < <(find "${artifacts_dir}" -type f -path '*/impl-conformance-results-*/*.json' | sort)
   data_dir="$(mktemp -d)"
@@ -112,6 +160,22 @@ post_report() {
     jq -R 'select(. != "")' >"${data_dir}/failed-jobs.json"
 
   body_file="$(mktemp)"
+  if [ "${rerun}" != "null" ]; then
+    echo "${RERUN_MARKER}" >"${body_file}"
+    jq -n \
+      --arg mode comment \
+      --slurpfile results "${data_dir}/results.json" \
+      --slurpfile changes "${data_dir}/changes.json" \
+      --slurpfile failedJobs "${data_dir}/failed-jobs.json" \
+      --arg sha "${sha}" \
+      --arg runUrl "${RUN_URL}" \
+      --arg reference "${REFERENCE_IMPLEMENTATION}" \
+      --argjson rerun "${rerun}" \
+      -f "${SCRIPT_DIR}/report.jq" | jq -r '.body' >>"${body_file}"
+    jq -n --rawfile body "${body_file}" '{body: $body}' |
+      gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${pr_number}/comments" --input - >/dev/null
+    return
+  fi
   echo "${COMMENT_MARKER}" >"${body_file}"
   if jq -n -e --slurpfile results "${data_dir}/results.json" --slurpfile failedJobs "${data_dir}/failed-jobs.json" \
     --slurpfile changes "${data_dir}/changes.json" \

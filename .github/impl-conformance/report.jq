@@ -6,8 +6,9 @@
 # With $mode "summary", . is one target's result and the output is its job
 # summary. With $mode "comment", the inputs are $results (all targets),
 # $changes (changes.json, or empty if unavailable), $failedJobs, $sha, $runUrl,
-# and $reference (the reference implementation), and the output is an object
-# with the comment body, check title, and check conclusion.
+# $reference (the reference implementation), and, for a run started by a
+# /rerun comment, $rerun (see rerun_command in report.sh), and the output is an
+# object with the comment body, check title, and check conclusion.
 
 def code:
   tostring | gsub("[\\p{Cc}\\p{Cf}]"; "") | .[0:120]
@@ -138,8 +139,21 @@ def details($implementations; $key; $column; $title; $note; $maxRows):
       ""
     end;
 
+# Describes what a /rerun comment ran. Its fields come from the comment, but
+# are checked before they go into links anyway.
+def rerun_text:
+  (.implementation | tostring) as $name
+  | (.pullRequest | count) as $number
+  | (.commentUrl | tostring | if test("^https://github\\.com/[A-Za-z0-9_./#-]+$") then . else "" end) as $url
+  | if ($name | test("^connect-[a-z0-9]+$") | not) then "Rerun of an invalid `/rerun` command"
+    elif $number > 0 then "Rerun of \($name | code) at [connectrpc/\($name)#\($number)](https://github.com/connectrpc/\($name)/pull/\($number))"
+    else "Rerun of \($name | code) at its default branch"
+    end
+  + (if $url != "" then ", requested in [this comment](\($url))." else "." end);
+
 def comment:
   $ARGS.named as $args
+  | ($args.rerun // null) as $rerun
   | $args.results as $results
   | ($args.changes[0] // null) as $changes
   | $args.failedJobs as $failedJobs
@@ -163,6 +177,7 @@ def comment:
   | [
       "### Implementation conformance",
       "",
+      (if $rerun != null then ($rerun | rerun_text), "" else empty end),
       "**\($headline)**",
       "",
       (if $referenceSkipped

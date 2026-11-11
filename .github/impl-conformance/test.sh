@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 # Tests how new-failures.jq classifies one test's outcomes, given one outcome
-# per runner call, in order, in each of the head, base, and retry runs.
+# per runner call, in order, in each of the head, base, and retry runs, and how
+# rerun.jq parses /rerun comments.
 
 set -euo pipefail
 
@@ -69,16 +70,49 @@ classify() {
     ] | if length == 0 then "none" else join(",") end'
 }
 
-failures=0
-for test_case in "${CASES[@]}"; do
-  IFS="|" read -r name head base head_retry base_retry expected <<<"${test_case}"
-  actual="$(classify "${head}" "${base}" "${head_retry}" "${base_retry}")"
+# comment body|expected parse_command output, compact
+COMMAND_CASES=(
+  "/rerun connect-py https://github.com/connectrpc/connect-py/pull/463|{\"implementation\":\"connect-py\",\"pullRequest\":463}"
+  "/rerun connect-py https://github.com/connectrpc/connect-py/pull/463/|{\"implementation\":\"connect-py\",\"pullRequest\":463}"
+  "  /rerun   connect-py   https://github.com/connectrpc/connect-py/pull/463  \r|{\"implementation\":\"connect-py\",\"pullRequest\":463}"
+  "/rerun connect-py https://github.com/connectrpc/connect-py/pull/463\nThe timeout fix.|{\"implementation\":\"connect-py\",\"pullRequest\":463}"
+  "/rerun connect-py|{\"implementation\":\"connect-py\",\"pullRequest\":null}"
+  "/rerun|{\"error\":\"usage\"}"
+  "/rerun connect-py https://github.com/connectrpc/connect-py/pull/463 extra|{\"error\":\"usage\"}"
+  "/rerun connect-cobol|{\"error\":\"unknown-implementation\"}"
+  "/rerun connect-py https://github.com/connectrpc/connect-go/pull/463|{\"error\":\"invalid-pull-request\"}"
+  "/rerun connect-py https://github.com/example/connect-py/pull/463|{\"error\":\"invalid-pull-request\"}"
+  "/rerun connect-py https://github.com/connectrpc/connect-py/pull/463/files|{\"error\":\"invalid-pull-request\"}"
+  "/rerun connect-py https://github.com/connectrpc/connect-py/pull/1234567890|{\"error\":\"invalid-pull-request\"}"
+  "/rerunconnect-py|null"
+  "Please /rerun connect-py|null"
+  "\n/rerun connect-py|null"
+)
+
+check() {
+  local name="${1}"
+  local actual="${2}"
+  local expected="${3}"
   if [ "${actual}" != "${expected}" ]; then
     echo "FAIL: ${name}: got ${actual}, want ${expected}" >&2
     failures=$((failures + 1))
   fi
+}
+
+failures=0
+for test_case in "${CASES[@]}"; do
+  IFS="|" read -r name head base head_retry base_retry expected <<<"${test_case}"
+  check "${name}" "$(classify "${head}" "${base}" "${head_retry}" "${base_retry}")" "${expected}"
 done
+for test_case in "${COMMAND_CASES[@]}"; do
+  IFS="|" read -r body expected <<<"${test_case}"
+  check "command ${body}" \
+    "$(jq -nc -L . --arg body "$(printf '%b' "${body}")" \
+      'include "rerun"; $body | parse_command(["connect-go", "connect-py"])')" \
+    "${expected}"
+done
+total=$((${#CASES[@]} + ${#COMMAND_CASES[@]}))
 if [ "${failures}" -gt 0 ]; then
   exit 1
 fi
-echo "All ${#CASES[@]} cases passed."
+echo "All ${total} cases passed."

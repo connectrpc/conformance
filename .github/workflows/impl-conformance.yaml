@@ -13,9 +13,17 @@ name: Implementation Conformance
 # job mirrors the conformance tests in the implementation's own CI, minus
 # browser targets other than Chrome. The "impl-conformance: skip" label skips
 # every implementation, and "impl-conformance: skip <implementation>" skips
-# one. impl-conformance-report.yaml posts the results. They never fail the
-# pull request; a job fails only if the scripts' tests fail or an
-# implementation didn't call the runner.
+# one. A maintainer's "/rerun <implementation> [<pull request URL>]" comment on
+# the pull request runs only that implementation, at the head of the given pull
+# request in its repository or at its default branch, regardless of labels (see
+# rerun.jq). impl-conformance-report.yaml posts the results. They never fail
+# the pull request; a job fails only if the scripts' tests fail, a /rerun
+# command is invalid, or an implementation didn't call the runner.
+#
+# Comment runs use this file from the default branch and check out the pull
+# request explicitly. Their GITHUB_TOKEN is read-only, and GitHub gives runs
+# for untrusted triggers like issue_comment a read-only cache, so pull request
+# code gets no more access than in pull_request runs.
 on:
   pull_request:
     # Label changes rerun the workflow, because a rerun keeps the labels of the
@@ -27,13 +35,22 @@ on:
       - 'proto/**'
       - '.github/impl-conformance/**'
       - '.github/workflows/impl-conformance.yaml'
+  issue_comment:
+    types: [created]
+# impl-conformance-report.yaml reads the pull request and comment of comment
+# runs from this, since it's set from the event, not by pull request code.
+run-name: >-
+  ${{ github.event_name == 'issue_comment' && startsWith(github.event.comment.body, '/rerun')
+  && format('Implementation conformance for #{0} (/rerun comment {1})', github.event.issue.number, github.event.comment.id)
+  || github.event.pull_request.title || github.workflow }}
 permissions:
   contents: read
 # A new push or skip label makes the results of a run in progress irrelevant.
-# Other labels don't, so their events get a group of their own.
+# Other labels and comments don't, so their events get a group of their own.
 concurrency:
   group: >-
-    impl-conformance-${{ github.event.pull_request.number }}${{
+    impl-conformance-${{ github.event_name == 'issue_comment'
+    && format('comment-{0}', github.run_id) || github.event.pull_request.number }}${{
     (github.event.action == 'labeled' || github.event.action == 'unlabeled')
     && !startsWith(github.event.label.name, 'impl-conformance: skip')
     && format('-{0}', github.run_id) || '' }}
@@ -44,32 +61,62 @@ defaults:
     shell: bash
 jobs:
   prepare:
-    # Other labels don't change the results, so nothing runs for them.
+    # Other labels don't change the results, so nothing runs for them. Every
+    # comment starts a run, but only maintainers' /rerun comments on pull
+    # requests run anything.
     if: >-
-      (github.event.action != 'labeled' && github.event.action != 'unlabeled')
-      || startsWith(github.event.label.name, 'impl-conformance: skip')
+      (github.event_name == 'pull_request'
+      && ((github.event.action != 'labeled' && github.event.action != 'unlabeled')
+      || startsWith(github.event.label.name, 'impl-conformance: skip')))
+      || (github.event_name == 'issue_comment'
+      && github.event.issue.pull_request
+      && startsWith(github.event.comment.body, '/rerun')
+      && contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
     runs-on: ubuntu-latest
     timeout-minutes: 15
     outputs:
       run-tests: ${{ steps.changes.outputs.run-tests }}
       skipped: ${{ steps.changes.outputs.skipped }}
+      # The merge commit that every job tests.
+      sha: ${{ steps.sha.outputs.sha }}
+      # The commit to check out for the implementation a /rerun names, or empty
+      # for its default branch.
+      implementation-ref: ${{ steps.command.outputs.ref }}
     steps:
       - uses: actions/checkout@v7
         with:
+          # Comment runs start from the default branch.
+          ref: ${{ github.event_name == 'issue_comment' && format('refs/pull/{0}/merge', github.event.issue.number) || '' }}
           # The merge commit and its first parent, the base branch.
           fetch-depth: 2
+      - name: Find merge commit
+        id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "${GITHUB_OUTPUT}"
       # Uploaded first so impl-conformance-report.yaml can find the pull
       # request even if a later step fails.
       - name: Save pull request number
         env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
         run: |
           mkdir -p "${RUNNER_TEMP}/pr"
           echo "${PR_NUMBER}" > "${RUNNER_TEMP}/pr/pr-number"
+          # The merge commit's second parent is the pull request's head.
+          git rev-parse HEAD^2 > "${RUNNER_TEMP}/pr/head-sha"
       - uses: actions/upload-artifact@v7
         with:
           name: impl-conformance-pr
           path: ${{ runner.temp }}/pr
+      - name: Parse /rerun command
+        id: command
+        if: github.event_name == 'issue_comment'
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          GH_TOKEN: ${{ github.token }}
+          # Keep in sync with IMPLEMENTATIONS below.
+          IMPLEMENTATIONS: connect-go connect-es connect-kotlin connect-swift connect-dart connect-py connect-rust
+        run: |
+          read -r -a implementations <<< "${IMPLEMENTATIONS}"
+          .github/impl-conformance/impl-conformance.sh command "${COMMENT_BODY}" "${implementations[@]}" >> "${GITHUB_OUTPUT}"
       - name: Test the scripts
         run: .github/impl-conformance/test.sh
       - uses: actions/setup-go@v7
@@ -82,16 +129,25 @@ jobs:
           # One for each implementation job below.
           IMPLEMENTATIONS: connect-go connect-es connect-kotlin connect-swift connect-dart connect-py connect-rust
           LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          RERUN_IMPLEMENTATION: ${{ steps.command.outputs.implementation }}
         run: |
           mkdir -p .tmp/conformance
           .github/impl-conformance/impl-conformance.sh changes HEAD^1 .tmp/conformance/changes.json
           read -r -a implementations <<< "${IMPLEMENTATIONS}"
-          skipped="$(.github/impl-conformance/impl-conformance.sh skipped "${LABELS}" "${implementations[@]}")"
+          if [ -n "${RERUN_IMPLEMENTATION}" ]; then
+            # A /rerun runs only the implementation it names, regardless of
+            # labels, so the report lists none as skipped by label.
+            skipped="$(jq -cn --arg name "${RERUN_IMPLEMENTATION}" '$ARGS.positional - [$name]' --args "${implementations[@]}")"
+            label_skipped="[]"
+          else
+            skipped="$(.github/impl-conformance/impl-conformance.sh skipped "${LABELS}" "${implementations[@]}")"
+            label_skipped="${skipped}"
+          fi
           echo "skipped=${skipped}" >> "${GITHUB_OUTPUT}"
-          jq --argjson skipped "${skipped}" '.skipped = $skipped' .tmp/conformance/changes.json > .tmp/changes.json
+          jq --argjson skipped "${label_skipped}" '.skipped = $skipped' .tmp/conformance/changes.json > .tmp/changes.json
           mv .tmp/changes.json .tmp/conformance/changes.json
-          if jq -e --argjson count "${#implementations[@]}" \
-            '(.scope == "all" or (.suites | length) > 0) and (.skipped | length) < $count' \
+          if jq -e --argjson count "${#implementations[@]}" --argjson skipped "${skipped}" \
+            '(.scope == "all" or (.suites | length) > 0) and ($skipped | length) < $count' \
             .tmp/conformance/changes.json > /dev/null; then
             echo "run-tests=true" >> "${GITHUB_OUTPUT}"
           fi
@@ -143,10 +199,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           fetch-depth: 2
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-go
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: .tmp/connect-go
       - uses: actions/setup-go@v7
         with:
@@ -229,10 +287,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           sparse-checkout: .github
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-es
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-es
       - uses: actions/setup-node@v7
         with:
@@ -281,10 +341,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           sparse-checkout: .github
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-kotlin
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-kotlin
       - uses: actions/setup-java@v6
         with:
@@ -332,10 +394,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           sparse-checkout: .github
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-swift
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-swift
       # impl-conformance.sh needs bash 4 or later, but macOS only has 3.2.
       # Homebrew's bin directory comes before /bin on the runner's PATH.
@@ -398,10 +462,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           sparse-checkout: .github
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-dart
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-dart
       - uses: dart-lang/setup-dart@v1
         with:
@@ -450,10 +516,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           sparse-checkout: .github
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-py
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-py
       - uses: astral-sh/setup-uv@v10.3.3
         with:
@@ -509,10 +577,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ needs.prepare.outputs.sha }}
           sparse-checkout: .github
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-rust
+          ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-rust
       - name: Install Rust
         run: rustup toolchain install stable --profile minimal --no-self-update && rustup default stable
