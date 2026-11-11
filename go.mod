@@ -28,6 +28,7 @@ require (
 	cel.dev/expr v0.25.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
+	github.com/coder/websocket v1.8.15 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/google/cel-go v0.29.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
@@ -40,3 +41,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
+
+replace connectrpc.com/connect/v2 => github.com/jonbodner-buf/connect-go/v2 v2.0.0-20261110172239-b26429d5fd2f

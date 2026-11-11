@@ -206,6 +206,11 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 		clientOptions = append(clientOptions,
 			connecthttp.WithCodecs(internal.NewStrictJSONCodec()),
 		)
+		if req.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET {
+			// The WebSocket transport defaults its send codec to proto, which
+			// WithCodecs above no longer registers.
+			clientOptions = append(clientOptions, connecthttp.WithSendCodec("json"))
+		}
 	case conformancev1.Codec_CODEC_TEXT: //nolint:staticcheck // staticcheck complains because this const is deprecated
 		return nil, fmt.Errorf("%s is deprecated and should not be used", req.Codec)
 	default:
