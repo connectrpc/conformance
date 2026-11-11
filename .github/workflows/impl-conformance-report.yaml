@@ -16,11 +16,13 @@ permissions:
   pull-requests: write
 jobs:
   report:
-    # A cancelled run was superseded by a newer commit, which gets its own report.
-    # Runs for comments that aren't /rerun commands skip every job.
+    # A cancelled pull_request run was superseded by a newer commit, which gets
+    # its own report. Nothing supersedes a comment run, so its comment says it
+    # was cancelled. Runs for comments that aren't /rerun commands skip every
+    # job.
     if: >-
-      (github.event.workflow_run.event == 'pull_request' || github.event.workflow_run.event == 'issue_comment')
-      && github.event.workflow_run.conclusion != 'cancelled'
+      ((github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled')
+      || github.event.workflow_run.event == 'issue_comment')
       && github.event.workflow_run.conclusion != 'skipped'
     # At job level, so skipped reports can't replace a pending one.
     concurrency:
@@ -38,6 +40,9 @@ jobs:
         with:
           sparse-checkout: .github
       - uses: actions/download-artifact@v8
+        # A comment run that was cancelled or failed early may have no
+        # artifacts, and report.sh still updates its comment.
+        continue-on-error: ${{ github.event.workflow_run.event == 'issue_comment' }}
         with:
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
@@ -52,4 +57,5 @@ jobs:
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           EVENT: ${{ github.event.workflow_run.event }}
           RUN_NAME: ${{ github.event.workflow_run.display_title }}
+          CONCLUSION: ${{ github.event.workflow_run.conclusion }}
         run: .github/impl-conformance/report.sh post "${RUNNER_TEMP}/artifacts"

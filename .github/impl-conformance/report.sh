@@ -20,9 +20,11 @@
 #     Creates or updates the results comment on the pull request and creates
 #     a check run on the tested commit. For a run started by a /rerun comment
 #     (EVENT is issue_comment), replaces the run's comment from started
-#     instead. Requires GH_TOKEN, GITHUB_REPOSITORY, HEAD_SHA (the tested
+#     instead, also when the run was cancelled or failed before uploading
+#     anything. Requires GH_TOKEN, GITHUB_REPOSITORY, HEAD_SHA (the tested
 #     commit, or the default branch's for a comment run), RUN_ID, RUN_URL, and,
-#     for a comment run, EVENT and RUN_NAME (the run's display title).
+#     for a comment run, EVENT, RUN_NAME (the run's display title), and
+#     CONCLUSION (the run's conclusion).
 
 set -euo pipefail
 
@@ -76,11 +78,10 @@ verified_pr_number() {
 # Prints the pull request number and comment ID of a comment run, separated by
 # a space. They come from the run's name, which impl-conformance.yaml sets from
 # the event, so pull request code can't change them. Returns 1 if the name
-# doesn't match.
+# doesn't match, as for comments that aren't /rerun commands.
 rerun_ids() {
   local pattern='^Implementation conformance for #([0-9]{1,9}) \(/rerun comment ([0-9]{1,20})\)$'
   if ! [[ "${RUN_NAME:-}" =~ ${pattern} ]]; then
-    echo "::error::Run name of comment run doesn't match." >&2
     return 1
   fi
   echo "${BASH_REMATCH[1]} ${BASH_REMATCH[2]}"
@@ -117,28 +118,38 @@ upsert_comment() {
 }
 
 # Creates the comment run's comment, or updates it if one exists, such as when
-# the run is rerun.
+# the run is rerun. With "update-only", never creates one.
 upsert_rerun_comment() {
   local pr_number="${1}"
   local body_file="${2}"
+  local mode="${3:-}"
   local comment_id
   comment_id="$(find_comment "${pr_number}" "$(rerun_marker)")"
   if [ -n "${comment_id}" ]; then
     jq -n --rawfile body "${body_file}" '{body: $body}' |
       gh api --method PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${comment_id}" --input - >/dev/null
-  else
+  elif [ "${mode}" != "update-only" ]; then
     jq -n --rawfile body "${body_file}" '{body: $body}' |
       gh api --method POST "repos/${GITHUB_REPOSITORY}/issues/${pr_number}/comments" --input - >/dev/null
   fi
+}
+
+# Writes the comment run's comment for a run that is running, was cancelled,
+# or failed before it uploaded anything.
+write_rerun_status() {
+  local status="${1}"
+  local rerun="${2}"
+  local body_file="${3}"
+  rerun_marker >"${body_file}"
+  jq -nr --arg mode status --arg status "${status}" --arg runUrl "${RUN_URL}" --argjson rerun "${rerun}" \
+    -f "${SCRIPT_DIR}/report.jq" >>"${body_file}"
 }
 
 post_started() {
   : "${GH_TOKEN:?}" "${GITHUB_REPOSITORY:?}" "${PR_NUMBER:?}" "${COMMENT_ID:?}" "${RUN_ID:?}" "${RUN_URL:?}"
   local body_file
   body_file="$(mktemp)"
-  rerun_marker >"${body_file}"
-  jq -nr --arg mode started --arg runUrl "${RUN_URL}" --argjson rerun "$(rerun_command "${PR_NUMBER}" "${COMMENT_ID}")" \
-    -f "${SCRIPT_DIR}/report.jq" >>"${body_file}"
+  write_rerun_status running "$(rerun_command "${PR_NUMBER}" "${COMMENT_ID}")" "${body_file}"
   upsert_rerun_comment "${PR_NUMBER}" "${body_file}"
 }
 
@@ -167,18 +178,31 @@ post_report() {
   local rerun="null"
   local ids
   local comment_id
+  local status=""
   local sha="${HEAD_SHA}"
 
   if [ "${EVENT:-}" = "issue_comment" ]; then
-    # Only runs for maintainers' /rerun comments get past the prepare job's
-    # condition, and it uploads this first.
-    if [ ! -f "${artifacts_dir}/impl-conformance-pr/pr-number" ]; then
+    if ! ids="$(rerun_ids)"; then
       echo "::notice::The comment wasn't a /rerun command; nothing to report." >&2
       return
     fi
-    ids="$(rerun_ids)"
     read -r pr_number comment_id <<<"${ids}"
     rerun="$(rerun_command "${pr_number}" "${comment_id}")"
+    # A cancelled run's results are incomplete, and a run without this
+    # failed before running any tests. Only the comment from started is
+    # updated, since there's none when the run didn't start, like for a
+    # /rerun from someone who can't run commands.
+    if [ "${CONCLUSION:-}" = "cancelled" ]; then
+      status="cancelled"
+    elif [ ! -f "${artifacts_dir}/impl-conformance-pr/pr-number" ]; then
+      status="failed"
+    fi
+    if [ -n "${status}" ]; then
+      body_file="$(mktemp)"
+      write_rerun_status "${status}" "${rerun}" "${body_file}"
+      upsert_rerun_comment "${pr_number}" "${body_file}" update-only
+      return
+    fi
     # The tested commit is the pull request's head when the run started. It
     # comes from the run's artifacts, so it's only used if it looks like one.
     sha="$(head -c 100 "${artifacts_dir}/impl-conformance-pr/head-sha" 2>/dev/null | tr -d '[:space:]' || true)"

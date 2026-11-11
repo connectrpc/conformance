@@ -9,8 +9,9 @@
 # $reference (the reference implementation), and, for a run started by a
 # /rerun comment, $rerun (see rerun_command in report.sh), and the output is an
 # object with the comment body, check title, and check conclusion. With $mode
-# "started", the inputs are $rerun and $runUrl, and the output is the body of
-# the comment shown while a /rerun comment's run is in progress.
+# "status", the inputs are $rerun, $runUrl, and $status (running, cancelled,
+# or failed), and the output is the body of a /rerun comment's run's comment
+# when there are no results to show.
 
 def code:
   tostring | gsub("[\\p{Cc}\\p{Cf}]"; "") | .[0:120]
@@ -153,17 +154,23 @@ def rerun_text:
     end
   + (if $url != "" then ", requested in [this comment](\($url))." else "." end);
 
-def started:
+def status:
   $ARGS.named.rerun as $rerun
+  | "[this workflow run](\($ARGS.named.runUrl))" as $run
   | [
       "### Implementation conformance",
       "",
       ($rerun | rerun_text),
       "",
-      (if $rerun.error? != null
-        then "**The command is invalid.** Use `/rerun <implementation> [<pull request URL>]`, with a pull request in the implementation's repository."
-        else "**Running in [this workflow run](\($ARGS.named.runUrl)).** The results will replace this comment when it finishes."
-        end)
+      if $ARGS.named.status == "cancelled" then
+        "**Cancelled in \($run)**, so there are no results."
+      elif $ARGS.named.status == "failed" then
+        "**Failed in \($run) before running the tests.** Its logs say why. For example, a pull request that is closed or has conflicts has no merge commit to test."
+      elif $rerun.error? != null then
+        "**The command is invalid.** Use `/rerun <implementation> [<pull request URL>]`, with a pull request in the implementation's repository."
+      else
+        "**Running in \($run).** The results will replace this comment when it finishes."
+      end
     ] | join("\n");
 
 def comment:
@@ -254,5 +261,5 @@ def comment:
     };
 
 if $ARGS.named.mode == "summary" then summary
-elif $ARGS.named.mode == "started" then started
+elif $ARGS.named.mode == "status" then status
 else comment end
