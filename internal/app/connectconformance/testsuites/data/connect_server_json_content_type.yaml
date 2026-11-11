@@ -1,0 +1,335 @@
+# A charset parameter on a JSON content type must be utf-8, and any other
+# parameter must be ignored.
+name: Connect JSON Content-Type Parameter Requests
+mode: TEST_MODE_SERVER
+relevantProtocols:
+  - PROTOCOL_CONNECT
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+relevantCodecs:
+  - CODEC_JSON
+testCases:
+  - request:
+      testName: unary/charset-utf-8
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; charset=utf-8" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+  - request:
+      testName: unary/charset-utf-8-uppercase
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; charset=UTF-8" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+  - request:
+      testName: unary/charset-utf-8-quoted
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ 'application/json; charset="utf-8"' ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+  - request:
+      testName: unary/charset-utf-8-with-unknown-parameter
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; charset=utf-8; foo=bar" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+  - request:
+      testName: unary/unknown-parameter
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; foo=bar" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+  - request:
+      testName: unary/unsupported-charset
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; charset=iso-8859-1" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+    expectedResponse:
+      httpStatusCode: 415
+      error:
+        # unknown, mapped from 415 status code
+        code: CODE_UNKNOWN
+  - request:
+      testName: unary/unknown-parameter-then-charset-utf-8
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; foo=bar; charset=utf-8" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+  - request:
+      testName: unary/unknown-parameter-then-unsupported-charset
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            responseData: "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/Unary
+        headers:
+          - name: content-type
+            value: [ "application/json; foo=bar; charset=iso-8859-1" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        unary:
+          text: '{"responseDefinition": {"responseData": "dGVzdCByZXNwb25zZQ=="}}'
+    expectedResponse:
+      httpStatusCode: 415
+      error:
+        # unknown, mapped from 415 status code
+        code: CODE_UNKNOWN
+  - request:
+      testName: server-stream/charset-utf-8
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; charset=utf-8" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+  - request:
+      testName: server-stream/charset-utf-8-uppercase
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; charset=UTF-8" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+  - request:
+      testName: server-stream/charset-utf-8-quoted
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ 'application/connect+json; charset="utf-8"' ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+  - request:
+      testName: server-stream/charset-utf-8-with-unknown-parameter
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; charset=utf-8; foo=bar" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+  - request:
+      testName: server-stream/unknown-parameter
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; foo=bar" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+  - request:
+      testName: server-stream/unsupported-charset
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; charset=iso-8859-1" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+    expectedResponse:
+      httpStatusCode: 415
+      error:
+        # unknown, mapped from 415 status code
+        code: CODE_UNKNOWN
+  - request:
+      testName: server-stream/unknown-parameter-then-charset-utf-8
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; foo=bar; charset=utf-8" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+  - request:
+      testName: server-stream/unknown-parameter-then-unsupported-charset
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+      rawRequest:
+        verb: POST
+        uri: /connectrpc.conformance.v1.ConformanceService/ServerStream
+        headers:
+          - name: content-type
+            value: [ "application/connect+json; foo=bar; charset=iso-8859-1" ]
+          - name: connect-protocol-version
+            value: [ "1" ]
+        stream:
+          items:
+            - flags: 0
+              payload:
+                text: '{"responseDefinition": {"responseData": ["dGVzdCByZXNwb25zZQ=="]}}'
+    expectedResponse:
+      httpStatusCode: 415
+      error:
+        # unknown, mapped from 415 status code
+        code: CODE_UNKNOWN

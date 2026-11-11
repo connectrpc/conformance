@@ -6,8 +6,12 @@
 # With $mode "summary", . is one target's result and the output is its job
 # summary. With $mode "comment", the inputs are $results (all targets),
 # $changes (changes.json, or empty if unavailable), $failedJobs, $sha, $runUrl,
-# and $reference (the reference implementation), and the output is an object
-# with the comment body, check title, and check conclusion.
+# $reference (the reference implementation), and, for a run started by a
+# /rerun comment, $rerun (see rerun_command in report.sh), and the output is an
+# object with the comment body, check title, and check conclusion. With $mode
+# "status", the inputs are $rerun, $runUrl, and $status (running, cancelled,
+# or failed), and the output is the body of a /rerun comment's run's comment
+# when there are no results to show.
 
 def code:
   tostring | gsub("[\\p{Cc}\\p{Cf}]"; "") | .[0:120]
@@ -119,9 +123,9 @@ def implementations($results):
     toRemove: distinct_cases("newPasses"; (.listed | count) > 0),
     problems: [.[] | (select(has_problem) | "\(.target | code): \(.status | status_text)\(.statusSide | side_text)"),
       (select((.notRunCount | count) > 0) | "\(.target | code): \(.notRunCount | count | plural("test case")) couldn't run")],
-    notes: ([.[] | .notes | list | .[] | note_text] | unique)
+    notes: (([.[] | .notes | list | .[] | note_text] | unique)
       + [.[] | (.retry | retry_text) as $text | "\(.target | code): \($text)"]
-      + (distinct_cases("flaky"; true) | if . > 0 then [plural("possibly flaky test case")] else [] end),
+      + (distinct_cases("flaky"; true) | if . > 0 then [plural("possibly flaky test case")] else [] end)),
     results: .
   });
 
@@ -138,8 +142,40 @@ def details($implementations; $key; $column; $title; $note; $maxRows):
       ""
     end;
 
+# Describes what a /rerun comment ran. Its fields come from the comment, but
+# are checked before they go into links anyway.
+def rerun_text:
+  (.implementation | tostring) as $name
+  | (.pullRequest | count) as $number
+  | (.commentUrl | tostring | if test("^https://github\\.com/[A-Za-z0-9_./#-]+$") then . else "" end) as $url
+  | if ($name | test("^connect-[a-z0-9]+$") | not) then "Rerun of an invalid `/rerun` command"
+    elif $number > 0 then "Rerun of \($name | code) at [connectrpc/\($name)#\($number)](https://github.com/connectrpc/\($name)/pull/\($number))"
+    else "Rerun of \($name | code) at its default branch"
+    end
+  + (if $url != "" then ", requested in [this comment](\($url))." else "." end);
+
+def status:
+  $ARGS.named.rerun as $rerun
+  | "[this workflow run](\($ARGS.named.runUrl))" as $run
+  | [
+      "### Implementation conformance",
+      "",
+      ($rerun | rerun_text),
+      "",
+      if $ARGS.named.status == "cancelled" then
+        "**Cancelled in \($run)**, so there are no results."
+      elif $ARGS.named.status == "failed" then
+        "**Failed in \($run) before running the tests.** Its logs say why. For example, a pull request that is closed or has conflicts has no merge commit to test."
+      elif $rerun.error? != null then
+        "**The command is invalid.** Use `/rerun <implementation> [<pull request URL>]`, with a pull request in the implementation's repository."
+      else
+        "**Running in \($run).** The results will replace this comment when it finishes."
+      end
+    ] | join("\n");
+
 def comment:
   $ARGS.named as $args
+  | ($args.rerun // null) as $rerun
   | $args.results as $results
   | ($args.changes[0] // null) as $changes
   | $args.failedJobs as $failedJobs
@@ -163,6 +199,7 @@ def comment:
   | [
       "### Implementation conformance",
       "",
+      (if $rerun != null then ($rerun | rerun_text), "" else empty end),
       "**\($headline)**",
       "",
       (if $referenceSkipped
@@ -223,4 +260,6 @@ def comment:
         else $header + ["The details are too long for a comment. The job summaries in the workflow run list them."] | join("\n") end)
     };
 
-if $ARGS.named.mode == "summary" then summary else comment end
+if $ARGS.named.mode == "summary" then summary
+elif $ARGS.named.mode == "status" then status
+else comment end

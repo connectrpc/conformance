@@ -1,3 +1,11 @@
+# connect-go rejects content types with unknown parameters, or with a charset
+# on proto, with a 415 instead of ignoring the parameters.
+Connect JSON Content-Type Parameter Requests/**/unknown-parameter
+Connect JSON Content-Type Parameter Requests/**/charset-utf-8-with-unknown-parameter
+Connect JSON Content-Type Parameter Requests/**/unknown-parameter-then-charset-utf-8
+Connect Proto Content-Type Parameter Requests/**/unknown-parameter
+Connect Proto Content-Type Parameter Requests/**/charset-ignored
+
 # connect-go accepts a timeout with a leading "+".
 Connect Timeout Format Requests/**/leading-plus
 Connect GET Timeout Format Requests/**/leading-plus
