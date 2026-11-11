@@ -100,7 +100,9 @@ func doUnary[ReqT, RespT any, Req hasUnaryResponseDefinition[ReqT]](
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(msg.GetResponseDefinition().ResponseDelayMs) * time.Millisecond
-		time.Sleep(responseDelay)
+		if err := internal.SleepContext(ctx, responseDelay); err != nil {
+			return nil, err
+		}
 	}
 
 	return makeResp(payload), nil
@@ -155,7 +157,9 @@ func (s *conformanceServer) ClientStream(
 
 		// If a response delay was specified, sleep for that amount of ms before responding
 		responseDelay := time.Duration(responseDefinition.ResponseDelayMs) * time.Millisecond
-		time.Sleep(responseDelay)
+		if err := internal.SleepContext(ctx, responseDelay); err != nil {
+			return nil, err
+		}
 	}
 
 	return &conformancev1.ClientStreamResponse{Payload: payload}, nil
@@ -205,7 +209,9 @@ func (s *conformanceServer) ServerStream(
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			time.Sleep(responseDelay)
+			if err := internal.SleepContext(ctx, responseDelay); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
@@ -289,7 +295,7 @@ func (s *conformanceServer) BidiStream(
 		}
 
 		// If fullDuplex, then send one of the desired responses each time we get a message on the stream
-		if fullDuplex {
+		if fullDuplex { //nolint:nestif
 			if respNum >= len(responseDefinition.GetResponseData()) {
 				// If there are no responses to send, then break the receive loop
 				// and throw the error specified
@@ -317,7 +323,9 @@ func (s *conformanceServer) BidiStream(
 			resp.Payload.RequestInfo = requestInfo
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			time.Sleep(responseDelay)
+			if err := internal.SleepContext(ctx, responseDelay); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())
@@ -356,7 +364,9 @@ func (s *conformanceServer) BidiStream(
 			}
 
 			// If a response delay was specified, sleep for that amount of ms before responding
-			time.Sleep(responseDelay)
+			if err := internal.SleepContext(ctx, responseDelay); err != nil {
+				return err
+			}
 
 			if err := stream.Send(resp); err != nil {
 				return connect.NewError(connect.CodeInternal, fmt.Errorf("error sending on stream: %w", err).Error())

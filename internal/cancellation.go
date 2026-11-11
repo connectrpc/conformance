@@ -15,9 +15,13 @@
 package internal
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"time"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
+	"connectrpc.com/connect"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -54,4 +58,18 @@ func GetCancelTiming(cancel *conformancev1.ClientCompatRequest_Cancel) (*CancelT
 		AfterCloseSendMs:  afterCloseSendMs,
 		AfterNumResponses: afterNumResponses,
 	}, nil
+}
+
+// SleepContext sleeps for the given duration or until the context is done, whichever comes first.
+func SleepContext(ctx context.Context, dur time.Duration) error {
+	select {
+	case <-ctx.Done():
+		err := ctx.Err()
+		if errors.Is(err, context.DeadlineExceeded) {
+			return connect.NewError(connect.CodeDeadlineExceeded, err)
+		}
+		return connect.NewError(connect.CodeCanceled, err)
+	case <-time.After(dur):
+		return nil
+	}
 }

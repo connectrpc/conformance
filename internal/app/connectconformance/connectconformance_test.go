@@ -16,6 +16,7 @@ package connectconformance
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"connectrpc.com/conformance/internal/app/connectconformance/testsuites"
@@ -103,13 +104,33 @@ func TestRun(t *testing.T) {
 	// 194 test cases as of this writing, but we will likely add more
 	require.GreaterOrEqual(t, expectedNumCases, 194)
 
+	// The base permutations run the reference client against the reference
+	// server. Neither enforces deadlines in reference mode, since the reference
+	// impl is never the implementation under test, so cases that require the
+	// implementation under test to enforce a deadline cannot pass there. The
+	// grpc-go variants (marked in their names) still run them.
+	var skipNames []string
+	for _, testCase := range allPermutations {
+		name := testCase.Request.TestName
+		if testCase.Request.TimeoutMs != nil &&
+			testCase.ExpectedResponse.GetError().GetCode() == conformancev1.Code_CODE_DEADLINE_EXCEEDED &&
+			!strings.Contains(name, grpcImplMarker) &&
+			!strings.Contains(name, grpcClientImplMarker) &&
+			!strings.Contains(name, grpcServerImplMarker) {
+			skipNames = append(skipNames, name)
+		}
+	}
+	require.NotEmpty(t, skipNames)
+	skip := parsePatterns(skipNames)
+	expectedNumCases -= len(skipNames)
+
 	logger := &testPrinter{t}
 	results, err := run(
 		configCases,
 		&testTrie{},
 		&testTrie{},
 		nil,
-		nil,
+		skip,
 		allSuites,
 		logger,
 		logger,
