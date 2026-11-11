@@ -120,9 +120,9 @@ def implementations($results):
     toRemove: distinct_cases("newPasses"; (.listed | count) > 0),
     problems: [.[] | (select(has_problem) | "\(.target | code): \(.status | status_text)\(.statusSide | side_text)"),
       (select((.notRunCount | count) > 0) | "\(.target | code): \(.notRunCount | count | plural("test case")) couldn't run")],
-    notes: ([.[] | .notes | list | .[] | note_text] | unique)
+    notes: (([.[] | .notes | list | .[] | note_text] | unique)
       + [.[] | (.retry | retry_text) as $text | "\(.target | code): \($text)"]
-      + (distinct_cases("flaky"; true) | if . > 0 then [plural("possibly flaky test case")] else [] end),
+      + (distinct_cases("flaky"; true) | if . > 0 then [plural("possibly flaky test case")] else [] end)),
     results: .
   });
 
