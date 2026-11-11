@@ -139,7 +139,8 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §7.3.1: a receiver decodes -bin values, and accepts unpadded base64.
+  # §7.3.1: a receiver validates that a -bin value is base64, accepting the
+  # unpadded form.
   - request:
       testName: metadata/binary-unpadded
       streamType: STREAM_TYPE_UNARY
@@ -157,7 +158,7 @@ testCases:
         - requestInfo:
             requestHeaders:
               - name: x-test-bin
-                value: [ "hello" ]
+                value: [ "aGVsbG8" ]
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
@@ -179,7 +180,7 @@ testCases:
         - requestInfo:
             requestHeaders:
               - name: x-test-bin
-                value: [ "hello" ]
+                value: [ "aGVsbG8=" ]
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
