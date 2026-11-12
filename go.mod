@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	buf.build/go/protoyaml v0.7.0
-	connectrpc.com/connect/v2 v2.0.2
+	connectrpc.com/connect/v2 v2.0.3-0.20261112084135-7e2f6f5ea54d
 	github.com/andybalholm/brotli v1.2.7
 	github.com/golang/snappy v1.0.0
 	github.com/google/go-cmp v0.7.0
@@ -41,5 +41,3 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
-
-replace connectrpc.com/connect/v2 => github.com/jonbodner-buf/connect-go/v2 v2.0.0-20261112084135-7e2f6f5ea54d
