@@ -8,8 +8,9 @@
 #
 # Where a test sets expectedClientCloseCodes, the reference server sends no
 # Close frame of its own after the messages. It waits for the client to close
-# the connection and checks the code: 3102 for a protocol error (§5) and 3103
-# for a body in the wrong frame type (§6.1, §13).
+# the connection and checks the code. 3102 is the only error code a client may
+# send (§13), so the reference server also requires a 3102 Close frame to carry
+# a reason.
 name: WebSocket Client Unexpected Responses
 mode: TEST_MODE_CLIENT
 relevantProtocols:
@@ -151,8 +152,6 @@ testCases:
     otherAllowedErrorCodes: [ CODE_UNKNOWN ]
 
   # §6.1: an empty JSON message is {}, so a text frame with only B is a protocol error.
-  # The specification does not say whether this closes as a generic protocol error
-  # (3102) or as a body in the wrong frame type (3103), so both are accepted.
   - request:
       testName: framing/empty-json-body
       streamType: STREAM_TYPE_UNARY
@@ -164,14 +163,51 @@ testCases:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B" }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
-              expectedClientCloseCodes: [ 3102, 3103 ]
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
+
+  # §6.1, §7.3: M is always JSON, so always text. A binary frame says its payload
+  # is Protobuf, so an M in one is a protocol error even if its payload parses.
+  - request:
+      testName: framing/metadata-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
+
+  # §6.1, §9: S is always JSON, so always text.
+  - request:
+      testName: framing/end-stream-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
         code: CODE_INTERNAL
     otherAllowedErrorCodes: [ CODE_UNKNOWN ]
 
   # §6.1, §13: a body in a frame type that does not match the negotiated codec is
-  # rejected, with the more specific close code 3103.
+  # rejected. A client has no code more specific than 3102 for it.
   - request:
       testName: framing/body-in-binary-frame
       streamType: STREAM_TYPE_UNARY
@@ -183,14 +219,14 @@ testCases:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse" } } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
-              expectedClientCloseCodes: [ 3103 ]
+              expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
         code: CODE_INTERNAL
     otherAllowedErrorCodes: [ CODE_UNKNOWN ]
 
   # §6.1: a non-browser client treats invalid UTF-8 in a text message as a
-  # protocol error (3102). A browser closes with 1002 itself.
+  # protocol error (3102). A browser closes with 1007 itself, or with 1002.
   - request:
       testName: framing/invalid-utf8
       streamType: STREAM_TYPE_UNARY
@@ -202,7 +238,7 @@ testCases:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { binary: "//4=" } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
-              expectedClientCloseCodes: [ 3102, 1002 ]
+              expectedClientCloseCodes: [ 3102, 1007, 1002 ]
     expectedResponse:
       error:
         code: CODE_INTERNAL

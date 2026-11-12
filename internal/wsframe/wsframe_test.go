@@ -59,8 +59,8 @@ func TestCloseWatcher(t *testing.T) {
 		var stream bytes.Buffer
 		stream.Write(AppendFrame(nil, OpText, []byte("B{}"), masked))
 		stream.Write(AppendFrame(nil, OpBinary, make([]byte, 70000), masked))
-		stream.Write(CloseFrame(3102, masked))
-		stream.Write(CloseFrame(1000, masked))
+		stream.Write(CloseFrame(3102, "bad marker", masked))
+		stream.Write(CloseFrame(1000, "", masked))
 
 		watcher := NewCloseWatcher()
 		// One byte at a time, as the worst case of how reads may split frames.
@@ -75,6 +75,7 @@ func TestCloseWatcher(t *testing.T) {
 		code, ok := watcher.Code()
 		require.True(t, ok)
 		require.Equal(t, 3102, code)
+		require.Equal(t, "bad marker", watcher.Reason())
 		select {
 		case <-watcher.Seen():
 		default:
@@ -83,11 +84,19 @@ func TestCloseWatcher(t *testing.T) {
 		watcher.Observe(stream.Bytes())
 		code, _ = watcher.Code()
 		require.Equal(t, 3102, code, "first Close frame wins")
+		require.Equal(t, "bad marker", watcher.Reason(), "first Close frame wins")
 	}
 
 	watcher := NewCloseWatcher()
-	watcher.Observe(AppendFrame(nil, OpClose, nil, false))
+	watcher.Observe(CloseFrame(1000, "", true))
 	code, ok := watcher.Code()
+	require.True(t, ok)
+	require.Equal(t, 1000, code)
+	require.Empty(t, watcher.Reason())
+
+	watcher = NewCloseWatcher()
+	watcher.Observe(AppendFrame(nil, OpClose, nil, false))
+	code, ok = watcher.Code()
 	require.True(t, ok)
 	require.Equal(t, CloseNoStatus, code)
 }

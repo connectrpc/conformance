@@ -42,4 +42,4 @@ require (
 	nhooyr.io/websocket v1.8.6 // indirect
 )
 
-replace connectrpc.com/connect/v2 => github.com/jonbodner-buf/connect-go/v2 v2.0.0-20261111130102-6a29e774f3c6
+replace connectrpc.com/connect/v2 => github.com/jonbodner-buf/connect-go/v2 v2.0.0-20261111162521-4b168bab3797

@@ -31,11 +31,8 @@ import (
 const (
 	// wsCloseWait bounds how long the client waits for the server's Close
 	// frame once the RPC is over, so that its code can be reported.
-	wsCloseWait = 2 * time.Second
-	// wsCloseCompression is the client's close code for a server that
-	// negotiated compression with a shared context.
-	wsCloseCompression = 3110
-	wsTimeoutParam     = "connect-timeout-ms"
+	wsCloseWait    = 2 * time.Second
+	wsTimeoutParam = "connect-timeout-ms"
 )
 
 // webSocketWire is the round-tripper for one RPC that connect-go carries over
@@ -84,7 +81,9 @@ func (w *webSocketWire) RoundTrip(req *http.Request) (*http.Response, error) {
 		return resp, nil
 	}
 	if extension, ok := sharedCompressionContext(resp.Header); ok {
-		_, _ = rwc.Write(wsframe.CloseFrame(wsCloseCompression, true))
+		// §10, §13: a fixed reason, because a close reason is at most 123 bytes.
+		reason := "permessage-deflate requires no_context_takeover in both directions"
+		_, _ = rwc.Write(wsframe.CloseFrame(wsframe.CloseClientError, reason, true))
 		_ = rwc.Close()
 		return nil, fmt.Errorf("server negotiated %q without no_context_takeover in both directions", extension)
 	}

@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -136,21 +137,35 @@ func writeRawWebSocketResponse(ctx context.Context) {
 		if code == 0 {
 			code = wsCloseNormal
 		}
-		_ = conn.writeRaw(wsframe.CloseFrame(code, false))
+		_ = conn.writeRaw(wsframe.CloseFrame(code, "", false))
 	}
 	go func() {
-		code, ok := conn.awaitClientClose()
+		code, reason, ok := conn.awaitClientClose()
 		_ = conn.Conn.Close()
 		if len(expected) == 0 || feedback == nil {
 			return
 		}
-		switch {
-		case !ok:
+		if !ok {
 			feedback.Printf("client did not close the connection within %v", wsClientCloseTimeout)
-		case !slices.Contains(expected, uint32(code)):
-			feedback.Printf("client closed the connection with code %d; expected one of %v", code, expected)
+			return
+		}
+		if problem := checkClientClose(expected, code, reason); problem != "" {
+			feedback.Printf("%s", problem)
 		}
 	}()
+}
+
+// checkClientClose describes how the client's Close frame falls short of
+// expected, or returns "" if it does not.
+func checkClientClose(expected []uint32, code int, reason string) string {
+	if !slices.Contains(expected, uint32(code)) {
+		return fmt.Sprintf("client closed the connection with code %d; expected one of %v", code, expected)
+	}
+	// §13: the code alone cannot tell a server what went wrong.
+	if code == wsframe.CloseClientError && reason == "" {
+		return fmt.Sprintf("client closed the connection with code %d but no reason", code)
+	}
+	return ""
 }
 
 // wsServerConn is the connection under connect-go's WebSocket handler. It
@@ -209,26 +224,26 @@ func (c *wsServerConn) writeRaw(data []byte) error {
 }
 
 // awaitClientClose reads until the client's Close frame arrives, and returns
-// its code. A connection that ends without one reports 1006. It reports false
-// if the client neither closed nor ended the connection in time.
-func (c *wsServerConn) awaitClientClose() (int, bool) {
+// its code and reason. A connection that ends without one reports 1006. It
+// reports false if the client neither closed nor ended the connection in time.
+func (c *wsServerConn) awaitClientClose() (int, string, bool) {
 	_ = c.SetReadDeadline(time.Now().Add(wsClientCloseTimeout))
 	buf := make([]byte, 512)
 	for {
 		select {
 		case <-c.watcher.Seen():
 			code, _ := c.watcher.Code()
-			return code, true
+			return code, c.watcher.Reason(), true
 		default:
 		}
 		if _, err := c.Read(buf); err != nil {
 			if code, ok := c.watcher.Code(); ok {
-				return code, true
+				return code, c.watcher.Reason(), true
 			}
 			if netErr, ok := errors.AsType[net.Error](err); ok && netErr.Timeout() {
-				return 0, false
+				return 0, "", false
 			}
-			return wsframe.CloseAbnormal, true
+			return wsframe.CloseAbnormal, "", true
 		}
 	}
 }

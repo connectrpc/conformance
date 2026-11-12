@@ -43,7 +43,14 @@ const (
 	// CloseAbnormal is reported for a connection that ended without a Close
 	// frame. A peer never sends it.
 	CloseAbnormal = 1006
+	// CloseClientError is the only error code a Connect-over-WebSocket client
+	// may send (§13). The code says nothing of the cause, so it needs a reason.
+	CloseClientError = 3102
 )
+
+// maxClosePayload is the most a Close frame carries: RFC 6455 limits control
+// frames to 125 bytes, two of them the code.
+const maxClosePayload = 125
 
 // AppendFrame appends a single final frame to dst. A client masks its frames
 // and a server does not.
@@ -75,9 +82,10 @@ func AppendFrame(dst []byte, opcode byte, payload []byte, masked bool) []byte {
 	return dst
 }
 
-// CloseFrame returns a Close frame that carries code.
-func CloseFrame(code int, masked bool) []byte {
-	return AppendFrame(nil, OpClose, binary.BigEndian.AppendUint16(nil, uint16(code)), masked)
+// CloseFrame returns a Close frame that carries code and reason.
+func CloseFrame(code int, reason string, masked bool) []byte {
+	payload := binary.BigEndian.AppendUint16(nil, uint16(code))
+	return AppendFrame(nil, OpClose, append(payload, reason...), masked)
 }
 
 // Messages returns the frames for the messages of a raw request or response
@@ -107,7 +115,8 @@ func Messages(messages []*conformancev1.WebSocketMessage, masked bool) ([]byte, 
 }
 
 // CloseWatcher follows the frames of one direction of a connection, as they
-// are read, and records the code of the first Close frame among them.
+// are read, and records the code and reason of the first Close frame among
+// them.
 type CloseWatcher struct {
 	mu        sync.Mutex
 	header    []byte
@@ -117,8 +126,9 @@ type CloseWatcher struct {
 	maskKey   [4]byte
 	remaining uint64
 	offset    uint64
-	payload   []byte // the first two payload bytes of a Close frame
+	payload   []byte // the payload of a Close frame, up to maxClosePayload
 	code      int
+	reason    string
 	closed    bool
 	seen      chan struct{}
 }
@@ -144,7 +154,7 @@ func (w *CloseWatcher) Observe(data []byte) {
 		chunk := data[:min(uint64(len(data)), w.remaining)]
 		if w.opcode == OpClose {
 			for _, b := range chunk {
-				if w.offset < 2 {
+				if w.offset < maxClosePayload {
 					w.payload = append(w.payload, b^w.maskByte(w.offset))
 				}
 				w.offset++
@@ -169,6 +179,14 @@ func (w *CloseWatcher) Code() (int, bool) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.code, w.closed
+}
+
+// Reason returns the reason of the first Close frame, or "" if it has none or
+// none has been read.
+func (w *CloseWatcher) Reason() string {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.reason
 }
 
 func (w *CloseWatcher) maskByte(offset uint64) byte {
@@ -209,8 +227,9 @@ func (w *CloseWatcher) endFrame() {
 		return
 	}
 	w.code = CloseNoStatus
-	if len(w.payload) == 2 {
+	if len(w.payload) >= 2 {
 		w.code = int(binary.BigEndian.Uint16(w.payload))
+		w.reason = string(w.payload[2:])
 	}
 	w.closed = true
 	close(w.seen)

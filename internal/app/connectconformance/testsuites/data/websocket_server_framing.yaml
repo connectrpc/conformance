@@ -178,7 +178,7 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §6.1: text messages must be valid UTF-8, and a server closes with 1002.
+  # §6.1: text messages must be valid UTF-8, and a server closes with 1007.
   - request:
       testName: framing/invalid-utf8
       streamType: STREAM_TYPE_UNARY
@@ -191,7 +191,7 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
-      websocketCloseCode: 1002
+      websocketCloseCode: 1007
       error:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
