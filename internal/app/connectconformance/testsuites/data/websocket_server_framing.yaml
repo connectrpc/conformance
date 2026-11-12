@@ -178,7 +178,8 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §6.1: text messages must be valid UTF-8, and a server closes with 1007.
+  # §6.1: text must be valid UTF-8, and a server closes with 1007. §13 allows
+  # 1007 without S, and the client then reports unavailable for want of one.
   - request:
       testName: framing/invalid-utf8
       streamType: STREAM_TYPE_UNARY
@@ -194,7 +195,7 @@ testCases:
       websocketCloseCode: 1007
       error:
         code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN, CODE_UNAVAILABLE ]
 
   # §8: a message after C is a protocol error, and it ends the stream. The
   # response delay keeps the RPC running while the server reads it.
