@@ -37,8 +37,8 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -56,7 +56,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "X", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
@@ -75,7 +75,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, contents: { binary: "gA==" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
@@ -94,7 +94,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
     expectedResponse:
       httpStatusCode: 101
@@ -111,7 +111,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
@@ -122,7 +122,7 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §6.1: an M message carries a JSON object, so a bare M is a protocol error.
+  # §6.1: an M message carries a JSON array, so a bare M is a protocol error.
   - request:
       testName: framing/bare-metadata
       streamType: STREAM_TYPE_UNARY
@@ -150,7 +150,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B" }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -168,7 +168,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -187,7 +187,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { binary: "//4=" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -206,7 +206,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"responseDefinition": {"responseData": ["AQID"], "responseDelayMs": 1000}}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
@@ -225,7 +225,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C", contents: { text: '{}' } }
     expectedResponse:
       httpStatusCode: 101
@@ -243,7 +243,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C", contents: { text: '{}' } }
     expectedResponse:

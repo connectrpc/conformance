@@ -28,7 +28,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse", "payload": { "data": "AQID" } } } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
     expectedResponse:
@@ -46,7 +46,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse", "payload": { "data": "AQID" } } } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -65,7 +65,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse", "payload": { "data": "AQID" } } } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]

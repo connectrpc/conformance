@@ -46,8 +46,8 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -65,9 +65,9 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
@@ -84,7 +84,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "X", contents: { text: '{}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
@@ -103,7 +103,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, contents: { binary: "gA==" } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
@@ -122,7 +122,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
@@ -141,7 +141,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
@@ -160,7 +160,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B" }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -179,7 +179,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -197,7 +197,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -216,7 +216,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse" } } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -235,7 +235,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { binary: "//4=" } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102, 1007, 1002 ]
@@ -253,7 +253,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S" }
               expectedClientCloseCodes: [ 3102 ]
@@ -271,7 +271,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: 'not json' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -289,7 +289,62 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a"], "X-Test": ["b"]}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a"], ["X-Test", "b"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
+
+  # §7.3.1: a client must also treat two entries with an identical key as a
+  # protocol error.
+  - request:
+      testName: metadata/duplicate-key
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a"], ["x-test", "b"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
+
+  # §7.3.1: the payload of M is a JSON array, not a JSON object.
+  - request:
+      testName: metadata/object-not-array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a"]}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
+
+  # §7.3.1: the payload of M is a JSON array; null is not one.
+  - request:
+      testName: metadata/null
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: 'null' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -307,7 +362,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test-bin": ["!!!"]}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test-bin", "!!!"]]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -326,7 +381,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
     expectedResponse:
       error:
@@ -342,7 +397,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
               omitClose: true
     expectedResponse:
@@ -359,7 +414,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
     expectedResponse:
       error:
@@ -378,7 +433,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               omitClose: true
@@ -396,7 +451,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["header"]}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "header"]]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"metadata": {"x-test": ["trailer"]}}' } }
     expectedResponse:
@@ -418,7 +473,7 @@ testCases:
           responseDefinition:
             rawWebsocketResponse:
               messages:
-                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"error": {"code": "resource_exhausted", "message": "oops"}}' } }
     expectedResponse:
       error:

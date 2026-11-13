@@ -20,7 +20,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
     expectedResponse:
@@ -39,7 +39,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B" }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
     expectedResponse:
@@ -58,7 +58,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
     expectedResponse:
@@ -76,7 +76,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
     expectedResponse:

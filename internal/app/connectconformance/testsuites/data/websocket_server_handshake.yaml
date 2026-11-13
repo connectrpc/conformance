@@ -20,7 +20,7 @@ testCases:
       rawWebsocketRequest:
         subprotocols: [ "connectrpc.2+json" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -41,7 +41,7 @@ testCases:
           - name: origin
             value: [ "https://attacker.example" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -62,7 +62,7 @@ testCases:
           - name: origin
             value: [ "null" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -81,7 +81,7 @@ testCases:
       rawWebsocketRequest:
         offerContextTakeover: true
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -104,7 +104,7 @@ testCases:
           - name: connect-timeout-ms
             value: [ "soon" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -122,7 +122,7 @@ testCases:
           - name: connect-timeout-ms
             value: [ "-1000" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -140,7 +140,7 @@ testCases:
           - name: connect-timeout-ms
             value: [ "12345678901" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: "{}" } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -161,7 +161,7 @@ testCases:
           - name: connect-timeout-ms
             value: [ "200" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - type: WEB_SOCKET_MESSAGE_TYPE_TEXT
             marker: "B"
             contents: { text: '{"responseDefinition": {"responseDelayMs": 1500}}' }
@@ -183,7 +183,7 @@ testCases:
           - name: connect-timeout-ms
             value: [ "1" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "{}" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: "[]" } }
           - type: WEB_SOCKET_MESSAGE_TYPE_TEXT
             marker: "B"
             contents: { text: '{"responseDefinition": {"responseDelayMs": 200}}' }

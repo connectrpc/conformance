@@ -12,15 +12,15 @@ relevantCodecs:
 relevantCompressions:
   - COMPRESSION_IDENTITY
 testCases:
-  # §7.3.1: values are arrays of strings.
+  # §7.3.1: the payload of M is a JSON array, not a JSON object.
   - request:
-      testName: metadata/value-not-array
+      testName: metadata/object-not-array
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": "value"}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a"]}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -30,9 +30,27 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §7.3.1: the payload of M is a JSON object.
+  # §7.3.1: the payload of M is a JSON array; null is not one.
   - request:
-      testName: metadata/not-an-object
+      testName: metadata/null
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: 'null' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+
+  # §7.3.1: each entry is an array of strings.
+  - request:
+      testName: metadata/entry-not-array
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -48,16 +66,15 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §7.3.1: keys that fold to the same lower-case form are one key, so an
-  # object with both is a protocol error.
+  # §7.3.1: each entry holds at least its key.
   - request:
-      testName: metadata/duplicate-key-differing-case
+      testName: metadata/empty-entry
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a"], "X-Test": ["b"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[[]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -67,7 +84,61 @@ testCases:
         code: CODE_INVALID_ARGUMENT
     otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
 
-  # §7.3.1: a server must also treat two identical keys as a protocol error.
+  # §7.3.1: every element of an entry is a string.
+  - request:
+      testName: metadata/value-not-string
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", 1]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+
+  # §7.3.1: values follow the key in the entry itself, not in a nested array.
+  - request:
+      testName: metadata/values-nested-in-array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", ["a"]]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+
+  # §7.3.1: keys that fold to the same lower-case form are one key, so two entries with them are a protocol error.
+  - request:
+      testName: metadata/duplicate-key-differing-case
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a"], ["X-Test", "b"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+
+  # §7.3.1: two entries with an identical key are a protocol error.
   - request:
       testName: metadata/duplicate-key
       streamType: STREAM_TYPE_UNARY
@@ -75,7 +146,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a"], "x-test": ["b"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a"], ["x-test", "b"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -93,7 +164,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x test": ["a"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x test", "a"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -111,7 +182,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a\nb"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a\nb"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -129,7 +200,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test-bin": ["!!!"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test-bin", "!!!"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -148,7 +219,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test-bin": ["aGVsbG8"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test-bin", "aGVsbG8"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -170,7 +241,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test-bin": ["aGVsbG8="]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test-bin", "aGVsbG8="]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -184,7 +255,7 @@ testCases:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
-  # §7.3.1: a receiver must accept a key whose value is an empty array.
+  # §7.3.1: a receiver must accept an entry that holds only a key.
   - request:
       testName: metadata/empty-values
       streamType: STREAM_TYPE_UNARY
@@ -192,7 +263,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-empty": []}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-empty"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -200,6 +271,28 @@ testCases:
       websocketCloseCode: 1000
       payloads:
         - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §7.3.1: one entry carries all of its key's values, in order.
+  - request:
+      testName: metadata/multiple-values
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a", "b"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requestHeaders:
+              - name: x-test
+                value: [ "a", "b" ]
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
@@ -211,7 +304,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"X-Mixed-Case": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["X-Mixed-Case", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -236,7 +329,7 @@ testCases:
           - name: x-from-handshake
             value: [ "value" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -261,7 +354,7 @@ testCases:
           - name: x-test
             value: [ "from-handshake" ]
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["from-metadata"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "from-metadata"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -284,7 +377,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"cookie": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["cookie", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -302,7 +395,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"host": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["host", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -320,7 +413,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"sec-websocket-protocol": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["sec-websocket-protocol", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -338,7 +431,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"proxy-authorization": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["proxy-authorization", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -356,7 +449,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-http-method-override": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-http-method-override", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -374,7 +467,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"forwarded": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["forwarded", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -392,7 +485,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-forwarded-for": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-forwarded-for", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -410,7 +503,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-real-ip": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-real-ip", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -428,7 +521,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"connect-protocol-version": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["connect-protocol-version", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -446,7 +539,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"connect-timeout-ms": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["connect-timeout-ms", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -464,7 +557,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"content-type": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["content-type", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -482,7 +575,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"connect-content-encoding": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["connect-content-encoding", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -499,7 +592,7 @@ testCases:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"Cookie": ["value"]}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["Cookie", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
