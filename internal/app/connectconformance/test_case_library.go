@@ -197,6 +197,17 @@ func (lib *testCaseLibrary) expandCases(cfgCase configCase, namePrefix []string,
 		if testCase.Request.StreamType != cfgCase.StreamType {
 			continue
 		}
+		// Raw requests and responses are specific to the wire format, so a raw
+		// HTTP case cannot run over WebSocket and a raw WebSocket case cannot
+		// run over HTTP.
+		isWebSocket := cfgCase.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET
+		if isWebSocket && (testCase.Request.RawRequest != nil || hasRawHTTPResponse(testCase.Request.RequestMessages)) {
+			continue
+		}
+		if !isWebSocket && (testCase.Request.RawWebsocketRequest != nil ||
+			hasRawWebSocketResponse(testCase.Request.RequestMessages)) {
+			continue
+		}
 		if testCase.Request.GetService() == "" {
 			if testCase.Request.GetMethod() == "" {
 				serviceName := conformancev1connect.ConformanceServiceName
@@ -311,7 +322,8 @@ func (lib *testCaseLibrary) filterGRPCImplTestCases(testCases []*conformancev1.T
 	for _, testCase := range testCases {
 		// Client only supports gRPC protocol. Server also supports gRPC-Web.
 		if clientIsGRPCImpl && testCase.Request.Protocol != conformancev1.Protocol_PROTOCOL_GRPC ||
-			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT {
+			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT ||
+			testCase.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET {
 			continue
 		}
 
@@ -449,6 +461,14 @@ func parseTestSuites(testFileData map[string][]byte) (map[string]*conformancev1.
 		for _, testCase := range suite.TestCases {
 			if testCase.Request.RawRequest != nil && suite.Mode != conformancev1.TestSuite_TEST_MODE_SERVER {
 				return nil, fmt.Errorf("%s: test case %q has raw request, but that is only allowed when mode is TEST_MODE_SERVER",
+					testFilePath, testCase.Request.TestName)
+			}
+			if testCase.Request.RawWebsocketRequest != nil && suite.Mode != conformancev1.TestSuite_TEST_MODE_SERVER {
+				return nil, fmt.Errorf("%s: test case %q has raw WebSocket request, but that is only allowed when mode is TEST_MODE_SERVER",
+					testFilePath, testCase.Request.TestName)
+			}
+			if testCase.Request.RawWebsocketRequest != nil && testCase.ExpectedResponse == nil {
+				return nil, fmt.Errorf("%s: test case %q has raw WebSocket request, but does not specify an explicit expected response",
 					testFilePath, testCase.Request.TestName)
 			}
 			if hasRawResponse(testCase.Request.RequestMessages) && suite.Mode != conformancev1.TestSuite_TEST_MODE_CLIENT {
@@ -594,25 +614,39 @@ func hasCodec(codecs []conformancev1.Codec, target conformancev1.Codec) bool {
 	return slices.Contains(codecs, target)
 }
 
+// hasRawResponse reports whether the first request directs the reference
+// server to send a raw response of either kind.
 func hasRawResponse(reqs []*anypb.Any) bool {
+	return hasRawHTTPResponse(reqs) || hasRawWebSocketResponse(reqs)
+}
+
+func hasRawHTTPResponse(reqs []*anypb.Any) bool {
+	httpDef, _ := rawResponseDefinitions(reqs)
+	return httpDef != nil
+}
+
+func hasRawWebSocketResponse(reqs []*anypb.Any) bool {
+	_, wsDef := rawResponseDefinitions(reqs)
+	return wsDef != nil
+}
+
+func rawResponseDefinitions(reqs []*anypb.Any) (*conformancev1.RawHTTPResponse, *conformancev1.RawWebSocketResponse) {
 	if len(reqs) == 0 {
-		return false
+		return nil, nil
 	}
 	msg, err := reqs[0].UnmarshalNew()
 	if err != nil {
-		return false // we'll deal with this error later
+		return nil, nil // we'll deal with this error later
 	}
 	switch msg := msg.(type) {
 	case unaryResponseDefiner:
-		if msg.GetResponseDefinition().GetRawResponse() != nil {
-			return true
-		}
+		def := msg.GetResponseDefinition()
+		return def.GetRawResponse(), def.GetRawWebsocketResponse()
 	case streamResponseDefiner:
-		if msg.GetResponseDefinition().GetRawResponse() != nil {
-			return true
-		}
+		def := msg.GetResponseDefinition()
+		return def.GetRawResponse(), def.GetRawWebsocketResponse()
 	}
-	return false
+	return nil, nil
 }
 
 // populates the expected response for a unary test case.

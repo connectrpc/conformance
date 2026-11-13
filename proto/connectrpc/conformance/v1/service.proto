@@ -167,6 +167,13 @@ message UnaryResponseDefinition {
   //
   // For test definitions, this field should be used instead of the above fields.
   RawHTTPResponse raw_response = 5;
+
+  // This field is only used by the reference server. If you are implementing a
+  // server under test, you can ignore this field or respond with an error if the
+  // server receives a request where it is set.
+  //
+  // It is the PROTOCOL_CONNECT_WEBSOCKET counterpart of raw_response.
+  RawWebSocketResponse raw_websocket_response = 7;
 }
 
 // A definition of responses to be sent from a streaming endpoint.
@@ -197,6 +204,13 @@ message StreamResponseDefinition {
   //
   // For test definitions, this field should be used instead of the above fields.
   RawHTTPResponse raw_response = 6;
+
+  // This field is only used by the reference server. If you are implementing a
+  // server under test, you can ignore this field or respond with an error if the
+  // server receives a request where it is set.
+  //
+  // It is the PROTOCOL_CONNECT_WEBSOCKET counterpart of raw_response.
+  RawWebSocketResponse raw_websocket_response = 7;
 }
 
 message UnaryRequest {
@@ -430,4 +444,76 @@ message RawHTTPResponse {
   }
   // Trailers to be set on the response.
   repeated Header trailers = 5;
+}
+
+// RawWebSocketRequest models the client side of a Connect-over-WebSocket
+// connection. This can be used to craft handshakes and message sequences
+// with odd properties (including certain kinds of malformed ones) to test
+// edge cases in servers.
+//
+// Unlike the messages of a normal RPC, none of these are generated
+// automatically: a test that wants the stream to open with a Leading-Metadata
+// message must include one in messages.
+message RawWebSocketRequest {
+  // The path of the handshake URI. If empty, the path of the procedure named
+  // by the request's service and method is used.
+  string path = 1;
+  // Query parameters to add to the handshake URI.
+  repeated Header query_params = 2;
+  // Headers to add to the handshake request.
+  repeated Header headers = 3;
+  // The tokens offered in the Sec-WebSocket-Protocol header. If empty, the
+  // single token that selects the request's codec is offered.
+  repeated string subprotocols = 4;
+  // If true, offer the permessage-deflate extension without the
+  // no_context_takeover parameters. If false, compression is not offered.
+  bool offer_context_takeover = 5;
+  // The messages to send once the connection is open, in order. The client
+  // then reads the server's response until the connection ends.
+  repeated WebSocketMessage messages = 6;
+}
+
+// RawWebSocketResponse models the server side of a Connect-over-WebSocket
+// connection, after the handshake has completed and the reference server has
+// read the client's request stream. This can be used to craft message
+// sequences with odd properties (including certain kinds of malformed ones)
+// to test edge cases in clients.
+//
+// None of the server's messages are generated automatically: a test that
+// wants the response to open with a Leading-Metadata message must include one
+// in messages.
+message RawWebSocketResponse {
+  // The messages to send, in order.
+  repeated WebSocketMessage messages = 1;
+  // The status code to send in the server's Close frame after the messages.
+  // If zero, 1000 (normal closure) is sent. Ignored if omit_close or
+  // expected_client_close_codes is set.
+  uint32 close_code = 2;
+  // If true, the server ends the connection without sending a Close frame.
+  bool omit_close = 3;
+  // If not empty, the server sends no Close frame of its own after the
+  // messages. It waits instead for the client to close the connection, and
+  // reports an error if the client's Close frame does not carry one of these
+  // codes, or carries 3102 without a reason. A connection the client ends
+  // without a Close frame is treated as code 1006.
+  repeated uint32 expected_client_close_codes = 4;
+}
+
+// WebSocketMessage is one complete WebSocket message, sent in a single frame.
+message WebSocketMessage {
+  // The frame type of the message.
+  WebSocketMessageType type = 1;
+  // Written verbatim before contents. It is typically a single Connect-over-
+  // WebSocket marker: "B", "M", "S", or "C". If empty, only contents is sent.
+  string marker = 2;
+  // The payload that follows the marker. If absent, the message is the marker
+  // alone.
+  MessageContents contents = 3;
+}
+
+// The frame type of a WebSocket message.
+enum WebSocketMessageType {
+  WEB_SOCKET_MESSAGE_TYPE_UNSPECIFIED = 0;
+  WEB_SOCKET_MESSAGE_TYPE_TEXT = 1;
+  WEB_SOCKET_MESSAGE_TYPE_BINARY = 2;
 }

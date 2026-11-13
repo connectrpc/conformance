@@ -556,6 +556,24 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
 			expectedErr: "config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex",
 		},
 		{
+			name: "features: WebSocket without HTTP/1.1",
+			config: `features:
+                        versions: [HTTP_VERSION_2]
+                        protocols: [PROTOCOL_CONNECT_WEBSOCKET]`,
+			expectedErr: "config features indicate Connect-over-WebSocket protocol is supported but HTTP/1.1 is not",
+		},
+		{
+			name: "included case: WebSocket over HTTP/2",
+			config: `
+                     features:
+                        versions: [HTTP_VERSION_1, HTTP_VERSION_2]
+                        protocols: [PROTOCOL_CONNECT, PROTOCOL_CONNECT_WEBSOCKET]
+                     include_cases:
+                      - version: HTTP_VERSION_2
+                        protocol: PROTOCOL_CONNECT_WEBSOCKET`,
+			expectedErr: "config case indicates Connect-over-WebSocket protocol but not HTTP/1.1",
+		},
+		{
 			name: "included case: TLS client certs without TLS (a)",
 			config: `
                      features:
@@ -583,6 +601,54 @@ func TestParseConfig_RejectsInvalidConfigurations(t *testing.T) {
 			t.Log(err)
 		})
 	}
+}
+
+func TestParseConfig_WebSocket(t *testing.T) {
+	t.Parallel()
+	cases, err := parseConfig("config.yaml", []byte(`features:
+                        versions: [HTTP_VERSION_1, HTTP_VERSION_2]
+                        protocols: [PROTOCOL_CONNECT, PROTOCOL_CONNECT_WEBSOCKET]
+                        compressions: [COMPRESSION_IDENTITY, COMPRESSION_GZIP]`))
+	require.NoError(t, err)
+	streamTypes := map[conformancev1.Protocol]map[conformancev1.StreamType]bool{}
+	for _, cfgCase := range cases {
+		if streamTypes[cfgCase.Protocol] == nil {
+			streamTypes[cfgCase.Protocol] = map[conformancev1.StreamType]bool{}
+		}
+		if cfgCase.Version == conformancev1.HTTPVersion_HTTP_VERSION_1 {
+			streamTypes[cfgCase.Protocol][cfgCase.StreamType] = true
+		}
+		if cfgCase.Protocol != conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET {
+			continue
+		}
+		// The handshake requires HTTP/1.1, the WebSocket layer does the
+		// compressing, and there is no GET form of an upgrade.
+		require.Equal(t, conformancev1.HTTPVersion_HTTP_VERSION_1, cfgCase.Version)
+		require.Equal(t, conformancev1.Compression_COMPRESSION_IDENTITY, cfgCase.Compression)
+		require.False(t, cfgCase.UseConnectGET)
+	}
+	webSocket := streamTypes[conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET]
+	require.True(t, webSocket[conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM])
+	require.True(t, webSocket[conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM])
+	connect := streamTypes[conformancev1.Protocol_PROTOCOL_CONNECT]
+	require.False(t, connect[conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM])
+}
+
+func TestParseConfig_WebSocketOnlyOverHTTP1(t *testing.T) {
+	t.Parallel()
+	// Only WebSocket can carry bidi streams over HTTP/1.1, so a configuration
+	// with no other HTTP version still tests them.
+	cases, err := parseConfig("config.yaml", []byte(`features:
+                        versions: [HTTP_VERSION_1]
+                        protocols: [PROTOCOL_CONNECT_WEBSOCKET]
+                        supportsTls: false
+                        supportsH2c: false`))
+	require.NoError(t, err)
+	var fullDuplex bool
+	for _, cfgCase := range cases {
+		fullDuplex = fullDuplex || cfgCase.StreamType == conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+	}
+	require.True(t, fullDuplex)
 }
 
 func computePermutations(

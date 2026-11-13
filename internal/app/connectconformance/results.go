@@ -168,6 +168,13 @@ func (r *testResults) assert(
 	expected := definition.ExpectedResponse
 	var errs multiErrors
 
+	if definition.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET && definition.Request.TimeoutMs == nil {
+		// A Connect-over-WebSocket server should bound an RPC that asked for no
+		// deadline with one of its own, so a deadline it echoes back is not a
+		// sign that the client sent one.
+		actual = withoutEchoedTimeouts(actual)
+	}
+
 	otherErrors := definition.OtherAllowedErrorCodes
 	if definition.Request.TimeoutMs != nil && r.mode == conformancev1.TestSuite_TEST_MODE_SERVER &&
 		expected.Error != nil && expected.Error.Code == conformancev1.Code_CODE_DEADLINE_EXCEEDED &&
@@ -220,6 +227,12 @@ func (r *testResults) assert(
 		expected.GetHttpStatusCode() != actual.GetHttpStatusCode() {
 		errs = append(errs, fmt.Errorf("actual HTTP status code does not match: wanted %d; got %d",
 			expected.GetHttpStatusCode(), actual.GetHttpStatusCode()))
+	}
+	if expected.WebsocketCloseCode != nil &&
+		actual.WebsocketCloseCode != nil &&
+		expected.GetWebsocketCloseCode() != actual.GetWebsocketCloseCode() {
+		errs = append(errs, fmt.Errorf("actual WebSocket close code does not match: wanted %d; got %d",
+			expected.GetWebsocketCloseCode(), actual.GetWebsocketCloseCode()))
 	}
 
 	r.setOutcome(testCase, false, errs.Result())
@@ -635,4 +648,23 @@ func joinAlternatives(values []string) string {
 		return strings.Join(values, " ")
 	}
 	return strings.Join(values, ", ")
+}
+
+// withoutEchoedTimeouts returns a copy of result in which no request info,
+// whether in a payload or in an error detail, carries a timeout.
+func withoutEchoedTimeouts(result *conformancev1.ClientResponseResult) *conformancev1.ClientResponseResult {
+	result = proto.CloneOf(result)
+	for _, payload := range result.GetPayloads() {
+		if payload.GetRequestInfo() != nil {
+			payload.RequestInfo.TimeoutMs = nil
+		}
+	}
+	for _, detail := range result.GetError().GetDetails() {
+		var info conformancev1.ConformancePayload_RequestInfo
+		if detail.MessageIs(&info) && detail.UnmarshalTo(&info) == nil {
+			info.TimeoutMs = nil
+			_ = detail.MarshalFrom(&info)
+		}
+	}
+	return result
 }

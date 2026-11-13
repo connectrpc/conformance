@@ -37,6 +37,9 @@ const clientName = "connectconformance-referenceclient"
 type invoker struct {
 	client        conformancev1connect.ConformanceServiceClient
 	referenceMode bool
+	// ws is set when the RPC is carried over WebSocket, which has its own
+	// wire details instead of an HTTP trace.
+	ws *webSocketWire
 }
 
 // Creates a new invoker around a ConformanceServiceClient.
@@ -491,7 +494,7 @@ func (i *invoker) unimplemented(
 }
 
 func (i *invoker) withWireCapture(ctx context.Context) context.Context {
-	if !i.referenceMode {
+	if !i.referenceMode || i.ws != nil {
 		return ctx
 	}
 	return withWireCapture(ctx)
@@ -502,9 +505,10 @@ func (i *invoker) examineWireDetails(ctx context.Context, headers, trailers []*c
 		return nil, nil
 	}
 	printer := &internal.SimplePrinter{}
-	statusCode, ok := examineWireDetails(ctx, printer)
 	var statusCodePtr *int32
-	if ok {
+	if i.ws != nil {
+		statusCodePtr = i.ws.status()
+	} else if statusCode, ok := examineWireDetails(ctx, printer); ok {
 		statusCodePtr = new(int32(statusCode))
 	}
 	checkBinaryMetadata("headers", headers, printer)

@@ -1,0 +1,86 @@
+# Tests of how a Connect-over-WebSocket server handles frame types under the Protobuf codec. Section
+# numbers refer to the Connect-over-WebSocket protocol specification.
+#
+# The specification does not name the error code that reports a protocol
+# error, so these tests accept the codes a server could reasonably use.
+name: WebSocket Server Proto Framing
+mode: TEST_MODE_SERVER
+relevantProtocols:
+  - PROTOCOL_CONNECT_WEBSOCKET
+relevantCodecs:
+  - CODEC_PROTO
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+testCases:
+  # §6.1: on a Protobuf connection, bodies are binary and M is text.
+  - request:
+      testName: framing/mixed-frame-types
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §6.1: a binary B with no payload is the empty Protobuf message.
+  - request:
+      testName: framing/empty-proto-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B" }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §6.1, §13: a JSON body on a Protobuf connection is rejected with 1003.
+  - request:
+      testName: framing/body-in-text-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1003
+      error:
+        code: CODE_INVALID_ARGUMENT
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+
+  # §6.1: M is always JSON, so it is always a text frame.
+  - request:
+      testName: framing/metadata-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_INVALID_ARGUMENT
+    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]

@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	buf.build/go/protoyaml v0.7.0
-	connectrpc.com/connect/v2 v2.0.2
+	connectrpc.com/connect/v2 v2.0.3-0.20261112084135-7e2f6f5ea54d
 	github.com/andybalholm/brotli v1.2.7
 	github.com/golang/snappy v1.0.0
 	github.com/google/go-cmp v0.7.0
@@ -28,6 +28,7 @@ require (
 	cel.dev/expr v0.25.3 // indirect
 	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1 // indirect
+	github.com/coder/websocket v1.8.15 // indirect
 	github.com/desertbit/timer v0.0.0-20180107155436-c41aec40b27f // indirect
 	github.com/google/cel-go v0.29.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect

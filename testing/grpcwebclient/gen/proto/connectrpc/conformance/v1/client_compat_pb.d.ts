@@ -100,6 +100,11 @@ export class ClientCompatRequest extends jspb.Message {
   hasRawRequest(): boolean;
   clearRawRequest(): ClientCompatRequest;
 
+  getRawWebsocketRequest(): connectrpc_conformance_v1_service_pb.RawWebSocketRequest | undefined;
+  setRawWebsocketRequest(value?: connectrpc_conformance_v1_service_pb.RawWebSocketRequest): ClientCompatRequest;
+  hasRawWebsocketRequest(): boolean;
+  clearRawWebsocketRequest(): ClientCompatRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ClientCompatRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ClientCompatRequest): ClientCompatRequest.AsObject;
@@ -130,6 +135,7 @@ export namespace ClientCompatRequest {
     requestDelayMs: number,
     cancel?: ClientCompatRequest.Cancel.AsObject,
     rawRequest?: connectrpc_conformance_v1_service_pb.RawHTTPRequest.AsObject,
+    rawWebsocketRequest?: connectrpc_conformance_v1_service_pb.RawWebSocketRequest.AsObject,
   }
 
   export class Cancel extends jspb.Message {
@@ -258,6 +264,11 @@ export class ClientResponseResult extends jspb.Message {
   clearFeedbackList(): ClientResponseResult;
   addFeedback(value: string, index?: number): ClientResponseResult;
 
+  getWebsocketCloseCode(): number;
+  setWebsocketCloseCode(value: number): ClientResponseResult;
+  hasWebsocketCloseCode(): boolean;
+  clearWebsocketCloseCode(): ClientResponseResult;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ClientResponseResult.AsObject;
   static toObject(includeInstance: boolean, msg: ClientResponseResult): ClientResponseResult.AsObject;
@@ -275,11 +286,17 @@ export namespace ClientResponseResult {
     numUnsentRequests: number,
     httpStatusCode?: number,
     feedbackList: Array<string>,
+    websocketCloseCode?: number,
   }
 
   export enum HttpStatusCodeCase { 
     _HTTP_STATUS_CODE_NOT_SET = 0,
     HTTP_STATUS_CODE = 6,
+  }
+
+  export enum WebsocketCloseCodeCase { 
+    _WEBSOCKET_CLOSE_CODE_NOT_SET = 0,
+    WEBSOCKET_CLOSE_CODE = 8,
   }
 }
 

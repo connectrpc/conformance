@@ -130,6 +130,7 @@ func run(ctx context.Context, referenceMode bool, args []string, inReader io.Rea
 				if !referenceMode {
 					// clear out reference-mode-specific details
 					result.HttpStatusCode = nil
+					result.WebsocketCloseCode = nil
 					result.Feedback = nil
 				}
 				resp.Result = &conformancev1.ClientCompatResponse_Response{
@@ -158,8 +159,21 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 	if err != nil {
 		return nil, err
 	}
-
-	if referenceMode {
+	var wsWire *webSocketWire
+	switch {
+	case req.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET:
+		if req.RawRequest != nil {
+			return nil, fmt.Errorf("%v does not support raw HTTP requests; use a raw WebSocket request", req.Protocol)
+		}
+		if referenceMode {
+			// The HTTP tracer would replace the body of the 101 response,
+			// which is the connection itself.
+			wsWire = &webSocketWire{transport: transport, raw: req.RawWebsocketRequest}
+			transport = wsWire
+		}
+	case req.RawWebsocketRequest != nil:
+		return nil, fmt.Errorf("a raw WebSocket request requires %v", conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET)
+	case referenceMode:
 		// Wrap the transport with a wire interceptor and an optional tracer.
 		// The wire interceptor wraps a TracingRoundTripper and intercepts values on the
 		// wire using the tracer framework. Note that 'trace' could be nil, in which case,
@@ -179,6 +193,8 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 		clientOptions = append(clientOptions, connecthttp.WithGRPCWeb())
 	case conformancev1.Protocol_PROTOCOL_CONNECT:
 		// Do nothing
+	case conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET:
+		clientOptions = append(clientOptions, connecthttp.WithWebSocket(connecthttp.SelectAll))
 	case conformancev1.Protocol_PROTOCOL_UNSPECIFIED:
 		return nil, errors.New("a protocol must be specified")
 	}
@@ -190,6 +206,11 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 		clientOptions = append(clientOptions,
 			connecthttp.WithCodecs(internal.NewStrictJSONCodec()),
 		)
+		if req.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET {
+			// The WebSocket transport defaults its send codec to proto, which
+			// WithCodecs above no longer registers.
+			clientOptions = append(clientOptions, connecthttp.WithSendCodec("json"))
+		}
 	case conformancev1.Codec_CODEC_TEXT: //nolint:staticcheck // staticcheck complains because this const is deprecated
 		return nil, fmt.Errorf("%s is deprecated and should not be used", req.Codec)
 	default:
@@ -217,7 +238,13 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 
 	switch req.GetService() {
 	case conformancev1connect.ConformanceServiceName:
-		return newInvoker(transport, referenceMode, serverURL, clientOptions).Invoke(ctx, req)
+		inv := newInvoker(transport, referenceMode, serverURL, clientOptions)
+		inv.ws = wsWire
+		result, err := inv.Invoke(ctx, req)
+		if err == nil && result != nil && wsWire != nil {
+			result.WebsocketCloseCode = wsWire.closeCode()
+		}
+		return result, err
 	default:
 		return nil, fmt.Errorf("service name %s is not a valid service", req.GetService())
 	}
