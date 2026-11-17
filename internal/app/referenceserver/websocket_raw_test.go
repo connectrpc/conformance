@@ -26,31 +26,23 @@ func TestCheckClientClose(t *testing.T) {
 		name     string
 		expected []uint32
 		code     int
-		reason   string
 		problem  string
 	}{
 		{
-			name:     "error with reason",
+			// §13 requires no close reason, so none is checked.
+			name:     "expected code",
 			expected: []uint32{3102},
 			code:     3102,
-			reason:   "unexpected marker",
-		},
-		{
-			name:     "error without reason",
-			expected: []uint32{3102},
-			code:     3102,
-			problem:  "client closed the connection with code 3102 but no reason",
 		},
 		{
 			name:     "unexpected code",
 			expected: []uint32{3102},
 			code:     3103,
-			reason:   "body in wrong frame type",
 			problem:  "client closed the connection with code 3103; expected one of [3102]",
 		},
 		{
-			// A browser closes with 1002 or 1007 itself, and may give no reason.
-			name:     "browser code without reason",
+			// A browser closes with 1002 or 1007 itself.
+			name:     "browser code",
 			expected: []uint32{3102, 1007, 1002},
 			code:     1007,
 		},
@@ -58,7 +50,7 @@ func TestCheckClientClose(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			assert.Equal(t, testCase.problem, checkClientClose(testCase.expected, testCase.code, testCase.reason))
+			assert.Equal(t, testCase.problem, checkClientClose(testCase.expected, testCase.code))
 		})
 	}
 }

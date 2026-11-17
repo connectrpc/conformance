@@ -114,6 +114,11 @@ func (w *webSocketWire) rewrite(req *http.Request) *http.Request {
 	}
 	req.URL.RawQuery = query.Encode()
 	internal.AddHeaders(w.raw.GetHeaders(), req.Header)
+	// net/http sends req.Host and ignores a Host entry in the header map.
+	if host := req.Header.Get("Host"); host != "" {
+		req.Host = host
+		req.Header.Del("Host")
+	}
 	if subprotocols := w.raw.GetSubprotocols(); len(subprotocols) > 0 {
 		req.Header.Set("Sec-WebSocket-Protocol", strings.Join(subprotocols, ", "))
 	}

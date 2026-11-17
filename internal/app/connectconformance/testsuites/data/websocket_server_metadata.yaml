@@ -1,8 +1,8 @@
 # Tests of how a Connect-over-WebSocket server handles request metadata. Section
 # numbers refer to the Connect-over-WebSocket protocol specification.
 #
-# The specification does not name the error code that reports a protocol
-# error, so these tests accept the codes a server could reasonably use.
+# §5: a server reports a protocol error in an S message with the code
+# internal, and then closes with 1002.
 name: WebSocket Server Metadata
 mode: TEST_MODE_SERVER
 relevantProtocols:
@@ -27,8 +27,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.1: the payload of M is a JSON array; null is not one.
   - request:
@@ -45,8 +44,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.1: each entry is an array of strings.
   - request:
@@ -63,10 +61,9 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
-  # §7.3.1: each entry holds at least its key.
+  # §7.3.1: each entry holds a key and at least one value.
   - request:
       testName: metadata/empty-entry
       streamType: STREAM_TYPE_UNARY
@@ -81,8 +78,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.1: every element of an entry is a string.
   - request:
@@ -99,8 +95,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.1: values follow the key in the entry itself, not in a nested array.
   - request:
@@ -117,26 +112,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
-
-  # §7.3.1: keys that fold to the same lower-case form are one key, so two entries with them are a protocol error.
-  - request:
-      testName: metadata/duplicate-key-differing-case
-      streamType: STREAM_TYPE_UNARY
-      requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      rawWebsocketRequest:
-        messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a"], ["X-Test", "b"]]' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
-    expectedResponse:
-      httpStatusCode: 101
-      websocketCloseCode: 1002
-      error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.1: two entries with an identical key are a protocol error.
   - request:
@@ -153,8 +129,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.1: keys must be valid HTTP field names.
   - request:
@@ -171,10 +146,10 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
-  # §7.3.1: values must not contain CR, LF, or NUL.
+  # §7.3.1: values are limited to visible ASCII, space, and horizontal tab, so
+  # LF is a protocol error.
   - request:
       testName: metadata/invalid-value
       streamType: STREAM_TYPE_UNARY
@@ -189,29 +164,95 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
-  # §7.3.1: the value of a -bin key that is not base64 is a protocol error.
+  # §7.3.1: RFC 9110 allows bytes 0x80-0xFF in a field value, but this binding
+  # does not, so a non-ASCII value is a protocol error.
   - request:
-      testName: metadata/binary-not-base64
+      testName: metadata/non-ascii-value
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test-bin", "!!!"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "café"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
-  # §7.3.1: a receiver validates that a -bin value is base64, accepting the
-  # unpadded form.
+  # §7.3.1: a horizontal tab inside a value is valid and is preserved.
+  - request:
+      testName: metadata/tab-in-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a\tb"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requestHeaders:
+              - name: x-test
+                value: [ "a\tb" ]
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §7.3.1: a receiver removes leading and trailing space and horizontal tab,
+  # and keeps whitespace inside the value.
+  - request:
+      testName: metadata/surrounding-whitespace
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", " \ta b\t "]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requestHeaders:
+              - name: x-test
+                value: [ "a b" ]
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §7.3.1: a value that holds only spaces and tabs is empty once trimmed.
+  - request:
+      testName: metadata/whitespace-only-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", " \t "]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requestHeaders:
+              - name: x-test
+                value: [ "" ]
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §7.3.1: a sender does not pad base64, and the value reaches the handler as
+  # sent.
   - request:
       testName: metadata/binary-unpadded
       streamType: STREAM_TYPE_UNARY
@@ -255,7 +296,8 @@ testCases:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
-  # §7.3.1: a receiver must accept an entry that holds only a key.
+  # §7.3.1: every key has at least one value, so an entry that holds only a key
+  # is a protocol error.
   - request:
       testName: metadata/empty-values
       streamType: STREAM_TYPE_UNARY
@@ -268,13 +310,35 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: an empty string is a valid value, so a key can be present but empty.
+  - request:
+      testName: metadata/empty-string-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-empty", ""]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
       websocketCloseCode: 1000
       payloads:
         - requestInfo:
+            requestHeaders:
+              - name: x-empty
+                value: [ "" ]
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
-  # §7.3.1: one entry carries all of its key's values, in order.
+  # §7.3.1: one entry carries all of its key's values, in order. A receiver
+  # may join them as "a, b"; the checker splits joined values on commas, so
+  # either form passes.
   - request:
       testName: metadata/multiple-values
       streamType: STREAM_TYPE_UNARY
@@ -296,9 +360,10 @@ testCases:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
-  # §7.3.1: keys are case-insensitive.
+  # §7.3.1: keys must be lower-case. A key with an upper-case letter is a
+  # protocol error.
   - request:
-      testName: metadata/mixed-case-key
+      testName: metadata/upper-case-key
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -309,16 +374,12 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
-      websocketCloseCode: 1000
-      payloads:
-        - requestInfo:
-            requestHeaders:
-              - name: x-mixed-case
-                value: [ "value" ]
-            requests:
-              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
 
-  # §7.1: every handshake header is made available as request metadata.
+  # §7.1: handshake headers, other than Connection, Upgrade, Sec-WebSocket-*,
+  # and Connect-*, are made available as request metadata.
   - request:
       testName: metadata/handshake-header
       streamType: STREAM_TYPE_UNARY
@@ -382,9 +443,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set host in M, because the Fetch standard forbids it. The server
   # must end the RPC with an error rather than ignore the key.
@@ -400,9 +461,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set sec-websocket-protocol in M, because the Fetch standard forbids every Sec- name. The server
   # must end the RPC with an error rather than ignore the key.
@@ -418,9 +479,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set proxy-authorization in M, because the Fetch standard forbids every Proxy- name. The server
   # must end the RPC with an error rather than ignore the key.
@@ -436,9 +497,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set x-http-method-override in M, because this binding forbids it outright. The server
   # must end the RPC with an error rather than ignore the key.
@@ -454,63 +515,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
-
-  # §7.3.2: a client may not set forwarded in M, because it is on the default infrastructure deny list. The server
-  # must end the RPC with an error rather than ignore the key.
-  - request:
-      testName: reserved/forwarded
-      streamType: STREAM_TYPE_UNARY
-      requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      rawWebsocketRequest:
-        messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["forwarded", "value"]]' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
-    expectedResponse:
-      httpStatusCode: 101
-      error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
-
-  # §7.3.2: a client may not set x-forwarded-for in M, because it is on the default infrastructure deny list. The server
-  # must end the RPC with an error rather than ignore the key.
-  - request:
-      testName: reserved/x-forwarded-for
-      streamType: STREAM_TYPE_UNARY
-      requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      rawWebsocketRequest:
-        messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-forwarded-for", "value"]]' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
-    expectedResponse:
-      httpStatusCode: 101
-      error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
-
-  # §7.3.2: a client may not set x-real-ip in M, because it is on the default infrastructure deny list. The server
-  # must end the RPC with an error rather than ignore the key.
-  - request:
-      testName: reserved/x-real-ip
-      streamType: STREAM_TYPE_UNARY
-      requestMessages:
-        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
-      rawWebsocketRequest:
-        messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-real-ip", "value"]]' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
-    expectedResponse:
-      httpStatusCode: 101
-      error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set connect-protocol-version in M, because the protocol controls it. The server
   # must end the RPC with an error rather than ignore the key.
@@ -526,9 +533,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set connect-timeout-ms in M, because the protocol controls it. The server
   # must end the RPC with an error rather than ignore the key.
@@ -544,9 +551,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set content-type in M, because the protocol controls it. The server
   # must end the RPC with an error rather than ignore the key.
@@ -562,9 +569,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set connect-content-encoding in M, because the protocol controls it. The server
   # must end the RPC with an error rather than ignore the key.
@@ -580,23 +587,43 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
 
-  # §7.3.2: reserved names match case-insensitively.
+  # §7.3.2: every name beginning connect- is reserved, not only the ones the
+  # protocol uses today.
   - request:
-      testName: reserved/mixed-case
+      testName: reserved/connect-prefix
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
       rawWebsocketRequest:
         messages:
-          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["Cookie", "value"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["connect-anything", "value"]]' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL, CODE_UNKNOWN ]
+        code: CODE_INTERNAL
+
+  # §7.3.2: a client may not set content-encoding in M, because this protocol
+  # controls it. The server must end the RPC with an error rather than ignore
+  # the key.
+  - request:
+      testName: reserved/content-encoding
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["content-encoding", "gzip"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL

@@ -43,8 +43,8 @@ const (
 	// CloseAbnormal is reported for a connection that ended without a Close
 	// frame. A peer never sends it.
 	CloseAbnormal = 1006
-	// CloseClientError is the only error code a Connect-over-WebSocket client
-	// may send (§13). The code says nothing of the cause, so it needs a reason.
+	// CloseClientError is the code a Connect-over-WebSocket client closes with
+	// for an unexpected condition of its own (§13.1).
 	CloseClientError = 3102
 )
 

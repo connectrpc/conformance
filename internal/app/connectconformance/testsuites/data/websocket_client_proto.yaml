@@ -3,13 +3,12 @@
 # specification.
 #
 # M and S are always JSON, so always text, even when binary is the negotiated
-# frame type. The specification does not name the error code with which a
-# client reports a protocol error in the server's response. Like the Connect
-# suites, these tests expect internal, and also accept unknown.
+# frame type. §5: a client reports a protocol error in the server's response
+# by failing the RPC with the code internal and closing with 3102.
 #
 # Where a test sets expectedClientCloseCodes, the reference server sends no
 # Close frame of its own after the messages. It waits for the client to close
-# the connection and checks the code, and that a 3102 carries a reason (§13).
+# the connection and checks the code.
 name: WebSocket Client Proto Framing
 mode: TEST_MODE_CLIENT
 relevantProtocols:
@@ -53,7 +52,6 @@ testCases:
     expectedResponse:
       error:
         code: CODE_INTERNAL
-    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
 
   # §6.1, §9: S is always JSON, so always text, even though binary is the
   # negotiated frame type.
@@ -72,4 +70,38 @@ testCases:
     expectedResponse:
       error:
         code: CODE_INTERNAL
-    otherAllowedErrorCodes: [ CODE_UNKNOWN ]
+
+  # §6.1: the negotiated frame type for bodies is binary, so a B in a text
+  # frame is a protocol error.
+  - request:
+      testName: framing/body-in-text-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse", "payload": { "data": "AQID" } } } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1: an empty B payload goes to the codec like any other. Under Protobuf
+  # it is the empty message, so the RPC succeeds.
+  - request:
+      testName: framing/empty-binary-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B" }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - {}

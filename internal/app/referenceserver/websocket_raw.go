@@ -140,7 +140,7 @@ func writeRawWebSocketResponse(ctx context.Context) {
 		_ = conn.writeRaw(wsframe.CloseFrame(code, "", false))
 	}
 	go func() {
-		code, reason, ok := conn.awaitClientClose()
+		code, ok := conn.awaitClientClose()
 		_ = conn.Conn.Close()
 		if len(expected) == 0 || feedback == nil {
 			return
@@ -149,7 +149,7 @@ func writeRawWebSocketResponse(ctx context.Context) {
 			feedback.Printf("client did not close the connection within %v", wsClientCloseTimeout)
 			return
 		}
-		if problem := checkClientClose(expected, code, reason); problem != "" {
+		if problem := checkClientClose(expected, code); problem != "" {
 			feedback.Printf("%s", problem)
 		}
 	}()
@@ -157,13 +157,9 @@ func writeRawWebSocketResponse(ctx context.Context) {
 
 // checkClientClose describes how the client's Close frame falls short of
 // expected, or returns "" if it does not.
-func checkClientClose(expected []uint32, code int, reason string) string {
+func checkClientClose(expected []uint32, code int) string {
 	if !slices.Contains(expected, uint32(code)) {
 		return fmt.Sprintf("client closed the connection with code %d; expected one of %v", code, expected)
-	}
-	// §13: the code alone cannot tell a server what went wrong.
-	if code == wsframe.CloseClientError && reason == "" {
-		return fmt.Sprintf("client closed the connection with code %d but no reason", code)
 	}
 	return ""
 }
@@ -224,26 +220,26 @@ func (c *wsServerConn) writeRaw(data []byte) error {
 }
 
 // awaitClientClose reads until the client's Close frame arrives, and returns
-// its code and reason. A connection that ends without one reports 1006. It
+// its code. A connection that ends without one reports 1006. It
 // reports false if the client neither closed nor ended the connection in time.
-func (c *wsServerConn) awaitClientClose() (int, string, bool) {
+func (c *wsServerConn) awaitClientClose() (int, bool) {
 	_ = c.SetReadDeadline(time.Now().Add(wsClientCloseTimeout))
 	buf := make([]byte, 512)
 	for {
 		select {
 		case <-c.watcher.Seen():
 			code, _ := c.watcher.Code()
-			return code, c.watcher.Reason(), true
+			return code, true
 		default:
 		}
 		if _, err := c.Read(buf); err != nil {
 			if code, ok := c.watcher.Code(); ok {
-				return code, c.watcher.Reason(), true
+				return code, true
 			}
 			if netErr, ok := errors.AsType[net.Error](err); ok && netErr.Timeout() {
-				return 0, "", false
+				return 0, false
 			}
-			return wsframe.CloseAbnormal, "", true
+			return wsframe.CloseAbnormal, true
 		}
 	}
 }
