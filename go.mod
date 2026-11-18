@@ -41,3 +41,5 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260817212433-ac3dfec99bb1 // indirect
 	nhooyr.io/websocket v1.8.6 // indirect
 )
+
+replace connectrpc.com/connect/v2 v2.0.3-0.20261112084135-7e2f6f5ea54d => github.com/jonbodner-buf/connect-go/v2 v2.0.0-20261118024535-b3c79243be54
