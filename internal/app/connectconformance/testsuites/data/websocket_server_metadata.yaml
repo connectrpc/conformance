@@ -296,6 +296,29 @@ testCases:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
+  # §7.3.1: a receiver trims leading and trailing space and tab from every value
+  # before delivering it, a -bin value included.
+  - request:
+      testName: metadata/binary-surrounding-whitespace
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test-bin", " \taGVsbG8\t "]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requestHeaders:
+              - name: x-test-bin
+                value: [ "aGVsbG8" ]
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
   # §7.3.1: every key has at least one value, so an entry that holds only a key
   # is a protocol error.
   - request:

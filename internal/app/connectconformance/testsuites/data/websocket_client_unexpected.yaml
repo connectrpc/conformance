@@ -88,7 +88,9 @@ testCases:
         code: CODE_INTERNAL
 
   # §5.1: every byte but the four markers is unknown, including one with the
-  # high bit set.
+  # high bit set. "é" is valid UTF-8, so the message can be a text frame, and
+  # its first byte, 0xC3, is not a marker. A binary frame would not isolate the
+  # marker: under JSON, §6.1 already rejects it.
   - request:
       testName: framing/high-bit-marker
       streamType: STREAM_TYPE_UNARY
@@ -98,7 +100,7 @@ testCases:
             rawWebsocketResponse:
               messages:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
-                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, contents: { binary: "gA==" } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "é", contents: { text: '{}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
@@ -196,7 +198,8 @@ testCases:
         code: CODE_INTERNAL
 
   # §6.1, §13: a body in a frame type that does not match the negotiated codec is
-  # rejected. A client has no code more specific than 3102 for it.
+  # rejected. A client has no code more specific than 3102 for it. The payload
+  # is a valid JSON body, so only the frame type is wrong.
   - request:
       testName: framing/body-in-binary-frame
       streamType: STREAM_TYPE_UNARY
@@ -206,7 +209,7 @@ testCases:
             rawWebsocketResponse:
               messages:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
-                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryResponse" } } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary: "eyJwYXlsb2FkIjogeyJkYXRhIjogIkFRSUQifX0=" } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
               expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
@@ -268,6 +271,44 @@ testCases:
     expectedResponse:
       error:
         code: CODE_INTERNAL
+
+  # §9: the payload of S is an EndStreamResponse, a JSON object, so null is
+  # not one and must not read as success. The RFC does not say whether this is
+  # a protocol error, so neither the code nor the close is pinned down.
+  - request:
+      testName: end-stream/null
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: 'null' } }
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §9: the payload of S is an EndStreamResponse, a JSON object, so an array is
+  # not one and must not read as success. The RFC does not say whether this is
+  # a protocol error, so neither the code nor the close is pinned down.
+  - request:
+      testName: end-stream/array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '[]' } }
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
   # §7.3.1: keys must be lower-case. A key with an upper-case letter is a
   # protocol error.
@@ -758,3 +799,39 @@ testCases:
       error:
         code: CODE_UNIMPLEMENTED
     otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §11.1, §13: a client whose deadline expires before S reports
+  # deadline_exceeded and closes with 1000. The reference server sends M and
+  # never S, and does not enforce the deadline itself.
+  - request:
+      testName: deadline/client-closes-normally
+      streamType: STREAM_TYPE_UNARY
+      timeoutMs: 200
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+              expectedClientCloseCodes: [ 1000 ]
+    expectedResponse:
+      error:
+        code: CODE_DEADLINE_EXCEEDED
+
+  # §8, §13: a client that cancels before S closes with 1000, which the server
+  # takes as the cancellation.
+  - request:
+      testName: cancel/client-closes-normally
+      streamType: STREAM_TYPE_UNARY
+      cancel:
+        afterCloseSendMs: 200
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+              expectedClientCloseCodes: [ 1000 ]
+    expectedResponse:
+      error:
+        code: CODE_CANCELED

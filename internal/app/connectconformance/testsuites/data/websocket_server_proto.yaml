@@ -13,15 +13,17 @@ relevantCompressions:
   - COMPRESSION_IDENTITY
 testCases:
   # §6.1: on a Protobuf connection, bodies are binary while M and C are text.
+  # The body has a field set, so the echo shows the server decoded it.
   - request:
       testName: framing/mixed-frame-types
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          requestData: "AQID"
       rawWebsocketRequest:
         messages:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest", "requestData": "AQID" } } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
@@ -30,6 +32,7 @@ testCases:
         - requestInfo:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+                requestData: "AQID"
 
   # §6.1: a binary B with no payload is the empty Protobuf message.
   - request:

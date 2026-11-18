@@ -28,7 +28,9 @@ testCases:
       error:
         # mapped from the 400 status code
         code: CODE_INTERNAL
-    otherAllowedErrorCodes: [ CODE_UNAVAILABLE, CODE_UNKNOWN ]
+    # §4.5: a Connect error in the response body sets the code, and the RFC does
+    # not say which, so only the status is checked.
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
   # §4.4: a cross-origin handshake is refused with 403, before the upgrade.
   - request:
@@ -49,7 +51,8 @@ testCases:
       error:
         # mapped from the 403 status code
         code: CODE_PERMISSION_DENIED
-    otherAllowedErrorCodes: [ CODE_UNAVAILABLE ]
+    # §4.5: a Connect error in the response body sets the code.
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
   # §4.4: same-origin compares only the host and port. Behind a TLS-terminating
   # proxy the page's origin is https on a plaintext connection, so a scheme
@@ -97,7 +100,8 @@ testCases:
       httpStatusCode: 403
       error:
         code: CODE_PERMISSION_DENIED
-    otherAllowedErrorCodes: [ CODE_UNAVAILABLE ]
+    # §4.5: a Connect error in the response body sets the code.
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
   # §10: a server must impose no_context_takeover in both directions, or leave
   # compression off. The reference client fails the RPC if it does neither.
@@ -411,7 +415,8 @@ testCases:
       httpStatusCode: 403
       error:
         code: CODE_PERMISSION_DENIED
-    otherAllowedErrorCodes: [ CODE_UNAVAILABLE ]
+    # §4.5: a Connect error in the response body sets the code.
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
   # §4.4: the host comparison is case-insensitive.
   - request:

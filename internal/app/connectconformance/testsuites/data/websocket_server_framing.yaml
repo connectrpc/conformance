@@ -65,7 +65,9 @@ testCases:
         code: CODE_INTERNAL
 
   # §5.1: every byte but the four markers is unknown, including one with the
-  # high bit set.
+  # high bit set. "é" is valid UTF-8, so the message can be a text frame, and
+  # its first byte, 0xC3, is not a marker. A binary frame would not isolate the
+  # marker: under JSON, §6.1 already rejects it, and §13 allows 1003 for that.
   - request:
       testName: framing/high-bit-marker
       streamType: STREAM_TYPE_UNARY
@@ -74,7 +76,7 @@ testCases:
       rawWebsocketRequest:
         messages:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
-          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, contents: { binary: "gA==" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "é", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
@@ -234,6 +236,7 @@ testCases:
       rawWebsocketRequest:
         messages:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C", contents: { text: '{}' } }
     expectedResponse:
       httpStatusCode: 101

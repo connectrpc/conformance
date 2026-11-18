@@ -521,6 +521,7 @@ func expandRequestData(testCase *conformancev1.TestCase) error {
 			return fmt.Errorf("expand directive #%d (%d) results in an invalid request size: %d",
 				i+1, expandSz.GetSizeRelativeToLimit(), totalSize)
 		}
+		original := proto.CloneOf(testCase.Request.RequestMessages[i])
 		concreteReq, err := testCase.Request.RequestMessages[i].UnmarshalNew()
 		if err != nil {
 			return fmt.Errorf("request message #%d: %w", i+1, err)
@@ -571,8 +572,21 @@ func expandRequestData(testCase *conformancev1.TestCase) error {
 		if err := testCase.Request.RequestMessages[i].MarshalFrom(concreteReq); err != nil {
 			return fmt.Errorf("request message #%d: %w", i+1, err)
 		}
+		expandRawWebSocketMessages(testCase.Request.GetRawWebsocketRequest(), original, testCase.Request.RequestMessages[i])
 	}
 	return nil
+}
+
+// expandRawWebSocketMessages gives every scripted WebSocket message whose
+// contents are the request message original the expanded message instead, so
+// that a raw request can carry a message sized relative to the limit.
+func expandRawWebSocketMessages(raw *conformancev1.RawWebSocketRequest, original, expanded *anypb.Any) {
+	for _, message := range raw.GetMessages() {
+		contents := message.GetContents()
+		if current := contents.GetBinaryMessage(); current != nil && proto.Equal(current, original) {
+			contents.Data = &conformancev1.MessageContents_BinaryMessage{BinaryMessage: proto.CloneOf(expanded)}
+		}
+	}
 }
 
 // populateExpectedResponse populates the response we expected to get back from the server
