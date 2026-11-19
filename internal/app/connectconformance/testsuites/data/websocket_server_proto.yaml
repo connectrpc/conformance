@@ -53,8 +53,7 @@ testCases:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
-  # §6.1, §13: a JSON body on a Protobuf connection is rejected. The close
-  # code is not checked: §13 allows 1002 or 1003.
+  # §6.1, §13: a JSON body on a Protobuf connection is a protocol error.
   - request:
       testName: framing/body-in-text-frame
       streamType: STREAM_TYPE_UNARY
@@ -67,6 +66,7 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
         code: CODE_INTERNAL
 
@@ -83,5 +83,6 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
         code: CODE_INTERNAL

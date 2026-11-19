@@ -67,7 +67,7 @@ testCases:
   # §5.1: every byte but the four markers is unknown, including one with the
   # high bit set. "é" is valid UTF-8, so the message can be a text frame, and
   # its first byte, 0xC3, is not a marker. A binary frame would not isolate the
-  # marker: under JSON, §6.1 already rejects it, and §13 allows 1003 for that.
+  # marker: under JSON, §6.1 already rejects it as the wrong frame type.
   - request:
       testName: framing/high-bit-marker
       streamType: STREAM_TYPE_UNARY
@@ -173,7 +173,7 @@ testCases:
     otherAllowedErrorCodes: [ CODE_INTERNAL ]
 
   # §6.1, §13: a body in a frame type that does not match the negotiated codec
-  # is rejected. The close code is not checked: §13 allows 1002 or 1003.
+  # is a protocol error.
   - request:
       testName: framing/body-in-binary-frame
       streamType: STREAM_TYPE_UNARY
@@ -186,6 +186,7 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
         code: CODE_INTERNAL
 
@@ -244,8 +245,7 @@ testCases:
       error:
         code: CODE_INTERNAL
 
-  # §6.1: C is always text. A C in a binary frame is a protocol error. The
-  # close code is not checked: §13 allows 1002 or 1003.
+  # §6.1: C is always text. A C in a binary frame is a protocol error.
   - request:
       testName: end-stream/c-in-binary-frame
       streamType: STREAM_TYPE_UNARY
@@ -258,6 +258,7 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
         code: CODE_INTERNAL
 
