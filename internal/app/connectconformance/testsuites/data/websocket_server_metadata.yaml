@@ -427,9 +427,11 @@ testCases:
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
 
-  # §7.3: a key in M replaces the value the handshake carried for it.
+  # §7.3: a key in M that matches a header of the handshake is a protocol
+  # error, rather than a replacement for the handshake's value. Header names
+  # are case-insensitive, and net/http sends this one as X-Test.
   - request:
-      testName: metadata/overrides-handshake
+      testName: metadata/conflicts-with-handshake
       streamType: STREAM_TYPE_UNARY
       requestMessages:
         - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
@@ -443,14 +445,95 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §7.1, §7.3: keys that do not collide combine, so the effective headers hold
+  # both the handshake's header and the one from M.
+  - request:
+      testName: metadata/combined-with-handshake
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        headers:
+          - name: x-from-handshake
+            value: [ "handshake" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-from-metadata", "metadata"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requestHeaders:
+              - name: x-from-handshake
+                value: [ "handshake" ]
+              - name: x-from-metadata
+                value: [ "metadata" ]
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §7.3.1: a comma is valid inside a value, as in a date. The checker splits
+  # joined values on commas, so this shows only that the value is accepted.
+  - request:
+      testName: metadata/comma-in-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "Wed, 21 Oct 2015 07:28:00 GMT"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
       websocketCloseCode: 1000
       payloads:
         - requestInfo:
             requestHeaders:
               - name: x-test
-                value: [ "from-metadata" ]
+                value: [ "Wed, 21 Oct 2015 07:28:00 GMT" ]
             requests:
               - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+
+  # §7.3.1: an empty key is not a valid HTTP field name.
+  - request:
+      testName: metadata/empty-key
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["", "a"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.2: a client may not set origin in M, because the Fetch standard forbids
+  # it, and the server validates the handshake's Origin, not one from M.
+  - request:
+      testName: reserved/origin
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["origin", "https://attacker.example"]]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
 
   # §7.3.2: a client may not set cookie in M, because the Fetch standard forbids it. The server
   # must end the RPC with an error rather than ignore the key.

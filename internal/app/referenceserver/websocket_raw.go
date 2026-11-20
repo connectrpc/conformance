@@ -25,6 +25,7 @@ import (
 	"net/http"
 	"slices"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
@@ -69,10 +70,11 @@ func (w *wsRawWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	// handshake; they are the first bytes of the connection.
 	buffered, _ := readWriter.Peek(readWriter.Reader.Buffered())
 	conn := &wsServerConn{
-		Conn:    netConn,
-		reader:  io.MultiReader(bytes.NewReader(slices.Clone(buffered)), netConn),
-		watcher: wsframe.NewCloseWatcher(),
+		Conn:   netConn,
+		reader: io.MultiReader(bytes.NewReader(slices.Clone(buffered)), netConn),
 	}
+	conn.watcher = wsframe.NewMessageWatcher(conn.observeClientMessage)
+	conn.sent = wsframe.NewMessageWatcher(conn.observeServerMessage)
 	w.mu.Lock()
 	w.conn = conn
 	w.mu.Unlock()
@@ -87,6 +89,18 @@ func (w *wsRawWriter) setFeedback(feedback *feedbackPrinter) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	w.feedback = feedback
+}
+
+// finish runs once connect-go's handler, and so its reads, are done. A raw
+// response reports late messages itself, after the client closes.
+func (w *wsRawWriter) finish() {
+	w.mu.Lock()
+	conn, raw, feedback := w.conn, w.raw, w.feedback
+	w.mu.Unlock()
+	if conn == nil || raw != nil || feedback == nil {
+		return
+	}
+	conn.reportMessageAfterEndStream(feedback)
 }
 
 // setRawWebSocketResponse directs the connection of the RPC in ctx to send
@@ -142,7 +156,11 @@ func writeRawWebSocketResponse(ctx context.Context) {
 	go func() {
 		code, ok := conn.awaitClientClose()
 		_ = conn.Conn.Close()
-		if len(expected) == 0 || feedback == nil {
+		if feedback == nil {
+			return
+		}
+		conn.reportMessageAfterEndStream(feedback)
+		if len(expected) == 0 {
 			return
 		}
 		if !ok {
@@ -171,12 +189,18 @@ func checkClientClose(expected []uint32, code int) string {
 type wsServerConn struct {
 	net.Conn
 
-	reader  io.Reader
+	reader io.Reader
+	// watcher follows the client's frames, and sent the server's.
 	watcher *wsframe.CloseWatcher
+	sent    *wsframe.CloseWatcher
 	// readMu keeps reads, and so the bytes the watcher observes, in order.
 	readMu  sync.Mutex
 	writeMu sync.Mutex
 	raw     bool
+
+	endStreamSent atomic.Bool
+	lateMu        sync.Mutex
+	late          string // the first message the client sent after S
 }
 
 func (c *wsServerConn) Read(data []byte) (int, error) {
@@ -193,7 +217,9 @@ func (c *wsServerConn) Write(data []byte) (int, error) {
 	if c.raw {
 		return len(data), nil
 	}
-	return c.Conn.Write(data)
+	n, err := c.Conn.Write(data)
+	c.sent.Observe(data[:n])
+	return n, err
 }
 
 func (c *wsServerConn) Close() error {
@@ -215,8 +241,49 @@ func (c *wsServerConn) discardWrites() {
 func (c *wsServerConn) writeRaw(data []byte) error {
 	c.writeMu.Lock()
 	defer c.writeMu.Unlock()
-	_, err := c.Conn.Write(data)
+	n, err := c.Conn.Write(data)
+	c.sent.Observe(data[:n])
 	return err
+}
+
+func (c *wsServerConn) observeServerMessage(opcode byte, marker int) {
+	if opcode == wsframe.OpText && marker == 'S' {
+		c.endStreamSent.Store(true)
+	}
+}
+
+// observeClientMessage records the first message after S (§6.2). Tests must
+// make the client wait for S, so the message can't have been in flight.
+func (c *wsServerConn) observeClientMessage(opcode byte, marker int) {
+	if !c.endStreamSent.Load() {
+		return
+	}
+	c.lateMu.Lock()
+	defer c.lateMu.Unlock()
+	if c.late != "" {
+		return
+	}
+	frameType := "binary"
+	if opcode == wsframe.OpText {
+		frameType = "text"
+	}
+	switch {
+	case marker == wsframe.NoMarker:
+		c.late = "an empty " + frameType + " message"
+	case marker >= 0x21 && marker <= 0x7E:
+		c.late = fmt.Sprintf("a %s %c message", frameType, marker)
+	default:
+		c.late = fmt.Sprintf("a %s message with marker 0x%02x", frameType, marker)
+	}
+}
+
+func (c *wsServerConn) reportMessageAfterEndStream(feedback *feedbackPrinter) {
+	c.lateMu.Lock()
+	late := c.late
+	c.lateMu.Unlock()
+	if late != "" {
+		feedback.Printf("client sent %s after receiving the server's S message; it may send only a Close frame", late)
+	}
 }
 
 // awaitClientClose reads until the client's Close frame arrives, and returns

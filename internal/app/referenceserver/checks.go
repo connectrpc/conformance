@@ -86,7 +86,7 @@ type timeoutContextKey struct{}
 // configured to require it).
 func referenceServerChecks(handler http.Handler, errPrinter internal.Printer, calls *callCounter) http.HandlerFunc {
 	return func(respWriter http.ResponseWriter, req *http.Request) {
-		if isWebSocketUpgrade(req) {
+		if internal.IsWebSocketUpgrade(req) {
 			// The client's headers arrive in its M message; webSocketChecks
 			// checks them once connect-go has read it.
 			handler.ServeHTTP(respWriter, withWebSocketHandshake(req))

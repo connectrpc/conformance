@@ -193,10 +193,7 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 		connecthttp.WithCodecs(connectproto.NewBinaryCodec(), internal.NewStrictJSONCodec()),
 		// Zero means no limit, which the conformance suite expects when none is set.
 		connecthttp.WithReadMaxBytes(int(req.MessageReceiveLimit)),
-	}
-	if referenceMode {
-		// Clients under test include browsers, whose origin is the test page's.
-		opts = append(opts, connecthttp.WithWebSocketCheckOrigin(func(*http.Request) bool { return true }))
+		connecthttp.WithWebSocket(),
 	}
 	srv := connect.NewServer(interceptors...)
 
@@ -205,11 +202,17 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 
 	handler := http.Handler(http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
 		if strings.HasSuffix(req.URL.Path, conformancev1connect.ConformanceServiceBidiStreamProcedure) &&
-			req.ProtoMajor == 1 && !isWebSocketUpgrade(req) {
+			req.ProtoMajor == 1 && !internal.IsWebSocketUpgrade(req) {
 			// To force support for bidirectional RPC over HTTP 1.1 (for half-duplex testing),
 			// we "trick" the handler into thinking this is HTTP/2. We have to do this because
 			// otherwise, connect-go refuses to handle bidi streams over HTTP 1.1.
 			req.ProtoMajor, req.ProtoMinor = 2, 0
+		}
+		if referenceMode && internal.IsWebSocketUpgrade(req) {
+			// Clients under test include browsers, whose origin is the test page's,
+			// and a server never rejects a handshake without an Origin.
+			req = req.Clone(req.Context())
+			req.Header.Del("Origin")
 		}
 		mux.ServeHTTP(respWriter, req)
 	}))
@@ -244,7 +247,7 @@ func createServer(ctx context.Context, req *conformancev1.ServerCompatRequest, l
 		// handshakes bypass it.
 		untraced, traced := handler, tracer.TracingHandler(handler, trace)
 		handler = http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-			if isWebSocketUpgrade(req) {
+			if internal.IsWebSocketUpgrade(req) {
 				untraced.ServeHTTP(respWriter, req)
 				return
 			}

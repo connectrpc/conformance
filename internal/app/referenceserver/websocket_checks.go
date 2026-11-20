@@ -24,7 +24,6 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/connect/v2"
-	"connectrpc.com/connect/v2/connecthttp"
 )
 
 const wsTimeoutParam = "connect-timeout-ms"
@@ -129,11 +128,6 @@ func (h *wsHandshake) check(ctx context.Context, info *connect.CallInfo, header 
 	if expectedMethod, _ := getHeader(header, "X-Expect-Http-Method", feedback); h.request.Method != expectedMethod {
 		feedback.Printf("expected HTTP method %q, got %q", expectedMethod, h.request.Method)
 	}
-}
-
-// isWebSocketUpgrade reports whether req is a WebSocket handshake.
-func isWebSocketUpgrade(req *http.Request) bool {
-	return connecthttp.IsWebSocketUpgrade(req)
 }
 
 // callCounter counts the requests a client sends for each test case.

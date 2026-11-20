@@ -1,0 +1,86 @@
+# Tests of what a Connect-over-WebSocket client sends once the server has
+# ended the stream. Section numbers refer to the Connect-over-WebSocket
+# protocol specification.
+#
+# §6.2: after a client receives S, it sends nothing more but a Close frame,
+# not even its own C. In each test the server sends S while the client waits
+# for a response, so anything after S was sent after the client received it.
+# The reference server reports such a message. errors.yaml's
+# full-duplex/error-no-responses covers S before any response.
+#
+# §13: S completes the RPC normally, whether or not it carries an error, so
+# the client's Close frame carries 1000. Where a test sets
+# expectedClientCloseCodes, the reference server sends no Close frame of its
+# own and checks the client's. These tests send only M and S, which are text
+# under every codec.
+name: WebSocket Client After End of Stream
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_CONNECT_WEBSOCKET
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+testCases:
+  # The server sends one response, then answers the next request with an
+  # error, while the client still has a request to send.
+  - request:
+      testName: end-of-stream/full-duplex/error-after-response
+      streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+            error:
+              code: CODE_FAILED_PRECONDITION
+              message: "ended before the client finished sending"
+          fullDuplex: true
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          requestData: "dGVzdCByZXF1ZXN0"
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          requestData: "dGVzdCByZXF1ZXN0"
+
+  # As above, but the server ends the stream successfully.
+  - request:
+      testName: end-of-stream/full-duplex/success-after-response
+      streamType: STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            responseData:
+              - "dGVzdCByZXNwb25zZQ=="
+          fullDuplex: true
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          requestData: "dGVzdCByZXF1ZXN0"
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          requestData: "dGVzdCByZXF1ZXN0"
+
+  # §13: an error in S is still a normal completion.
+  - request:
+      testName: end-of-stream/unary/error-closes-normally
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"error": {"code": "not_found", "message": "oops"}}' } }
+              expectedClientCloseCodes: [ 1000 ]
+    expectedResponse:
+      error:
+        code: CODE_NOT_FOUND
+        message: "oops"
+
+  # §13: a stream that ends with S and no error closes with 1000.
+  - request:
+      testName: end-of-stream/server-stream/success-closes-normally
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 1000 ]
+    expectedResponse: {}

@@ -44,9 +44,10 @@ type rawResponseKey struct{}
 // raw response can be sent.)
 func rawResponder(handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(respWriter http.ResponseWriter, req *http.Request) {
-		if isWebSocketUpgrade(req) {
+		if internal.IsWebSocketUpgrade(req) {
 			writer := &wsRawWriter{ResponseWriter: respWriter}
 			handler.ServeHTTP(writer, req.WithContext(context.WithValue(req.Context(), wsRawResponseKey{}, writer)))
+			writer.finish()
 			return
 		}
 		snapshotHeaders := respWriter.Header().Clone()

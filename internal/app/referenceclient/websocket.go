@@ -25,7 +25,6 @@ import (
 	"connectrpc.com/conformance/internal"
 	conformancev1 "connectrpc.com/conformance/internal/gen/proto/go/connectrpc/conformance/v1"
 	"connectrpc.com/conformance/internal/wsframe"
-	"connectrpc.com/connect/v2/connecthttp"
 )
 
 const (
@@ -50,7 +49,7 @@ type webSocketWire struct {
 }
 
 func (w *webSocketWire) RoundTrip(req *http.Request) (*http.Response, error) {
-	if !connecthttp.IsWebSocketUpgrade(req) {
+	if !internal.IsWebSocketUpgrade(req) {
 		return w.transport.RoundTrip(req)
 	}
 	if w.raw != nil {

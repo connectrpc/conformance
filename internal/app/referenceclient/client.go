@@ -194,7 +194,7 @@ func invoke(ctx context.Context, transports *transports, req *conformancev1.Clie
 	case conformancev1.Protocol_PROTOCOL_CONNECT:
 		// Do nothing
 	case conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET:
-		clientOptions = append(clientOptions, connecthttp.WithWebSocket(connecthttp.SelectAll))
+		clientOptions = append(clientOptions, connecthttp.WithWebSocket())
 	case conformancev1.Protocol_PROTOCOL_UNSPECIFIED:
 		return nil, errors.New("a protocol must be specified")
 	}

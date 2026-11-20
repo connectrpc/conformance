@@ -137,8 +137,8 @@ testCases:
         code: CODE_INTERNAL
 
   # §6.1: an empty B payload goes to the codec like any other. The empty JSON
-  # message is {}, so an empty payload fails to decode, as malformed JSON does.
-  # The spec names no code for a decode failure, so either common one passes.
+  # message is {}, so an empty payload fails to decode, as malformed JSON does,
+  # and a payload that fails to decode is a protocol error.
   - request:
       testName: framing/empty-json-body
       streamType: STREAM_TYPE_UNARY
@@ -151,9 +151,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL ]
+        code: CODE_INTERNAL
 
   # §6.1: malformed JSON fails to decode, with the same result as an empty body.
   - request:
@@ -168,9 +168,9 @@ testCases:
           - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
     expectedResponse:
       httpStatusCode: 101
+      websocketCloseCode: 1002
       error:
-        code: CODE_INVALID_ARGUMENT
-    otherAllowedErrorCodes: [ CODE_INTERNAL ]
+        code: CODE_INTERNAL
 
   # §6.1, §13: a body in a frame type that does not match the negotiated codec
   # is a protocol error.
@@ -337,3 +337,40 @@ testCases:
       websocketCloseCode: 1007
       error:
         code: CODE_INTERNAL
+
+  # §6.2: a server-streaming RPC also takes exactly one request. A server that
+  # receives no B before C MUST end the RPC with an error, and SHOULD use
+  # unimplemented, so any error code passes.
+  - request:
+      testName: cardinality/server-stream-zero-requests
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §6.2: the same holds for a server-streaming RPC that receives two B before
+  # C.
+  - request:
+      testName: cardinality/server-stream-two-requests
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]

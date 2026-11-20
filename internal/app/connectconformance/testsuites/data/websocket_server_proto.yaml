@@ -86,3 +86,43 @@ testCases:
       websocketCloseCode: 1002
       error:
         code: CODE_INTERNAL
+
+  # §6.1: a payload that fails to decode is a protocol error. 0xFF begins a
+  # varint tag that never ends, so it is not a Protobuf message.
+  - request:
+      testName: framing/undecodable-proto-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary: "/w==" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §4.3: a server selects the first offered token whose codec it supports.
+  # This server supports both, so it selects Protobuf, and the binary body
+  # decodes. Had it selected JSON, the binary body would be a protocol error.
+  - request:
+      testName: subprotocol/first-supported-token
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        subprotocols: [ "connectrpc.1+proto", "connectrpc.1+json" ]
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest

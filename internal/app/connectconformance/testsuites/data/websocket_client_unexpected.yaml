@@ -272,9 +272,9 @@ testCases:
       error:
         code: CODE_INTERNAL
 
-  # §9: the payload of S is an EndStreamResponse, a JSON object, so null is
-  # not one and must not read as success. The RFC does not say whether this is
-  # a protocol error, so neither the code nor the close is pinned down.
+  # §6.1, §9: the payload of S is an EndStreamResponse, a JSON object, so
+  # null fails to decode as one, and a payload that fails to decode is a
+  # protocol error.
   - request:
       testName: end-stream/null
       streamType: STREAM_TYPE_UNARY
@@ -286,14 +286,14 @@ testCases:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: 'null' } }
+              expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
         code: CODE_INTERNAL
-    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
-  # §9: the payload of S is an EndStreamResponse, a JSON object, so an array is
-  # not one and must not read as success. The RFC does not say whether this is
-  # a protocol error, so neither the code nor the close is pinned down.
+  # §6.1, §9: the payload of S is an EndStreamResponse, a JSON object, so
+  # an array fails to decode as one, and a payload that fails to decode is a
+  # protocol error.
   - request:
       testName: end-stream/array
       streamType: STREAM_TYPE_UNARY
@@ -305,10 +305,10 @@ testCases:
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
                 - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '[]' } }
+              expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
         code: CODE_INTERNAL
-    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_UNIMPLEMENTED, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
 
   # §7.3.1: keys must be lower-case. A key with an upper-case letter is a
   # protocol error.
@@ -835,3 +835,129 @@ testCases:
     expectedResponse:
       error:
         code: CODE_CANCELED
+
+  # §6.1: a payload that fails to decode is a protocol error. The JSON is
+  # well-formed, but payload is a message, not a number.
+  - request:
+      testName: framing/undecodable-json-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": 5}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: keys must be valid HTTP field names.
+  - request:
+      testName: metadata/invalid-key
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x test", "a"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: each entry is an array of strings.
+  - request:
+      testName: metadata/entry-not-array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '["x-test"]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: an empty string is a valid value, so a key can be present but empty.
+  - request:
+      testName: metadata/empty-string-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", ""]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseHeaders:
+        - name: x-test
+          value: [ "" ]
+
+  # §7.3.1: a comma is valid inside a value, as in a date. The checker splits
+  # joined values on commas, so this shows only that the value is accepted.
+  - request:
+      testName: metadata/comma-in-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "Wed, 21 Oct 2015 07:28:00 GMT"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseHeaders:
+        - name: x-test
+          value: [ "Wed, 21 Oct 2015 07:28:00 GMT" ]
+
+  # §13.1: a close without S is unavailable for every close code but 1007 and
+  # 1009, including 1011, which a server sends for an idle timeout.
+  - request:
+      testName: end-stream/missing-close-1011
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              closeCode: 1011
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+
+  # §6.2: the same holds for a client-stream response with two messages.
+  - request:
+      testName: cardinality/client-stream-two-responses
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]

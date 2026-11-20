@@ -100,3 +100,39 @@ func TestCloseWatcher(t *testing.T) {
 	require.True(t, ok)
 	require.Equal(t, CloseNoStatus, code)
 }
+
+func TestMessageWatcher(t *testing.T) {
+	t.Parallel()
+	const opPing = 0x9
+	type message struct {
+		opcode byte
+		marker int
+	}
+	for _, masked := range []bool{false, true} {
+		var stream bytes.Buffer
+		stream.Write(AppendFrame(nil, OpText, []byte("M[]"), masked))
+		stream.Write(AppendFrame(nil, OpBinary, append([]byte("B"), make([]byte, 70000)...), masked))
+		stream.Write(AppendFrame(nil, opPing, []byte("S"), masked))
+		stream.Write(AppendFrame(nil, OpText, nil, masked))
+		stream.Write(AppendFrame(nil, OpText, []byte("C"), masked))
+		stream.Write(CloseFrame(1000, "", masked))
+
+		var got []message
+		watcher := NewMessageWatcher(func(opcode byte, marker int) {
+			got = append(got, message{opcode, marker})
+		})
+		// One byte at a time, as the worst case of how reads may split frames.
+		for _, b := range stream.Bytes() {
+			watcher.Observe([]byte{b})
+		}
+		require.Equal(t, []message{
+			{OpText, 'M'},
+			{OpBinary, 'B'},
+			{OpText, NoMarker},
+			{OpText, 'C'},
+		}, got, "control frames are not messages")
+		code, ok := watcher.Code()
+		require.True(t, ok)
+		require.Equal(t, 1000, code)
+	}
+}

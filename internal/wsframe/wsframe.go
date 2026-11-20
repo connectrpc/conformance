@@ -114,9 +114,16 @@ func Messages(messages []*conformancev1.WebSocketMessage, masked bool) ([]byte, 
 	return frames, nil
 }
 
+// NoMarker is what a MessageFunc receives for a message with an empty payload.
+const NoMarker = -1
+
+// MessageFunc receives the opcode and the first payload byte of a text or
+// binary frame, or NoMarker if its payload is empty.
+type MessageFunc func(opcode byte, marker int)
+
 // CloseWatcher follows the frames of one direction of a connection, as they
 // are read, and records the code and reason of the first Close frame among
-// them.
+// them. It can also report the start of each text or binary frame.
 type CloseWatcher struct {
 	mu        sync.Mutex
 	header    []byte
@@ -131,11 +138,18 @@ type CloseWatcher struct {
 	reason    string
 	closed    bool
 	seen      chan struct{}
+	onMessage MessageFunc
 }
 
 // NewCloseWatcher returns a CloseWatcher positioned at the start of a frame.
 func NewCloseWatcher() *CloseWatcher {
 	return &CloseWatcher{seen: make(chan struct{})}
+}
+
+// NewMessageWatcher returns a CloseWatcher that also calls onMessage as each
+// text or binary frame starts. onMessage must not call the watcher.
+func NewMessageWatcher(onMessage MessageFunc) *CloseWatcher {
+	return &CloseWatcher{seen: make(chan struct{}), onMessage: onMessage}
 }
 
 // Observe advances the watcher past data, the next bytes of the connection.
@@ -159,6 +173,11 @@ func (w *CloseWatcher) Observe(data []byte) {
 				}
 				w.offset++
 			}
+		} else {
+			if w.offset == 0 {
+				w.reportMessage(int(chunk[0] ^ w.maskByte(0)))
+			}
+			w.offset += uint64(len(chunk))
 		}
 		data = data[len(chunk):]
 		w.remaining -= uint64(len(chunk))
@@ -217,8 +236,18 @@ func (w *CloseWatcher) startPayload() {
 	w.header, w.offset, w.payload = w.header[:0], 0, nil
 	w.inPayload = true
 	if w.remaining == 0 {
+		w.reportMessage(NoMarker)
 		w.endFrame()
 	}
+}
+
+// reportMessage tells onMessage that a text or binary frame has started. A
+// continuation frame is not reported: its first byte is not a marker.
+func (w *CloseWatcher) reportMessage(marker int) {
+	if w.onMessage == nil || (w.opcode != OpText && w.opcode != OpBinary) {
+		return
+	}
+	w.onMessage(w.opcode, marker)
 }
 
 func (w *CloseWatcher) endFrame() {
