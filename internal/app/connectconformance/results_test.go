@@ -1039,6 +1039,60 @@ func TestResults_Assert_OtherAllowedErrorMessages(t *testing.T) {
 	}
 }
 
+func TestResults_Assert_WebSocketConnectKeys(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		name          string
+		mode          conformancev1.TestSuite_TestMode
+		protocol      conformancev1.Protocol
+		expectedError string
+	}{
+		{
+			name:     "websocket-server",
+			mode:     conformancev1.TestSuite_TEST_MODE_SERVER,
+			protocol: conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET,
+			expectedError: `actual response headers include reserved key "connect-custom"` + "\n" +
+				`actual response trailers include reserved key "connect-other"`,
+		},
+		{
+			name:     "websocket-client",
+			mode:     conformancev1.TestSuite_TEST_MODE_CLIENT,
+			protocol: conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET,
+		},
+		{
+			name:     "connect-server",
+			mode:     conformancev1.TestSuite_TEST_MODE_SERVER,
+			protocol: conformancev1.Protocol_PROTOCOL_CONNECT,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+			results := newResults(testCase.mode, 0, &testTrie{}, &testTrie{}, nil)
+			definition := &conformancev1.TestCase{
+				Request:          &conformancev1.ClientCompatRequest{Protocol: testCase.protocol},
+				ExpectedResponse: &conformancev1.ClientResponseResult{},
+			}
+			actual := &conformancev1.ClientResponseResult{
+				ResponseHeaders: []*conformancev1.Header{
+					{Name: "x-ok", Value: []string{"1"}},
+					{Name: "Connect-Custom", Value: []string{"1"}},
+				},
+				ResponseTrailers: []*conformancev1.Header{
+					{Name: "connect-other", Value: []string{"1"}},
+				},
+			}
+			results.assert(testCase.name, definition, actual)
+			err := results.outcomes[testCase.name].actualFailure
+			if testCase.expectedError == "" {
+				require.NoError(t, err)
+			} else {
+				require.EqualError(t, err, testCase.expectedError)
+			}
+		})
+	}
+}
+
 func makeKnownFailing() *testTrie {
 	return parsePatterns([]string{"known-to-fail/**"})
 }

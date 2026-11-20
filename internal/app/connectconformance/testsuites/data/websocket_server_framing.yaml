@@ -136,9 +136,10 @@ testCases:
       error:
         code: CODE_INTERNAL
 
-  # §6.1: an empty B payload goes to the codec like any other. The empty JSON
-  # message is {}, so an empty payload fails to decode, as malformed JSON does,
-  # and a payload that fails to decode is a protocol error.
+  # §5, §6.1: an empty B payload goes to the codec like any other. The empty
+  # JSON message is {}, so an empty payload fails to decode, as malformed JSON
+  # does. A B payload that fails to decode is a protocol error reported as
+  # invalid_argument.
   - request:
       testName: framing/empty-json-body
       streamType: STREAM_TYPE_UNARY
@@ -153,7 +154,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INTERNAL
+        code: CODE_INVALID_ARGUMENT
 
   # §6.1: malformed JSON fails to decode, with the same result as an empty body.
   - request:
@@ -170,7 +171,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INTERNAL
+        code: CODE_INVALID_ARGUMENT
 
   # §6.1, §13: a body in a frame type that does not match the negotiated codec
   # is a protocol error.

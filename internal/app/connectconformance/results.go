@@ -222,6 +222,12 @@ func (r *testResults) assert(
 		errs = append(errs, checkHeaders("response trailers", expected.ResponseTrailers, actual.ResponseTrailers)...)
 	}
 
+	if r.mode == conformancev1.TestSuite_TEST_MODE_SERVER &&
+		definition.Request.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET {
+		errs = append(errs, checkNoConnectKeys("response headers", actual.ResponseHeaders)...)
+		errs = append(errs, checkNoConnectKeys("response trailers", actual.ResponseTrailers)...)
+	}
+
 	if expected.HttpStatusCode != nil &&
 		actual.HttpStatusCode != nil &&
 		expected.GetHttpStatusCode() != actual.GetHttpStatusCode() {
@@ -430,6 +436,18 @@ func checkHeaders(what string, expected, actual []*conformancev1.Header) multiEr
 		if !reflect.DeepEqual(expectedVals, actualVals) {
 			errs = append(errs, fmt.Errorf("%s has incorrect values for %q: expected [%s], got [%s]",
 				what, name, headerValsToString(hdr.Value), headerValsToString(actualVals)))
+		}
+	}
+	return errs
+}
+
+// checkNoConnectKeys reports keys beginning with connect-, which a
+// Connect-over-WebSocket server must leave out of its M and S messages.
+func checkNoConnectKeys(what string, actual []*conformancev1.Header) multiErrors {
+	var errs multiErrors
+	for _, hdr := range actual {
+		if name := strings.ToLower(hdr.Name); strings.HasPrefix(name, "connect-") {
+			errs = append(errs, fmt.Errorf("actual %s include reserved key %q", what, name))
 		}
 	}
 	return errs

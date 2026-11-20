@@ -87,8 +87,9 @@ testCases:
       error:
         code: CODE_INTERNAL
 
-  # §6.1: a payload that fails to decode is a protocol error. 0xFF begins a
-  # varint tag that never ends, so it is not a Protobuf message.
+  # §5, §6.1: a B payload that fails to decode is a protocol error reported as
+  # invalid_argument. 0xFF begins a varint tag that never ends, so it is not a
+  # Protobuf message.
   - request:
       testName: framing/undecodable-proto-body
       streamType: STREAM_TYPE_UNARY
@@ -103,7 +104,7 @@ testCases:
       httpStatusCode: 101
       websocketCloseCode: 1002
       error:
-        code: CODE_INTERNAL
+        code: CODE_INVALID_ARGUMENT
 
   # §4.3: a server selects the first offered token whose codec it supports.
   # This server supports both, so it selects Protobuf, and the binary body

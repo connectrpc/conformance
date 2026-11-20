@@ -144,8 +144,9 @@ testCases:
       error:
         code: CODE_INTERNAL
 
-  # §6.1: an empty B payload goes to the codec. The empty JSON message is {},
-  # so an empty payload fails to decode, and the client fails the RPC.
+  # §5, §6.1: an empty B payload goes to the codec. The empty JSON message is
+  # {}, so an empty payload fails to decode, and the client fails the RPC with
+  # invalid_argument.
   - request:
       testName: framing/empty-json-body
       streamType: STREAM_TYPE_UNARY
@@ -160,7 +161,7 @@ testCases:
               expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
-        code: CODE_INTERNAL
+        code: CODE_INVALID_ARGUMENT
 
   # §6.1, §7.3: M is always JSON, so always text. A binary frame says its payload
   # is Protobuf, so an M in one is a protocol error even if its payload parses.
@@ -273,8 +274,8 @@ testCases:
         code: CODE_INTERNAL
 
   # §6.1, §9: the payload of S is an EndStreamResponse, a JSON object, so
-  # null fails to decode as one, and a payload that fails to decode is a
-  # protocol error.
+  # null fails to decode as one. Unlike a B payload, an S payload that fails to
+  # decode is reported as internal.
   - request:
       testName: end-stream/null
       streamType: STREAM_TYPE_UNARY
@@ -292,8 +293,8 @@ testCases:
         code: CODE_INTERNAL
 
   # §6.1, §9: the payload of S is an EndStreamResponse, a JSON object, so
-  # an array fails to decode as one, and a payload that fails to decode is a
-  # protocol error.
+  # an array fails to decode as one. Unlike a B payload, an S payload that
+  # fails to decode is reported as internal.
   - request:
       testName: end-stream/array
       streamType: STREAM_TYPE_UNARY
@@ -836,8 +837,9 @@ testCases:
       error:
         code: CODE_CANCELED
 
-  # §6.1: a payload that fails to decode is a protocol error. The JSON is
-  # well-formed, but payload is a message, not a number.
+  # §5, §6.1: a B payload that fails to decode is a protocol error reported as
+  # invalid_argument. The JSON is well-formed, but payload is a message, not a
+  # number.
   - request:
       testName: framing/undecodable-json-body
       streamType: STREAM_TYPE_UNARY
@@ -852,7 +854,7 @@ testCases:
               expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
-        code: CODE_INTERNAL
+        code: CODE_INVALID_ARGUMENT
 
   # §7.3.1: keys must be valid HTTP field names.
   - request:

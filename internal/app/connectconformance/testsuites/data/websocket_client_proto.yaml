@@ -106,8 +106,9 @@ testCases:
       payloads:
         - {}
 
-  # §6.1: a payload that fails to decode is a protocol error. 0xFF begins a
-  # varint tag that never ends, so it is not a Protobuf message.
+  # §5, §6.1: a B payload that fails to decode is a protocol error reported as
+  # invalid_argument. 0xFF begins a varint tag that never ends, so it is not a
+  # Protobuf message.
   - request:
       testName: framing/undecodable-binary-body
       streamType: STREAM_TYPE_UNARY
@@ -122,4 +123,4 @@ testCases:
               expectedClientCloseCodes: [ 3102 ]
     expectedResponse:
       error:
-        code: CODE_INTERNAL
+        code: CODE_INVALID_ARGUMENT
