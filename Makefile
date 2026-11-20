@@ -62,6 +62,7 @@ build: generate ## Build all packages
 
 .PHONY: generate
 generate: $(BUF) $(LICENSE_HEADER) ## Regenerate code and licenses
+	$(GO) mod tidy
 	$(BUF) generate proto
 	$(LICENSE_HEADER) \
 		--license-type apache \
