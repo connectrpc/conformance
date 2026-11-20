@@ -287,6 +287,9 @@ func TestRawResponseRecorder(t *testing.T) {
 					testCaseName := t.Name()
 					transport := roundTripperFunc(func(req *http.Request) (*http.Response, error) {
 						req.Header.Set("X-Test-Case-Name", testCaseName)
+						// The client's Close cancels the request, which would abort the
+						// response before captureBody.Close can drain it.
+						req = req.WithContext(context.WithoutCancel(req.Context()))
 						resp, err = svr.Client().Transport.RoundTrip(req)
 						if err != nil {
 							return nil, err

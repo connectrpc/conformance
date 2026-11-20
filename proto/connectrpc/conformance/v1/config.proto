@@ -124,6 +124,17 @@ enum Protocol {
   PROTOCOL_CONNECT = 1;
   PROTOCOL_GRPC = 2;
   PROTOCOL_GRPC_WEB = 3;
+  // The Connect protocol carried over a WebSocket connection, as described
+  // by the Connect-over-WebSocket specification. The handshake is always an
+  // HTTP/1.1 request, so this protocol is only tested with HTTP_VERSION_1. All
+  // stream types, including full-duplex bidi streams, work over it.
+  //
+  // Messages are compressed by the WebSocket layer (permessage-deflate), not
+  // by Connect, so this protocol is only tested with COMPRESSION_IDENTITY.
+  //
+  // An implementation opts into this protocol by listing it in the features
+  // of its configuration. It is never included by default.
+  PROTOCOL_CONNECT_WEBSOCKET = 6;
   // TODO: Support add'l protocols:
   //PROTOCOL_GRPC_WEB_TEXT = 4;
   //PROTOCOL_REST_TRANSCODING = 5;

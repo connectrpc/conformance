@@ -918,6 +918,31 @@ func TestExpandRequestData(t *testing.T) {
 	}
 }
 
+func TestExpandRequestDataExpandsRawWebSocketMessages(t *testing.T) {
+	t.Parallel()
+	var testCase conformancev1.TestCase
+	err := protojson.Unmarshal([]byte(`{
+		"request": {
+			"requestMessages": [
+				{"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest"},
+				{"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest", "request_data": "AA=="}
+			],
+			"rawWebsocketRequest": {
+				"messages": [
+					{"type": "WEB_SOCKET_MESSAGE_TYPE_BINARY", "marker": "B", "contents": {"binary_message": {"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest"}}},
+					{"type": "WEB_SOCKET_MESSAGE_TYPE_BINARY", "marker": "B", "contents": {"binary_message": {"@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest", "request_data": "AA=="}}}
+				]
+			}
+		},
+		"expandRequests": [{}, {"size_relative_to_limit": 1}]
+	}`), &testCase)
+	require.NoError(t, err)
+	require.NoError(t, expandRequestData(&testCase))
+	messages := testCase.GetRequest().GetRawWebsocketRequest().GetMessages()
+	require.Empty(t, messages[0].GetContents().GetBinaryMessage().GetValue())
+	require.Len(t, messages[1].GetContents().GetBinaryMessage().GetValue(), 200*1024+1)
+}
+
 func TestPopulateExpectedResponse(t *testing.T) {
 	t.Parallel()
 
