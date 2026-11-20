@@ -16,22 +16,17 @@ you to sign your commits when you open your pull request, and provide helpful ti
 
 ## Setup
 
-Install Docker on your machine and ensure that [Docker Compose V2 is
-enabled][docker-compose-v2].
-
 [Fork][fork], then clone the repository:
 
 ```
-mkdir -p $GOPATH/src/connectrpc.com
-cd $GOPATH/src/connectrpc.com
 git clone git@github.com:your_github_username/conformance.git
 cd conformance
 git remote add upstream https://github.com/connectrpc/conformance.git
 git fetch upstream
 ```
 
-Make sure that the tests and the linters pass (you'll need `bash`, `curl`, and
-the latest stable Go release installed):
+Make sure that the tests and the linters pass (you'll need `bash`, `curl`,
+`npm`, and the latest stable Go release installed):
 
 ```
 make
@@ -42,7 +37,6 @@ make
 Start by creating a new branch for your changes:
 
 ```
-cd $GOPATH/src/connectrpc.com/conformance
 git checkout main
 git fetch upstream
 git rebase upstream/main
@@ -74,5 +68,4 @@ We're much more likely to approve your changes if you:
 [fork]: https://github.com/connectrpc/conformance/fork
 [open-issue]: https://github.com/connectrpc/conformance/issues/new
 [commit-message]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
-[docker-compose-v2]: https://www.docker.com/blog/announcing-compose-v2-general-availability/#still-using-compose-v1
 [dco]: https://developercertificate.org
