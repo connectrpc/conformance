@@ -228,12 +228,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: db5596f
+          ref: ${{ needs.prepare.outputs.sha }}
           fetch-depth: 2
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-go
-          ref: ${{ needs.prepare.outputs.implementation-ref }}
+          ref: ed/websocket
           path: .tmp/connect-go
       - uses: actions/setup-go@v7
         with:
