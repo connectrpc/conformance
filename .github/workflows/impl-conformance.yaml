@@ -228,7 +228,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.prepare.outputs.sha }}
+          ref: db5596f
           fetch-depth: 2
       - uses: actions/checkout@v7
         with:
