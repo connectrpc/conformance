@@ -1,0 +1,5 @@
+# connect-go drops the connection without a Close frame when a call is canceled
+# or its deadline expires before S. The spec requires the client to close with
+# 1000 in both cases.
+WebSocket Client Unexpected Responses/**/cancel/client-closes-normally
+WebSocket Client Unexpected Responses/**/deadline/client-closes-normally

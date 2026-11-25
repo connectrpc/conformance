@@ -233,7 +233,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: connectrpc/connect-go
-          ref: ed/websocket
+          ref: ed/websocket2
           path: .tmp/connect-go
       - uses: actions/setup-go@v7
         with:
