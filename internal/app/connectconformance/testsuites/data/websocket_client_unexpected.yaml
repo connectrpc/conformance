@@ -856,6 +856,45 @@ testCases:
       error:
         code: CODE_INVALID_ARGUMENT
 
+  # §5, §6.1: a streamed B that fails to decode ends the RPC at once. The
+  # server sends no S, so a client that waits for one never closes.
+  - request:
+      testName: framing/undecodable-json-body-server-stream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": 5}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+      payloads:
+        - data: "AQID"
+
+  # As above, for a bidi stream.
+  - request:
+      testName: framing/undecodable-json-body-half-duplex
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": 5}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+      payloads:
+        - data: "AQID"
+
   # §7.3.1: keys must be valid HTTP field names.
   - request:
       testName: metadata/invalid-key
