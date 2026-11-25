@@ -404,10 +404,12 @@ jobs:
         env:
           # connect-kotlin generates its conformance code from its pinned release.
           PROTOS_PINNED: true
-        # -o keeps make from replacing the runner with the pinned release.
+        # An older stand-in for the release download keeps make from replacing
+        # the runner. Unlike -o, a variable reaches connect-kotlin's sub-makes.
         run: |
+          touch -d @0 "${RUNNER_TEMP}/connectconformance-release.tgz"
           "${GITHUB_WORKSPACE}/.github/impl-conformance/impl-conformance.sh" run connect-kotlin client \
-            make -o .tmp/bin/connectconformance runconformance
+            make CONNECT_CONFORMANCE_DOWNLOAD="${RUNNER_TEMP}/connectconformance-release.tgz" runconformance
       - uses: actions/upload-artifact@v7
         if: always()
         with:
