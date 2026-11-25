@@ -1,0 +1,1004 @@
+# Tests of how a Connect-over-WebSocket client handles unexpected responses
+# from a server. Section numbers refer to the Connect-over-WebSocket protocol
+# specification.
+#
+# §5: a client reports a protocol error in the server's response by failing
+# the RPC with the code internal and closing with 3102.
+#
+# Where a test sets expectedClientCloseCodes, the reference server sends no
+# Close frame of its own after the messages. It waits for the client to close
+# the connection and checks the code.
+name: WebSocket Client Unexpected Responses
+mode: TEST_MODE_CLIENT
+relevantProtocols:
+  - PROTOCOL_CONNECT_WEBSOCKET
+relevantCodecs:
+  - CODEC_JSON
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+testCases:
+  # §6.2: every response stream opens with an M message.
+  - request:
+      testName: framing/first-message-not-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.2: a stream carries exactly one M message.
+  - request:
+      testName: framing/second-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.2: M may not follow a body.
+  - request:
+      testName: framing/metadata-after-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §5: an unrecognized marker is a protocol error, never skipped.
+  - request:
+      testName: framing/unknown-marker
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "X", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §5.1: every byte but the four markers is unknown, including one with the
+  # high bit set. "é" is valid UTF-8, so the message can be a text frame, and
+  # its first byte, 0xC3, is not a marker. A binary frame would not isolate the
+  # marker: under JSON, §6.1 already rejects it.
+  - request:
+      testName: framing/high-bit-marker
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "é", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §5: C is valid only from a client.
+  - request:
+      testName: framing/client-marker-from-server
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §5: a message with no marker is a protocol error.
+  - request:
+      testName: framing/empty-message
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §5, §6.1: an empty B payload goes to the codec. The empty JSON message is
+  # {}, so an empty payload fails to decode, and the client fails the RPC with
+  # invalid_argument.
+  - request:
+      testName: framing/empty-json-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B" }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # §6.1, §7.3: M is always JSON, so always text. A binary frame says its payload
+  # is Protobuf, so an M in one is a protocol error even if its payload parses.
+  - request:
+      testName: framing/metadata-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1, §9: S is always JSON, so always text.
+  - request:
+      testName: framing/end-stream-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1, §13: a body in a frame type that does not match the negotiated codec is
+  # rejected. A client has no code more specific than 3102 for it. The payload
+  # is a valid JSON body, so only the frame type is wrong.
+  - request:
+      testName: framing/body-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary: "eyJwYXlsb2FkIjogeyJkYXRhIjogIkFRSUQifX0=" } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1, §13: a client that finds invalid UTF-8 in a text message closes with
+  # 1007 and reports internal. Some browsers close with 1002 instead, and some
+  # drop the connection without a Close frame (1006), as RFC 6455 §7.1.7
+  # permits. A client on the WebSocket API sees only 1006, as for a dropped
+  # connection, and reports unavailable [§13.1].
+  - request:
+      testName: framing/invalid-utf8
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { binary: "//4=" } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 1007, 1002, 1006 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+    otherAllowedErrorCodes: [ CODE_UNAVAILABLE ]
+
+  # §9: an S message with no payload is a protocol error.
+  - request:
+      testName: end-stream/bare
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S" }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §9: the payload of S is a JSON EndStreamResponse.
+  - request:
+      testName: end-stream/not-json
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: 'not json' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1, §9: the payload of S is an EndStreamResponse, a JSON object, so
+  # null fails to decode as one. Unlike a B payload, an S payload that fails to
+  # decode is reported as internal.
+  - request:
+      testName: end-stream/null
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: 'null' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1, §9: the payload of S is an EndStreamResponse, a JSON object, so
+  # an array fails to decode as one. Unlike a B payload, an S payload that
+  # fails to decode is reported as internal.
+  - request:
+      testName: end-stream/array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '[]' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: keys must be lower-case. A key with an upper-case letter is a
+  # protocol error.
+  - request:
+      testName: metadata/upper-case-key
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["X-Test", "a"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: a client must also treat two entries with an identical key as a
+  # protocol error.
+  - request:
+      testName: metadata/duplicate-key
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "a"], ["x-test", "b"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: the payload of M is a JSON array, not a JSON object.
+  - request:
+      testName: metadata/object-not-array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '{"x-test": ["a"]}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: the payload of M is a JSON array; null is not one.
+  - request:
+      testName: metadata/null
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: 'null' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §9, §13.1: a connection that closes without S is a failed RPC, even with
+  # close code 1000.
+  - request:
+      testName: end-stream/missing-normal-close
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+
+  # §13.1: a connection that ends without S or a Close frame is a failed RPC.
+  - request:
+      testName: end-stream/missing-abnormal-close
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              omitClose: true
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+
+  # §9, §13.1: the same holds for a stream that has delivered messages.
+  - request:
+      testName: end-stream/server-stream-missing
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+      payloads:
+        - data: "AQID"
+
+  # §13: once S has arrived, the RPC is complete. A connection that then ends
+  # without a Close frame (1006) is not a transport failure.
+  - request:
+      testName: end-stream/abnormal-close-after-end
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              omitClose: true
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+
+  # §6.2: once S has arrived, the RPC's outcome is decided. A client discards
+  # any message that follows, rather than failing the RPC.
+  - request:
+      testName: end-stream/body-after-end
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "BAUG"}}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+
+  # §6.2: the same holds for a message that would be a protocol error before S.
+  - request:
+      testName: end-stream/unknown-marker-after-end
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "X", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+
+  # §7.4: leading metadata and the metadata of S are separate namespaces, and a
+  # receiver surfaces both, as headers and trailers.
+  - request:
+      testName: metadata/headers-and-trailers
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "header"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"metadata": {"x-test": ["trailer"]}}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseHeaders:
+        - name: x-test
+          value: [ "header" ]
+      responseTrailers:
+        - name: x-test
+          value: [ "trailer" ]
+
+  # §9: S carries the RPC's error, in the Connect error format.
+  - request:
+      testName: end-stream/error
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"error": {"code": "resource_exhausted", "message": "oops"}}' } }
+    expectedResponse:
+      error:
+        code: CODE_RESOURCE_EXHAUSTED
+        message: "oops"
+
+  # §6.2: an error with no body before it still opens with M.
+  - request:
+      testName: end-stream/error-without-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"error": {"code": "resource_exhausted"}}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §6.2: a unary response holds exactly one message. A client that receives
+  # none MUST fail the RPC and SHOULD report unimplemented, so any error code
+  # passes.
+  - request:
+      testName: cardinality/unary-zero-responses
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §6.2: the same holds for a server that sends two messages.
+  - request:
+      testName: cardinality/unary-two-responses
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §9: the metadata of S keeps Connect's schema, whose keys a receiver compares
+  # case-insensitively, so an upper-case trailer key is not an error.
+  - request:
+      testName: metadata/trailer-key-case
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{"metadata": {"X-Test": ["trailer"]}}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseTrailers:
+        - name: x-test
+          value: [ "trailer" ]
+
+  # §13.1: a close without S is a failed RPC. A server that closed with 1009
+  # reports an oversized message, so the client reports resource_exhausted.
+  - request:
+      testName: end-stream/missing-close-1009
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              closeCode: 1009
+    expectedResponse:
+      error:
+        code: CODE_RESOURCE_EXHAUSTED
+
+  # §13.1: a server that closed with 1007 without S found invalid data, so the
+  # client reports internal.
+  - request:
+      testName: end-stream/missing-close-1007
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              closeCode: 1007
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §13.1: every other close code without S is unavailable, including the
+  # protocol error code 1002.
+  - request:
+      testName: end-stream/missing-close-1002
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              closeCode: 1002
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+
+  # §13.1: the same holds for 1001, a server going away.
+  - request:
+      testName: end-stream/missing-close-1001
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              closeCode: 1001
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+
+  # §13: once S has arrived, the RPC is complete, and the close code that
+  # follows does not change its outcome.
+  - request:
+      testName: end-stream/close-1002-after-end
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              closeCode: 1002
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+
+  # §13: the same holds for 1011.
+  - request:
+      testName: end-stream/close-1011-after-end
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              closeCode: 1011
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+
+  # §7.3.1: an M message carries a JSON array, so a bare M is a protocol error.
+  - request:
+      testName: metadata/bare
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M" }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: every key has at least one value.
+  - request:
+      testName: metadata/key-without-values
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: every element of an entry is a string.
+  - request:
+      testName: metadata/value-not-string
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", 1]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: a value for a key without -bin is limited to visible ASCII, space
+  # and horizontal tab.
+  - request:
+      testName: metadata/non-ascii-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "caf\u00e9"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: a receiver removes leading and trailing space and horizontal tab
+  # from a value, and keeps whitespace inside it.
+  - request:
+      testName: metadata/surrounding-whitespace
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", " \ta\tb\t "]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseHeaders:
+        - name: x-test
+          value: [ "a\tb" ]
+
+  # §6.2: a client-stream response also holds exactly one message. A client
+  # that receives none MUST fail the RPC and SHOULD report unimplemented.
+  - request:
+      testName: cardinality/client-stream-zero-responses
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §11.1, §13: a client whose deadline expires before S reports
+  # deadline_exceeded and closes with 1000. The reference server sends M and
+  # never S, and does not enforce the deadline itself.
+  - request:
+      testName: deadline/client-closes-normally
+      streamType: STREAM_TYPE_UNARY
+      timeoutMs: 200
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+              expectedClientCloseCodes: [ 1000 ]
+    expectedResponse:
+      error:
+        code: CODE_DEADLINE_EXCEEDED
+
+  # §8, §13: a client that cancels before S closes with 1000, which the server
+  # takes as the cancellation.
+  - request:
+      testName: cancel/client-closes-normally
+      streamType: STREAM_TYPE_UNARY
+      cancel:
+        afterCloseSendMs: 200
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+              expectedClientCloseCodes: [ 1000 ]
+    expectedResponse:
+      error:
+        code: CODE_CANCELED
+
+  # §5, §6.1: a B payload that fails to decode is a protocol error reported as
+  # invalid_argument. The JSON is well-formed, but payload is a message, not a
+  # number.
+  - request:
+      testName: framing/undecodable-json-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": 5}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # §5, §6.1: a streamed B that fails to decode ends the RPC at once. The
+  # server sends no S, so a client that waits for one never closes.
+  - request:
+      testName: framing/undecodable-json-body-server-stream
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": 5}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+      payloads:
+        - data: "AQID"
+
+  # As above, for a bidi stream.
+  - request:
+      testName: framing/undecodable-json-body-half-duplex
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": 5}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INVALID_ARGUMENT
+      payloads:
+        - data: "AQID"
+
+  # §7.3.1: keys must be valid HTTP field names.
+  - request:
+      testName: metadata/invalid-key
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x test", "a"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: each entry is an array of strings.
+  - request:
+      testName: metadata/entry-not-array
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '["x-test"]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+              expectedClientCloseCodes: [ 3102 ]
+    expectedResponse:
+      error:
+        code: CODE_INTERNAL
+
+  # §7.3.1: an empty string is a valid value, so a key can be present but empty.
+  - request:
+      testName: metadata/empty-string-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", ""]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseHeaders:
+        - name: x-test
+          value: [ "" ]
+
+  # §7.3.1: a comma is valid inside a value, as in a date. The checker splits
+  # joined values on commas, so this shows only that the value is accepted.
+  - request:
+      testName: metadata/comma-in-value
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[["x-test", "Wed, 21 Oct 2015 07:28:00 GMT"]]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      payloads:
+        - data: "AQID"
+      responseHeaders:
+        - name: x-test
+          value: [ "Wed, 21 Oct 2015 07:28:00 GMT" ]
+
+  # §13.1: a close without S is unavailable for every close code but 1007 and
+  # 1009, including 1011, which a server sends for an idle timeout.
+  - request:
+      testName: end-stream/missing-close-1011
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+              closeCode: 1011
+    expectedResponse:
+      error:
+        code: CODE_UNAVAILABLE
+
+  # §6.2: the same holds for a client-stream response with two messages.
+  - request:
+      testName: cardinality/client-stream-two-responses
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            rawWebsocketResponse:
+              messages:
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"payload": {"data": "AQID"}}' } }
+                - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]

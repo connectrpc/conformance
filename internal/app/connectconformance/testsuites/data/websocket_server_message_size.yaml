@@ -1,0 +1,63 @@
+# Tests of how a Connect-over-WebSocket server enforces its message size limit.
+# Section numbers refer to the Connect-over-WebSocket protocol specification.
+#
+# A scripted message whose contents are a request message that expandRequests
+# sizes is sent at that size.
+name: WebSocket Server Message Size
+mode: TEST_MODE_SERVER
+reliesOnMessageReceiveLimit: true
+relevantProtocols:
+  - PROTOCOL_CONNECT_WEBSOCKET
+relevantCodecs:
+  - CODEC_PROTO
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+testCases:
+  # §12.1: a server that rejects an oversized client message closes with 1009,
+  # with or without an S first, and the client reports resource_exhausted.
+  - request:
+      testName: framing/oversized-message
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          requestData: "AA=="
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest", "requestData": "AA==" } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expandRequests:
+      - sizeRelativeToLimit: 1
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1009
+      error:
+        code: CODE_RESOURCE_EXHAUSTED
+
+  # §8, §12.1: a message after C is a protocol error even when it is too big to
+  # read, and being too big makes the close 1009. The response delay keeps the
+  # RPC running while the server reads it.
+  - request:
+      testName: end-stream/oversized-message-after-end
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          responseDefinition:
+            responseData: "AQID"
+            responseDelayMs: 1000
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+          requestData: "AA=="
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest", "responseDefinition": { "responseData": "AQID", "responseDelayMs": 1000 } } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest", "requestData": "AA==" } } }
+    expandRequests:
+      - {}
+      - sizeRelativeToLimit: 1
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1009
+      error:
+        code: CODE_RESOURCE_EXHAUSTED

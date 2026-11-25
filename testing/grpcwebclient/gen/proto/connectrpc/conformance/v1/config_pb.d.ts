@@ -273,6 +273,7 @@ export enum Protocol {
   PROTOCOL_CONNECT = 1,
   PROTOCOL_GRPC = 2,
   PROTOCOL_GRPC_WEB = 3,
+  PROTOCOL_CONNECT_WEBSOCKET = 6,
 }
 export enum Codec { 
   CODEC_UNSPECIFIED = 0,

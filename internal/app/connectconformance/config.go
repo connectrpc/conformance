@@ -184,6 +184,11 @@ func resolveFeatures(features *conformancev1.Features) (supportedFeatures, error
 		}
 	}
 
+	includesWebSocket := contains(result.Protocols, conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET)
+	if includesWebSocket && !contains(result.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1) {
+		return result, errors.New("config features indicate Connect-over-WebSocket protocol is supported but HTTP/1.1 is not")
+	}
+
 	includesGPRC := contains(result.Protocols, conformancev1.Protocol_PROTOCOL_GRPC)
 	if includesGPRC && !result.SupportsTrailers {
 		return result, errors.New("config features indicate gRPC protocol is supported but trailers are not")
@@ -221,7 +226,8 @@ func resolveFeatures(features *conformancev1.Features) (supportedFeatures, error
 	}
 
 	includesFullDuplex := contains(result.StreamTypes, conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM)
-	onlyHTTP1 := !includesHTTP2 && !includesHTTP3
+	// WebSocket carries bidi streams of either kind over HTTP/1.1.
+	onlyHTTP1 := !includesHTTP2 && !includesHTTP3 && !includesWebSocket
 	if includesFullDuplex && onlyHTTP1 {
 		return result, errors.New("config features indicate full-duplex bidi streams are supported but neither HTTP/2 nor HTTP/3 included")
 	}
@@ -302,6 +308,10 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 						version != conformancev1.HTTPVersion_HTTP_VERSION_2 {
 						continue // gRPC requires HTTP/2
 					}
+					webSocket := protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET
+					if webSocket && version != conformancev1.HTTPVersion_HTTP_VERSION_1 {
+						continue // the upgrade handshake requires HTTP/1.1
+					}
 
 					connectGetCases := []bool{false}
 					if protocol == conformancev1.Protocol_PROTOCOL_CONNECT && features.SupportsConnectGet {
@@ -311,11 +321,12 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 					for _, streamType := range features.StreamTypes {
 						switch streamType { //nolint:exhaustive
 						case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
-							if !features.SupportsHalfDuplexBidiOverHTTP1 && version == conformancev1.HTTPVersion_HTTP_VERSION_1 {
+							if !features.SupportsHalfDuplexBidiOverHTTP1 && version == conformancev1.HTTPVersion_HTTP_VERSION_1 &&
+								!webSocket {
 								continue
 							}
 						case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-							if version == conformancev1.HTTPVersion_HTTP_VERSION_1 {
+							if version == conformancev1.HTTPVersion_HTTP_VERSION_1 && !webSocket {
 								continue // HTTP/1.1 can't do full duplex
 							}
 						}
@@ -327,6 +338,9 @@ func computeCasesFromFeatures(features supportedFeatures, tlsCases, tlsClientCer
 								continue
 							}
 							for _, compression := range features.Compressions {
+								if webSocket && compression != conformancev1.Compression_COMPRESSION_IDENTITY {
+									continue // WebSocket has no per-message compression of its own
+								}
 								for _, connectGetCase := range connectGetCases {
 									for _, msgRecvLimitCase := range msgRecvLimitCases {
 										cases[configCase{
@@ -381,6 +395,10 @@ func resolveCase(features supportedFeatures, unresolvedCase *conformancev1.Confi
 			!contains(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_2) {
 			return nil, errors.New("config case indicates gRPC protocol but not HTTP/2")
 		}
+		if unresolvedCase.Protocol == conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET &&
+			!contains(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1) {
+			return nil, errors.New("config case indicates Connect-over-WebSocket protocol but not HTTP/1.1")
+		}
 		impliedFeatures.Protocols = []conformancev1.Protocol{unresolvedCase.Protocol}
 	}
 	if unresolvedCase.Codec != conformancev1.Codec_CODEC_UNSPECIFIED {
@@ -390,15 +408,8 @@ func resolveCase(features supportedFeatures, unresolvedCase *conformancev1.Confi
 		impliedFeatures.Compressions = []conformancev1.Compression{unresolvedCase.Compression}
 	}
 	if unresolvedCase.StreamType != conformancev1.StreamType_STREAM_TYPE_UNSPECIFIED {
-		switch unresolvedCase.StreamType { //nolint:exhaustive
-		case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
-			if !features.SupportsHalfDuplexBidiOverHTTP1 && only(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1) {
-				return nil, errors.New("config case indicates half-duplex bidi stream type, but features indicate only HTTP/1.1 and that half-duplex is not supported over HTTP1.1")
-			}
-		case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
-			if only(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1) {
-				return nil, errors.New("config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex")
-			}
+		if err := checkStreamType(features, impliedFeatures, unresolvedCase.StreamType); err != nil {
+			return nil, err
 		}
 		impliedFeatures.StreamTypes = []conformancev1.StreamType{unresolvedCase.StreamType}
 	}
@@ -421,6 +432,24 @@ func resolveCase(features supportedFeatures, unresolvedCase *conformancev1.Confi
 		msgReceiveLimitCases = []bool{unresolvedCase.GetUseMessageReceiveLimit()}
 	}
 	return computeCasesFromFeatures(impliedFeatures, tlsCases, tlsClientCertCases, msgReceiveLimitCases), nil
+}
+
+// checkStreamType reports whether the protocols and HTTP versions a config
+// case implies can carry streamType.
+func checkStreamType(features, impliedFeatures supportedFeatures, streamType conformancev1.StreamType) error {
+	onlyHTTP1 := only(impliedFeatures.Versions, conformancev1.HTTPVersion_HTTP_VERSION_1)
+	webSocketOnly := only(impliedFeatures.Protocols, conformancev1.Protocol_PROTOCOL_CONNECT_WEBSOCKET)
+	switch streamType { //nolint:exhaustive
+	case conformancev1.StreamType_STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM:
+		if !features.SupportsHalfDuplexBidiOverHTTP1 && onlyHTTP1 && !webSocketOnly {
+			return errors.New("config case indicates half-duplex bidi stream type, but features indicate only HTTP/1.1 and that half-duplex is not supported over HTTP1.1")
+		}
+	case conformancev1.StreamType_STREAM_TYPE_FULL_DUPLEX_BIDI_STREAM:
+		if onlyHTTP1 && !webSocketOnly {
+			return errors.New("config case indicates full-duplex bidi stream type, but features indicate only HTTP/1.1 which cannot support full-duplex")
+		}
+	}
+	return nil
 }
 
 func checkForDeprecations(config *conformancev1.Config) {

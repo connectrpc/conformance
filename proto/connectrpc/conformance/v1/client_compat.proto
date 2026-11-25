@@ -149,6 +149,18 @@ message ClientCompatRequest {
   // provided and valid so that the reference client knows how it
   // should try to interpret the server's response.
   RawHTTPRequest raw_request = 20;
+
+  // The following field is only used by the reference client. If
+  // you are implementing a client under test, you may ignore it
+  // or respond with an error if the client receives a request where
+  // it is set.
+  //
+  // It is the PROTOCOL_CONNECT_WEBSOCKET counterpart of raw_request. When
+  // present, it defines the handshake and the WebSocket messages that will be
+  // sent instead of the ones the client would otherwise produce. The above
+  // group of fields must still be provided and valid so that the reference
+  // client knows how it should try to interpret the server's response.
+  RawWebSocketRequest raw_websocket_request = 21;
 }
 
 // The outcome of one ClientCompatRequest.
@@ -201,6 +213,13 @@ message ClientResponseResult {
   // If you are implementing a client-under-test, you should ignore this field
   // and leave it unset.
   repeated string feedback = 7;
+  // The following field is only set by the reference client, and only for
+  // the PROTOCOL_CONNECT_WEBSOCKET protocol. It is the status code in the
+  // server's WebSocket Close frame. A connection that ended without a Close
+  // frame is reported as 1006, as RFC 6455 section 7.1.5 prescribes.
+  // If you are implementing a client-under-test, you should ignore this field
+  // and leave it unset.
+  optional int32 websocket_close_code = 8;
 }
 
 // The client is not able to fulfill the ClientCompatRequest. This may be due

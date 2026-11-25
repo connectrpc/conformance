@@ -1,0 +1,414 @@
+# Tests of how a Connect-over-WebSocket server handles the framing of messages. Section
+# numbers refer to the Connect-over-WebSocket protocol specification.
+#
+# §5: a server reports a protocol error in an S message with the code
+# internal, and then closes with 1002.
+name: WebSocket Server Framing
+mode: TEST_MODE_SERVER
+relevantProtocols:
+  - PROTOCOL_CONNECT_WEBSOCKET
+relevantCodecs:
+  - CODEC_JSON
+relevantCompressions:
+  - COMPRESSION_IDENTITY
+testCases:
+  # §6.2: every stream opens with an M message.
+  - request:
+      testName: framing/first-message-not-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §6.2: a stream carries exactly one M message.
+  - request:
+      testName: framing/second-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §5: an unrecognized marker is a protocol error, never skipped.
+  - request:
+      testName: framing/unknown-marker
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "X", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §5.1: every byte but the four markers is unknown, including one with the
+  # high bit set. "é" is valid UTF-8, so the message can be a text frame, and
+  # its first byte, 0xC3, is not a marker. A binary frame would not isolate the
+  # marker: under JSON, §6.1 already rejects it as the wrong frame type.
+  - request:
+      testName: framing/high-bit-marker
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "é", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §5: S is valid only from a server.
+  - request:
+      testName: framing/server-marker-from-client
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "S", contents: { text: '{}' } }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §5: a message with no marker is a protocol error.
+  - request:
+      testName: framing/empty-message
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1: an M message carries a JSON array, so a bare M is a protocol error.
+  - request:
+      testName: framing/bare-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M" }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §5, §6.1: an empty B payload goes to the codec like any other. The empty
+  # JSON message is {}, so an empty payload fails to decode, as malformed JSON
+  # does. A B payload that fails to decode is a protocol error reported as
+  # invalid_argument.
+  - request:
+      testName: framing/empty-json-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B" }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # §6.1: malformed JSON fails to decode, with the same result as an empty body.
+  - request:
+      testName: framing/truncated-json-body
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # §5, §6.1: a B that fails to decode is a protocol error wherever it falls
+  # in the stream, not only as the first request. requestData is bytes.
+  - request:
+      testName: framing/undecodable-json-body-client-stream
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"requestData": 5}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # As above, for a bidi stream.
+  - request:
+      testName: framing/undecodable-json-body-half-duplex
+      streamType: STREAM_TYPE_HALF_DUPLEX_BIDI_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.BidiStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"requestData": 5}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INVALID_ARGUMENT
+
+  # §6.1, §13: a body in a frame type that does not match the negotiated codec
+  # is a protocol error.
+  - request:
+      testName: framing/body-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "B", contents: { binary_message: { "@type": "type.googleapis.com/connectrpc.conformance.v1.UnaryRequest" } } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1: text must be valid UTF-8. A server closes with 1007 and sends no S,
+  # and §13.1 has the client report internal.
+  - request:
+      testName: framing/invalid-utf8
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { binary: "//4=" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1007
+      error:
+        code: CODE_INTERNAL
+
+  # §8: a message after C is a protocol error, and it ends the stream. The
+  # response delay keeps the RPC running while the server reads it.
+  - request:
+      testName: framing/message-after-end
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{"responseDefinition": {"responseData": ["AQID"], "responseDelayMs": 1000}}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1, §8: C carries no payload. A C with one is a protocol error, not a
+  # final message to deliver; the last message goes in a B before it.
+  - request:
+      testName: end-stream/payload-in-c
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C", contents: { text: '{}' } }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §6.1: C is always text. A C in a binary frame is a protocol error.
+  - request:
+      testName: end-stream/c-in-binary-frame
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_BINARY, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1002
+      error:
+        code: CODE_INTERNAL
+
+  # §8: every body before C is delivered, and C ends the stream.
+  - request:
+      testName: end-stream/client-stream-bodies-before-c
+      streamType: STREAM_TYPE_CLIENT_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1000
+      payloads:
+        - requestInfo:
+            requests:
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+              - "@type": type.googleapis.com/connectrpc.conformance.v1.ClientStreamRequest
+
+  # §6.2: a unary RPC takes exactly one request. A server that receives no B
+  # before C MUST end the RPC with an error, and SHOULD use unimplemented, so
+  # any error code passes.
+  - request:
+      testName: cardinality/unary-zero-requests
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §6.2: the same holds for a unary RPC that receives two B before C.
+  - request:
+      testName: cardinality/unary-two-requests
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §6.1: UTF-8 is validated before the marker is read, so invalid UTF-8 in an
+  # M message also closes with 1007 and no S. §13.1 has the client report
+  # internal.
+  - request:
+      testName: framing/invalid-utf8-in-metadata
+      streamType: STREAM_TYPE_UNARY
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.UnaryRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { binary: "//4=" } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      websocketCloseCode: 1007
+      error:
+        code: CODE_INTERNAL
+
+  # §6.2: a server-streaming RPC also takes exactly one request. A server that
+  # receives no B before C MUST end the RPC with an error, and SHOULD use
+  # unimplemented, so any error code passes.
+  - request:
+      testName: cardinality/server-stream-zero-requests
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]
+
+  # §6.2: the same holds for a server-streaming RPC that receives two B before
+  # C.
+  - request:
+      testName: cardinality/server-stream-two-requests
+      streamType: STREAM_TYPE_SERVER_STREAM
+      requestMessages:
+        - "@type": type.googleapis.com/connectrpc.conformance.v1.ServerStreamRequest
+      rawWebsocketRequest:
+        messages:
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "M", contents: { text: '[]' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "B", contents: { text: '{}' } }
+          - { type: WEB_SOCKET_MESSAGE_TYPE_TEXT, marker: "C" }
+    expectedResponse:
+      httpStatusCode: 101
+      error:
+        code: CODE_UNIMPLEMENTED
+    otherAllowedErrorCodes: [ CODE_CANCELED, CODE_UNKNOWN, CODE_INVALID_ARGUMENT, CODE_DEADLINE_EXCEEDED, CODE_NOT_FOUND, CODE_ALREADY_EXISTS, CODE_PERMISSION_DENIED, CODE_RESOURCE_EXHAUSTED, CODE_FAILED_PRECONDITION, CODE_ABORTED, CODE_OUT_OF_RANGE, CODE_INTERNAL, CODE_UNAVAILABLE, CODE_DATA_LOSS, CODE_UNAUTHENTICATED ]

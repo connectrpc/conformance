@@ -233,7 +233,8 @@ requestMessagesList: jspb.Message.toObjectList(msg.getRequestMessagesList(),
 timeoutMs: (f = jspb.Message.getField(msg, 17)) == null ? undefined : f,
 requestDelayMs: jspb.Message.getFieldWithDefault(msg, 18, 0),
 cancel: (f = msg.getCancel()) && proto.connectrpc.conformance.v1.ClientCompatRequest.Cancel.toObject(includeInstance, f),
-rawRequest: (f = msg.getRawRequest()) && connectrpc_conformance_v1_service_pb.RawHTTPRequest.toObject(includeInstance, f)
+rawRequest: (f = msg.getRawRequest()) && connectrpc_conformance_v1_service_pb.RawHTTPRequest.toObject(includeInstance, f),
+rawWebsocketRequest: (f = msg.getRawWebsocketRequest()) && connectrpc_conformance_v1_service_pb.RawWebSocketRequest.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -354,6 +355,11 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.deserializeBinaryFromReader 
       var value = new connectrpc_conformance_v1_service_pb.RawHTTPRequest;
       reader.readMessage(value,connectrpc_conformance_v1_service_pb.RawHTTPRequest.deserializeBinaryFromReader);
       msg.setRawRequest(value);
+      break;
+    case 21:
+      var value = new connectrpc_conformance_v1_service_pb.RawWebSocketRequest;
+      reader.readMessage(value,connectrpc_conformance_v1_service_pb.RawWebSocketRequest.deserializeBinaryFromReader);
+      msg.setRawWebsocketRequest(value);
       break;
     default:
       reader.skipField();
@@ -527,6 +533,14 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.serializeBinaryToWriter = fu
       20,
       f,
       connectrpc_conformance_v1_service_pb.RawHTTPRequest.serializeBinaryToWriter
+    );
+  }
+  f = message.getRawWebsocketRequest();
+  if (f != null) {
+    writer.writeMessage(
+      21,
+      f,
+      connectrpc_conformance_v1_service_pb.RawWebSocketRequest.serializeBinaryToWriter
     );
   }
 };
@@ -1341,6 +1355,43 @@ proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.hasRawRequest = fu
 };
 
 
+/**
+ * optional RawWebSocketRequest raw_websocket_request = 21;
+ * @return {?proto.connectrpc.conformance.v1.RawWebSocketRequest}
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.getRawWebsocketRequest = function() {
+  return /** @type{?proto.connectrpc.conformance.v1.RawWebSocketRequest} */ (
+    jspb.Message.getWrapperField(this, connectrpc_conformance_v1_service_pb.RawWebSocketRequest, 21));
+};
+
+
+/**
+ * @param {?proto.connectrpc.conformance.v1.RawWebSocketRequest|undefined} value
+ * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest} returns this
+*/
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.setRawWebsocketRequest = function(value) {
+  return jspb.Message.setWrapperField(this, 21, value);
+};
+
+
+/**
+ * Clears the message field making it undefined.
+ * @return {!proto.connectrpc.conformance.v1.ClientCompatRequest} returns this
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.clearRawWebsocketRequest = function() {
+  return this.setRawWebsocketRequest(undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.connectrpc.conformance.v1.ClientCompatRequest.prototype.hasRawWebsocketRequest = function() {
+  return jspb.Message.getField(this, 21) != null;
+};
+
+
 
 /**
  * Oneof group definitions for this message. Each group defines the field
@@ -1647,7 +1698,8 @@ responseTrailersList: jspb.Message.toObjectList(msg.getResponseTrailersList(),
     connectrpc_conformance_v1_service_pb.Header.toObject, includeInstance),
 numUnsentRequests: jspb.Message.getFieldWithDefault(msg, 5, 0),
 httpStatusCode: (f = jspb.Message.getField(msg, 6)) == null ? undefined : f,
-feedbackList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f
+feedbackList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
+websocketCloseCode: (f = jspb.Message.getField(msg, 8)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1715,6 +1767,10 @@ proto.connectrpc.conformance.v1.ClientResponseResult.deserializeBinaryFromReader
     case 7:
       var value = /** @type {string} */ (reader.readStringRequireUtf8());
       msg.addFeedback(value);
+      break;
+    case 8:
+      var value = /** @type {number} */ (reader.readInt32());
+      msg.setWebsocketCloseCode(value);
       break;
     default:
       reader.skipField();
@@ -1795,6 +1851,13 @@ proto.connectrpc.conformance.v1.ClientResponseResult.serializeBinaryToWriter = f
   if (f.length > 0) {
     writer.writeRepeatedString(
       7,
+      f
+    );
+  }
+  f = /** @type {number} */ (jspb.Message.getField(message, 8));
+  if (f != null) {
+    writer.writeInt32(
+      8,
       f
     );
   }
@@ -2040,6 +2103,42 @@ proto.connectrpc.conformance.v1.ClientResponseResult.prototype.addFeedback = fun
  */
 proto.connectrpc.conformance.v1.ClientResponseResult.prototype.clearFeedbackList = function() {
   return this.setFeedbackList([]);
+};
+
+
+/**
+ * optional int32 websocket_close_code = 8;
+ * @return {number}
+ */
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.getWebsocketCloseCode = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.connectrpc.conformance.v1.ClientResponseResult} returns this
+ */
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.setWebsocketCloseCode = function(value) {
+  return jspb.Message.setField(this, 8, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.connectrpc.conformance.v1.ClientResponseResult} returns this
+ */
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.clearWebsocketCloseCode = function() {
+  return jspb.Message.setField(this, 8, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.connectrpc.conformance.v1.ClientResponseResult.prototype.hasWebsocketCloseCode = function() {
+  return jspb.Message.getField(this, 8) != null;
 };
 
 
