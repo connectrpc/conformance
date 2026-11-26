@@ -552,7 +552,7 @@ jobs:
           repository: connectrpc/connect-py
           ref: ${{ needs.prepare.outputs.implementation-ref }}
           path: connect-py
-      - uses: astral-sh/setup-uv@v10.3.3
+      - uses: astral-sh/setup-uv@v10.4.0
         with:
           python-version: '3.14'
       - uses: actions/download-artifact@v8
